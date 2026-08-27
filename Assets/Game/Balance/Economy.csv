@@ -1,0 +1,52 @@
+# Economy.csv — 씬 컴포넌트에 흩어져 있는 "게임 진행 수치"를 한 장에 모은 표.
+# Import 를 돌리면 열려 있는 씬의 해당 컴포넌트 직렬화 필드에 그대로 기록된다.
+#
+# Field 는 SerializedProperty 경로다. baseStats.MaxHp 처럼 중첩 필드도 쓸 수 있다.
+# 배열은 | 로 구분한다. Note 는 임포터가 무시하는 설명용 열이다.
+#
+# ※ 전부 임시값이다. 플레이 감각 잡히면 여기서 조정하고 Import 만 다시 돌리면 된다.
+Component,Field,Value,Note
+# ── 스테이지 클리어 골드 보상 ────────────────────────────────────
+GameManager,normalClearReward,8,노말 노드 클리어 보상
+GameManager,eliteClearReward,20,엘리트 노드 클리어 보상
+GameManager,bossClearReward,60,보스 노드 클리어(런 승리) 보상
+# ── 레벨업 곡선 (index = 레벨, value = 다음 레벨까지 필요 XP) ────
+# 표를 넘어서면 마지막 값 + 현재레벨*50 으로 계산된다 (ExperienceManager.XpToNext)
+ExperienceManager,xpThresholds,5|10|20|35|55|80|110|150|200|260,Lv1~Lv10 필요 경험치
+# ── 상점 ─────────────────────────────────────────────────────────
+ShopManager,shopSlotCount,3,한 번에 진열되는 상품 수
+ShopManager,baseRerollCost,3,리롤 기본 비용(골드)
+ShopManager,rerollCostIncrease,1,리롤 1회마다 비용 증가
+ShopManager,refundRate,0.5,아이템 제거 시 환급 비율
+# ── 레벨업 선택 리롤 ─────────────────────────────────────────────
+# 레벨업 1회당 리롤은 딱 한 번만 가능하다. 그래서 비용 증가 항목이 없다.
+LevelUpManager,rerollCost,1,레벨업 선택지 리롤 비용(골드). 레벨업당 1회 제한
+# ── 메타 진행 ────────────────────────────────────────────────────
+MetaProgressionManager,characterUnlockCost,30,캐릭터 해금 비용
+MetaProgressionManager,skinUnlockCost,15,스킨 해금 비용
+# ── 플레이어 기본 스탯 ───────────────────────────────────────────
+PlayerStats,baseStats.MaxHp,100,최대 체력
+PlayerStats,baseStats.MoveSpeed,4,이동 속도
+PlayerStats,baseStats.Damage,1,무기 데미지 배율
+PlayerStats,baseStats.AttackSpeed,1,무기 쿨다운 배율 (낮을수록 빠름)
+PlayerStats,baseStats.ProjectileSize,1,투사체 크기 배율
+PlayerStats,baseStats.PickupRadius,2,경험치 흡수 반경
+PlayerStats,baseStats.CritChance,0.05,치명타 확률
+PlayerStats,baseStats.CritMultiplier,1.5,치명타 배수
+PlayerStats,baseStats.Armor,0,방어력 (받는 피해 감산)
+PlayerStats,baseStats.XpGain,1,경험치 획득 배율
+PlayerStats,baseStats.GoldGain,1,골드 획득 배율
+PlayerStats,baseStats.BuildingCooldown,1,건물 작동 주기 배율 (낮을수록 빠름)
+# ── 건물 설치 (Z 키) ─────────────────────────────────────────────
+# 건물 프리팹은 scale 2.6 · 콜라이더 반경 0.2222 → 실제 반경 ≈ 0.58 (월드 1.3유닛)
+# placeDistance 는 링 위 이웃 칸 간격(= 0.765 × placeDistance)이 건물 지름(1.16)보다 커야 한다
+BuildingManager,placeDistance,1.8,플레이어에게서 떨어뜨려 세우는 거리
+BuildingManager,placeClearRadius,0.6,이 반경 안에 막는 콜라이더가 없어야 세운다
+# ── 피격 반응 (넉백 / 무적 / 연출) ───────────────────────────────
+# 접촉 피해는 "한 방"이다. 적 하나가 계속 붙어 있을 때 초당 피해 = ContactDamage / invincibleTime
+PlayerStats,invincibleTime,0.6,피격 후 무적 시간(초). 접촉 피해 연타를 막는다
+PlayerController,knockbackForce,9,넉백 초기 속도. MoveSpeed(4)보다 커야 밀려나 보인다
+PlayerController,knockbackTime,0.15,넉백 동안 이동 입력이 막히는 시간(초)
+PlayerController,hitFlashTime,0.12,맞은 직후 붉게 물드는 시간(초)
+PlayerController,blinkInterval,0.07,무적 중 깜빡임 주기(초)
+PlayerController,shakeMagnitude,0.18,피격 시 카메라 흔들림 강도

@@ -1,0 +1,49 @@
+# ─────────────────────────────────────────────────────────────
+# Unity 파일 취급 규칙
+#
+# Unity 의 .unity / .prefab / .asset 은 텍스트(YAML)다. 반드시 text 로 잡아야
+# diff 가 보이고 병합이 된다. 반대로 .png / .ttf 는 binary 로 못박지 않으면
+# 줄바꿈 정규화가 파일을 망가뜨린다.
+# ─────────────────────────────────────────────────────────────
+
+# 기본: 줄바꿈은 git 이 알아서 판단
+*                    text=auto
+
+# Unity YAML — 텍스트로 취급하되 병합 충돌 시 UnityYAMLMerge 를 쓸 수 있게 표시
+*.cs                 text diff=csharp
+*.shader             text
+*.cginc              text
+*.hlsl               text
+*.unity              text merge=unityyamlmerge eol=lf
+*.prefab             text merge=unityyamlmerge eol=lf
+*.asset              text merge=unityyamlmerge eol=lf
+*.mat                text merge=unityyamlmerge eol=lf
+*.anim               text merge=unityyamlmerge eol=lf
+*.controller         text merge=unityyamlmerge eol=lf
+*.physicMaterial2D   text merge=unityyamlmerge eol=lf
+*.meta               text eol=lf
+*.csv                text eol=lf
+*.md                 text
+*.json               text
+*.txt                text
+
+# 바이너리 — 절대 건드리지 말 것
+*.png                binary
+*.jpg                binary
+*.jpeg               binary
+*.gif                binary
+*.psd                binary
+*.tga                binary
+*.tif                binary
+*.exr                binary
+*.hdr                binary
+*.ttf                binary
+*.otf                binary
+*.wav                binary
+*.mp3                binary
+*.ogg                binary
+*.fbx                binary
+*.obj                binary
+*.blend              binary
+*.dll                binary
+*.unitypackage       binary

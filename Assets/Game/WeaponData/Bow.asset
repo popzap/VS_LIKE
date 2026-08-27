@@ -1,0 +1,44 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7743b8d275c61e1489bfd9158b4aa25c, type: 3}
+  m_Name: Bow
+  m_EditorClassIdentifier: Assembly-CSharp::WeaponData
+  WeaponName: Bow
+  WeaponPrefab: {fileID: 7710070822802352840, guid: 5d7c717e7789c1e4bba31b411bd08f9c, type: 3}
+  Icon: {fileID: 21300000, guid: 7cb2b59ea0ed3e44e91c54ebd05f2221, type: 3}
+  Damage:
+  - 8
+  - 12
+  - 17
+  - 24
+  - 33
+  Cooldown:
+  - 1.1
+  - 1
+  - 0.85
+  - 0.7
+  - 0.55
+  ProjectileSize:
+  - 0.8
+  - 0.85
+  - 0.9
+  - 1
+  - 1.1
+  ProjectileCount: 0100000002000000020000000300000003000000
+  Range:
+  - 14
+  - 14
+  - 16
+  - 16
+  - 18
+  ProjectileSpeed: 14
+  ProjectilePrefab: {fileID: 691123369852945806, guid: b302c4b4e24ee7442a8c2232aa722f92, type: 3}

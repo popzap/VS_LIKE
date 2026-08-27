@@ -1,0 +1,66 @@
+# ─────────────────────────────────────────────────────────────
+# Unity 프로젝트 — 커밋하면 안 되는 것들
+#
+# 원칙: Assets/ · Packages/ · ProjectSettings/ 만 있으면 에디터가
+#       나머지를 전부 다시 만든다. 그 밖은 전부 로컬 산출물이다.
+# ─────────────────────────────────────────────────────────────
+
+# 에디터가 재생성하는 캐시 / 임시물
+/[Ll]ibrary/
+/[Tt]emp/
+/[Oo]bj/
+/[Bb]uild/
+/[Bb]uilds/
+/[Ll]ogs/
+/[Uu]ser[Ss]ettings/
+/[Mm]emoryCaptures/
+/[Rr]ecordings/
+
+# Unity AI 생성 캐시 (프로젝트 루트, 약 100MB)
+# 생성물 자체는 Assets/Game/Sprites 로 들어가 있다. 여기는 원본·중간 결과 보관소라
+# 게임 동작에 필요 없다.
+/GeneratedAssets/
+
+# Asset Store 다운로드 캐시
+/[Aa]ssets/AssetStoreTools*
+/[Aa]ssets/Plugins/Editor/JetBrains*
+
+# IDE 가 만드는 솔루션/프로젝트 파일 (에디터가 다시 생성한다)
+*.csproj
+*.unityproj
+*.sln
+*.slnx
+*.suo
+*.tmp
+*.user
+*.userprefs
+*.pidb
+*.booproj
+*.svd
+*.pdb
+*.mdb
+*.opendb
+*.VC.db
+.vs/
+.idea/
+.vscode/
+!.vscode/settings.json
+
+# 빌드 산출물
+*.apk
+*.aab
+*.unitypackage
+*.app
+ExportedObj/
+.consulo/
+crashlytics-build.properties
+
+# Unity 크래시 리포트
+sysinfo.txt
+/[Aa]ssets/[Ss]treamingAssets/aa.meta
+/[Aa]ssets/[Ss]treamingAssets/aa/*
+
+# OS 부산물
+.DS_Store
+Thumbs.db
+desktop.ini

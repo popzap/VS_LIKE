@@ -1,0 +1,1557 @@
+# VS_LIKE — 프로젝트 현황
+
+> Unity 6.3 LTS (6000.3.8f1) / 2D 뱀서라이크
+>
+> **2026-08-26 — 작업 전제 변경 (사용자 지시)**
+> 기존의 「C# 스크립트는 완성 단계」라는 전제와 「요청 없이 코드 건드리지 말 것」 규칙이 **해제됨**.
+> 이제 게임 완성을 위해 C# 스크립트 신규 작성·수정이 허용된다.
+>
+> **최종 갱신:** 2026-08-27 (11차 — 건물 확대 + 곡사포 폭탄 투사체 + 폭발 애니메이션 + 미사용 애셋 정리)
+> 검증 방식: Unity MCP + Play 모드 스모크 테스트 + YAML 직접 파싱
+> **검증 기준 파일:** `Assets/Scenes/SampleScene.unity`
+>
+> **현재 상태: 메인메뉴 → 스테이지맵 → 웨이브 → 클리어 → 게임오버 전체 루프 런타임 검증 완료 (18/18 PASS), 콘솔 에러 0 / 경고 0.**
+> Shop / Event / Pause / Retry 버그 5건(I-14~I-18)은 **코드 수정 완료**, 런타임 재검증은 미완 → [`TODO.md`](TODO.md) §1
+> 밸런스 수치는 **CSV가 원본**이다. 고치는 법은 [`BALANCE.md`](BALANCE.md).
+
+---
+
+## 0. 툴체인 상태  ✅ 연결됨
+
+| 항목 | 상태 |
+|---|---|
+| Claude Code ↔ `unity-mcp` (relay `--mcp`) | ✅ |
+| `com.unity.ai.assistant` 2.18.0-pre.2 (릴레이 제공) | ✅ |
+| Unity Editor (6000.3.8f1) | ✅ 실행 중 |
+
+MCP 초기화는 `McpInitializer.cs`의 `[InitializeOnLoadMethod]`로 에디터 로드 시 자동 실행되며
+**별도 토글이 없음**. `Unity not detected` 에러가 나면 원인은 사실상 "에디터 미실행" 하나.
+에디터를 닫으면 릴레이도 약 2분 뒤 종료(`--shutdown-delay 120`)되므로 작업 중에는 계속 열어둘 것.
+
+---
+
+## 0-1. Input 처리 방식  🟡 (나) 완료 / (가) 대기
+
+`ProjectSettings.activeInputHandler: 1` (= Input System 전용)인데 스크립트가 레거시
+`UnityEngine.Input`을 써서 **플레이어 이동이 아예 동작하지 않던 블로커**가 있었음.
+
+**(나) 스크립트를 Input System으로 이관 — ✅ 완료 (컴파일 클린)**
+`.inputactions` 애셋 배선 없이 동작하도록 디바이스 직접 읽기(`Keyboard.current` / `Mouse.current`)로 1:1 치환.
+Inspector 추가 연결 불필요.
+
+| 파일 | 변경 |
+|---|---|
+| `Player/PlayerController.cs` | `GetAxisRaw` → WASD/방향키 직접 읽기, `GetKeyDown(B)` → `bKey.wasPressedThisFrame`, `GetMouseButtonDown(0)` → `leftButton.wasPressedThisFrame`, `mousePosition` → `Mouse.current.position.ReadValue()` |
+| `UI/PauseMenuUI.cs` | `GetKeyDown(Escape)` → `escapeKey.wasPressedThisFrame` |
+| `Building/BuildingManager.cs` | `mousePosition` → `Mouse.current.position.ReadValue()` (+ null 가드) |
+| `UI/StageClearUI.cs` | `GetMouseButtonDown(0)` → `leftButton.wasPressedThisFrame` |
+
+**(가) Active Input Handling = `Both` — ⏳ 대기 (에디터 재시작 필요)**
+(나)만으로 기능은 해결되므로, 재시작이 MCP 릴레이를 끊는 것을 피하기 위해
+**마지막 Play 검증 직전에 적용**할 예정.
+
+---
+
+## 1. 씬 하이어라키 (현재)
+
+```
+SampleScene
+├─ EventSystem
+├─ Global Light 2D
+├─ AudioManager                      ← 씬 루트 (2026-08-26 추가)
+├─ Ground  [Grid cellSize 1×1]       ← 9차 추가
+│   └─ GroundTilemap  [Tilemap, TilemapRenderer(order -100), GroundTiler]
+├─ (매니저 프리팹 인스턴스, 전부 루트)
+│   GameManager / WaveManager / LevelUpManager / ExperienceManager
+│   DamagePopupManager / BuildingManager / ShopManager / EventManager
+│   MetaProgressionManager / StageMapManager / ObjectPool / Player / Camera
+└─ UI Canvas  [HUDManager, PauseMenuUI, ShopUI,
+    │          MainMenuUI, StageMapUI, RunEndUI, StageClearUI, StateVisibilityBinder]
+    ├─ MainMenuPanel     <INACTIVE>
+    │   └─ DimBG, TitleText, CurrencyText,
+    │      StartButton / OptionButton / QuitButton  (각각 → Label)
+    ├─ StageMapPanel     <INACTIVE>
+    │   └─ DimBG, HeaderText, CurrencyText,
+    │      MapScrollView → Viewport → Content   ← 노드/라인이 런타임 생성됨
+    ├─ StageClearPanel   <INACTIVE>
+    │   └─ DimBG, Card (StageTitleText, XpGainText, CurrencyGainText,
+    │                   KillCountText, TimeText, StatChangeContainer,
+    │                   ItemContainer, ContinueHint, ContinueButton)
+    ├─ RunEndPanel       <INACTIVE>
+    │   └─ DimBG, Card (TitleText, SummaryText, RetryButton, MainMenuButton)
+    ├─ HUD                               ← StateVisibilityBinder가 Wave/Shop 등에서만 표시
+    │   ├─ PortraitGroup
+    │   │   ├─ PortraitImage → StatusDot
+    │   │   ├─ HPSlider → Fill
+    │   │   └─ HPText
+    │   ├─ XPGroup (LevelText, XPText, XPSlider → Fill)
+    │   ├─ CurrencyText
+    │   └─ OptionsButton
+    ├─ LevelUpPanel                      <INACTIVE>
+    │   ├─ DimBG
+    │   ├─ TitleText
+    │   └─ PanelBG
+    │       ├─ CardContainer
+    │       │   ├─ ItemCard_0  (150x200)
+    │       │   ├─ ItemCard_1  (150x200)
+    │       │   └─ ItemCard_2  (150x200)
+    │       └─ RerollArea
+    │           ├─ RerollButton → RerollBtnText
+    │           └─ RerollCostText
+    ├─ PausePanel        <INACTIVE>  [CanvasGroup]
+    │   ├─ DimBG
+    │   └─ Card (TitleText, ResumeButton, OptionButton, QuitButton)
+    ├─ OptionSubPanel    <INACTIVE>  [OptionPanel]
+    │   ├─ DimBG
+    │   └─ Card (TitleText, BGMLabel/BGMSlider, SFXLabel/SFXSlider, CloseButton)
+    └─ ShopRoot          <INACTIVE>  [CanvasGroup]
+        ├─ DimBG
+        ├─ LeftPanel   — RemoveHintText, RemoveScrollView → Viewport → Content
+        ├─ CenterPanel — CardContainer, RerollButton, RerollCostText, CloseButton
+        └─ RightPanel  — NpcDialogueText, KillCountText, ElapsedTimeText,
+                         PlayerLevelText, WaveProgressText
+```
+
+> 방치 프리팹 인스턴스 10개(루트 7 + UI Canvas 하위 3)는 **B단계에서 삭제 완료**.
+
+`UI Canvas.prefab` 자체는 자식이 없는 빈 Canvas이고, 위 UI 트리는 전부 씬에서 추가된 것.
+
+> `OptionPanel` 컴포넌트는 원래 UI Canvas에 붙어 있었음. `closeButton`이
+> `gameObject.SetActive(false)`를 호출하므로 **Canvas 전체가 꺼지는 버그**가 있어
+> C단계에서 `OptionSubPanel`로 옮김.
+
+---
+
+## 2. 작업 현황
+
+### 1단계 — Inspector 연결  ✅ 완료
+
+| 대상 | 필드 | 상태 |
+|---|---|---|
+| LevelUpManager | levelUpPanel | ✅ LevelUpPanel |
+| | cards[3] | ✅ ItemCard_0 / 1 / 2 |
+| | rerollButton | ✅ RerollButton |
+| | rerollCostText | ✅ RerollCostText |
+| | allItems | ✅ **17개** — 2차에서 `SceneWiring.csv` 로 자동 배선 (원래 3개) |
+| WaveManager | normalWaves | ✅ **Normal1~3** — 2차 `SceneWiring.csv` (원래 Normal1 1개, 내용도 비어 있었음 → I-12) |
+| | eliteWaves | ✅ **Elite1~2** — 동일 |
+| | bossWave | ✅ Boss1 — 동일 |
+| | enemyPool | ✅ ObjectPool |
+| | playerTransform | ✅ Player |
+| Camera (CameraController) | target | ✅ Player |
+| ExperienceManager | expPool | ✅ ObjectPool |
+| | expDropPrefab | ✅ `ExpDrop_Small.prefab` (B단계 수정) |
+| DamagePopupManager | pool | ✅ ObjectPool |
+| | popupPrefab | ✅ `DamagePopup.prefab` (B단계 수정) |
+| BuildingManager | buildingPool | ✅ ObjectPool |
+| Player (WeaponManager) | weaponPool | ✅ ObjectPool (4단계에서 누락 발견 → 연결) |
+| ShopUI | shopCardPrefab | ✅ `Prefab_ShopCard.prefab` (B단계 수정) |
+| | removeRowPrefab | ✅ `Prefab_ShopRemoveRow.prefab` (B단계 수정) |
+
+**ObjectPool `warmUpEntries` (5개) — 전부 프리팹 애셋 참조 ✅**
+
+| # | Prefab | Count |
+|---|---|---|
+| 0 | `Assets/Prefabs/Enemy_Goblin.prefab` | 20 |
+| 1 | `Assets/Prefabs/Proj_Bullet.prefab` | 30 |
+| 2 | `Assets/Prefabs/Proj_Aoe(Boom).prefab` | 10 |
+| 3 | `Assets/Prefabs/ExpDrop_Small.prefab` | 30 |
+| 4 | `Assets/Prefabs/DamagePopup.prefab` | 20 |
+
+> **(해결됨) 씬 인스턴스 참조 문제**: 프리팹 애셋이 아니라 씬에 놓인 오브젝트를 참조하고 있어
+> 풀이 씬 오브젝트를 복제하고 원본이 씬에 그대로 남아 있었음.
+> → B단계에서 참조 7건을 애셋으로 교체하고 방치 인스턴스 10개를 삭제, 씬 저장 후 재검증 완료.
+
+### 2단계 — LevelUpPanel UI  ✅ 완료
+
+- LevelUpPanel 비활성 상태 ✅
+- CardContainer에 ItemCard_0/1/2 배치, 각 150x200 ✅
+- RerollArea(RerollButton + RerollCostText) 구성 ✅
+- RerollButton `onClick` → `LevelUpManager.OnRerollClicked` ✅
+
+### 3단계 — UI 전체 (HUD + Pause + Option + Shop)  ✅ 완료
+
+UI 패널 4종을 `Unity_RunCommand`(C# 동적 실행)로 신규 구축하고 필드를 전부 배선함.
+
+| 컴포넌트 | 연결 | 비고 |
+|---|---|---|
+| `HUDManager` | 9 / 15 | 나머지 6개는 **선택 필드** — 아래 표 참조 |
+| `PauseMenuUI` | 6 / 6 | ✅ |
+| `OptionPanel` | 3 / 3 | ✅ (`OptionSubPanel`로 이동 후 연결) |
+| `ShopUI` | 16 / 16 | ✅ |
+
+**HUDManager 미연결 6개 — 전부 애셋이 없어 비워둔 선택 필드 (코드상 null-safe)**
+
+| 필드 | 이유 |
+|---|---|
+| `faceHealthy` / `faceNormal` / `faceWorried` / `faceCritical` | 초상화 표정 Sprite 애셋 없음. `UpdatePortrait`가 `portraitImage == null` 조기 반환 + 스프라이트 null 허용 |
+| `levelUpAnimator` | 레벨업 Animator 없음. `levelUpAnimator?.SetTrigger` |
+| `levelUpEffect` | 레벨업 파티클 없음. `if (levelUpEffect)` 가드 |
+
+> 검증: 씬 저장 후 `SampleScene.unity`의 `m_Modifications` 직접 파싱
+> (UI Canvas가 프리팹 인스턴스라 MonoBehaviour 필드가 오버라이드로 기록됨).
+> MCP `get_component`는 **비활성 오브젝트를 찾지 못하므로** YAML 검증이 필수였음.
+
+### 4단계 — 프리팹 / SO 내부 연결  ✅ 완료
+
+| 애셋 | 필드 | 상태 |
+|---|---|---|
+| `ItemData/Sword` | Category=Weapon(0), WeaponRef | ✅ WeaponData/Sword |
+| `ItemData/House` | Category=Building(1), BuildingRef | ✅ BuildingData/House |
+| `ItemData/Speed` | Category=Passive(2), PassiveRef | ✅ PassiveData/MoveSpeed |
+| `WeaponData/Sword` | WeaponPrefab | ✅ `Weapon_Sword.prefab` (`5d7c717e…`) |
+| `WeaponData/Sword` | ProjectilePrefab | ✅ `Proj_Bullet.prefab` (`b302c4b4…`) |
+| `EnemyData/Goblin` | Prefab | ✅ `Enemy_Goblin.prefab` (`35bc07b6…`) |
+| `BuildingData/House` | Prefab | ✅ `Building_Turret.prefab` (`be6065fc…`) |
+
+`Assets/Prefabs/Weapon_Sword.prefab` — **신규 생성 완료**. 빈 GameObject + `ProjectileWeapon`
+(`WeaponBase`는 abstract, 구현체는 `ProjectileWeapon` / `AoeWeapon` 2종).
+`WeaponManager.AddOrUpgradeWeapon`이 풀에서 꺼내 Player 자식으로 붙이므로 별도 씬 배치 불필요.
+
+### 5단계 — Play 모드 콘솔 검증  ✅ 완료 (콘솔 클린)
+
+Play 진입 → 정지를 3회 반복하며 에러를 하나씩 제거함.
+
+| 회차 | 결과 |
+|---|---|
+| 1회 | `NullReferenceException: ShopUI.Start() (ShopUI.cs:84)` → **I-8** |
+| 2회 | `NullReferenceException: MetaProgressionManager.GetStatBonus() (:131)` ← `PlayerStats.Start()` → **I-9** |
+| 3회 | **에러 0 / 경고 0** ✅ |
+
+최종 콘솔 출력:
+```
+[Meta] No save found. Fresh start.
+[GameManager] State → MainMenu
+```
+> `[Adaptive Performance] Initialization of Provider was not successful` 는
+> Log 레벨이고 Adaptive Performance 패키지 기본 동작. 무해.
+
+**I-8 — 실행 순서**
+`GameManager`는 `Start()`에서 `FindFirstObjectByType`으로 매니저 참조를 채우는데,
+Unity는 서로 다른 컴포넌트의 `Start()` 순서를 보장하지 않아 `ShopUI.Start()`가 먼저 실행됨.
+→ **코드 수정 없이** Script Execution Order로 해결.
+
+| 스크립트 | Execution Order |
+|---|---|
+| `GameManager` | `0` → **`-100`** |
+
+**I-9 — upgrades 배열**
+`MetaProgressionManager.upgrades`가 `size=1`인데 원소가 `NULL`이었음.
+프로젝트에 `UpgradeDefinition` 애셋이 **하나도 없어서** 채울 값도 없음 → **`size = 0`으로 정리**.
+(빈 배열이면 `GetStatBonus()`가 보너스 없는 `StatBlock`을 정상 반환)
+
+**씬 전체 빈 참조 스캔 결과 — 남은 2건은 모두 코드에서 null 가드된 선택 필드**
+
+| 대상 | 빈 필드 | 영향 |
+|---|---|---|
+| `BuildingManager` | `placementCursorPrefab` | 배치 커서 프리팹 미제작. `ShowCursor()`에 `if (placementCursorPrefab)` 가드 → 커서만 안 보임 |
+| `HUDManager` | 표정 4 + `levelUpAnimator` + `levelUpEffect` | 애셋 미제작. 전부 null 가드 |
+
+---
+
+## 2-2. ✅ 게임 루프 완성 (I-10 / I-11 해결)
+
+이전에는 `GameManager.StartRun()` 호출자가 0개라 **`MainMenu`에서 게임이 멈춰** 있었음.
+전제 해제(2026-08-26) 후 누락된 UI 스크립트를 신규 작성해 루프를 연결함.
+
+**신규 스크립트 5종 — `Assets/Scripts/UI/`**
+
+| 스크립트 | 역할 |
+|---|---|
+| `GameStatePanel` | 공통 베이스. `GameState`를 구독해 자기 담당 상태일 때만 자식 패널을 켠다. `Awake`에서 구독하므로 **항상 활성인 `UI Canvas`에 붙이고 자식 패널을 토글**하는 구조 |
+| `MainMenuUI` | Start / Continue / Quit. Start → `GameManager.StartRun()` |
+| `StageMapUI` | `StageMapManager.Layers`를 읽어 `Prefab_StageNode` / `Prefab_MapLine`을 스크롤뷰에 배치, 노드 클릭 → `StageMapManager.SelectNode()` |
+| `RunEndUI` | GameOver / Victory 결과창. Retry → `GameManager.ReloadScene(true)`, Main Menu 복귀 |
+| `StateVisibilityBinder` | HUD처럼 상태별 표시/숨김만 필요한 오브젝트용 경량 바인더 |
+
+**신규 프리팹 4종 — `Assets/Prefabs/`**
+
+`Prefab_StageNode` · `Prefab_MapLine` · `Prefab_ItemChip` · `Prefab_StatChangeRow`
+
+**신규 씬 패널 4종 — `UI Canvas` 하위**
+
+`MainMenuPanel` · `StageMapPanel` · `StageClearPanel` · `RunEndPanel`
+
+**동반 수정**
+
+| 항목 | 내용 |
+|---|---|
+| `DontDestroyOnLoad` 제거 | 씬이 1개뿐인데 `DontDestroyOnLoad`가 걸려 있어 재시작 시 매니저가 중복 생성됨. 제거하고 `GameManager.ReloadScene(bool)` 로 정리 |
+| Event 노드 순서 버그 | `ChangeState` 호출 순서가 어긋나 Event 노드에서 패널이 잘못 뜨던 문제 수정 |
+
+**I-11 해결** — `AudioManager`를 재작성해 씬에 배치, `StageClearUI`는
+`TakeSnapshot()` / `AddKill()` / `Tick()` / `AddItem()` / `Show()` 를 `WaveManager`에서 호출하도록 연결.
+
+---
+
+## 2-3. ✅ 진행 차단 버그 수정 + 콘텐츠 투입 (2026-08-26, 2차)
+
+전수 코드 감사에서 발견된 I-14~I-18을 수정하고, 프로토타입 분량이던 콘텐츠를
+**CSV 기반 데이터 파이프라인**으로 교체했다.
+
+### 파이프라인 신설 — 왜
+
+밸런스 수치를 인스펙터에서 SO 하나씩 여는 방식은 표로 비교가 안 돼 밸런싱이 불가능했다.
+`Assets/Game/Balance/*.csv` 를 **원본(authoring source)** 으로 삼고 SO는 산출물로 취급한다.
+
+| 신규 파일 | 역할 |
+|---|---|
+| `Assets/Scripts/Balance/CsvTable.cs` | CSV 파서 + 타입별 행 접근자. 헤더 기반, `#` 주석, `\|` 배열, 따옴표 이스케이프 |
+| `Assets/Editor/BalanceImporter.cs` | `Game/Balance/` 메뉴 2개 (Import / Export). SO 생성·갱신 + 씬 컴포넌트 직접 기록 |
+| `Assets/Game/Balance/*.csv` | 9장 — Enemies / Weapons / Buildings / Passives / Items / Waves / Events / Economy / SceneWiring |
+
+`Economy.csv` / `SceneWiring.csv` 는 SO가 아니라 **씬 컴포넌트의 직렬화 필드**를 `SerializedProperty`
+경로로 직접 쓴다. 덕분에 `LevelUpManager.allItems`(17개)·`WaveManager.normalWaves` 같은
+배열을 인스펙터 드래그 없이 CSV로 관리한다.
+
+상세는 [`BALANCE.md`](BALANCE.md).
+
+### 투입된 콘텐츠
+
+| 종류 | 수 | 내용 |
+|---|---|---|
+| `EnemyData` | 1 → **6** | Slime / Goblin / Zombie / Wolf / Demon / Ogre |
+| `WeaponData` | 1 → **5** | Sword / Bow / Gun / **Fireball** / **Bomb** (뒤 2종은 `AoeWeapon`) |
+| `BuildingData` | 1 → **3** | House / Turret / Bombard |
+| `PassiveData` | 1 → **9** | Damage / MoveSpeed / AttackSpeed / MaxHp / Armor / PickupRadius / XpGain / GoldGain / CritChance |
+| `ItemData` | 3 → **17** | 위 무기·건물·패시브 1:1 대응 |
+| `WaveData` | 3 → **6** | Normal1~3 / Elite1~2 / Boss1 |
+| `EventManager.events` | 0 → **5** | 보상형 3 + 웨이브 유발형 2 |
+| 신규 프리팹 | 1 | `Weapon_Aoe.prefab` (`AoeWeapon` + `explosionRadius 3`) |
+
+> 적 6종은 **`Enemy_Goblin.prefab` 하나를 공유**하고 `EnemyData.Tint` / `SizeScale` 로만 구분한다.
+> 스프라이트가 준비되면 `Enemies.csv` 의 `Sprite` 열만 바꾸면 된다.
+
+### 동반 코드 변경
+
+| 파일 | 변경 |
+|---|---|
+| `Player/StatBlock.cs` | `XpGain` / `GoldGain` 필드 추가 (기본 1.0 배율) |
+| `Player/PlayerStats.cs` | `static Current` 캐시 추가. `RecalculateStats`에서 `XpGain`/`GoldGain` 은 base·meta 양쪽이 1.0 기준이라 `-1f` 로 중복 제거 |
+| `Passive/PassiveData.cs` · `PassiveEffect.cs` | `BonusXpGain` / `BonusGoldGain` 지원 |
+| `Experience/ExperienceManager.cs` | 획득 XP에 `Final.XpGain` 곱 적용 |
+| `Core/GameManager.cs` | `GrantGold(int)` 신설 — **게임플레이 골드는 전부 이 함수를 거치며 `GoldGain` 배율이 여기서 적용**된다. 클리어 보상을 `[SerializeField]` 3개로 분리 |
+| `Enemy/EnemyData.cs` | `Tint` / `SizeScale` 추가 |
+| `Enemy/EnemyBase.cs` | `OnInitialized`에서 sprite·color·scale을 **매번 덮어쓰도록** 변경. 기존엔 엘리트/보스일 때만 색을 칠해서 **풀에서 재사용될 때 이전 적의 보라/빨강이 남는 잠복 버그**가 있었음 |
+| `Meta/MetaProgressionManager.cs` | `RegisterRunResult(kills)` 신설 + `ApplyStatKey`에 `XpGain`/`GoldGain` 추가 |
+| `Wave/WaveData.cs` | **신규 파일.** `WaveManager.cs` 에서 분리 (아래 I-19) |
+
+---
+
+## 2-4. ✅ 피격 반응 — 넉백 / 무적 / 연출 (2026-08-26, 3차)
+
+"적에 닿으면 체력이 계속 줄어든다"는 보고에서 출발해 접촉 피해 구조를 바꿨다 (I-20).
+
+**지속 피해 → 한 방 + 무적 시간**
+
+| 파일 | 변경 |
+|---|---|
+| `Enemy/EnemyBase.cs` | `OnTriggerStay2D` 가 `ContactDamage` **전액**을 `PlayerStats.TryTakeHit` 으로 넘긴다. `Stay` 로 둔 이유는 계속 붙어 있으면 무적이 풀리는 즉시 다시 맞아야 하기 때문 |
+| `Player/PlayerStats.cs` | `invincibleTime`(0.6초) + `IsInvincible` + `TryTakeHit(raw, sourcePos)` 신설. 무적 중이면 `false` 반환하고 아무 일도 없다. `TakeDamage` 는 이제 데미지 팝업도 띄운다 |
+| `Player/PlayerController.cs` | `PlayHitFeedback(dir, invincibleTime)` 신설 — 넉백 + 붉은 플래시 + 깜빡임 + 카메라 흔들기 |
+
+> **넉백이 안 보이던 이유**: `PlayerController.Update` 가 **매 프레임** `rb.linearVelocity` 를
+> 이동 입력으로 덮어쓴다. 그래서 `_knockbackTimer` 가 도는 동안에는 그 대입을 건너뛰고
+> 속도를 감쇠만 시킨다. 이 처리를 안 하면 넉백이 한 프레임도 보이지 않는다.
+
+**연출 순서** — 맞은 순간 붉게(0.12초) → 무적이 끝날 때까지 알파 깜빡임(0.07초 주기) → 원래 색 복귀.
+색 복원은 `TickHitFeedback()` 이 `Update` **맨 앞**에서 처리한다. 입력이 막히거나(레벨업 패널)
+죽은 뒤에도 색이 붉은 채로 굳지 않게 하기 위함.
+
+**수치는 전부 `Economy.csv` 에 있다** (`invincibleTime` / `knockbackForce` / `knockbackTime` /
+`hitFlashTime` / `blinkInterval` / `shakeMagnitude`). 자세한 건 [`BALANCE.md`](BALANCE.md) §3-4.
+
+**검증** — 임시 `HitSmokeTest` 로 0.1초마다 `TryTakeHit` 을 24회 호출:
+
+| 확인 | 결과 |
+|---|---|
+| 피해가 들어간 시각 | `t=0.0 / 0.6 / 1.2` — 무적 0.6초 간격 정확 |
+| 그 사이 호출 | 전부 `landed=False`, HP 변화 없음 |
+| 넉백 속도 | 가해자 반대 방향으로 `-9.00` → 0.2초 내 `0.00` 감쇠 |
+
+> 검증 후 `HitSmokeTest.cs` 와 씬 오브젝트 모두 삭제 완료. 콘솔 에러 0 / 경고 0.
+
+---
+
+## 2-5. ✅ 플레이어 스탯 2배 버그 (I-21, 2026-08-26 3차)
+
+I-20 검증 로그에 `hp=200` 이 찍혀서 발견했다. `Economy.csv` 의 `baseStats.MaxHp` 는 100이다.
+
+`StatBlock` 은 인스펙터에서 `baseStats` 를 처음 만들 때 쓸 **기본값**을 필드 초기값으로 갖고 있다
+(`MaxHp = 100f`, `MoveSpeed = 4f`, `Damage = 1f` …). 그런데 `GetStatBonus()` 가 그걸
+**보너스 블록**의 시작점으로 썼다. `PlayerStats.RecalculateStats()` 는 `base + meta` 를 하므로 전부 2배.
+
+| 스탯 | 의도 | 버그 시 |
+|---|---|---|
+| MaxHp | 100 | 200 |
+| MoveSpeed | 4 | 8 |
+| Damage | 1 | 2 |
+| AttackSpeed | 1 | 2 → **공격 속도 절반** (쿨다운 배율) |
+| ProjectileSize | 1 | 2 |
+| PickupRadius | 2 | 4 |
+| CritChance | 0.05 | 0.1 |
+| CritMultiplier | 1.5 | 3.0 |
+
+> `XpGain`/`GoldGain` 에만 `RecalculateStats()` 안에 `-1f` 땜질이 있었다.
+> **그 땜질 자체가 이 버그의 증상이었는데 두 필드에만 적용돼 있었다.**
+
+**수정** — `StatBlock.Zero()` (전 필드 0) 팩토리를 추가하고
+
+| 위치 | 변경 |
+|---|---|
+| `Player/StatBlock.cs` | `static StatBlock Zero()` 신설. 왜 기본 생성자를 보너스로 쓰면 안 되는지 주석으로 남김 |
+| `Meta/MetaProgressionManager.cs` | `GetStatBonus()` 의 `new StatBlock()` → `StatBlock.Zero()` |
+| `Player/PlayerStats.cs` | `?? new StatBlock()` 폴백 → `?? StatBlock.Zero()`, `XpGain`/`GoldGain` 의 `-1f` 땜질 제거 |
+
+**검증** — 임시 `StatSmokeTest` 로 Play 직후 `Final` 을 덤프:
+
+```
+[STAT] hp=100 MaxHp=100 MoveSpeed=4 Damage=1 AttackSpeed=1 ProjSize=1
+       Pickup=2 Crit=0.05 CritMul=1.5 Armor=0 XpGain=1 GoldGain=1
+```
+
+`Economy.csv` 와 11개 항목 전부 일치. 검증 후 스크립트·씬 오브젝트 삭제 완료.
+
+> ⚠️ 이 수정으로 **체력·이동속도·픽업 반경이 절반, 공격 속도는 2배**가 됐다.
+> [`BALANCE.md`](BALANCE.md) 의 수치는 원래 CSV 값 기준으로 쓰여 있어서 이제야 문서와 실제가 맞는다.
+> 대신 **체감 난이도가 크게 올라갔을 것**이므로 플레이 후 재조정이 필요하다.
+
+---
+
+## 2-6. ✅ 직업(Class) 시스템 — 시작 무기 지급 (I-22, 2026-08-26 4차)
+
+**플레이어가 맨손으로 시작했다.** `AddOrUpgradeWeapon()` 의 호출자가 레벨업 카드(`LevelUpManager.cs:96`)
+하나뿐이라, 첫 레벨업까지 아무도 공격할 수 없었다. 이걸 직업 데이터로 메웠다.
+
+### 데이터
+
+`Assets/Scripts/Player/CharacterClassData.cs` (SO. I-19 때문에 **같은 이름의 파일**에 단독으로 둔다)
+
+| 그룹 | 필드 |
+|---|---|
+| 기본 | `ClassName` / `Description` |
+| 시작 무기 | `StartingWeapon`(WeaponData) / `StartingWeaponLevel` |
+| 스탯 | `BonusMaxHp` … `BonusGoldGain` 10종 — **차이값**이라 0이 기본 |
+| 연출 (빈 슬롯) | `Portrait` / `BodySprite` / `ModelPrefab` |
+| 해금 (미사용) | `UnlockedByDefault` / `UnlockCost` |
+
+기본 스탯 전체가 아니라 **보너스(차이값)** 로 둔 이유: 직업이 `MaxHp` 원본을 들고 있으면
+`Economy.csv` 의 `baseStats` 와 원본이 둘로 갈라진다. I-21 과 같은 부류의 사고를 미리 막았다.
+
+| Id | 시작 무기 | 성격 |
+|---|---|---|
+| Warrior | Sword | HP +30 / 이속 −0.3 / 방어 +2 |
+| Ranger | Bow | HP −15 / 이속 +0.6 / 공속 −0.1 / 흡수 +0.5 / 치명 +0.05 |
+| Mage | Fireball | HP −25 / 피해 +0.2 / 투사체 +0.2 / 방어 −1 / XP +0.1 |
+
+### 코드 변경
+
+| 위치 | 변경 |
+|---|---|
+| `Player/CharacterClassData.cs` | 신규. `ApplyBonus(StatBlock)` 포함 |
+| `Player/PlayerStats.cs` | `Class` 프로퍼티 + `ApplyClass()` 신설. `RecalculateStats()` 합산이 `base + meta + class + passive` 로 바뀜 |
+| `Player/PlayerController.cs` | `ApplyBodySprite(Sprite)` — 직업 스프라이트 교체용 (지금은 애셋이 없어 호출돼도 무시됨) |
+| `Core/GameManager.cs` | `classes[]` / `defaultClassIndex` 필드, `SelectedClass` / `SelectClass(int)` / `ApplySelectedClass()`. `StartRun()` 이 이걸 호출한다 |
+| `Editor/BalanceImporter.cs` | `Classes.csv` ↔ `Assets/Game/ClassData/*.asset` 임포트/익스포트 |
+| `Balance/Classes.csv` | 신규 (3행) |
+| `Balance/SceneWiring.csv` | `GameManager,classes` 행 추가 → 적용 수 4/4 → **5/5** |
+
+`_selectedClassIndex` 는 `_autoStartRunOnLoad` 와 같은 이유로 **static** 이다.
+Retry 는 씬을 다시 로드하므로 인스턴스 필드로 두면 고른 직업이 날아간다.
+
+### 검증
+
+임시 `ClassSmokeTest` 로 Play 1초 뒤 `StartRun()` 을 호출하고 상태를 덤프:
+
+```
+[GameManager] 직업 'Warrior' — 시작 무기 Sword Lv1
+[CLS] class=Warrior hp=130/130 spd=3.7 armor=2
+[CLS] weapons=1 : Sword
+[CLS] child weapon obj=Weapon_Sword(Clone) active=True
+```
+
+`base(100/4/0) + Warrior(+30/−0.3/+2)` 와 정확히 일치하고 무기 오브젝트도 살아 있다.
+검증 후 스크립트·씬 오브젝트 삭제 완료. 콘솔 0 에러 / 0 경고.
+
+> 직업 선택 UI 는 이어지는 5차 작업에서 완성했다 → **2-7**.
+
+---
+
+## 2-7. ✅ 직업 선택 UI (I-23, 2026-08-26 5차)
+
+### 원인
+
+I-22 로 직업 데이터는 생겼지만 **고르는 화면이 없어서** `defaultClassIndex` 로만 고정됐다.
+Ranger/Mage 를 보려면 인스펙터에서 인덱스를 바꿔야 했다.
+
+### 화면 구성 (사용자 스케치 기준)
+
+| 위치 | 요소 | 오브젝트 |
+|---|---|---|
+| 좌상단 | 직업 칸 그리드 (4열 `GridLayoutGroup`, 셀 200×200) | `ClassSelectPanel/CardGrid` |
+| 우측 | 선택한 직업의 일러스트 패널 (520×800) | `ClassSelectPanel/PortraitPanel` |
+| 좌하단 | `Description` 라벨 + 설명 바 (설명 + 스탯 요약) | `ClassSelectPanel/DescBar` |
+| 하단 | Back / Start | `ClassSelectPanel/BackButton`·`StartButton` |
+
+일러스트가 없으면 `PortraitPlaceholder`(`No Illustration`)가 대신 뜬다.
+`Classes.csv` 의 `Portrait` 열을 채우면 자동으로 교체된다 — **코드 수정 불필요.**
+
+### 변경한 파일
+
+| 파일 | 변경 |
+|---|---|
+| `Core/GameManager.cs` | `GameState.ClassSelect` 를 enum **맨 끝**에 추가 · `SelectedClassIndex` getter |
+| `UI/ClassSelectUI.cs` | 신규. 카드 생성 · 선택 · 일러스트/설명 갱신 · Start/Back |
+| `UI/ClassCardUI.cs` | 신규. 칸 하나 (초상화 · 이름 · 선택 테두리 · 잠금 오버레이) |
+| `UI/MainMenuUI.cs` | Start → `ChangeState(ClassSelect)` (직업 목록이 비면 예전대로 즉시 `StartRun()`) |
+| `Prefabs/Prefab_ClassCard.prefab` | 신규 |
+| `Scenes/SampleScene.unity` | `UI Canvas/ClassSelectPanel` 신설 + `ClassSelectUI` 컴포넌트 배선 |
+
+> ⚠️ **`GameState` 에 새 값을 중간에 끼워 넣지 말 것.** enum 은 씬에 **정수**로 직렬화된다
+> (`StateVisibilityBinder.visibleStates`). 중간 삽입 시 뒤 값이 전부 한 칸 밀려 기존 배선이 조용히 깨진다.
+> 이번에 실제로 `MainMenu` 뒤에 넣었다가 되돌렸다.
+
+### 검증
+
+임시 `ClassSelectSmokeTest` 로 버튼을 코드에서 눌러 흐름 전체를 덤프:
+
+```
+[CS] 1 state=MainMenu
+[GameManager] State → ClassSelect
+[CS] 2 state=ClassSelect panelActive=True cards=3
+[CS] 3 default name=Warrior placeholder=True
+[CS] 3 stat=Weapon: Sword  HP +30  Speed -0.3  Armor +2
+[CS] 4 picked name=Ranger
+[CS] 4 desc=Fast skirmisher. Starts with a Bow.
+[CS] 4 stat=Weapon: Bow  HP -15  Speed +0.6  Attack Speed +0.1  Pickup +0.5  Crit +0.05
+[CS] 5 card0 name=Warrior sel=False lock=False
+[CS] 5 card1 name=Ranger  sel=True  lock=False
+[CS] 5 card2 name=Mage    sel=False lock=False
+[GameManager] 직업 'Ranger' — 시작 무기 Bow Lv1
+[CS] 6 state=StageMap panelActive=False
+[CS] 6 class=Ranger hp=85/85 spd=4.6 atkSpd=0.9
+[CS] 6 weapons=Bow
+```
+
+`base(100/4/1) + Ranger(−15/+0.6/−0.1)` 과 정확히 일치한다.
+`Attack Speed` 는 쿨다운 배율이라 **표시만 부호를 뒤집어** `+0.1`(빨라짐)로 보여준다.
+게임뷰 캡처로 레이아웃도 육안 확인했다. 검증 후 스크립트·씬 오브젝트·캡처 파일 삭제 완료.
+콘솔 0 에러 / 0 경고.
+
+---
+
+## 2-8. ✅ 레벨업 카드가 안 뜸 + 리롤 1회 제한 (I-24, 2026-08-26 6차)
+
+### 원인
+
+**`?.` 는 Unity 의 "가짜 null" 을 걸러내지 못한다.**
+
+`HUDManager.OnLevelUp` 이 `levelUpAnimator?.SetTrigger("LevelUp")` 을 호출했는데,
+`levelUpAnimator` 는 씬에서 **미할당** 상태였다. 미할당 직렬화 필드는 C# 기준 `null` 이 아니라
+접근 시 `UnassignedReferenceException` 을 던지는 **가짜 null** 이라, `?.` 가 통과시켜 버린다.
+
+그 예외가 이벤트 핸들러 밖으로 전파되면서 호출 사슬이 통째로 끊겼다:
+
+```
+ExperienceManager.CollectXp()
+  └ OnLevelUp?.Invoke()  →  HUDManager.OnLevelUp()  ← 💥 여기서 예외
+    TriggerLevelUp()                                  ← 실행 안 됨
+      └ LevelUpManager.ShowLevelUpPanel()             ← 그래서 패널이 안 뜬다
+```
+
+`LevelUpManager` 배선(`cards[3]`, `allItems[17]`)과 패널 계층은 **처음부터 정상**이었다.
+카드가 안 뜬 게 아니라 **패널을 켜는 코드까지 도달하지 못한 것**이다.
+
+> ⚠️ 프로젝트 전체 `?.` 48곳을 훑어 **직렬화 Unity Object 필드에 쓴 곳은 여기 하나뿐**임을 확인했다.
+> 앞으로 직렬화 필드는 반드시 `if (field != null)` 로 검사할 것 → `CLAUDE.md` §3 에 규칙 추가.
+
+### 리롤 1회 제한
+
+기존엔 골드만 있으면 무한 리롤이 가능했다. 레벨업 **1회당 딱 한 번**으로 바꿨다.
+
+| | 전 | 후 |
+|---|---|---|
+| 제한 | 없음 (골드만 있으면 무한) | 레벨업 1회당 1번 (`_rerollUsed` 플래그) |
+| 비용 | `rerollCost` + 리롤할 때마다 `rerollCostIncrease` 만큼 증가 | `rerollCost` 고정 (1회뿐이라 증가가 무의미) |
+| 버튼 표시 | `Reroll (nG)` | `Reroll (1G)  x1` → 쓰고 나면 `Reroll used` + 비활성 |
+
+`_rerollUsed` 는 `ShowLevelUpPanel()` 에서 초기화되므로 **레벨업마다 리롤 1회가 새로 주어진다.**
+
+### 변경한 파일
+
+| 파일 | 변경 |
+|---|---|
+| `UI/HUDManager.cs` | `OnLevelUp` 의 `?.` → `if (!= null)`. `levelUpEffect`/`PlayerController` 도 널 가드 |
+| `LevelUp/LevelUpManager.cs` | `_currentRerollCost`·`rerollCostIncrease` 제거 → `_rerollUsed` bool. `ShowLevelUpPanel`/`OnRerollClicked`/`RefreshPanel`/`ResetRunState` 수정 |
+| `Game/Balance/Economy.csv` | `LevelUpManager,rerollCostIncrease` 행 **삭제** (필드가 없어져 임포터가 잡을 대상이 없음). `ShopManager,rerollCostIncrease` 는 그대로 유효 |
+
+### 검증
+
+임시 `LevelUpSmokeTest` 로 메인메뉴 → 직업선택 → 웨이브 → `CollectXp(999)` 까지 태운 뒤 덤프:
+
+```
+[GameManager] State → LevelUp
+[LU] 1 state=LevelUp panelActive=True
+[LU] 2 card0 active=True name='Fireball'
+[LU] 2 card1 active=True name='Armor'
+[LU] 2 card2 active=True name='Attack Speed'
+[LU] 3 before reroll: text='Reroll (1G)  x1' interactable=True gold=52
+[LU] 4 after reroll#1: text='Reroll used' interactable=False gold=51 cards=[Damage Up Bombard Gun]
+[LU] 5 after reroll#2: gold=51 (blocked=True)
+```
+
+수정 전에는 `[LU] 1 state=Wave` 에서 멈추고 `UnassignedReferenceException: The variable
+levelUpAnimator of HUDManager has not been assigned.` 이 떴다 — `[LU] 2` 는 아예 안 찍혔다.
+
+2회차 리롤은 골드가 **깎이지 않고** 막혔다(`blocked=True`). 게임뷰 캡처로 카드 3장과
+회색 처리된 Reroll 버튼도 육안 확인. 검증 후 스크립트·씬 오브젝트·캡처 삭제 완료.
+콘솔 0 에러 / 0 경고.
+
+> 콘솔을 `[LU]` 로 필터링했다면 예외를 못 봤을 것이다.
+> **`Types:["All"]` + 필터 없이** 읽어야 원인이 보인다.
+
+### 레벨업 패널 확대 (뱀서 스타일)
+
+카드가 뜨게 되고 나서 보니 패널이 **560×320** — 1920×1080 기준 화면 폭의 **29%** 에
+폰트가 10~14pt 라 한눈에 안 들어왔다. 뱀파이어 서바이벌처럼 화면을 채우도록 키웠다.
+
+| 대상 | 전 | 후 |
+|---|---|---|
+| `PanelBG` | 560 × 320 | **1560 × 900** (화면의 81% × 83%), y = −40 |
+| `CardContainer` | 520 × 220 · 간격 16 | **1400 × 560** · 간격 **40** |
+| 카드 1장 | 150 × 200 | **440 × 560** |
+| 아이콘 | 64 | **180** |
+| 이름 / 설명 / 태그 | 14 / 10 / 10 pt | **44 / 26 / 26** pt |
+| `SelectButton` | 130 × 30 · 13pt | **340 × 78** · **34**pt |
+| `RerollButton` | 140 × 32 · 13pt | **320 × 80** · **34**pt |
+| `TitleText` | 24pt, 화면 최상단 | **60pt, 패널 안쪽 위** |
+
+> ⚠️ `TitleText` 는 `PanelBG` 가 아니라 **`LevelUpPanel`(전체화면) 직속**이다.
+> 처음에 화면 최상단(y = −78)에 뒀더니 **HUD 의 XP 바와 겹쳤다.**
+> 패널을 y = −40 으로 내리고 타이틀을 y = −195 로 옮겨 패널 안에 넣어 해결.
+
+캡처로 겹침 없음 확인. `HorizontalLayoutGroup` 이 카드 폭을 강제하지 않으므로
+(`childControlWidth = false`) 카드 `sizeDelta` 를 직접 주면 그대로 반영된다.
+
+---
+
+## 2-9. ✅ 스프라이트 26종 생성 + 전면 배선 (I-25, 2026-08-27 7차)
+
+### 원인
+
+콘텐츠 공백이었지 버그가 아니다. 적 6종이 **`goblin.png` 한 장을 공유**하며 `Tint`(색 곱셈)로만
+구분됐고, 무기·건물·패시브 17종의 아이콘은 `sword.png` / `speed.png` / `house.png` /
+`turret.png` / `Bullet.png` **5장을 돌려 쓰고 있었다.** 직업 3종은 일러스트가 아예 없어
+선택 화면에 `No Illustration` 자리표시가 떴다.
+
+전제 조건이 **Unity AI 구독**이었다. 구독 전에는 생성 요청이 서버에서
+`NoSubscription` 으로 반려됐다 (`ModelSelectorSuperProxyActions.cs:495`).
+사용자가 14일 체험을 구독하면서 해금 → 모델 37종 사용 가능.
+
+### 생성
+
+| | |
+|---|---|
+| 모델 | **`gpt-image-1-5`** (`Unity_AssetGeneration_GenerateAsset` / `GenerateSprite`) |
+| 산출 | 1024×1024 **RGBA** (알파 있음), 26장 |
+| 소모 | **69 포인트** (1000 중) = 장당 3 포인트 |
+| 스타일 | 픽셀아트 — 청키 픽셀 · 진한 아웃라인 · 제한 팔레트 · 투명 배경 |
+
+프롬프트 템플릿 (26장 전부 이 틀을 공유해서 톤이 일관된다):
+
+```
+Pixel art game sprite of <SUBJECT>, single character/item centered, <POSE>,
+chunky visible pixels, dark outline, limited color palette, simple shading,
+transparent background, no text, no ground shadow, retro 16-bit RPG <CONTEXT> style
+```
+
+| 폴더 | 개수 | 목록 |
+|---|---|---|
+| `Sprites/Enemies/` | 6 | Slime · Goblin · Zombie · Wolf · Demon · Ogre |
+| `Sprites/Weapons/` | 5 | Sword · Bow · Gun · Fireball · Bomb |
+| `Sprites/Passives/` | 9 | Damage · MoveSpeed · AttackSpeed · MaxHp · Armor · PickupRadius · XpGain · GoldGain · CritChance |
+| `Sprites/Buildings/` | 3 | House · Turret · Bombard |
+| `Sprites/Classes/` | 3 | Warrior · Ranger · Mage |
+
+> ⚠️ **모델 선택이 중요하다.** 파일럿에서 `game-ui-essentials-2` 로 뽑은 Sword 는
+> **알파 없는 RGB에 흰 배경**이 박혀 나왔다 (`corner=(255,253,254)`). 프롬프트에
+> `transparent background` 를 넣어도 소용없다. `gpt-image-1-5` 만 RGBA 를 준다.
+> 그래서 파일럿 3장만 먼저 뽑아 확인한 뒤 나머지 23장을 돌렸다.
+>
+> ⚠️ **같은 경로로 재생성하면 덮어쓰지 않고 `Sword 1.png` 를 만든다.** 기존 파일을
+> 지우고 새로 생성하거나, 생성 후 `.png` + `.meta` 를 같이 rename 해야 한다.
+
+### 임포트 설정 (픽셀아트)
+
+26장 전부에 일괄 적용. **`Filter Mode = Bilinear`(기본값) 이면 픽셀이 뭉개진다.**
+
+| 항목 | 값 | 이유 |
+|---|---|---|
+| `filterMode` | **Point** | 픽셀아트 보간 끔 |
+| `textureCompression` | **Uncompressed** | 압축 아티팩트가 아웃라인을 갉아먹음 |
+| `mipmapEnabled` | false | 2D 라 불필요 |
+| `alphaIsTransparency` | true | 아웃라인 가장자리 검은 테 방지 |
+| `spritePixelsPerUnit` | 512 | 1024px → 월드 2유닛 |
+| `maxTextureSize` | 512 | 1024 는 과함 |
+
+### 배선
+
+CSV 가 원본이므로 **CSV 의 경로 열만 고치고 Import 를 돌렸다.** SO 를 직접 건드리지 않았다.
+
+| CSV | 열 | 변경 |
+|---|---|---|
+| `Enemies.csv` | `Sprite` | `ICON/goblin.png` ×6 → 종별 고유 스프라이트 |
+| `Enemies.csv` | `Tint` | `#6FE06F` 등 5종 → **전부 `#FFFFFF`** |
+| `Weapons.csv` | `Icon` | 5행 |
+| `Buildings.csv` | `Icon` | 3행 |
+| `Items.csv` | `Icon` | **17행** (레벨업 카드 · 상점에 뜨는 아이콘) |
+| `Classes.csv` | `Portrait`, `BodySprite` | 3행 × 2열 (기존 공란) |
+
+> **`Tint` 를 흰색으로 되돌린 이유:** `Tint` 는 스프라이트에 **곱해지는** 색이다.
+> 한 장을 공유하던 시절엔 종을 구분하는 유일한 수단이었지만, 이제 색이 있는 고유
+> 스프라이트가 생겼으므로 그 위에 또 색을 곱하면 **탁해진다.**
+> 앞으로 `Tint` 는 피격 점멸·상태이상 같은 **연출용**으로만 쓴다.
+
+### 변경한 파일
+
+| 파일 | 변경 |
+|---|---|
+| `Assets/Game/Sprites/**/*.png` | **신규 26장** (+ `.meta`) |
+| `Assets/Game/Balance/Enemies.csv` | `Sprite` 6행, `Tint` 6행, 주석 |
+| `Assets/Game/Balance/Weapons.csv` | `Icon` 5행 |
+| `Assets/Game/Balance/Buildings.csv` | `Icon` 3행 |
+| `Assets/Game/Balance/Items.csv` | `Icon` 17행 |
+| `Assets/Game/Balance/Classes.csv` | `Portrait` / `BodySprite` 3행 |
+
+### 검증 로그
+
+```
+[알파]   26/26  RGBA (1024,1024) alpha 최소값 = 0   ← 전부 투명 영역 있음
+[임포트] Applied to 26 textures
+[Import] Weapons 5 / Buildings 3 / Passives 9 / Enemies 6 / Items 17 / Classes 3
+[배선]   sprite fields: 37 total, 0 null
+         Enemies 6 · Items 17 · Weapons 5 · Buildings 3 · Classes 3(Portrait+BodySprite=6)
+[잔여]   CSV 내 Assets/Game/ICON/ 참조 = 0건
+[포인트] 989 → 920
+```
+
+37개 필드가 **전부 `Sprite` 타입으로 연결됐고 null 이 하나도 없다.**
+컨택트 시트를 만들어 눈으로도 확인했다 — 26장 모두 아웃라인·팔레트·픽셀 크기가 일관됨.
+(확인 후 임시 시트 파일은 삭제)
+
+---
+
+## 2-10. ✅ 적 연출 — 등급 외곽선 + 걷기 바운스 + 피격 플래시 (I-26, 2026-08-27 8차)
+
+I-25 로 종별 고유 스프라이트가 들어간 **직후에 드러난 두 문제**를 함께 고쳤다.
+
+### 원인
+
+**(1) 엘리트/보스가 원화를 죽인다**
+
+`EnemyBase.OnInitialized()` 가 등급에 따라 `SpriteRenderer.color` 를 덮어썼다.
+
+```csharp
+sr.color = IsBoss  ? new Color(1f, 0.2f, 0.1f)   // 보스 = 빨강
+         : IsElite ? new Color(0.8f, 0.3f, 1f)   // 엘리트 = 보라
+         : Data.Tint;
+```
+
+`sr.color` 는 **곱셈**이다. 적 6종이 전부 회색 실루엣 한 장을 공유하던 시절엔
+등급을 알리는 유일한 수단이었지만, 색이 있는 고유 스프라이트가 생긴 뒤로는
+**녹색 좀비 × 보라 ≈ 검정**이 된다. 등급은 알아보되 원화는 건드리지 않아야 한다.
+
+**(2) 적이 미끄러진다**
+
+생성한 26장이 전부 1프레임 정지 이미지다. `Rb.linearVelocity` 로 이동만 하니
+발도 안 딛고 좌우도 안 보고 평행이동한다.
+
+### 왜 이 방법인가
+
+| 결정 | 이유 |
+|---|---|
+| 색 곱셈 → **알파 팽창 외곽선** | 원화 픽셀을 하나도 건드리지 않는다. 사용자가 3안 중 이걸 선택 |
+| 자식 `SpriteRenderer` 오라 ✗ → **셰이더** | 오라는 오브젝트 수가 2배가 되고 스프라이트가 바뀔 때마다 동기화해야 한다 |
+| 바운스를 `transform.localScale` ✗ → **버텍스 셰이더** | 루트를 늘이면 `CapsuleCollider2D` 까지 늘어나 **판정이 변한다.** 정점만 흔들면 물리와 완전히 분리된다 |
+| `sr.material` ✗ → **`MaterialPropertyBlock`** | 풀에서 수백 마리가 돌아간다. `sr.material` 접근은 개체마다 머티리얼을 복제한다 |
+| `Sprite-Lit-Default` ✗ → **Unlit 커스텀** | 씬의 `Light2D` 가 Global/흰색/intensity 1 **하나뿐**이라 결과가 같다 (조명을 쓰게 되면 이 셰이더도 손봐야 한다) |
+| 개체마다 **랜덤 위상** (`_AnimPhase`) | 같은 프레임에 스폰된 무리가 한 몸처럼 출렁이는 걸 막는다 |
+
+### 함정 두 개
+
+**`Mesh Type = Tight` 는 외곽선을 잘라먹는다.** 기본값 Tight 는 스프라이트 메시가
+알파에 딱 붙어서 팽창시킬 여백이 없다. 적 6종을 **`FullRect`** 로 다시 임포트했다.
+
+**8방향 샘플은 폭이 커지면 네모나진다.** 대각선 샘플이 √2 만큼 멀리 찍혀
+모서리가 부풀기 때문이다. 첫 캡처에서 보스가 빨간 사각 덩어리로 나왔다.
+**반지름 위 16방향 원형 샘플**로 바꿔 해결 (각도가 컴파일 타임 상수라 `sin`/`cos` 는 폴딩됨).
+
+**`_MainTex_TexelSize` 는 2D SRP Batcher 를 끈다.**
+> Material 'SpriteOutline' has _TexelSize / _ST texture properties which are not supported by 2D SRP Batcher.
+
+스프라이트가 전부 512px 로 통일돼 있으므로 `_OutlineTexSize` 프로퍼티로 대체했다.
+
+### 변경한 파일
+
+| 파일 | 변경 |
+|---|---|
+| `Assets/Game/Shaders/SpriteOutline.shader` | **신규.** URP Unlit. 외곽선(16방향 알파 팽창) + 피격 플래시 + 버텍스 스쿼시/바운스 |
+| `Assets/Game/Materials/SpriteOutline.mat` | **신규.** 기본값 외곽선 0 (일반 몹) |
+| `Assets/Scripts/Enemy/EnemyVisual.cs` | **신규.** 좌우 `flipX`(데드존 0.15) · 바운스 파라미터 · 피격 플래시 감쇠 |
+| `Assets/Scripts/Enemy/EnemyBase.cs` | 색 곱셈 제거 → `ApplyRankOutline()` · `Visual` 캐시 · `TakeDamage` 에서 `Visual.Flash()` |
+| `Assets/Prefabs/Enemy_Goblin.prefab` | `EnemyVisual` 추가 · `SpriteRenderer.material` `Sprite-Lit-Default` → `SpriteOutline` |
+| `Assets/Game/Sprites/Enemies/*.png` (6장) | `spriteMeshType` `Tight` → **`FullRect`** |
+| `Assets/Game/Sprites/Enemies/Wolf.png` | 좌우 반전 (원본이 왼쪽을 봐서 `flipX` 규약과 어긋났다) |
+
+### 수치
+
+| | 일반 | 엘리트 | 보스 |
+|---|---|---|---|
+| `_OutlineWidth` (텍스처 px) | 0 | 14 | **12** |
+| 색 | — | 보라 `(0.75, 0.35, 1)` | 빨강 `(1, 0.25, 0.15)` |
+| 오브젝트 스케일 | ×1 | ×1.3 | ×2 |
+
+> 보스가 엘리트보다 **숫자가 작은 이유**: 폭은 텍스처 픽셀 단위라 오브젝트 스케일에
+> 같이 곱해진다. 보스는 2배로 커지므로 20 을 그대로 두면 화면상 두께가 엘리트의
+> 2.2배가 되어 다리 사이가 메워진다.
+
+바운스: `_AnimSpeed = bounceSpeed(9) × clamp(MoveSpeed, 0.5, 3)`,
+`_SquashAmt = 0.07`, `_BobAmt = 0.04`, `_AnimPhase` 는 개체마다 `Random(0, 2π)`.
+`_Time.y` 는 `timeScale` 을 따르므로 **일시정지·레벨업 중에는 같이 멈춘다** (의도한 동작).
+
+### 검증 로그
+
+```
+[셰이더]  isSupported=True  messages=0
+[머티리얼] shader=VS_LIKE/SpriteOutline  outlineTexSize=512  outlineWidth=0
+[프리팹]  SpriteRenderer.mat=SpriteOutline   EnemyVisual=True
+
+플레이 모드 — 같은 EnemyData(Goblin) 로 3마리 스폰
+  Normal  color=(1,1,1,1)  outlineW=0   animSpeed=19.80  animPhase=4.2371  scale=1.0
+  Elite   color=(1,1,1,1)  outlineW=14  animSpeed=23.76  animPhase=0.0085  scale=1.3
+  Boss    color=(1,1,1,1)  outlineW=12  animSpeed=15.84  animPhase=3.4447  scale=2.0
+
+[캡처] 일반=외곽선 없음 · 엘리트=보라 · 보스=빨강, 원화 색 그대로
+[버텍스] 강제로 sin=+1 주입 → 세로로 늘고 위로 떠오름 (버텍스 경로 동작 확인)
+[정리] 콘솔 0건 · [TEST] 오브젝트 0개
+```
+
+> **바운스는 스크린샷으로 검증할 수 없다.** `Unity_SceneView_Capture2DScene` 은
+> `_Time` 이 고정된 상태로 오프스크린 렌더하기 때문에 몇 초를 띄워 두 장을 찍어도
+> **바이트 단위로 동일한 이미지**가 나온다. `_AnimPhase` 에 `π/2` 를 강제로 넣어
+> `sin=+1` 을 만든 뒤 변형이 나타나는지로 확인했다.
+
+---
+
+## 2-11. ✅ 바닥 타일맵 + 플레이어 크기·걷기 연출 (I-27~I-31, 2026-08-27 9차)
+
+사용자 요청 네 가지 — **플레이어 크기 맞추기 · 맵 타일 10종 랜덤 배치 · 눈 안 아프게 ·
+캐릭터가 이동할 때 몸이 움직이게** — 를 한 묶음으로 처리하면서 그 과정에서
+씬의 버그 두 건(I-30 / I-31)을 함께 찾아 고쳤다.
+
+### 원인
+
+**(1) 플레이어만 작았다 — PPU 함정 (I-27)**
+
+`maxTextureSize` 가 원본보다 작으면 Unity 는 텍스처를 줄이면서 **`spritePixelsPerUnit` 은 그대로 둔다.**
+`bounds = rect / ppu` 이므로 rect 만 반토막 나고 **스프라이트가 그만큼 작아진다.**
+
+| | rect | ppu | 월드 크기 |
+|---|---|---|---|
+| 적 6종 | 512 | 1024 | **0.50** |
+| 직업 정지그림 (수정 전) | 512 | 1024 | 0.50 → 화면상 적과 같아 플레이어가 안 보였다 |
+| 직업 정지그림 (수정 후) | 512 | **512** | **1.00** |
+| 걷기 프레임 | 256 | 256 | **1.00** |
+| 바닥 타일 | 256 | 256 | **1.00** (= Grid `cellSize` 1) |
+
+**(2) 바닥이 아예 없었다 (I-28)**
+
+카메라가 `Skybox` 클리어로 URP 기본 파랑(#314D79)을 그대로 비추고 있었다.
+바닥 애셋도 타일맵도 0. 밝은 파랑이라 눈도 아팠다.
+
+**(3) 플레이어가 미끄러진다 (I-29)**
+
+I-26 은 **적**만 고쳤다. 플레이어는 `PlayerController` 의 `sr.flipX` 한 줄이 전부라
+좌우로 갈 때 그림이 뒤집히기만 하고 위아래로 갈 때는 아무 일도 안 일어났다.
+
+### 왜 이 방법인가
+
+| 결정 | 이유 |
+|---|---|
+| 유한 타일맵 ✗ → **카메라 추종 무한 타일러** | `CameraController.useBounds = false` 이고 적은 플레이어 주변 `SpawnRadius` 에서 나온다. **아레나 경계가 없어** 미리 깔아 두면 언젠가 바닥이 끊긴다 |
+| `Random` ✗ → **좌표 해시** | 창이 지나갔다 되돌아와도 같은 칸에 같은 그림이 나와야 한다. 난수를 쓰면 되돌아갈 때마다 바닥이 깜빡인다 |
+| 칸마다 `SetTile` ✗ → **`SetTilesBlock`** | 한 칸 이동마다 수천 번 호출된다 |
+| `GenerateSprite` ✗ → **`GenerateImage` + `gemini-3.1-flash-texture`** | `SupportsTileable` 이라 이음매가 없고 배경 제거가 안 걸린다 (바닥 텍스처에 배경 제거는 재앙) |
+| 새 캐릭터 생성 ✗ → **`referenceImageInstanceId`** | AI 생성은 매번 독립이라 같은 캐릭터가 안 나온다. 기존 원화를 레퍼런스로 넣어 디자인을 유지했다 |
+| `transform.rotation` ✗ → **버텍스 전단(shear)** | 루트를 돌리면 `Rigidbody2D` 와 싸운다. 정점만 밀면 물리와 완전히 분리된다 (I-26 과 같은 이유) |
+
+### 함정 세 개
+
+**`GenerateSpritesheet` 출력에는 알파가 아예 없다.** 48프레임 전부 `opaque=65536`.
+흰 배경이 진짜 불투명 픽셀이라 그대로 쓰면 플레이어가 **흰 사각형**으로 렌더된다.
+프레임마다 테두리에 닿은 연결 성분만 지우는 방식(`scipy.ndimage.label`,
+조건 `diff≤30 & sat≤24 & bri≥150`)으로 제거 → 투명 비율 Warrior 62.5% / Ranger 74.1% / Mage 78.0%.
+
+**타일 10장을 그냥 깔면 퀼트(조각보)가 된다.** 독립 생성이라 평균 휘도가
+0.164 ~ 0.325 로 **2배**까지 벌어져 첫 캡처가 알록달록한 체크무늬였다.
+타일마다 `Tile.color` 배율로 평균을 한 목표색에 맞춰 눌렀다.
+`Tile.color` 는 정점 스트림의 `Color32` 라 **1을 넘는 배율은 잘린다** → 목표는 가장 어두운 타일 이하로 잡아야 한다.
+
+**`GetComponent<T>() ?? AddComponent<T>()` 는 동작하지 않는다.** Unity 의 "가짜 null" 이
+`??` 를 그냥 통과해 `MissingComponentException` 이 났다. CLAUDE.md 의 I-24 규칙과 같은 함정.
+`if (c == null)` 로 명시 검사하는 헬퍼로 교체.
+
+### 변경한 파일
+
+| 파일 | 변경 |
+|---|---|
+| `Assets/Game/Sprites/Tiles/Tile_*.png` (10장) | **신규.** 이음매 없는 바닥 텍스처. Single/FullRect/max 256/ppu 256/Bilinear/무압축 |
+| `Assets/Game/Tiles/Tile_*.asset` (10개) | **신규.** `UnityEngine.Tilemaps.Tile`. `colliderType = None`, `color` = 평준화 배율 |
+| `Assets/Scripts/Stage/GroundTiler.cs` | **신규.** 카메라 추종 무한 타일러. 좌표 해시 + 가중치 추첨 + `SetTilesBlock` |
+| `Assets/Game/Sprites/Classes/Walk/{Warrior,Ranger,Mage}_Walk.png` | **신규.** 4×4 = 16프레임 걷기 시트. Multiple/FullRect/max 1024/ppu 256/Point. 배경 제거 후처리 완료 |
+| `Assets/Scripts/Player/PlayerVisual.cs` | **신규.** 걷기 프레임 재생 + 바운스 + 진행 방향 기울이기 |
+| `Assets/Game/Shaders/SpriteOutline.shader` | `_LeanAmt` 프로퍼티 + 버텍스 전단 `pos.x += pos.y * _LeanAmt` |
+| `Assets/Scripts/Player/CharacterClassData.cs` | `Sprite[] WalkFrames` 추가 |
+| `Assets/Editor/BalanceImporter.cs` | `WalkSheet` 열 임포트(`LoadSpriteSheet`/`FrameIndex`) + 익스포트 |
+| `Assets/Game/Balance/Classes.csv` | `WalkSheet` 열 신설. `BodySprite` 를 걷기 시트로 교체 |
+| `Assets/Scripts/Player/PlayerStats.cs` | `ApplyClass` 에서 `PlayerVisual.SetWalkFrames` 호출 |
+| `Assets/Game/Sprites/Classes/*.png` (3장) | `spritePixelsPerUnit` 1024 → **512** (I-27) |
+| `Assets/Scenes/SampleScene.unity` | `Ground`(Grid) + `GroundTilemap`(`TilemapRenderer` sortingOrder **-100**, `GroundTiler`) 신규 · 카메라 `Skybox`→`SolidColor` / #314D79→**#161815** · Player 머티리얼 `SpriteOutline` + `PlayerVisual` · Camera 태그 `MainCamera`(I-30) |
+| `Assets/Prefabs/Enemy_Goblin.prefab` | `CapsuleCollider2D` 0.5×1.0 → **0.34×0.36** (I-31) |
+
+### 수치
+
+`GroundTiler`: `margin = 4`, `seed = 1337`. 타일 색 배율 = `clip(목표 / 평균, 0, 1)`,
+목표 = `(0.155, 0.166, 0.116)` (가장 어두운 `Tile_MossyCobble` 기준).
+
+| 타일 | 색 배율 (R, G, B) | 비중 |
+|---|---|---|
+| `Tile_Grass` | 0.987, 0.892, 0.946 | **40** |
+| `Tile_GrassPebble` | 0.673, 0.675, 0.528 | 18 |
+| `Tile_Weeds` | 0.708, 0.833, 0.778 | 13 |
+| `Tile_Dirt` | 0.585, 0.803, 0.743 | 10 |
+| `Tile_Gravel` | 0.594, 0.708, 0.556 | 7 |
+| `Tile_Roots` | 0.787, 1.000, 0.911 | 5 |
+| `Tile_CrackedEarth` | 0.570, 0.705, 0.618 | 3 |
+| `Tile_MossyCobble` | 0.912, 0.971, 1.000 | 2 |
+| `Tile_StoneSlab` | 0.537, 0.575, 0.420 | 1 |
+| `Tile_Flagstone` | 0.462, 0.511, 0.386 | 1 |
+
+> **평범한 타일(Grass)에 비중 40 을 몰아준 이유**: 10종을 균등하게 뿌리면 평준화를 해도
+> 바닥이 산만해진다. 특징이 강한 돌바닥류는 1~3 으로 눌러 "가끔 눈에 띄는" 정도로만 남겼다.
+
+`PlayerVisual`: `framesPerSecond = 12`(이동 속도에 `clamp(speed/4, 0.5, 2)` 비례),
+`moveDeadzone = 0.15`, `bounceSpeed = 13`, `leanAmount = 0.10`, `leanResponse = 12`.
+
+### 검증 로그
+
+```
+[크기]  적 6종      rect=512 ppu=1024 → bounds 0.50
+        걷기 프레임 rect=256 ppu=256  → bounds 1.00
+        직업 정지   rect=512 ppu=512  → bounds 1.00
+        바닥 타일   rect=256 ppu=256  → bounds 1.00 (= cellSize 1)
+[씬]    Camera tag=MainCamera clear=SolidColor bg=RGBA(0.086,0.094,0.082) ortho=10
+        Enemy_Goblin capsule=(0.34, 0.36) Vertical
+[알파]  걷기 시트 투명 비율 Warrior 62.5% / Ranger 74.1% / Mage 78.0% (마젠타 합성 확인, 후광 없음)
+
+플레이 모드 — SelectClass(0) → StartRun()
+  class=Warrior  WalkFrames=16  BodySprite=frame_0
+  이동 중 sprite  frame_0 → frame_7 → frame_14     (프레임 실제로 넘어감)
+  _LeanAmt=+0.1  _AnimSpeed=13  flipX=False  vel=(4,0)  → 진행 방향으로 기움
+[캡처] 퀼트 사라짐. 어두운 올리브 바닥 위에 기사 실루엣 선명
+[정리] 콘솔 에러 0 · PlayerController.enabled 복구 · 플레이 모드 종료
+```
+
+> **한 번 헛짚었던 것**: 첫 검증에서 프레임이 `frame_0` 에 붙어 있었다.
+> **플레이 중에 스크립트를 고쳐 컴파일이 뒤로 밀린 세션**이라 `ApplyClass` 의 새 코드가
+> 아직 안 돌고 있었던 것이고, 코드 문제가 아니었다. 플레이 모드를 껐다 켜니 정상 동작.
+> **플레이 중 수정한 C# 은 그 세션에서 검증하지 말 것.**
+
+---
+
+## 2-12. ✅ 건물 5종 + Z 즉시 설치 + 패시브 누적 버그 (I-32~I-37, 2026-08-27 10차)
+
+사용자 요청 6건을 한 묶음으로 처리했다.
+경험치 오브 크기 / 레벨업 후보 편중 / 클리어 화면 / Z 설치 / 건물 기능 / 건물 쿨다운 패시브.
+
+### 원인
+
+**① 패시브가 레벨업할 때마다 "누적"됐다 (I-32) — 가장 깊은 버그**
+
+`Passives.csv` 는 값이 **"그 레벨일 때의 총 보너스"** 라고 못박고 있는데 런타임은 정반대였다.
+
+```
+LevelUpManager.ApplyPassive() →  new PassiveEffect(data, level) 를 매번 새로 만들어 AddPassive()
+PlayerStats.RecalculateStats() → _activePassives 를 전부 순회하며 합산
+PassiveEffect.UpgradeTo(int)   → 존재하지만 호출자 0건
+```
+
+같은 패시브를 5번 고르면 Lv1~Lv5 값이 **전부** 더해진다.
+`Damage` Lv5 는 의도한 +0.55 대신 **+1.57**, `BuildingCooldown` 은 배수라서
+`1 + (-0.1-0.18-0.26-0.34-0.42) = **-0.30**` 으로 **음수로 뒤집혔다.**
+`BuildingBase.Cooldown` 의 `Mathf.Max(0.1f, mult)` 하한에 걸려 0.1 로 잘리는 바람에
+**모든 건물이 10배 빨라졌다** (식당 60초 → 6초). 그래서 이 세션에서 새로 만든
+`BuildingCooldown` 패시브를 검증할 수가 없었다.
+
+> 부수 효과로 `RemovePassiveByData`(상점 아이템 제거)도 스택 중 **한 개만** 지우고 있었다.
+
+**② 경험치 오브가 너무 컸다 (I-33)** — `Exp_Orb.gif` 의 `spritePixelsToUnits` 가 작아
+오브가 플레이어만 했다. 화면이 오브로 뒤덮여 적이 안 보였다.
+
+**③ 리롤을 안 돌리면 같은 아이템만 나왔다 (I-34)** — 예전 `PickCandidates` 는
+**보유 아이템 업그레이드로 슬롯을 먼저 다 채우고** 남은 자리에만 신규를 넣었다.
+최대레벨이 아닌 아이템 3개만 들고 있으면 카드 3장이 **영구히 그 3개로 고정**된다.
+
+**④ 클리어 화면에 성장 정보가 없었다 (I-35)** — 킬 수/시간만 있고 무엇을 얼마나 키웠는지가 안 보였다.
+
+**⑤ 건물을 설치할 방법이 사실상 없었다 (I-36)** — `BuildingManager` 는 마우스 배치 모드였는데
+`SelectBuildingForPlacement()` 의 **호출자가 0개**라 `_selectedBuildingData` 가 늘 null 이었다.
+**건물 아이템을 먹어도 아무 일도 일어나지 않았다.**
+
+**⑥ 건물이 전부 "때리는 것"뿐이었다 (I-37)** — `Turret` / `Bombard` / `House` 3종인데
+`House` 는 스크립트가 없어 세워도 아무것도 안 했다.
+
+### 변경한 파일
+
+| 파일 | 변경 |
+|---|---|
+| `Player/PlayerStats.cs` | **`AddOrUpgradePassive(PassiveData, int)` 신규.** 같은 `Data` 가 있으면 `UpgradeTo(level)` 만 하고, 없을 때만 새로 추가한다. 함정이던 `AddPassive(PassiveEffect)` 는 **삭제** (I-32) |
+| `LevelUp/LevelUpManager.cs` | `ApplyPassive` 가 `AddOrUpgradePassive` 를 부르게 수정 (I-32) · `PickCandidates` 를 **가중치 비복원 추첨**으로 교체 — 보유 아이템 가중치 `OwnedWeight = 2`, 신규는 1 (I-34) |
+| `Player/PlayerController.cs` | `Z` 키(`kb.zKey.wasPressedThisFrame`) → `BuildingManager.PlaceNext(transform.position)` (I-36) · `BuildingManager` 참조를 `Awake` 캐시 → **첫 사용 시점 지연 조회**로 (I-38) |
+| `Building/BuildingManager.cs` | 마우스 배치 모드 제거 → **FIFO 설치 대기열**. `UnlockBuilding` 이 `MaxCount` 만큼 대기열에 쌓고, `PlaceNext` 가 맨 앞(=가장 먼저 얻은 것)을 꺼낸다. `TryFindSpot` 은 플레이어 중심 동심원 3링 × 8방향을 훑는다 (I-36) |
+| `Building/BuildingBase.cs` | `OnCooldownElapsed` 훅 분리(비전투 건물용) · `CooldownActive` 훅(식당이 타이머를 얼릴 때) · `Cooldown` 에 `Final.BuildingCooldown` 배율 반영 (I-37) |
+| `Building/VillageBuilding.cs` | **신규** — 쿨다운마다 `ExperienceManager.CollectXp(Output)` |
+| `Building/FarmBuilding.cs` | **신규** — 쿨다운마다 `MetaProgression.AddCurrency(Output × GoldGain)` |
+| `Building/RestaurantBuilding.cs` | **신규** — 힐템을 떨구고 `CooldownActive => _pending == null` 로 **회수 전까지 타이머를 얼린다** |
+| `Building/HealPickup.cs` | **신규** — 경험치와 달리 **끌려오지 않는다.** 직접 밟아야 회복되고, 회수 콜백으로 식당의 잠금을 푼다 |
+| `UI/StageClearUI.cs` | 보유 아이템을 아이콘 + `"{ItemName} Lv.{CurrentLevel}"` 로 나열 (I-35) |
+| `Game/ICON/Exp_Orb.gif.meta` | `spritePixelsToUnits` → **460** (I-33) |
+| `Balance/Buildings.csv` | 3종 → **5종**(Turret/Bombard/Village/Farm/Restaurant). **`Output` 열 신규** (쿨다운 1회당 산출량) |
+| `Balance/Passives.csv` | **`BonusBuildingCooldown` 열 신규.** `BuildingCooldown` 행 = `-0.1|-0.18|-0.26|-0.34|-0.42` |
+| `Balance/Items.csv` | `House` 제거, `Village`/`Farm`/`Restaurant`/`BuildingCooldown` 추가 → **20종** |
+| `Balance/SceneWiring.csv` | `LevelUpManager,allItems` 20개로 갱신 · `BuildingManager,placementBlockLayer = Building` |
+| 프리팹 / 스프라이트 | `Building_Village` / `Building_Farm` / `Building_Restaurant` / `HealPickup` 프리팹, `Farm.png` / `Restaurant.png` 스프라이트 신규 (Village 는 기존 `House.png` 재사용) |
+
+건물 물리 (사용자 요청: "너무 쉽게 밀리지만 않는 느낌"):
+`Rigidbody2D` = **Dynamic · mass 5 · linearDamping 10 · gravityScale 0 · freezeRotation**,
+`CircleCollider2D`(non-trigger), layer `Building`.
+
+### 검증 로그
+
+```
+[패시브] BuildingCooldown 을 Lv1→Lv5 로 다섯 번 획득
+  Lv1 → Final.BuildingCooldown = 0.9     (기대 1-0.10)
+  Lv2 → 0.82                             (기대 1-0.18)
+  Lv3 → 0.74                             (기대 1-0.26)
+  Lv4 → 0.66                             (기대 1-0.34)
+  Lv5 → 0.58                             (기대 1-0.42)   ← 수정 전에는 -0.30
+  Damage 는 이 사이 내내 1 로 고정 (다른 패시브에 새지 않음)
+
+[식당] Restaurant Lv1(60s) × 0.58 = 34.8s 기대
+  배치 t=24.1 → t=60.4 (경과 36.3s) heals=1
+  플레이어를 힐템 위로 이동해 회수 t=78.7
+    t=106.6 (경과 27.9s) heals=0     ← 수정 전(6초)이면 이미 1
+    t=125.4 (경과 46.8s) heals=1
+  → 34.8초 근처에서 정확히 한 번만 재소환. 회수 전에는 안 나옴
+
+[Z 설치] place0..4 = True, place5 = False (MaxCount 초과), 순서 = 획득 순서
+         실제 키 입력 주입(InputSystem.QueueStateEvent(Key.Z)) → pending 1→0,
+         Building_Turret(Clone) 생성 확인                             (I-38 수정 후)
+[마을]   VillageBuilding.OnCooldownElapsed → CollectXp → TriggerLevelUp
+[농장]   25초에 currency 97 → 99 (쿨 12s × Output 1 = 정확히 2틱)
+[타워/포대] 플레이어 무기를 전부 제거(weapons=0)한 상태에서 kills 7 → 14
+[웨이브]  웨이브 중 배치 건물 5개 전부 유지 (ObjectPool 자식, act=True)
+[물리]   Building_Restaurant rb=Dynamic mass:5 drag:10 grav:0 freezeRot:True layer=Building
+[컴파일] 에러 0 · 경고 0
+```
+
+> **헛짚었던 것**: "웨이브 중에 건물이 사라진다"고 의심해 `OnDisable`/`OnDestroy` 에
+> 스택 트레이스 로그를 심었는데, 트레이스에 **엔진 프레임만** 있었고 콘솔에
+> `PauseMenuUI.Update → Open` (ESC) → `PauseMenuUI.QuitGame` 이 찍혀 있었다.
+> **사람이 Game 뷰에서 ESC 를 누르고 Quit 을 눌러 플레이 모드가 끝난 것**이지 버그가 아니었다.
+> 진단용 로그는 확인 후 전부 제거했다. → 테스트 중에는 Game 뷰를 만지지 말 것.
+
+---
+
+## 2-13. ✅ 건물 확대 + 곡사포 폭탄 투사체 + 폭발 애니메이션 (I-39~I-41, 2026-08-27 11차)
+
+사용자 요청 4건: 건물 크기 확대 / 곡사포가 폭탄을 **날려서** 터뜨리게 / 터지는 애니메이션 / 폭발 잔상 버그.
+
+### 원인
+
+**① 폭발이 맵에 영구히 쌓였다 (I-39) — 사용자가 말한 "폭발 잔상"**
+
+`BombardBuilding.Attack` 이 두 가지를 잘못하고 있었다.
+
+```csharp
+Physics2D.OverlapCircleAll(...)          // 날아가는 시간 없이 그 자리에서 즉시 피해
+Instantiate(aoeEffectPrefab, ...)        // 풀을 안 거치고 새로 만들고, 아무도 안 지운다
+```
+
+`Proj_Aoe(Boom)` 를 풀로 돌려보내는 코드는 `AoeProjectile.Explode()` 코루틴 안에 있는데,
+그 코루틴은 **`Initialize()` 가 시작시킨다.** `Instantiate` 만 하면 `Initialize` 를 안 부르므로
+코루틴이 영영 시작되지 않는다 → 폭발 스프라이트가 **런이 끝날 때까지 그 자리에 남는다.**
+곡사포가 3초마다 쏘므로 웨이브 하나에 수십 장이 겹쳐 쌓였다.
+
+**② 폭발 스프라이트가 회색 네모였다 (I-40)**
+
+`Assets/Game/ICON/폭발 애니메이션 시퀀스.png` 는 6×5=30컷 몽타주인데
+**배경이 불투명하게 구워져 있었고**, 슬라이스도 4장만 엉뚱한 좌표에 잡혀 있었다.
+그중 한 장(100×100)이 프리팹에 물려 있어서 화면에는 회색 사각형이 떴다.
+
+**③ AI 가 만든 새 시트도 투명이 아니었다 (I-41) — 함정**
+
+`GenerateSpritesheet` 결과물은 겉보기엔 투명해 보이는데 **알파 채널이 전부 255** 였다.
+모델이 "투명"을 표현하려고 **체커보드 무늬를 RGB 에 그대로 그려 넣은** 것이다.
+게임에 넣으면 폭발 뒤에 흰/회색 체커 사각형이 그대로 보인다.
+
+> 확인 방법: `PIL.Image.getchannel('A').getextrema()` 가 `(255, 255)` 면 가짜 투명이다.
+
+### 변경한 파일
+
+| 파일 | 변경 |
+|---|---|
+| `Building/BombProjectile.cs` | **신규** — 목표 지점까지 포물선으로 날아가고(`arcHeight 1.2`, `spinSpeed 540`), 도착하면 폭발을 풀에서 꺼내 `Initialize` 하고 자기도 풀로 돌아간다. 목표를 `Transform` 이 아니라 **좌표로 굳혀서** 받는다 — 비행 중 적이 죽으면 그 `Transform` 은 풀에서 재사용돼 엉뚱한 자리로 옮겨간다 |
+| `Building/BombardBuilding.cs` | 즉시 `OverlapCircleAll` + `Instantiate` → **`Pool.Get(bombPrefab)` + `BombProjectile.Initialize`** (I-39). `bombSpeed` / `bombPrefab` 필드 신규 |
+| `Weapon/AoeProjectile.cs` | 스프라이트 프레임 재생 추가(`frames` / `frameRate` / `fadeOutPortion`) · **피해를 연출 전에 먼저** 넣는다(터진 뒤 0.15초 사이에 폭심을 빠져나간 적이 살아남던 문제) · `spriteRadiusAtScaleOne` 으로 **실제 폭발 반경에 맞춰 자동 확대** |
+| `Game/Sprites/Effects/Explosion.png` | **신규** — Unity AI `GenerateSpritesheet`(`video-seedance-1-pro`) 1024×1024 / 4×4 / 16프레임. ppu 256 · Point 필터 · 무압축 |
+| `Prefabs/Proj_Bomb.prefab` | **신규** — 기존 `Sprites/Weapons/Bomb.png`(투명 배경 픽셀아트) 재사용, scale 0.225 → 0.45유닛 |
+| `Prefabs/Proj_Aoe(Boom).prefab` | 스프라이트를 새 시트 `frame_0` 으로 교체, `sortingOrder 20`, `frames` 16장 배선 |
+| `Prefabs/Building_*.prefab` (5종) | `m_LocalScale` **1.8 → 2.6** (스프라이트 0.5유닛 × 2.6 = **1.3유닛**, 플레이어 1.0유닛) |
+| `Balance/Economy.csv` | `BuildingManager,placeDistance` **1.2 → 1.8**, `placeClearRadius` **0.5 → 0.6** (건물이 커져 이웃 칸이 겹쳤다) |
+
+**가짜 투명 제거 방법 (I-41)** — 배경만 골라 알파를 파야 한다.
+
+1. 후보 = 밝고(`max>150`) 채도 낮은(`max-min<40`) 픽셀 → 체커 두 색 + **흰 폭심**이 함께 잡힌다
+2. 씨앗 = 어두운 체커 회색(`~184,184,181`) 픽셀. **폭발 색에는 이 회색이 없다**
+3. 씨앗이 속한 덩어리만 flood fill 로 배경 판정 → 연기 사이에 **갇힌 체커 조각**까지 지워지고
+   흰 폭심은 (184 회색과 이어져 있지 않아) 살아남는다
+
+> 테두리에서만 flood fill 하면 연기 사이 갇힌 조각이 흰 얼룩으로 남는다. 실제로 1차 시도에서 남았다.
+
+### 수치
+
+| 항목 | 값 | 근거 |
+|---|---|---|
+| 건물 크기 | 1.3유닛 (scale 2.6) | 플레이어 1.0유닛보다 확실히 크되 화면을 안 막는 선 |
+| 건물 콜라이더 실반경 | 0.578 (지름 1.156) | `m_Radius 0.22222224 × 2.6` |
+| `placeDistance` | 1.8 | 링 위 이웃 간격 `0.765 × 1.8 = 1.38` > 건물 지름 1.156 |
+| `placeClearRadius` | 0.6 | 실반경 0.578 보다 약간 크게 |
+| 폭탄 속도 | 6 유닛/초 | 곡사포 사거리 3.5 를 약 0.6초에 — 날아가는 게 보이되 답답하지 않다 |
+| 폭발 프레임 | 16장 @ 24fps = **0.667초** | 뒤 40% 는 알파 페이드 (마지막 프레임이 연기 덩어리라 그냥 끄면 툭 사라진다) |
+| `spriteRadiusAtScaleOne` | 0.4 | 프레임 1.0유닛 중 불덩이가 덮는 반경. 반경 2 → scale 5 |
+
+### 검증 로그
+
+```
+[크기]  Turret/Bombard/Village/Farm/Restaurant scale=2.60 월드=1.30 콜라이더반경=0.578
+        Player 월드=1.00
+        placeDistance=1.8  placeClearRadius=0.6      (Economy.csv 31/31 적용)
+
+[폭탄]  Pool.Get(Proj_Bomb) → Initialize((-3,0)→(3,0), speed 6)
+        1초 뒤 → Proj_Bomb active=False  pos=(3.00, 0.00)     ← 정확히 목표에 도달 후 회수
+                 Explosion active=False  pos=(3.00, 0.00) scale=5.00  frame=frame_15
+                                                              ← 반경 2 ÷ 0.4 = 5 ✓
+
+[곡사포] Building_Bombard Lv1 (사거리 3.5 / 쿨 3s / 피해 20) + 적 배치
+        4초 뒤 → Proj_Bomb 활성=0 / Explosion 활성=1 (재생 중)
+                 풀 밖 폭발 오브젝트(잔상) = 0            ← I-39 수정 확인
+        적이 실제로 AoeProjectile.Explode 에서 피해를 받고 Die() 진입
+
+[투명]  Explosion.png alpha min/max: 생성 직후 (255,255) → 처리 후 (0,255)
+        프레임별 불투명 비율 46→67→54→32% (팽창 후 소멸과 일치, 잔여 체커 없음)
+        게임 카메라 캡처: 배경 완전 투명, 흰 얼룩 0
+
+[컴파일] 에러 0 · 경고 0
+```
+
+> **헛짚었던 것**: 캡처에 흰 원이 찍혀서 시트 잔여물인 줄 알았는데,
+> 씬의 `SpriteRenderer` 를 훑어 보니 **메인메뉴라 직업 스프라이트가 아직 안 붙은 플레이어**
+> (기본 `Circle` 스프라이트)였다.
+>
+> 테스트로 `Enemy_Goblin` 을 raw `Instantiate` 했더니 `EnemyBase.Die()` 에서
+> `NullReferenceException` 이 났다. `Rb` 는 `Awake` 가 아니라 **`Initialize()` 에서** 잡히므로
+> 정상 스폰 경로에서는 안 나는, 테스트가 만든 예외였다.
+
+---
+
+## 2-14. ✅ 폭발 반경 확정 + 미사용 애셋 정리 (I-42, 2026-08-27 11차 후속)
+
+### 원인 — 그림을 정직하게 만들자 숨어 있던 불일치가 드러났다 (I-42)
+
+2-13 에서 폭발 그림이 **실제 피해 반경에 맞춰 확대**되도록 바꿨다
+(`AoeProjectile` 이 `scale = 반경 ÷ spriteRadiusAtScaleOne`).
+그전까지는 반경과 무관하게 항상 scale 1(0.5유닛)이라 **피해 범위와 그림이 따로 놀았다.**
+
+그 결과 `Weapon_Aoe.prefab` 의 `explosionRadius = 3` 이 화면에 그대로 드러났다 —
+**지름 6유닛**, 화면(약 17×10유닛)의 3분의 1이다. 곡사포(반경 2)보다 큰 폭발을
+Lv1 무기가 매 발 쏘고 있었던 셈이다.
+
+사용자 결정: **(A) 반경을 낮춘다** → 곡사포와 같은 **2**.
+
+> 면적이 `π3² → π2²` 로 **56% 줄었다.** 단일 대상 DPS 는 그대로지만
+> 다수 적 상황의 실효 DPS 는 눈에 띄게 떨어진다. 특히 Fireball 로 시작하는 **Mage 가 약해졌다.**
+> 보정이 필요하면 `Weapons.csv` 의 `Damage` 로 → [`TODO.md`](TODO.md) §1
+
+### 미사용 애셋 전수 조사
+
+`.meta` 의 `guid` 를 `.prefab` / `.unity` / `.asset` / `.mat` / `.controller` 전체에서 grep 해
+참조 수가 0인 것만 골랐다.
+
+> ⚠️ **CSV 참조만 세면 안 된다.** `Bullet.png` 와 `goblin.png` 는 CSV 에는 안 나오지만
+> `Proj_Bullet.prefab` / `Enemy_Goblin.prefab` 의 인스펙터에 직접 물려 있다.
+> TODO 에 "자리표시 아이콘 6장"으로 묶여 있던 것이 실제로는 **4장**이었다.
+
+### 변경한 파일
+
+| 파일 | 변경 |
+|---|---|
+| `Assets/Scripts/Weapon/AoeWeapon.cs` | `explosionRadius` 기본값 `3f` → `2f` + 이유 주석 |
+| `Assets/Prefabs/Weapon_Aoe.prefab` | `explosionRadius: 3` → `2` |
+| `Assets/Prefabs/Building_Turret.prefab` | 미사용 `ObjectPool` 컴포넌트 제거 (씬의 공용 풀을 쓴다) |
+| `Assets/Scripts/Meta/MetaProgressionManager.cs` | `SaveProgress()` 제거 — `Save()` 의 별칭, 호출자 0 |
+| `Assets/Game/ICON/house·speed·sword·turret.png` | **삭제** (+ `.meta`) — 참조 0 |
+| `Assets/Game/ICON/폭발 애니메이션 시퀀스.png` | **삭제** (+ `.meta`) — 불투명 배경 30컷 몽타주. I-40 에서 대체됨 |
+| `Assets/Scripts/{Enemy/EnemySystem,Weapon/WeaponSystem,Passive/PassiveSystem}.cs` | **삭제** (+ `.meta`) — 내용이 주석뿐인 껍데기 |
+
+### 검증 로그
+
+```
+[VERIFY] Weapon_Aoe.explosionRadius = 2
+[VERIFY] Building_Turret components: Transform SpriteRenderer CircleCollider2D TurretBuilding Rigidbody2D
+         (ObjectPool 사라짐 · <MISSING> 없음)
+[VERIFY] house/speed/sword/turret.png       => 삭제됨
+[VERIFY] EnemySystem/WeaponSystem/PassiveSystem.cs => 삭제됨
+[VERIFY] ICON 폴더 텍스처 수 = 3 (Bullet · goblin · Exp_Orb — 전부 프리팹이 물고 있음)
+
+[컴파일] 에러 0 · 경고 0 (Assets/Refresh 후 콘솔 로그 0건)
+```
+
+> **남긴 것과 이유**: `Assets/Fonts` 는 실제로 쓰는 게
+> `public/static/alternative/Pretendard-Regular.ttf` 한 장뿐이지만,
+> 나머지 굵기는 나중에 UI 강조용으로 쓸 수 있고 `LICENSE.txt` 는 재배포 조건이라 보류했다.
+> `Assets/_Recovery/0.unity`(512KB) 는 크래시 복구본으로 보여 **백업 가치를 확인하기 전엔 손대지 않았다.**
+> → [`TODO.md`](TODO.md) §5
+
+---
+
+## 2-1. 이슈 목록 (I-1 ~ I-42 — 전부 해결됨)
+
+> 미해결 항목은 [`TODO.md`](TODO.md) 참조.
+
+| # | 이슈 | 상태 |
+|---|---|---|
+| I-1 | Player `Rigidbody2D.gravityScale = 1` (탑다운인데 아래로 떨어짐) | ✅ 해결 |
+| I-2 | Player에 `Collider2D` 없음 | ✅ 해결 |
+| I-3 | 한글 TMP 폰트 없음 (모든 한글이 `□`) | ✅ 해결 — Pretendard |
+| I-4 | CanvasScaler = Constant Pixel Size @ 800x600 | ✅ 해결 |
+| **I-5** | **Player `tag = Untagged`** — `ExpDrop`/`EnemyBase`가 `"Player"` 태그로 찾으므로 **경험치 획득·접촉 데미지가 전부 무효**였음 | ✅ 해결 (I-1 작업 중 발견) |
+| **I-6** | **Enemy/Projectile 프리팹도 `gravityScale = 1`** — 적과 총알이 아래로 떨어짐 | ✅ 해결 |
+| **I-7** | **`Proj_Bullet` Rigidbody2D가 Dynamic** — `ProjectileBase`는 `transform.Translate`로 이동시켜 물리와 충돌 | ✅ 해결 → Kinematic |
+| **I-8** | **스크립트 실행 순서 경쟁** — `GameManager.Start()`가 매니저 참조를 채우는데 `ShopUI.Start()`가 먼저 돌아 `NullReferenceException` | ✅ 해결 (Play 검증에서 발견) |
+| **I-9** | **`MetaProgressionManager.upgrades[0] = NULL`** — `GetStatBonus()`의 `foreach`에서 `NullReferenceException` | ✅ 해결 (Play 검증에서 발견) |
+| **I-10** | **런 시작 경로가 없음** — `GameManager.StartRun()` 호출자가 **0개**. MainMenu UI / StageMap UI **스크립트 자체가 미작성** | ✅ 해결 (2026-08-26, 스크립트 5종 신규 작성 → 2-2 참조) |
+| **I-11** | `AudioManager` / `StageClearUI` 스크립트가 씬 어디에도 없음 | ✅ 해결 (씬 배치 + 호출부 연결) |
+| **I-12** | **`WaveData` 3종(`Normal1`/`Elite1`/`Boss1`)의 `Spawns`가 전부 빈 배열** — 웨이브가 시작돼도 **적이 한 마리도 스폰되지 않음** | ✅ 해결 (2026-08-26) |
+| **I-13** | **`CameraController` NaN 오염** — `UpdateLookAhead()`가 `delta / Time.deltaTime`을 하는데 `timeScale == 0`(일시정지/레벨업/클리어)에서 `0/0 = NaN`. 한 번 발생하면 `_lookAheadPos`와 카메라 위치가 영구 오염되어 매 프레임 에러 스팸 | ✅ 해결 (2026-08-26) |
+| **I-14** | **Shop 노드를 지나도 맵이 진행되지 않음** — `CloseShop()`이 `AdvanceToNext(node)`를 부르지 않아 같은 층을 무한 반복. **상점을 고르면 런이 사실상 끝남** | ✅ 해결 (2026-08-26 2차) |
+| **I-15** | **Event가 웨이브를 띄우면 HUD가 사라짐** — `TriggerRandomWave` 분기에 `ChangeState(Wave)` 누락. 상태가 `Event`로 남아 어떤 패널도 안 뜬 채 전투 진행 | ✅ 해결 |
+| **I-16** | **ESC 일시정지가 아무 상태에서나 열리고, 닫으면 무조건 `Wave`가 됨** — 메뉴/맵/상점에서 ESC→닫기 시 게임이 `Wave` 상태로 착각 | ✅ 해결 |
+| **I-17** | **Retry 시 아이템 레벨이 이전 런에서 이월** — `ItemData.CurrentLevel`은 SO 애셋에 쓰는 런타임 값이고 `[NonSerialized]`는 **도메인 리로드에서만** 초기화된다. `ReloadScene()`은 씬만 다시 로드하므로 값이 남음 | ✅ 해결 |
+| **I-18** | `SaveData.TotalRuns` / `TotalKills` 가 아무 데서도 증가하지 않음 (죽은 필드) | ✅ 해결 |
+| **I-19** | **`WaveData` 가 `WaveManager.cs` 안에 정의되어 있어** 새로 만든 `.asset` 의 `m_Script` 가 `0`으로 기록됨 (`No script asset for WaveData` 경고). 기존 `Normal1`/`Elite1`/`Boss1` 도 이미 깨져 있었음 | ✅ 해결 (2026-08-26 2차) |
+| **I-20** | **적에 닿으면 체력이 순식간에 증발** — `EnemyBase.OnTriggerStay2D` 가 `ContactDamage × fixedDeltaTime`(≈0.16)을 매 물리 프레임 넣는 지속 피해였는데, `PlayerStats.TakeDamage` 의 `Mathf.Max(1, raw - Armor)` **바닥값이 그 0.16을 1로 올려** 적 하나당 **초당 50 피해**가 됐다. 무적 시간도 없어 여러 마리가 겹치면 즉사 | ✅ 해결 (2026-08-26 3차) |
+| **I-21** | **플레이어 전 스탯이 2배** — `MetaProgressionManager.GetStatBonus()` 가 `new StatBlock()` 을 **보너스 블록**으로 쓰는데 `StatBlock` 의 필드 초기값이 기본 스탯(`MaxHp 100` / `MoveSpeed 4` / `Damage 1` …)이라 `base + meta` 합산이 전부 2배가 됨. `AttackSpeed` 는 쿨다운 배율이라 **공격 속도가 절반**이었다 | ✅ 해결 (2026-08-26 3차) |
+| **I-22** | **시작 무기가 없음** — `WeaponManager.AddOrUpgradeWeapon()` 의 호출자가 레벨업 카드 하나뿐이라 `StartRun()` 직후 플레이어가 **맨손**이었다. 첫 레벨업 전까지 적을 공격할 수단이 전무 | ✅ 해결 (2026-08-26 4차 — 직업 시스템 → 2-6) |
+| **I-23** | **직업을 고를 수 없음** — I-22 로 직업 3종이 생겼지만 선택 화면이 없어 `defaultClassIndex` 로 고정. Ranger/Mage 를 보려면 인스펙터를 고쳐야 했다 | ✅ 해결 (2026-08-26 5차 — 직업 선택 UI → 2-7) |
+| **I-24** | **레벨업해도 카드 3장이 안 뜸** — `HUDManager.OnLevelUp` 의 `levelUpAnimator?.SetTrigger()` 가 **미할당 직렬화 필드**에서 `UnassignedReferenceException` 을 던졌다. `?.` 는 Unity 의 "가짜 null" 을 못 막는다. 예외가 `CollectXp` 밖으로 전파되어 `ShowLevelUpPanel()` 에 도달하지 못함. **레벨업 성장이 통째로 막혀 있었다** | ✅ 해결 (2026-08-26 6차 → 2-8) |
+| **I-25** | **애셋 공백 — 적 6종이 스프라이트 1장을 공유하고 아이콘 17종이 5장을 돌려 씀, 직업 일러스트 0.** 종을 `Tint`(색 곱셈)로만 구분해 전부 같은 실루엣이었다. Unity AI 구독이 없어 생성이 `NoSubscription` 으로 반려되던 것이 전제 조건 | ✅ 해결 (2026-08-27 7차 → 2-9) |
+| **I-26** | **적 연출 — (1) 엘리트/보스가 `sr.color` 곱셈이라 고유 스프라이트를 탁하게 만듦(녹색 좀비 × 보라 ≈ 검정), (2) 26장이 전부 1프레임이라 적이 미끄러짐.** 둘 다 I-25 직후에 드러난 문제 | ✅ 해결 (2026-08-27 8차 → 2-10) |
+| **I-27** | **플레이어만 화면에서 작다** — `maxTextureSize`(512)가 원본(1024)보다 작으면 Unity 가 텍스처만 줄이고 `spritePixelsPerUnit`(1024)은 그대로 둔다. `bounds = rect/ppu` 라 직업 그림이 적과 같은 **0.5 유닛**이 되어 주인공이 안 보였다 | ✅ 해결 (2026-08-27 9차 → 2-11) — ppu 512 → 1.0 유닛 |
+| **I-28** | **바닥이 없다** — 카메라가 `Skybox` 클리어로 URP 기본 파랑(#314D79)을 그대로 비추고 있었다. 바닥 애셋·타일맵 0개, 게다가 밝은 파랑이라 눈이 아프다 | ✅ 해결 (2026-08-27 9차 → 2-11) — 타일 10종 + `GroundTiler` |
+| **I-29** | **플레이어가 미끄러진다** — I-26 은 **적만** 고쳤다. 플레이어는 `PlayerController` 의 `sr.flipX` 한 줄이 전부라 좌우로 갈 땐 뒤집히기만 하고 상하로 갈 땐 아무 일도 없었다 (사용자 표현: "현재는 머리만 움직임") | ✅ 해결 (2026-08-27 9차 → 2-11) — 16프레임 걷기 시트 + `PlayerVisual` |
+| **I-30** | **씬 `Camera` 가 `Untagged`** — `Camera.main == null` 이라 **카메라 흔들기가 한 번도 발동하지 않았고**, 건물 배치의 `GetMouseWorldPos()` 는 `NullReferenceException` 이 날 자리였다 | ✅ 해결 (2026-08-27 9차, I-28 작업 중 발견) — `MainCamera` |
+| **I-31** | **적 `CapsuleCollider2D` 가 그림보다 2배 김** — 0.5×1.0 인데 스프라이트는 0.5×0.5. 그림에 닿기도 전에 접촉 피해가 들어왔다 | ✅ 해결 (2026-08-27 9차, I-27 작업 중 발견) — 0.34×0.36 |
+| **I-32** | **패시브가 레벨업할 때마다 누적됨** — `ApplyPassive` 가 매번 `new PassiveEffect` 를 리스트에 추가하고 `RecalculateStats` 가 전부 합산했다. `Passives.csv` 값은 "그 레벨의 총 보너스"라 Lv5 면 5개 레벨 값이 다 더해진다. `Damage` +0.55 → **+1.57**, `BuildingCooldown` 은 배수라 **-0.30 으로 음수 반전** → 하한 0.1 에 걸려 **전 건물이 10배 빨라짐** | ✅ 해결 (2026-08-27 10차, 건물 쿨다운 패시브 검증 중 발견 → 2-12) |
+| **I-33** | **경험치 오브가 플레이어만 함** — `Exp_Orb.gif` 의 `spritePixelsToUnits` 가 작아 화면이 오브로 뒤덮였다 | ✅ 해결 (2026-08-27 10차) — ppu 460 |
+| **I-34** | **리롤을 안 돌리면 계속 같은 아이템만 나옴** — `PickCandidates` 가 보유 업그레이드로 슬롯을 먼저 다 채워, 최대레벨이 아닌 아이템 3개만 있으면 카드 3장이 **영구히 고정**됐다 | ✅ 해결 (2026-08-27 10차) — 가중치 비복원 추첨(보유 ×2) |
+| **I-35** | 클리어 화면에 **성장 정보가 없음** — 킬 수/시간만 있고 무엇을 얼마나 키웠는지 안 보였다 | ✅ 해결 (2026-08-27 10차) — 보유 아이템 아이콘 + `Lv.n` 나열 |
+| **I-36** | **건물을 설치할 방법이 없음** — 마우스 배치 모드인데 `SelectBuildingForPlacement()` 호출자가 **0개**라 `_selectedBuildingData` 가 늘 null. **건물 아이템을 먹어도 아무 일도 안 일어났다** | ✅ 해결 (2026-08-27 10차) — `Z` 즉시 설치 + FIFO 대기열 + 밀리는 건물 |
+| **I-37** | **건물이 전부 "때리는 것"뿐** — 3종 중 `House` 는 스크립트가 없어 세워도 아무 동작을 안 했다 | ✅ 해결 (2026-08-27 10차) — 5종(전투 2 + 경험치/골드/회복 3) + `BuildingCooldown` 패시브 |
+| **I-38** | **`Z` 를 눌러도 건물이 안 세워짐** — `PlayerController.Awake()` 가 `GameManager.Instance?.BuildingMgr` 를 캐시하는데, 그 값은 `GameManager.Start()` 에서 채워진다. **모든 `Awake` 는 모든 `Start` 보다 먼저** 돌므로 `_buildingManager` 가 늘 null 이었고 Z 분기가 통째로 건너뛰어졌다 (I-8 과 같은 실행 순서 경쟁) | ✅ 해결 (2026-08-27 10차, 사용자 제보) — 첫 사용 시점 지연 조회 |
+| **I-39** | **폭발 그림이 맵에 영구히 쌓임 (잔상)** — `BombardBuilding` 이 연출 프리팹을 풀 없이 `Instantiate` 만 하고 `AoeProjectile.Initialize` 를 안 불렀다. 풀 반환은 그 `Initialize` 가 시작하는 코루틴 안에 있어서 **영영 회수되지 않았다.** 곡사포가 3초마다 쏘므로 웨이브 하나에 수십 장이 겹쳤다 | ✅ 해결 (2026-08-27 11차, 사용자 제보) — 폭탄 투사체 경유 + 풀 반환 |
+| **I-40** | **폭발 스프라이트가 회색 네모** — `ICON/폭발 애니메이션 시퀀스.png` 는 배경이 불투명하게 구워진 30컷 몽타주였고, 슬라이스도 4장만 엉뚱한 좌표에 잡혀 있었다 | ✅ 해결 (2026-08-27 11차) — Unity AI 로 16프레임 시트 재생성 |
+| **I-41** | **AI 가 만든 스프라이트시트의 "투명 배경"이 가짜** — 알파 채널이 전부 255 이고 모델이 **체커보드 무늬를 RGB 에 그려 넣었다.** 그대로 넣으면 폭발 뒤에 체커 사각형이 보인다 | ✅ 해결 (2026-08-27 11차) — 체커 회색 씨앗 flood fill 로 알파 재생성 |
+| **I-42** | **폭발 그림과 피해 범위가 따로 놀았다** — 폭발이 반경과 무관하게 항상 scale 1(0.5유닛)로 떴다. I-39 에서 그림을 반경에 맞추자 `Weapon_Aoe.explosionRadius = 3`(**지름 6유닛 = 화면의 1/3**)이 드러났다 | ✅ 해결 (2026-08-27 11차 후속) — 반경 3 → **2** (곡사포와 동일). 사용자 결정 |
+
+### 해결 상세
+
+**I-1 / I-2 / I-5 — Player**
+
+| 항목 | 변경 |
+|---|---|
+| `tag` | `Untagged` → **`Player`** |
+| `layer` | `Default(0)` → `Player(7)` |
+| `Rigidbody2D.gravityScale` | `1` → `0` |
+| `Rigidbody2D.freezeRotation` | → `true` (충돌 시 회전 방지) |
+| `Rigidbody2D.collisionDetectionMode` | → `Continuous` |
+| `Rigidbody2D.interpolation` | → `Interpolate` |
+| `CircleCollider2D` | **신규 추가** — `radius 0.4`, `isTrigger = false` |
+
+> `isTrigger = false`로 둔 이유: `Enemy_Goblin`의 `CapsuleCollider2D`가 이미
+> `isTrigger = true`라 `EnemyBase.OnTriggerStay2D`는 정상 발동하고,
+> 동시에 `Building_Turret`(non-trigger)과는 물리 충돌이 유지됨.
+
+**I-6 / I-7 — 프리팹 물리**
+
+| 프리팹 | 변경 |
+|---|---|
+| `Enemy_Goblin` | `gravityScale 1 → 0`, `freezeRotation` (이동은 `Rb.linearVelocity`라 Dynamic 유지) |
+| `Proj_Bullet` | `gravityScale 1 → 0`, `bodyType Dynamic → Kinematic` |
+| `Proj_Aoe(Boom)` / `ExpDrop_Small` / `Building_Turret` | Rigidbody2D 없음 — 변경 불필요 |
+
+**I-3 — 한글 폰트 (Pretendard)**
+
+사용자가 `Assets/Fonts/`에 Pretendard 배포판을 추가 → TMP Font Asset을 직접 생성.
+
+| 항목 | 값 |
+|---|---|
+| 소스 | `Assets/Fonts/public/static/alternative/Pretendard-Regular.ttf` |
+| 생성물 | **`Assets/Fonts/Pretendard SDF.asset`** (+ Atlas / Material 서브애셋) |
+| 렌더 모드 | `SDFAA`, 샘플링 90pt, 패딩 9, 아틀라스 1024×1024 |
+| **Atlas Population Mode** | **`Dynamic`** ← 한글은 완성형만 11,172자라 Static으로 구우면 아틀라스가 터짐. 런타임에 필요한 글리프만 추가됨 |
+| Multi Atlas | 활성 |
+
+적용 범위:
+- `TMP Settings.defaultFontAsset` → Pretendard SDF (앞으로 만드는 텍스트의 기본값)
+- `TMP Settings.fallbackFontAssets` → Pretendard SDF 등록 (**전역 안전망** — 어떤 텍스트가 다른 폰트를 쓰더라도 한글이 깨지지 않음)
+- 씬 TMP 텍스트 **40개** 전부 교체
+- 프리팹 TMP 텍스트 **18개** 교체 — `DamagePopup`, `Prefab_ItemCard`, `Prefab_ShopCard`, `Prefab_ShopRemoveRow`
+
+> 글리프 커버리지 검증: `TryAddCharacters("가나다라마바사한글안녕게임상점레벨업▲▼")` → **missing 0**.
+> `StageClearUI`가 쓰는 `▲` `▼`까지 포함됨.
+
+**I-4 — CanvasScaler**
+
+| 항목 | 값 |
+|---|---|
+| UI Scale Mode | `Constant Pixel Size` → **`Scale With Screen Size`** |
+| Reference Resolution | **1920 × 1080** |
+| Screen Match Mode | `Match Width Or Height`, **Match = 0.5** |
+
+> Match 0.5(가로/세로 균등)로 둔 이유 — **옵션 메뉴에서 해상도를 바꿀 예정**이라서.
+> 이 설정이면 `Screen.SetResolution()`만 호출해도 UI가 자동으로 비율에 맞춰 스케일되므로
+> 해상도별 레이아웃을 따로 만들 필요가 없음. 울트라와이드/4:3에서도 잘림 없이 대응됨.
+
+**I-12 — 빈 `WaveData.Spawns`**
+
+Play 스모크 테스트에서 `3 enemies spawned (0 alive)` FAIL로 발견.
+세 애셋 모두 `Spawns: []` 였음. 현재 존재하는 유일한 `EnemyData`인
+`Assets/Game/EnemyData/Goblin.asset`(프리팹 `Enemy_Goblin`)로 채움.
+
+| 애셋 | 클리어 조건 | Spawns | 오버라이드 |
+|---|---|---|---|
+| `Normal1` | Timer 60초 | Goblin ×18 @0.9s, Goblin ×22 @0.6s | — |
+| `Elite1` | Timer 75초 | Goblin ×24 @0.7s | `EliteOverride`=Goblin, `EliteCount`=2 |
+| `Boss1` | Kill 13 | Goblin ×12 @0.8s | `BossOverride`=Goblin |
+
+`SpawnRadius`는 셋 다 `12`. 적 종류가 Goblin 하나뿐이라 **임시 밸런스**였음.
+
+> ⚠️ **위 표는 2차(2026-08-26) 작업에서 대체됨.** 지금 Spawns 는 `Assets/Game/Balance/Waves.csv`
+> 가 원본이고, 적 6종·웨이브 6종으로 다시 짜였다. 현재 수치는 [`BALANCE.md`](BALANCE.md) §2-6 참조.
+
+**I-13 — CameraController NaN**
+
+`LateUpdate` 진입부에 조기 반환을 추가. NaN은 한 번 섞이면 계속 전파되므로 아예 갱신을 건너뛴다.
+
+```csharp
+private void LateUpdate()
+{
+    if (target == null) return;
+    if (Time.deltaTime <= 0f) return;   // timeScale = 0 → 0/0 = NaN 방지
+    ...
+}
+```
+
+---
+
+## 3. 결정 사항
+
+| # | 항목 | 결정 |
+|---|---|---|
+| A | MCP 연결 방식 | Unity 에디터를 열어 공식 릴레이로 연결 (YAML 직접 편집 안 함) |
+| B | 씬 인스턴스 참조 | 프리팹 애셋 참조로 수정 |
+| C | UI 범위 | HUD·PauseMenu·Option·Shop **전부** 구축 |
+| D | `Normal1 1.asset` | `Normal1.asset`으로 이름 정리 |
+| E | Input 처리 | (나) 스크립트를 Input System으로 이관 **＋** (가) Active Input Handling = `Both` 둘 다 적용 |
+
+---
+
+## 4. 다음 할 일
+
+1. ✅ Unity 에디터 실행 / MCP 연결
+2. ✅ `Normal1 1.asset` → `Normal1.asset` 리네임 (D)
+3. ✅ Input System 이관 (E-나) — 컴파일 클린
+4. ✅ 씬 인스턴스 참조 → 프리팹 애셋 참조 교체 + 방치 인스턴스 정리 (B)
+5. ✅ `Weapon_Sword.prefab` 생성 및 WeaponData/EnemyData/BuildingData 프리팹 연결 (4단계)
+6. ✅ HUD / PausePanel / OptionSubPanel 구축 + 필드 연결 (C)
+7. ✅ ShopRoot 구축 + ShopUI 16개 필드 연결 (C)
+8. ✅ Pretendard TMP 폰트 애셋 생성 + 전역 적용 (I-3)
+9. ✅ CanvasScaler → Scale With Screen Size 1920×1080 (I-4)
+10. ✅ Player 물리/태그/레이어 + 프리팹 중력 정리 (I-1, I-2, I-5, I-6, I-7)
+11. ❌ Active Input Handling = `Both` (E-가) — **불필요로 판정, 미적용**
+12. ✅ Play 모드 콘솔 검증 — 에러 0 / 경고 0 (5단계)
+13. ✅ **MainMenuUI / StageMapUI / RunEndUI / GameStatePanel / StateVisibilityBinder 작성 (I-10)**
+14. ✅ `AudioManager` / `StageClearUI` 씬 배치 + 호출부 연결 (I-11)
+15. ✅ `WaveData` 3종 Spawns 채우기 (I-12)
+16. ✅ `CameraController` NaN 가드 (I-13)
+17. ✅ **Play 모드 전체 루프 검증 — 18 / 18 PASS** (6단계)
+
+**2차 (2026-08-26)**
+
+18. ✅ 진행 차단 버그 5건 수정 (I-14~I-18) — ⚠️ **런타임 재검증 미완** → [`TODO.md`](TODO.md) §1
+19. ✅ `WaveData` 를 `WaveManager.cs` 에서 분리 + 깨진 애셋 6개 재생성 (I-19)
+20. ✅ **CSV ↔ ScriptableObject 파이프라인 신설** — `CsvTable.cs` / `BalanceImporter.cs` / CSV 9장
+21. ✅ 콘텐츠 투입 — 적 6 · 무기 5 · 건물 3 · 패시브 9 · 아이템 17 · 웨이브 6 · 이벤트 5
+22. ✅ `MoveSpeed` 패시브 수치 정상화 (CSV 임포트로 해결)
+23. ✅ 경제/경험치 임시 수치 확정 + [`BALANCE.md`](BALANCE.md) 작성
+**3차 (2026-08-26)**
+
+24. ✅ 접촉 피해를 지속 → 한 방 + 무적 0.6초로 교체 (I-20)
+25. ✅ 피격 넉백 + 붉은 플래시 + 깜빡임 + 카메라 흔들기 (→ 2-4)
+26. ✅ `StatBlock` 기본값이 보너스로 두 번 더해지던 문제 (I-21 → 2-5)
+
+**4차 (2026-08-26)**
+
+27. ✅ **직업 시스템 신설 — 런 시작 시 무기 지급** (I-22 → 2-6). 직업 3종 + `Classes.csv`
+
+**5차 (2026-08-26)**
+
+28. ✅ **직업 선택 UI** (I-23 → 2-7). 카드 그리드 + 일러스트 패널 + 설명 바 + `Prefab_ClassCard`
+29. ✅ `CLAUDE.md` 신설 — 문서 3종을 매 작업마다 자동 갱신하도록 규칙화
+
+**6차 (2026-08-26)**
+
+30. ✅ **레벨업 카드가 안 뜨던 문제** (I-24 → 2-8). `?.` 가 Unity 가짜 null 을 못 막아 예외가 흐름을 끊고 있었다
+31. ✅ **레벨업 리롤을 레벨업당 1회로 제한** (→ 2-8). `rerollCostIncrease` 는 무의미해져 제거
+32. ✅ **레벨업 패널 확대** (→ 2-8 끝). 560×320 → 1560×900, 카드 150×200 → 440×560
+33. ✅ **스프라이트 26종 생성 + 전면 배선** (I-25 → 2-9). Unity AI(`gpt-image-1-5`)로 픽셀아트를 뽑아
+    적 6 · 무기 5 · 패시브 9 · 건물 3 · 직업 3 을 채우고 CSV 5종의 경로 열을 갈아끼웠다.
+    스프라이트 필드 **37/37 연결, null 0**. `Tint` 는 흰색으로 되돌림(연출 전용으로 용도 변경)
+34. ✅ **적 연출 — 등급 외곽선 + 걷기 바운스 + 피격 플래시** (I-26 → 2-10). `sr.color` 곱셈을
+    **알파 팽창 외곽선**(URP Unlit 커스텀 셰이더)으로 대체해 원화 색을 되살리고,
+    정지 이미지를 **버텍스 스쿼시/바운스**로 흔들었다. 스케일이 아니라 정점을 건드리므로
+    `CapsuleCollider2D` 판정은 그대로다. 포인트 소모 **0**
+
+**9차 (2026-08-27)**
+
+35. ✅ **플레이어 크기 정상화** (I-27 → 2-11). PPU 함정 — `maxTextureSize` 축소가 `ppu` 는
+    안 건드려 직업 그림이 적과 같은 0.5 유닛이었다. ppu 1024 → 512 로 **1.0 유닛**
+36. ✅ **바닥 타일맵 신설** (I-28 → 2-11). 이음매 없는 타일 **10종** 생성 + `Tile.color` 로
+    평균 휘도를 평준화(퀼트 제거) + 카메라 추종 무한 타일러 `GroundTiler`.
+    배경 #314D79 → **#161815** (사용자 요청 "눈 안 아프게")
+37. ✅ **플레이어 걷기 애니메이션 + 몸 연출** (I-29 → 2-11). 직업 3종 **16프레임** 걷기 시트
+    생성(기존 원화를 레퍼런스로) + `PlayerVisual` + 셰이더 `_LeanAmt` 전단.
+    `Classes.csv` 에 `WalkSheet` 열을 신설해 **CSV 파이프라인 안**에서 관리한다
+38. ✅ **씬 `Camera` 태그 `Untagged` → `MainCamera`** (I-30). 카메라 흔들기가 죽어 있었다
+39. ✅ **적 캡슐 콜라이더 0.5×1.0 → 0.34×0.36** (I-31). 그림보다 2배 길어 헛맞았다
+40. ⏳ **다음**: §1 런타임 재검증 → 스탯 재조정 → 재화 구조 결정 (→ [`TODO.md`](TODO.md) §6)
+
+**16~17 과정에서 함께 처리한 것**
+
+| 항목 | 내용 |
+|---|---|
+| `PlayerSettings.runInBackground` | `false` → **`true`**. 에디터가 포커스를 잃어도 돌아야 MCP 원격 검증이 가능 |
+| 💰 이모지 제거 | `ShopUI` / `ShopCardUI`의 `$"💰 {n}"` → `$"{n} G"`. U+1F4B0가 Pretendard SDF와 폴백 어디에도 없어 TMP 경고 + `□` 발생. 이제 `MainMenuUI`/`StageMapUI`와 표기 통일 |
+| CS0414 경고 2건 | `StageMapManager.weightEvent` 미사용 → `RollStageType`에서 실제로 사용(가중치 합 1.0이라 동작 동일), `WaveManager._elapsedTime` 미사용 필드 삭제(`TotalElapsedTime`이 실사용) |
+
+### 6단계 — Play 모드 전체 루프 검증  ✅ 18/18 PASS
+
+임시 `LoopSmokeTest` MonoBehaviour를 씬에 붙여 코루틴으로 루프를 자동 주행시키고
+`[SMOKE]` 태그 로그를 콘솔에서 읽는 방식으로 검증함. **검증 후 스크립트·오브젝트 모두 삭제 완료.**
+
+| 단계 | 검증 내용 | 결과 |
+|---|---|---|
+| 1 | 콜드 스타트 → `MainMenu`, `MainMenuPanel` 활성 | ✅ |
+| 2 | Start 버튼 → `StageMap`, 맵 노드 생성 (Content 자식 64 = 노드 21 + 라인 43) | ✅ |
+| 3 | 노드 선택 → `Wave`, HUD 활성 / StageMapPanel 숨김, **2초 후 적 3마리 생존** | ✅ |
+| 4 | `OnWaveCleared` → `StageClearPanel` 활성, `timeScale = 0` | ✅ |
+| 5 | Continue → `StageMap` 복귀, `timeScale = 1` | ✅ |
+| 6 | `OnPlayerDied` → `GameOver`, `RunEndPanel` 활성 / HUD 숨김, `[Meta] Saved to …/save.json` | ✅ |
+
+**아직 루프에서 미검증 (스모크 테스트가 의도적으로 건너뜀)**
+
+Shop 노드 · Event 노드 · 실제 Boss/Victory 경로 ·
+Retry 버튼의 `GameManager.ReloadScene(true)` 씬 리로드
+
+> LevelUp 패널은 **6차에서 검증 완료** (I-24 → 2-8). 카드 3장 표시 + 리롤 1회 제한 확인.
+
+### 검증 방법 메모 (다음 세션용 MCP 함정)
+
+| 함정 | 대응 |
+|---|---|
+| `Unity_ReadConsole`의 기본 `Types`(`[2,1,0]`)가 대부분의 엔트리를 **조용히 걸러냄** | 항상 `Types: ["All"]` 를 명시 |
+| 에디터가 **포커스를 잃으면 프레임이 진행되지 않음**. 코루틴 테스트가 멈춘 것처럼 보임 | `runInBackground = true` + `Play` 후 `GetState` / `ReadConsole` 호출로 에디터를 펌프 |
+| `Unity_RunCommand` 컴파일이 **도메인 리로드를 유발**해 static이 리셋되고 Play 모드가 종료됨 | 플레이 모드 조사는 RunCommand 대화형 대신 **임시 씬 MonoBehaviour + 로그** 방식 사용 |
+| `System.Reflection`은 RunCommand **금지 네임스페이스** | `Unity_ManageGameObject get_component` + `include_non_public_serialized: true` 로 대체 |
+| RunCommand 내 `AssetDatabase.DeleteAsset` / `Refresh` → `User interactions are not supported` | 로드된 애셋을 제자리에서 수정 + `EditorUtility.SetDirty` + `AssetDatabase.SaveAssets()` |
+| `Unity not detected (no fresh discovery files found)` | 거의 항상 도메인 리로드 중. `sleep 15~20` 후 `ManageEditor(GetState)`로 `IsCompiling=false` 확인 후 재시도 |
+
+> **UI 문자열은 영문 유지** (사용자 결정). 폰트는 한글을 지원하지만,
+> C단계에서 만든 패널의 라벨은 영문(`SHOP`/`REROLL`/`CLOSE` 등) 그대로 둠.
+> 스크립트에 하드코딩된 한글(`ShopUI.npcDialogues`, `StageClearUI`)은 이제 정상 렌더링됨.
+
+### E-가를 적용하지 않은 이유
+
+당초 결정(E)은 (나) 스크립트 이관 **＋** (가) `Active Input Handling = Both` 둘 다였으나,
+검증 결과 (가)가 **불필요**해서 적용하지 않음. 에디터 재시작(= MCP 릴레이 끊김) 비용만 발생함.
+
+| 확인 항목 | 결과 |
+|---|---|
+| 레거시 `Input.GetAxis/GetKey/GetMouse/mousePosition` 잔존 | **0건** (E-나에서 전량 이관 완료) |
+| `ProjectSettings.activeInputHandler` | `1` (Input System 전용) |
+| `EventSystem`의 입력 모듈 | **`InputSystemUIInputModule`** ✅ (레거시 `StandaloneInputModule`이면 UI 클릭이 전부 죽었을 것) |
+
+> `Both`로 바꾸면 레거시 입력 백엔드가 추가로 올라가지만 이를 쓰는 코드가 없음.
+> 나중에 레거시 `Input`을 쓰는 외부 에셋을 도입하면 그때 켜면 됨.
+
+---
+
+## 5. 남은 작업
+
+**→ [`TODO.md`](TODO.md) 로 분리됨.** (2026-08-26 2차 기준)
+
+문서 3종의 역할:
+
+| 문서 | 담는 것 |
+|---|---|
+| `SETUP_STATUS.md` (이 문서) | **완료된 작업의 이력** |
+| [`TODO.md`](TODO.md) | **아직 안 된 것** |
+| [`BALANCE.md`](BALANCE.md) | **수치를 고치는 법** (CSV 파이프라인) |
+
+`TODO.md` 요약:
+
+| 구분 | 내용 |
+|---|---|
+| 🔴 재검증 필요 | I-14~I-18 은 **코드 수정만 끝났다.** 스모크 테스트가 건너뛴 경로라 실제 플레이 확인 필요 |
+| 🔴 결정 필요 | **런 골드 vs 메타 골드** 구조. 지금 둘이 `MetaProgression.Currency` 하나를 공유해 10층 런 수입 ≈1,240G 대 상점가 5~12G |
+| 🔴 구조적 공백 | **층별 난이도 스케일링 없음** — `StartWave()` 가 풀에서 무작위로 뽑아 1층에 Normal3 이 나올 수 있음 |
+| 🔴 미조정 수치 | I-21 로 실효 스탯이 절반이 된 뒤 **아무도 재조정하지 않았다.** 직업 `Bonus*` 도 감으로 넣은 자리표시값 |
+| ⚠️ 미연결 시스템 | `MetaScreen` 전환 코드 0 · `UpgradeDefinition` 애셋 0 · 캐릭터/스킨 해금 호출자 0 · **직업 해금 흐름 없음**(`UnlockedByDefault` 만 봄) |
+| ⚠️ 콘텐츠 잔여 | ~~적 스프라이트 1장 공유 · 무기 아이콘 재사용 · 직업 일러스트 0~~ → **I-25 로 26종 생성·배선 완료.** 남은 것: **적 AI 직진뿐** · **AudioClip 0** · 경험치 곡선 과속 · ~~애니메이션 0프레임~~ → **I-26 으로 걷기 바운스·좌우·피격 플래시 완료**(공격·사망 모션은 여전히 없음) |
+| ⚠️ 빈 슬롯 | 배치 커서 · HUD 표정/레벨업 연출 (전부 null 가드 — I-24 로 `?.` 가 아닌 `!= null` 로 교정) |
+| 미검증 경로 | Shop · Event · Boss/Victory · Retry · 피격/사망 · 건물 배치 · **신규 무기 5종 실사격** |
+
+---
+
+## 6. 참고
+
+- 검증 스크립트: `Temp/scan.py`(프리팹 인스턴스 오버라이드 덤프), `Temp/tree.py`(하이어라키 트리).
+  `Temp/`는 Unity가 지우는 폴더이므로 임시용. (없으면 다시 만들면 됨)
+- 이 문서는 `Assets/` 바깥에 두어 Unity가 임포트하지 않도록 함.
+- **밸런스 수치를 인스펙터에서 직접 고치지 말 것.** `Assets/Game/Balance/*.csv` 가 원본이고,
+  `Game/Balance/Import CSV -> ScriptableObjects` 를 실행하면 인스펙터 값이 **덮어써진다.**
+  반대 방향(`Export ScriptableObjects -> CSV`)도 있으니 실수로 SO를 고쳤다면 Export로 회수할 것.
+- **ScriptableObject 클래스는 반드시 클래스명과 같은 파일에 둘 것** (I-19).
+  다른 파일에 있으면 새로 만든 `.asset` 의 `m_Script` 가 `0`으로 기록되고,
+  이미 만들어진 애셋은 **재임포트로도 복구되지 않아 삭제 후 재생성**해야 한다.

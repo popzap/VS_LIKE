@@ -1,0 +1,13 @@
+# Classes.csv — 직업(클래스) 원본. Id 가 곧 Assets/Game/ClassData/{Id}.asset 파일명이다.
+#
+# StartingWeapon 은 Weapons.csv 의 Id 를 적는다. 이게 "런 시작 시 무기를 주는" 유일한 경로다.
+# Bonus* 는 PlayerStats.baseStats(Economy.csv) 위에 더해지는 차이값이다. 0 이면 영향 없음.
+#   AttackSpeed 는 쿨다운 배율이라 값이 낮을수록 빠르다 → 보너스는 음수를 넣어야 빨라진다.
+# Portrait  = 메뉴/HUD 용 큰 그림. 인게임 크기와 무관하다.
+# BodySprite= 인게임 정지 그림. 걷기 시트를 쓰면 시트 경로를 그대로 적어도 된다(첫 프레임이 잡힌다).
+# WalkSheet = 걷기 스프라이트시트 .png. 잘려 있는 프레임을 전부 가져와 CharacterClassData.WalkFrames 에 넣는다.
+#             비워 두면 정지 그림 한 장으로 동작한다(셰이더 바운스는 그대로).
+Id,ClassName,Description,StartingWeapon,StartingWeaponLevel,BonusMaxHp,BonusMoveSpeed,BonusDamage,BonusAttackSpeed,BonusProjectileSize,BonusPickupRadius,BonusCritChance,BonusArmor,BonusXpGain,BonusGoldGain,Portrait,BodySprite,WalkSheet,ModelPrefab,UnlockedByDefault,UnlockCost
+Warrior,Warrior,"Tough melee fighter. Starts with a Sword.",Sword,1,30,-0.3,0,0,0,0,0,2,0,0,Assets/Game/Sprites/Classes/Warrior.png,Assets/Game/Sprites/Classes/Walk/Warrior_Walk.png,Assets/Game/Sprites/Classes/Walk/Warrior_Walk.png,,1,0
+Ranger,Ranger,"Fast skirmisher. Starts with a Bow.",Bow,1,-15,0.6,0,-0.1,0,0.5,0.05,0,0,0,Assets/Game/Sprites/Classes/Ranger.png,Assets/Game/Sprites/Classes/Walk/Ranger_Walk.png,Assets/Game/Sprites/Classes/Walk/Ranger_Walk.png,,1,30
+Mage,Mage,"Fragile caster with area damage. Starts with a Fireball.",Fireball,1,-25,0,0.2,0,0.2,0,0,-1,0.1,0,Assets/Game/Sprites/Classes/Mage.png,Assets/Game/Sprites/Classes/Walk/Mage_Walk.png,Assets/Game/Sprites/Classes/Walk/Mage_Walk.png,,1,30

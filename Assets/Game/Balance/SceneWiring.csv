@@ -1,0 +1,12 @@
+# SceneWiring.csv — 씬 컴포넌트의 "애셋 참조 배열"을 CSV 로 관리한다.
+# 새 아이템/웨이브를 추가할 때마다 인스펙터에 드래그하는 수고를 없애려는 표다.
+#
+# Value 는 애셋 경로이며 배열은 | 로 구분한다. 빈 칸이면 그 필드는 건드리지 않는다.
+# 씬 안의 오브젝트(ObjectPool, Transform 등)는 경로로 지정할 수 없어 여기서 다루지 않는다.
+Component,Field,Value,Note
+LevelUpManager,allItems,Assets/Game/ItemData/Sword.asset|Assets/Game/ItemData/Bow.asset|Assets/Game/ItemData/Gun.asset|Assets/Game/ItemData/Fireball.asset|Assets/Game/ItemData/Bomb.asset|Assets/Game/ItemData/Turret.asset|Assets/Game/ItemData/Bombard.asset|Assets/Game/ItemData/Village.asset|Assets/Game/ItemData/Farm.asset|Assets/Game/ItemData/Restaurant.asset|Assets/Game/ItemData/Damage.asset|Assets/Game/ItemData/Speed.asset|Assets/Game/ItemData/AttackSpeed.asset|Assets/Game/ItemData/MaxHp.asset|Assets/Game/ItemData/Armor.asset|Assets/Game/ItemData/PickupRadius.asset|Assets/Game/ItemData/XpGain.asset|Assets/Game/ItemData/GoldGain.asset|Assets/Game/ItemData/CritChance.asset|Assets/Game/ItemData/BuildingCooldown.asset,레벨업/상점 후보 전체 목록
+WaveManager,normalWaves,Assets/Game/WaveData/Normal1.asset|Assets/Game/WaveData/Normal2.asset|Assets/Game/WaveData/Normal3.asset,노말 스테이지에서 무작위로 하나 선택
+WaveManager,eliteWaves,Assets/Game/WaveData/Elite1.asset|Assets/Game/WaveData/Elite2.asset,엘리트 스테이지에서 무작위로 하나 선택
+WaveManager,bossWave,Assets/Game/WaveData/Boss1.asset,보스 스테이지 고정
+GameManager,classes,Assets/Game/ClassData/Warrior.asset|Assets/Game/ClassData/Ranger.asset|Assets/Game/ClassData/Mage.asset,직업 목록. 여기 없는 직업은 선택 화면에 뜨지 않는다
+BuildingManager,placementBlockLayer,Building,이 레이어와 겹치면 설치를 막는다. 레이어 "이름"을 | 로 나열

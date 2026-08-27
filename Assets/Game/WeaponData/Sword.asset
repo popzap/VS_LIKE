@@ -1,0 +1,44 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7743b8d275c61e1489bfd9158b4aa25c, type: 3}
+  m_Name: Sword
+  m_EditorClassIdentifier: Assembly-CSharp::WeaponData
+  WeaponName: Sword
+  WeaponPrefab: {fileID: 7710070822802352840, guid: 5d7c717e7789c1e4bba31b411bd08f9c, type: 3}
+  Icon: {fileID: 21300000, guid: 009d725fe54e4a1499ff3903c4bf378e, type: 3}
+  Damage:
+  - 10
+  - 15
+  - 22
+  - 30
+  - 40
+  Cooldown:
+  - 1.5
+  - 1.3
+  - 1.1
+  - 0.9
+  - 0.7
+  ProjectileSize:
+  - 1
+  - 1.1
+  - 1.2
+  - 1.3
+  - 1.5
+  ProjectileCount: 0100000001000000020000000200000003000000
+  Range:
+  - 10
+  - 10
+  - 12
+  - 12
+  - 15
+  ProjectileSpeed: 8
+  ProjectilePrefab: {fileID: 691123369852945806, guid: b302c4b4e24ee7442a8c2232aa722f92, type: 3}

@@ -1,0 +1,33 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c5d555e62773af445a8d4cfd24658c8f, type: 3}
+  m_Name: Slime
+  m_EditorClassIdentifier: Assembly-CSharp::EnemyData
+  EnemyName: Slime
+  Prefab: {fileID: 3241561999773228563, guid: 35bc07b6190591b4eb4f3c5d45f08647, type: 3}
+  Sprite: {fileID: 21300000, guid: 0ad0062c5397add4696c77ee6635b474, type: 3}
+  Tint: {r: 1, g: 1, b: 1, a: 1}
+  SizeScale: 0.9
+  MaxHp: 45
+  MoveSpeed: 1.4
+  ContactDamage: 6
+  Armor: 1
+  XpDrop: 4
+  CurrencyDrop: 1
+  EliteHpMult: 2.5
+  EliteDamageMult: 1.5
+  EliteSpeedMult: 1.2
+  EliteXpMult: 3
+  BossHpMult: 10
+  BossDamageMult: 2.5
+  BossSpeedMult: 0.8
+  BossXpMult: 10

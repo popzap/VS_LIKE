@@ -1,0 +1,50 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 74ae27f0940bc414f86b6c2b546dc0c3, type: 3}
+  m_Name: Ranger
+  m_EditorClassIdentifier: Assembly-CSharp::CharacterClassData
+  ClassName: Ranger
+  Description: Fast skirmisher. Starts with a Bow.
+  StartingWeapon: {fileID: 11400000, guid: 56ae650b5ce5be245b72acdab53d8897, type: 2}
+  StartingWeaponLevel: 1
+  BonusMaxHp: -15
+  BonusMoveSpeed: 0.6
+  BonusDamage: 0
+  BonusAttackSpeed: -0.1
+  BonusProjectileSize: 0
+  BonusPickupRadius: 0.5
+  BonusCritChance: 0.05
+  BonusArmor: 0
+  BonusXpGain: 0
+  BonusGoldGain: 0
+  Portrait: {fileID: 21300000, guid: d138124b5892ca54b846acd1e187fa53, type: 3}
+  BodySprite: {fileID: -756708257, guid: 87bb800ad61c9854ababf57ee773bec2, type: 3}
+  WalkFrames:
+  - {fileID: -756708257, guid: 87bb800ad61c9854ababf57ee773bec2, type: 3}
+  - {fileID: 1940356330, guid: 87bb800ad61c9854ababf57ee773bec2, type: 3}
+  - {fileID: -557022856, guid: 87bb800ad61c9854ababf57ee773bec2, type: 3}
+  - {fileID: -1313636177, guid: 87bb800ad61c9854ababf57ee773bec2, type: 3}
+  - {fileID: -986727394, guid: 87bb800ad61c9854ababf57ee773bec2, type: 3}
+  - {fileID: -1140381844, guid: 87bb800ad61c9854ababf57ee773bec2, type: 3}
+  - {fileID: -2110044328, guid: 87bb800ad61c9854ababf57ee773bec2, type: 3}
+  - {fileID: -591683682, guid: 87bb800ad61c9854ababf57ee773bec2, type: 3}
+  - {fileID: 381208715, guid: 87bb800ad61c9854ababf57ee773bec2, type: 3}
+  - {fileID: 144098709, guid: 87bb800ad61c9854ababf57ee773bec2, type: 3}
+  - {fileID: 1842507612, guid: 87bb800ad61c9854ababf57ee773bec2, type: 3}
+  - {fileID: 259868033, guid: 87bb800ad61c9854ababf57ee773bec2, type: 3}
+  - {fileID: -431607502, guid: 87bb800ad61c9854ababf57ee773bec2, type: 3}
+  - {fileID: 1393179300, guid: 87bb800ad61c9854ababf57ee773bec2, type: 3}
+  - {fileID: 25107484, guid: 87bb800ad61c9854ababf57ee773bec2, type: 3}
+  - {fileID: -2120397590, guid: 87bb800ad61c9854ababf57ee773bec2, type: 3}
+  ModelPrefab: {fileID: 0}
+  UnlockedByDefault: 1
+  UnlockCost: 30

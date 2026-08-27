@@ -1,0 +1,42 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 567b635e4a430844e934f66bd727d30e, type: 3}
+  m_Name: Turret
+  m_EditorClassIdentifier: Assembly-CSharp::BuildingData
+  BuildingName: Turret
+  Prefab: {fileID: 8709231333208177678, guid: be6065fc59a122e49b19c5030dde7db8, type: 3}
+  Icon: {fileID: 21300000, guid: 36b024fcab94f004590aadcab4b4c3c9, type: 3}
+  Damage:
+  - 6
+  - 9
+  - 13
+  - 19
+  - 26
+  AttackRange:
+  - 5
+  - 5.5
+  - 6
+  - 6.5
+  - 7
+  AttackCooldown:
+  - 1.2
+  - 1.05
+  - 0.9
+  - 0.75
+  - 0.6
+  MaxCount: 0100000002000000020000000300000003000000
+  Output:
+  - 0
+  - 0
+  - 0
+  - 0
+  - 0

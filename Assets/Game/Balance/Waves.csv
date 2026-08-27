@@ -1,0 +1,19 @@
+# Waves.csv — 웨이브(스테이지 1회분) 구성 원본.
+#
+# Spawns 문법 : 적Id*마리수@스폰간격초  를 | 로 이어 붙인다. 예) Goblin*18@0.9|Zombie*22@0.6
+#   항목은 "동시"가 아니라 "순차"로 소환된다. Goblin 18마리를 다 뿌린 뒤 Zombie 로 넘어간다.
+#   따라서 (마리수 x 간격) 의 합이 SurvivalTime 을 넘으면 뒤쪽 항목은 등장하지 못한다.
+#
+# 클리어 조건 : UseTimerClear(시간 생존) / UseKillClear(킬 수) 는 동시에 켤 수 있고 먼저 만족되는 쪽이 이긴다.
+#   보스 웨이브는 KillTarget = (Spawns 총 마리수 + 보스 1) 로 잡되,
+#   적이 죽지 않고 사라지는 경우를 대비해 타이머를 넉넉히 켜 두어 진행이 막히지 않게 한다.
+#
+# EliteOverride : Elite 스테이지에서 Spawns 를 다 뿌린 뒤 EliteCount 마리 추가 소환 (엘리트 배율 적용).
+# BossOverride  : Boss  스테이지에서 Spawns 를 다 뿌린 뒤 1마리 소환 (보스 배율 적용).
+Id,UseTimerClear,SurvivalTime,UseKillClear,KillTarget,SpawnRadius,Spawns,EliteOverride,BossOverride,EliteCount
+Normal1,1,60,0,0,20,Slime*24@0.8|Goblin*40@0.7,,,1
+Normal2,1,75,0,0,20,Goblin*30@0.7|Zombie*30@0.9|Wolf*12@1,,,1
+Normal3,1,90,0,0,20,Zombie*36@0.8|Wolf*24@0.9|Demon*8@1.5|Goblin*40@0.6,,,1
+Elite1,1,90,0,0,20,Wolf*20@0.9|Zombie*24@0.8|Demon*10@1.4,Demon,,2
+Elite2,1,100,0,0,20,Zombie*30@0.8|Demon*14@1.2|Wolf*20@0.8,Ogre,,2
+Boss1,1,240,1,19,22,Zombie*12@1.2|Demon*6@2,,Ogre,1

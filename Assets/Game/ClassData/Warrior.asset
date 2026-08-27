@@ -1,0 +1,50 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 74ae27f0940bc414f86b6c2b546dc0c3, type: 3}
+  m_Name: Warrior
+  m_EditorClassIdentifier: Assembly-CSharp::CharacterClassData
+  ClassName: Warrior
+  Description: Tough melee fighter. Starts with a Sword.
+  StartingWeapon: {fileID: 11400000, guid: 1564dd8096332d94fb75c6cfc16461f5, type: 2}
+  StartingWeaponLevel: 1
+  BonusMaxHp: 30
+  BonusMoveSpeed: -0.3
+  BonusDamage: 0
+  BonusAttackSpeed: 0
+  BonusProjectileSize: 0
+  BonusPickupRadius: 0
+  BonusCritChance: 0
+  BonusArmor: 2
+  BonusXpGain: 0
+  BonusGoldGain: 0
+  Portrait: {fileID: 21300000, guid: f02e8961e0e84b84abf77e91a232f234, type: 3}
+  BodySprite: {fileID: -251139876, guid: 4a835d77cce42c74cab5adc8c7f7f6c7, type: 3}
+  WalkFrames:
+  - {fileID: -251139876, guid: 4a835d77cce42c74cab5adc8c7f7f6c7, type: 3}
+  - {fileID: 1509395585, guid: 4a835d77cce42c74cab5adc8c7f7f6c7, type: 3}
+  - {fileID: 1698211501, guid: 4a835d77cce42c74cab5adc8c7f7f6c7, type: 3}
+  - {fileID: 1739744332, guid: 4a835d77cce42c74cab5adc8c7f7f6c7, type: 3}
+  - {fileID: -1004532036, guid: 4a835d77cce42c74cab5adc8c7f7f6c7, type: 3}
+  - {fileID: -49893237, guid: 4a835d77cce42c74cab5adc8c7f7f6c7, type: 3}
+  - {fileID: -1484119437, guid: 4a835d77cce42c74cab5adc8c7f7f6c7, type: 3}
+  - {fileID: -1773531358, guid: 4a835d77cce42c74cab5adc8c7f7f6c7, type: 3}
+  - {fileID: -37166122, guid: 4a835d77cce42c74cab5adc8c7f7f6c7, type: 3}
+  - {fileID: -1944789546, guid: 4a835d77cce42c74cab5adc8c7f7f6c7, type: 3}
+  - {fileID: 1891015362, guid: 4a835d77cce42c74cab5adc8c7f7f6c7, type: 3}
+  - {fileID: 425895145, guid: 4a835d77cce42c74cab5adc8c7f7f6c7, type: 3}
+  - {fileID: -1595090517, guid: 4a835d77cce42c74cab5adc8c7f7f6c7, type: 3}
+  - {fileID: 1686573067, guid: 4a835d77cce42c74cab5adc8c7f7f6c7, type: 3}
+  - {fileID: 64783978, guid: 4a835d77cce42c74cab5adc8c7f7f6c7, type: 3}
+  - {fileID: 1194091118, guid: 4a835d77cce42c74cab5adc8c7f7f6c7, type: 3}
+  ModelPrefab: {fileID: 0}
+  UnlockedByDefault: 1
+  UnlockCost: 0

@@ -1,0 +1,174 @@
+// 스프라이트 외곽선 + 피격 플래시.
+//
+// 엘리트/보스를 "색 곱셈"으로 표시하던 걸 대체한다. 곱셈은 컬러 스프라이트를
+// 탁하게 만든다(녹색 좀비 x 보라 = 검정). 외곽선은 원화를 건드리지 않는다.
+//
+// 알파 팽창(dilation) 방식이다. 자기 알파가 낮은 픽셀에서 주변 8방향을 훑어
+// 하나라도 불투명하면 외곽선 색을 칠한다.
+//
+// ※ 스프라이트 임포트 설정이 Mesh Type = Full Rect 여야 한다.
+//    기본값 Tight 는 메시가 알파에 딱 붙어서 외곽선이 그려질 여백이 없다.
+//
+// 씬의 Light2D 가 Global/흰색/intensity 1 하나뿐이라 Unlit 으로 두어도
+// Sprite-Lit-Default 와 결과가 같다. 나중에 조명을 쓰면 이 셰이더도 손봐야 한다.
+
+Shader "VS_LIKE/SpriteOutline"
+{
+    Properties
+    {
+        [PerRendererData] _MainTex ("Sprite Texture", 2D) = "white" {}
+        _Color        ("Tint", Color) = (1,1,1,1)
+        _OutlineColor ("Outline Color", Color) = (1,1,1,1)
+        // 텍스처 픽셀 단위(512px 기준). 0 이면 외곽선이 완전히 꺼진다(일반 몹).
+        // 스프라이트가 화면에서 작으므로 12~20 은 되어야 눈에 띈다.
+        _OutlineWidth ("Outline Width (px)", Range(0,32)) = 0
+        _FlashColor   ("Flash Color", Color) = (1,1,1,1)
+        _FlashAmount  ("Flash Amount", Range(0,1)) = 0
+        // _MainTex_TexelSize 를 쓰면 2D SRP Batcher 가 이 머티리얼을 통째로 배칭에서
+        // 제외한다. 스프라이트가 전부 512px 로 통일돼 있으니 참조 크기를 직접 넘긴다.
+        _OutlineTexSize ("Outline Ref Texture Size (px)", Float) = 512
+
+        // ── 걷기 바운스 (버텍스) ──────────────────────────────────
+        // 스케일을 코드로 흔들면 CapsuleCollider2D 까지 같이 늘어나 판정이 변한다.
+        // 그래서 정점에서만 찌그러뜨린다. 물리와 완전히 분리된다.
+        // _AnimSpeed 가 0 이면 애니메이션이 꺼진다(기본값).
+        _AnimSpeed  ("Anim Speed", Float) = 0
+        _AnimPhase  ("Anim Phase", Float) = 0
+        _SquashAmt  ("Squash Amount", Range(0,0.4)) = 0.07
+        _BobAmt     ("Bob Amount", Range(0,0.4)) = 0.04
+
+        // 이동 방향으로 몸을 기울인다. 회전이 아니라 전단(shear)이라 발은 땅에 붙어 있고
+        // 위쪽만 밀린다. transform.rotation 을 돌리면 Rigidbody2D 와 싸우게 되므로 피한다.
+        _LeanAmt    ("Lean (shear)", Range(-0.4,0.4)) = 0
+    }
+
+    SubShader
+    {
+        Tags
+        {
+            "Queue"           = "Transparent"
+            "RenderType"      = "Transparent"
+            "IgnoreProjector" = "True"
+            "PreviewType"     = "Plane"
+            "RenderPipeline"  = "UniversalPipeline"
+        }
+
+        Cull Off
+        ZWrite Off
+        // Sprites/Default 와 동일한 프리멀티플라이드 알파 블렌딩
+        Blend One OneMinusSrcAlpha
+
+        Pass
+        {
+            HLSLPROGRAM
+            #pragma vertex vert
+            #pragma fragment frag
+
+            #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
+
+            struct Attributes
+            {
+                float4 positionOS : POSITION;
+                float4 color      : COLOR;
+                float2 uv         : TEXCOORD0;
+            };
+
+            struct Varyings
+            {
+                float4 positionCS : SV_POSITION;
+                float4 color      : COLOR;
+                float2 uv         : TEXCOORD0;
+            };
+
+            TEXTURE2D(_MainTex);
+            SAMPLER(sampler_MainTex);
+
+            CBUFFER_START(UnityPerMaterial)
+                half4  _Color;
+                half4  _OutlineColor;
+                half   _OutlineWidth;
+                float  _OutlineTexSize;
+                half4  _FlashColor;
+                half   _FlashAmount;
+                float  _AnimSpeed;
+                float  _AnimPhase;
+                half   _SquashAmt;
+                half   _BobAmt;
+                half   _LeanAmt;
+            CBUFFER_END
+
+            Varyings vert (Attributes IN)
+            {
+                Varyings OUT;
+
+                float3 pos = IN.positionOS.xyz;
+
+                if (_AnimSpeed > 0)
+                {
+                    // _Time.y 는 timeScale 의 영향을 받는다 → 일시정지/레벨업 중에는
+                    // 애니메이션도 같이 멈춘다. 의도한 동작이다.
+                    float s = sin(_Time.y * _AnimSpeed + _AnimPhase);
+
+                    // 부피 보존 느낌: 세로로 늘면 가로로 준다
+                    pos.y *= 1.0 + s * _SquashAmt;
+                    pos.x *= 1.0 - s * _SquashAmt * 0.7;
+                    pos.y += s * _BobAmt;
+                }
+
+                // 피벗(발밑)에서 멀수록 많이 밀린다 → 아래는 고정, 위만 기운다.
+                // pos.y 는 피벗 기준이므로 피벗이 Center 면 발도 반대로 밀린다.
+                // 지금 스프라이트는 전부 Center 피벗이라 그 정도 반동은 오히려 자연스럽다.
+                pos.x += pos.y * _LeanAmt;
+
+                OUT.positionCS = TransformObjectToHClip(pos);
+                OUT.uv         = IN.uv;
+                OUT.color      = IN.color;
+                return OUT;
+            }
+
+            half SampleAlpha(float2 uv)
+            {
+                // 스프라이트 UV 밖은 아틀라스의 다른 그림일 수 있다. 0 으로 막는다.
+                if (uv.x < 0 || uv.x > 1 || uv.y < 0 || uv.y > 1) return 0;
+                return SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, uv).a;
+            }
+
+            half4 frag (Varyings IN) : SV_Target
+            {
+                half4 tex = SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, IN.uv);
+                half4 col = tex * _Color * IN.color;
+
+                // 피격 플래시 — 알파는 유지한 채 색만 밀어 올린다
+                col.rgb = lerp(col.rgb, _FlashColor.rgb, _FlashAmount * col.a);
+
+                if (_OutlineWidth > 0)
+                {
+                    float d = _OutlineWidth / max(_OutlineTexSize, 1.0);
+
+                    // 반지름 d 의 원 위에서 16방향을 샘플한다.
+                    // 축/대각 8방향만 쓰면 대각선이 sqrt(2) 만큼 멀리 찍혀 모서리가
+                    // 부풀고, 폭이 커질수록 외곽선이 네모난 덩어리가 된다.
+                    // 각도는 컴파일 타임 상수라 sin/cos 는 폴딩된다.
+                    half a = 0;
+                    [unroll]
+                    for (int j = 0; j < 16; j++)
+                    {
+                        float ang = 6.28318530718 / 16.0 * j;
+                        a = max(a, SampleAlpha(IN.uv + float2(cos(ang), sin(ang)) * d));
+                    }
+
+                    // 자기 자신이 비어 있고 이웃이 차 있는 곳 = 외곽선
+                    half rim = saturate(a - tex.a) * _OutlineColor.a;
+                    col.rgb = lerp(col.rgb, _OutlineColor.rgb, rim);
+                    col.a   = saturate(col.a + rim);
+                }
+
+                col.rgb *= col.a;   // 프리멀티플라이드
+                return col;
+            }
+            ENDHLSL
+        }
+    }
+
+    Fallback "Sprites/Default"
+}

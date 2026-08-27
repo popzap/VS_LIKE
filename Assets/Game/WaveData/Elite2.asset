@@ -1,0 +1,32 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 24bfa9aa30742a941a848b21356a9fda, type: 3}
+  m_Name: Elite2
+  m_EditorClassIdentifier: Assembly-CSharp::WaveData
+  UseTimerClear: 1
+  SurvivalTime: 100
+  UseKillClear: 0
+  KillTarget: 0
+  Spawns:
+  - Enemy: {fileID: 11400000, guid: 6886e1064a7c8504cbefc1203a66f2bb, type: 2}
+    Count: 30
+    SpawnInterval: 0.8
+  - Enemy: {fileID: 11400000, guid: 0a732f4198fbdec43a4e3a115015f59d, type: 2}
+    Count: 14
+    SpawnInterval: 1.2
+  - Enemy: {fileID: 11400000, guid: 37e9bcc2a4d3cee4dac46fff477052dc, type: 2}
+    Count: 20
+    SpawnInterval: 0.8
+  SpawnRadius: 20
+  EliteOverride: {fileID: 11400000, guid: c1e01a681911aaa4784749a69ba1f58c, type: 2}
+  BossOverride: {fileID: 0}
+  EliteCount: 2

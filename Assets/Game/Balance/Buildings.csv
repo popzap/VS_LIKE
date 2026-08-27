@@ -1,0 +1,13 @@
+# Buildings.csv — 설치형 건물 밸런스 원본. 배열 인덱스 = 레벨-1.
+# MaxCount = 그 레벨에서 동시에 존재할 수 있는 개수.
+#
+# AttackCooldown = 건물이 "한 번 일하는" 주기(초). 전투 건물은 발사 간격, 비전투 건물은 산출 주기.
+#                  실제 주기는 여기에 PlayerStats.Final.BuildingCooldown 배율이 곱해진다.
+# Output         = 쿨다운 1회당 산출량. Village=경험치, Farm=골드, Restaurant=회복량.
+#                  전투 건물(Turret/Bombard)은 Damage 를 쓰므로 0.
+Id,BuildingName,Prefab,Icon,Damage,AttackRange,AttackCooldown,MaxCount,Output
+Turret,Turret,Assets/Prefabs/Building_Turret.prefab,Assets/Game/Sprites/Buildings/Turret.png,6|9|13|19|26,5|5.5|6|6.5|7,1.2|1.05|0.9|0.75|0.6,1|2|2|3|3,0|0|0|0|0
+Bombard,Bombard,Assets/Prefabs/Building_Bombard.prefab,Assets/Game/Sprites/Buildings/Bombard.png,20|29|42|58|80,3.5|3.8|4.2|4.6|5,3|2.7|2.4|2|1.6,1|1|1|2|2,0|0|0|0|0
+Village,Village,Assets/Prefabs/Building_Village.prefab,Assets/Game/Sprites/Buildings/House.png,0|0|0|0|0,0|0|0|0|0,6|5.5|5|4.5|4,1|1|2|2|3,2|3|5|7|10
+Farm,Farm,Assets/Prefabs/Building_Farm.prefab,Assets/Game/Sprites/Buildings/Farm.png,0|0|0|0|0,0|0|0|0|0,12|11|10|9|8,1|1|2|2|3,1|2|3|4|6
+Restaurant,Restaurant,Assets/Prefabs/Building_Restaurant.prefab,Assets/Game/Sprites/Buildings/Restaurant.png,0|0|0|0|0,0|0|0|0|0,60|55|50|45|40,1|1|1|2|2,15|25|40|60|85

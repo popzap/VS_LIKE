@@ -1,0 +1,26 @@
+# Items.csv — 레벨업 선택지 / 상점 판매 목록의 원본.
+# Category = Weapon | Building | Passive.
+# RefId    = 그 카테고리 테이블의 Id. Weapon 이면 Weapons.csv 의 Id, Passive 면 Passives.csv 의 Id.
+# 값에 쉼표를 쓰려면 큰따옴표로 감싼다. Description 은 UI 에 그대로 나오므로 영문 유지.
+# ShopPrice 는 상점 구매가. 제거 환급은 ShopManager.refundRate(0.5) 배.
+Id,ItemName,Description,Icon,Category,MaxLevel,RefId,ShopPrice
+Sword,Sword,Swings a blade at the nearest enemy.,Assets/Game/Sprites/Weapons/Sword.png,Weapon,5,Sword,8
+Bow,Bow,Long range shots that fan out as it levels.,Assets/Game/Sprites/Weapons/Bow.png,Weapon,5,Bow,8
+Gun,Gun,Rapid low damage fire.,Assets/Game/Sprites/Weapons/Gun.png,Weapon,5,Gun,9
+Fireball,Fireball,Explodes on the nearest enemy.,Assets/Game/Sprites/Weapons/Fireball.png,Weapon,5,Fireball,10
+Bomb,Bomb,Slow but heavy area damage.,Assets/Game/Sprites/Weapons/Bomb.png,Weapon,5,Bomb,11
+Turret,Turret,Deploys a turret that shoots the nearest enemy.,Assets/Game/Sprites/Buildings/Turret.png,Building,5,Turret,10
+Bombard,Bombard,Deploys a cannon that damages every enemy around it.,Assets/Game/Sprites/Buildings/Bombard.png,Building,5,Bombard,12
+Village,Village,Deploys a village that generates experience over time.,Assets/Game/Sprites/Buildings/House.png,Building,5,Village,10
+Farm,Farm,Deploys a farm that generates gold over time.,Assets/Game/Sprites/Buildings/Farm.png,Building,5,Farm,10
+Restaurant,Restaurant,Deploys a restaurant that drops a healing meal. The next one waits until you eat it.,Assets/Game/Sprites/Buildings/Restaurant.png,Building,5,Restaurant,12
+Damage,Damage Up,Increases all weapon damage.,Assets/Game/Sprites/Passives/Damage.png,Passive,5,Damage,7
+Speed,Move Speed,Increases movement speed.,Assets/Game/Sprites/Passives/MoveSpeed.png,Passive,5,MoveSpeed,6
+AttackSpeed,Attack Speed,Shortens weapon cooldowns.,Assets/Game/Sprites/Passives/AttackSpeed.png,Passive,5,AttackSpeed,7
+MaxHp,Max Health,Increases maximum health.,Assets/Game/Sprites/Passives/MaxHp.png,Passive,5,MaxHp,6
+Armor,Armor,Reduces damage taken.,Assets/Game/Sprites/Passives/Armor.png,Passive,5,Armor,6
+PickupRadius,Pickup Radius,Collects experience from farther away.,Assets/Game/Sprites/Passives/PickupRadius.png,Passive,5,PickupRadius,5
+XpGain,Experience Gain,Increases experience gained.,Assets/Game/Sprites/Passives/XpGain.png,Passive,5,XpGain,6
+GoldGain,Gold Gain,Increases gold gained.,Assets/Game/Sprites/Passives/GoldGain.png,Passive,5,GoldGain,6
+CritChance,Critical Chance,Increases critical hit chance.,Assets/Game/Sprites/Passives/CritChance.png,Passive,5,CritChance,7
+BuildingCooldown,Building Speed,Buildings work more often.,Assets/Game/Sprites/Passives/BuildingCooldown.png,Passive,5,BuildingCooldown,7

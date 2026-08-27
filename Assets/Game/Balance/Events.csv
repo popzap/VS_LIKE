@@ -1,0 +1,9 @@
+# Events.csv — 이벤트 스테이지에서 무작위로 하나 뽑혀 실행된다. (씬의 EventManager 에 직접 기록됨)
+# TriggerRandomWave=1 이면 보상을 준 뒤 노말 웨이브가 하나 시작된다. 0 이면 곧바로 다음 노드로 넘어간다.
+# Title/Description 은 UI 및 로그에 그대로 나오므로 영문 유지.
+Title,Description,XpBonus,CurrencyBonus,TriggerRandomWave
+Abandoned Cache,You find a supply crate left behind by a fallen adventurer.,0,12,0
+Ancient Shrine,Touching the shrine floods you with forgotten knowledge.,40,0,0
+Wandering Merchant,A merchant pays well for the trophies you carry.,0,20,0
+Ambush,The path was a trap. Enemies close in from every side.,0,0,1
+Cursed Offering,The altar grants power but wakes what slept beneath it.,60,10,1
