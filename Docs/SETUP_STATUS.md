@@ -1244,12 +1244,22 @@ Lv1 무기가 매 발 쏘고 있었던 셈이다.
 
 ### 커밋 범위를 정한 근거
 
-전체 프로젝트는 248MB 였다. 그대로 올리면 **되돌릴 수 없는 히스토리**가 되므로
+**프로젝트 폴더는 실측 3.1GB 였다.** 그대로 올리면 **되돌릴 수 없는 히스토리**가 되므로
 첫 커밋 전에 무엇을 뺄지부터 정했다.
+
+```
+3.1G  전체
+├ 2.8G  Library/          ← 에디터 캐시. 이것만으로 GitHub 권장치(1GB)를 3배 넘긴다
+├ 147M  Assets/
+├ 100M  GeneratedAssets/
+├  21M  Logs/
+└ 9.9M  Temp/
+```
 
 | 뺀 것 | 용량 | 이유 |
 |---|---|---|
-| `Library/` `Temp/` `Logs/` `UserSettings/` | — | 에디터가 재생성한다 |
+| `Library/` | **2.8GB** | 에디터가 임포트 결과를 캐시하는 곳. 지워도 다시 만들어진다 |
+| `Temp/` `Logs/` `UserSettings/` | 31MB | 실행 중 산출물 · 개인 에디터 설정 |
 | `*.csproj` `*.slnx` | — | IDE 가 재생성한다 |
 | `GeneratedAssets/` | **약 100MB** | Unity AI 생성 캐시. `Assets/` 밖이고 게임 동작에 필요 없다. **결과물은 `Assets/Game/Sprites` 에 따로 들어가 있다** |
 | `Assets/Fonts/web/` | **24MB** | woff/woff2/css — **Unity 가 아예 못 읽는다.** 지워도 잃을 게 없다 (삭제) |
