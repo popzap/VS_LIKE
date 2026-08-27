@@ -74,7 +74,7 @@ public class BuildingBase : MonoBehaviour
     protected virtual void Attack(Transform target)
     {
         // 기본 구현: 즉시 데미지
-        target.GetComponent<EnemyBase>()?.TakeDamage(Data.GetDamage(Level));
+        target.GetComponent<EnemyBase>()?.TakeDamage(Data.GetDamage(Level), transform.position);
     }
 
     protected Transform FindNearestEnemy()

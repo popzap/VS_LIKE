@@ -34,6 +34,17 @@ public class WaveManager : MonoBehaviour
     /// <summary>런 전체 누적 경과 시간 (초).</summary>
     public float TotalElapsedTime  { get; private set; }
 
+    /// <summary>
+    /// 현재 웨이브 클리어까지 남은 시간 (초). 시간 클리어가 아닌 웨이브면 <c>-1</c>.
+    /// <para>HUD 가 매 프레임 폴링한다. <c>OnTimerUpdated</c> 이벤트도 있지만, 구독은
+    /// <c>GameManager.Start()</c> 가 참조를 채우기 전에 일어날 수 있어(I-8·I-38 과 같은
+    /// 실행 순서 경쟁) HUD 쪽은 폴링으로 간다.</para>
+    /// </summary>
+    public float WaveRemainingTime { get; private set; } = -1f;
+
+    /// <summary>현재 웨이브가 진행 중인지. HUD 가 표시 여부를 정할 때 쓴다.</summary>
+    public bool  IsWaveActive => _waveActive;
+
     // ── 이벤트 ───────────────────────────────────────────────────
     public System.Action<float> OnTimerUpdated;   // 남은 시간
     public System.Action<int>   OnKillCountUpdated;
@@ -62,7 +73,14 @@ public class WaveManager : MonoBehaviour
         _spawnRoutine = StartCoroutine(SpawnRoutine());
 
         if (_currentWaveData.UseTimerClear)
-            _timerRoutine = StartCoroutine(TimerRoutine());
+        {
+            WaveRemainingTime = _currentWaveData.SurvivalTime;
+            _timerRoutine     = StartCoroutine(TimerRoutine());
+        }
+        else
+        {
+            WaveRemainingTime = -1f;   // 킬 클리어 웨이브 — HUD 는 타이머를 숨긴다
+        }
     }
 
     public void ResumeWave()
@@ -139,6 +157,7 @@ public class WaveManager : MonoBehaviour
             {
                 remaining -= Time.deltaTime;
                 TotalElapsedTime += Time.deltaTime;
+                WaveRemainingTime = Mathf.Max(0f, remaining);
                 OnTimerUpdated?.Invoke(remaining);
             }
             yield return null;

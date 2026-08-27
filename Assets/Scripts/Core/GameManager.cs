@@ -1,3 +1,4 @@
+using System.Collections;
 using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.SceneManagement;
@@ -256,6 +257,39 @@ public class GameManager : MonoBehaviour
         float mult  = PlayerStats.Current != null ? PlayerStats.Current.Final.GoldGain : 1f;
         int   final = Mathf.Max(1, Mathf.RoundToInt(baseAmount * mult));
         MetaProgression.AddCurrency(final);
+    }
+
+    // ── 히트스톱 ─────────────────────────────────────────────────
+    //
+    // 큰 타격(엘리트/보스 처치) 순간에 시간을 아주 짧게 멈춰 "묵직함"을 만든다.
+    //
+    // ⚠️ Time.timeScale 은 이 프로젝트에서 여러 곳이 공유한다 —
+    //    WaveManager.PauseWave() 가 0, 일시정지·레벨업·스테이지 결과창이 각각 0/1 을 쓴다.
+    //    아무 때나 끼어들어 1f 로 되돌리면 일시정지가 저절로 풀린다.
+    //    그래서 (1) 웨이브 진행 중일 때만 시작하고 (2) 이미 1f 가 아니면 (누가 멈춰 놨으면)
+    //    아예 손대지 않으며 (3) 복구 시점에도 여전히 Wave 인지 다시 확인한다.
+
+    private Coroutine _hitstopRoutine;
+
+    /// <summary>지정한 실시간(초) 동안 게임을 멈춘다. 웨이브 진행 중에만 동작한다.</summary>
+    public void DoHitstop(float seconds)
+    {
+        if (CurrentState != GameState.Wave) return;
+        if (!Mathf.Approximately(Time.timeScale, 1f)) return;   // 누가 이미 멈춰 놨다
+        if (_hitstopRoutine != null) return;                    // 겹치면 무시 (연장하지 않는다)
+
+        _hitstopRoutine = StartCoroutine(HitstopRoutine(seconds));
+    }
+
+    private IEnumerator HitstopRoutine(float seconds)
+    {
+        Time.timeScale = 0f;
+        yield return new WaitForSecondsRealtime(seconds);
+
+        // 멈춰 있는 사이에 레벨업 패널이 뜨거나 웨이브가 끝났을 수 있다.
+        // 그런 경우 timeScale 은 그쪽 주인에게 맡기고 손대지 않는다.
+        if (CurrentState == GameState.Wave) Time.timeScale = 1f;
+        _hitstopRoutine = null;
     }
 
     /// <summary>레벨업 선택 완료 후 LevelUpManager에서 호출.</summary>

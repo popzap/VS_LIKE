@@ -49,7 +49,8 @@ public class AoeProjectile : MonoBehaviour
         foreach (var h in hits)
         {
             var enemy = h.GetComponent<EnemyBase>();
-            if (enemy != null) enemy.TakeDamage(_damage);
+            // 폭심에서 바깥으로 밀어낸다.
+            if (enemy != null) enemy.TakeDamage(_damage, transform.position);
         }
 
         if (frames != null && frames.Length > 0 && sr != null && frameRate > 0f)

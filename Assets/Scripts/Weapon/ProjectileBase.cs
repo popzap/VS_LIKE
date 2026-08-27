@@ -36,7 +36,8 @@ public class ProjectileBase : MonoBehaviour
     protected virtual void OnTriggerEnter2D(Collider2D other)
     {
         if (!other.CompareTag("Enemy")) return;
-        other.GetComponent<EnemyBase>()?.TakeDamage(Damage);
+        // 넉백 기준점은 투사체 위치 — 날아온 방향으로 밀린다.
+        other.GetComponent<EnemyBase>()?.TakeDamage(Damage, transform.position);
         Despawn();
     }
 

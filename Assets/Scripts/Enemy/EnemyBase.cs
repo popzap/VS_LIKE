@@ -1,3 +1,4 @@
+using System.Collections;
 using UnityEngine;
 
 [RequireComponent(typeof(Rigidbody2D))]
@@ -46,6 +47,13 @@ public class EnemyBase : MonoBehaviour
         Armor         = data.Armor;
         XpDrop        = data.XpDrop        * xpMult;
         CurrencyDrop  = data.CurrencyDrop;
+
+        // ── 풀 재사용 대비 초기화 ────────────────────────────────
+        // 이전 생애의 넉백/사망 연출 잔재를 지운다. 안 지우면 갓 스폰된 적이
+        // 잠깐 못 움직이거나(넉백 타이머) 충돌이 꺼진 채로 살아난다(사망 연출).
+        _knockbackTimer = 0f;
+        if (_deathPopRoutine != null) { StopCoroutine(_deathPopRoutine); _deathPopRoutine = null; }
+        SetCollidersEnabled(true);
 
         OnInitialized();
     }
@@ -104,6 +112,16 @@ public class EnemyBase : MonoBehaviour
     protected virtual void FixedUpdate()
     {
         if (IsDead || PlayerTransform == null) return;
+
+        // 넉백 중에는 추적을 멈춘다.
+        // ⚠️ MoveTowardsPlayer 가 linearVelocity 를 통째로 덮어쓰기 때문에,
+        //    이 return 이 없으면 넉백 속도가 다음 물리 프레임에 즉시 지워진다.
+        if (_knockbackTimer > 0f)
+        {
+            _knockbackTimer -= Time.fixedDeltaTime;
+            return;
+        }
+
         MoveTowardsPlayer();
     }
 
@@ -115,7 +133,13 @@ public class EnemyBase : MonoBehaviour
 
     // ── 전투 ────────────────────────────────────────────────────
 
-    public virtual void TakeDamage(float raw)
+    // ── 넉백 ────────────────────────────────────────────────────
+    private const float KnockbackForce = 6f;
+    private const float KnockbackTime  = 0.10f;
+    private float _knockbackTimer;
+
+    /// <param name="from">피해가 날아온 위치. 넉백 방향을 정한다. 생략하면 넉백 없음.</param>
+    public virtual void TakeDamage(float raw, Vector2? from = null)
     {
         if (IsDead) return;
         float dmg = Mathf.Max(1, raw - Armor);
@@ -126,7 +150,26 @@ public class EnemyBase : MonoBehaviour
         // 데미지 팝업 (이벤트로 분리하거나 DamagePopupManager 사용)
         DamagePopupManager.Instance?.Show(transform.position, dmg);
 
-        if (CurrentHp <= 0) Die();
+        if (CurrentHp <= 0) { Die(); return; }
+
+        ApplyKnockback(from);
+    }
+
+    private void ApplyKnockback(Vector2? from)
+    {
+        if (from == null) return;
+
+        // 등급이 높을수록 덜 밀린다. 보스는 아예 안 밀린다 —
+        // 밀리는 보스는 위압감이 없고, 벽 없는 아레나에서 무한히 밀려나 도망가 버린다.
+        float resist = IsBoss ? 0f : IsElite ? 0.4f : 1f;
+        if (resist <= 0f) return;
+
+        Vector2 dir = (Vector2)transform.position - from.Value;
+        if (dir.sqrMagnitude < 0.0001f) dir = Random.insideUnitCircle;   // 정확히 겹친 경우
+        dir.Normalize();
+
+        Rb.linearVelocity = dir * (KnockbackForce * resist);
+        _knockbackTimer   = KnockbackTime;
     }
 
     protected virtual void Die()
@@ -145,8 +188,66 @@ public class EnemyBase : MonoBehaviour
         // 킬 카운트
         GameManager.Instance?.WaveManager.OnEnemyKilled(this);
 
+        PlayDeathImpact();
+
         OnDeath();
+
+        // 사망 연출이 끝나면 코루틴이 ForceDespawn 을 부른다.
+        // 연출을 못 돌리는 상황(비활성 상태 등)이면 즉시 반환한다.
+        if (isActiveAndEnabled) _deathPopRoutine = StartCoroutine(DeathPopRoutine());
+        else                    ForceDespawn();
+    }
+
+    // ── 사망 연출 ────────────────────────────────────────────────
+    //
+    // 파티클 애셋이 아직 없어서 스케일 "팝"으로 대신한다.
+    // 살짝 부풀었다가 0 으로 줄어들며 사라진다.
+    // EnemyVisual 은 셰이더로 흔들 뿐 localScale 을 건드리지 않으므로 충돌하지 않고,
+    // OnInitialized() 가 재사용 때마다 localScale 을 다시 세팅하므로 잔재도 남지 않는다.
+
+    private const float DeathPopTime = 0.14f;
+    private Coroutine _deathPopRoutine;
+
+    private IEnumerator DeathPopRoutine()
+    {
+        SetCollidersEnabled(false);   // 시체에 부딪혀 피해를 입지 않게
+
+        Vector3 baseScale = transform.localScale;
+        float   t         = 0f;
+
+        while (t < DeathPopTime)
+        {
+            t += Time.deltaTime;
+            float p = Mathf.Clamp01(t / DeathPopTime);
+            // 앞 30% 는 1.25배까지 부풀고, 나머지 70% 는 0 으로 수축
+            float s = p < 0.3f ? Mathf.Lerp(1f, 1.25f, p / 0.3f)
+                               : Mathf.Lerp(1.25f, 0f, (p - 0.3f) / 0.7f);
+            transform.localScale = baseScale * s;
+            yield return null;
+        }
+
+        transform.localScale = baseScale;   // 풀에 돌아가기 전 원복
+        _deathPopRoutine     = null;
         ForceDespawn();
+    }
+
+    /// <summary>처치 순간의 화면 연출. 엘리트/보스에만 건다.</summary>
+    private void PlayDeathImpact()
+    {
+        // 잡몹은 초당 수십 마리가 죽는다. 매번 흔들거나 멈추면 화면이 계속 덜컹거려
+        // 타격감이 아니라 멀미가 된다. 무게가 있는 대상에만 준다.
+        if (!IsElite && !IsBoss) return;
+
+        var cam = Camera.main != null ? Camera.main.GetComponent<CameraController>() : null;
+        if (cam != null) cam.Shake(IsBoss ? 0.45f : 0.20f, IsBoss ? 0.5f : 0.25f);
+
+        GameManager.Instance?.DoHitstop(IsBoss ? 0.09f : 0.05f);
+    }
+
+    private void SetCollidersEnabled(bool on)
+    {
+        foreach (var col in GetComponents<Collider2D>())
+            col.enabled = on;
     }
 
     protected virtual void OnDeath() { }

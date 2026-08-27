@@ -6,7 +6,7 @@
 > 기존의 「C# 스크립트는 완성 단계」라는 전제와 「요청 없이 코드 건드리지 말 것」 규칙이 **해제됨**.
 > 이제 게임 완성을 위해 C# 스크립트 신규 작성·수정이 허용된다.
 >
-> **최종 갱신:** 2026-08-28 (12차 — 장르 완성도 갭 분석 · [`ROADMAP.md`](ROADMAP.md) 신설)
+> **최종 갱신:** 2026-08-28 (13차 — ROADMAP 1단계: HUD 정보 3종 · 타격 반응 · 오디오 배관)
 > 검증 방식: Unity MCP + Play 모드 스모크 테스트 + YAML 직접 파싱
 > **검증 기준 파일:** `Assets/Scenes/SampleScene.unity`
 >
@@ -1339,7 +1339,129 @@ Lv1 무기가 매 발 쏘고 있었던 셈이다.
 
 ---
 
-## 2-1. 이슈 목록 (I-1 ~ I-42 — 전부 해결됨)
+## 2-17. ✅ ROADMAP 1단계 — HUD 정보 3종 · 타격 반응 · 오디오 배관 (I-43~I-45, 2026-08-28 13차)
+
+[`ROADMAP.md`](ROADMAP.md) §8 의 1단계("**한 판이 재미있어지는 최소치**")를 통째로 실행했다.
+셋 다 "없어서 안 보이던 것"이라 눈에 띄는 변화가 크다.
+
+### 원인
+
+**I-43 — 플레이어가 자기 상황을 볼 수 없었다**
+HUD 에 HP 와 경험치뿐이었다. **언제 끝나는지 · 몇 마리 잡았는지 · 돈이 얼마인지**가 전부 화면 밖.
+`WaveManager` 는 남은 시간을 `TimerRoutine` 의 **지역 변수**로만 들고 있어 밖에서 읽을 방법조차 없었다.
+게다가 `HUD/CurrencyText` 는 **씬에 존재하는데 아무 스크립트도 굴리지 않는 죽은 UI** 였다.
+
+**I-44 — 때려도 맞은 티가 안 났다**
+적은 피격 시 흰색으로 번쩍일 뿐(I-26) **밀리지 않고**, 죽을 때는 그 자리에서 **한 프레임에 사라졌다**
+(`OnDeath()` 가 빈 함수 `{ }`, `ForceDespawn()` 직행). 화면 흔들기는 `Shake()` API 가 있는데
+호출자가 `PlayerController.cs:128`(플레이어 **피격**) **하나뿐**이었다 — 적을 죽일 때는 아무 반응도 없었다.
+
+**I-45 — SFX 볼륨을 0 으로 내리면 BGM 도 같이 꺼졌다**
+`AudioManager.SetSFXVolume()` 이 `AudioListener.volume`(**전역 마스터**)을 건드렸다.
+BGM 도 그 마스터를 통과하므로 최종 음량이 `bgmSource.volume × SfxVolume` 이 되어,
+SFX 를 끄면 BGM 이 같이 죽었다. 애초에 **효과음을 재생하는 함수 자체가 없었다** (`PlaySfx` 0건).
+
+### 변경한 파일
+
+| 파일 | 변경 |
+|---|---|
+| `Wave/WaveManager.cs` | `WaveRemainingTime` / `IsWaveActive` 프로퍼티 노출. 킬 클리어 웨이브는 `-1` 로 두어 HUD 가 타이머를 숨기게 함 |
+| `UI/HUDManager.cs` | `timerText`/`killText`/`currencyText` 필드 + `RefreshWaveInfo()`. 초·값이 **바뀔 때만** 문자열 생성 |
+| `Core/GameManager.cs` | `using System.Collections` + `DoHitstop(float)` / `HitstopRoutine` |
+| `Enemy/EnemyBase.cs` | `TakeDamage(float, Vector2? from)` 넉백 · `DeathPopRoutine` 사망 연출 · `PlayDeathImpact()` 흔들기+히트스톱 · `Initialize` 에 풀 재사용 초기화 |
+| `Weapon/ProjectileBase.cs` · `Weapon/AoeProjectile.cs` · `Building/BuildingBase.cs` | 넉백 기준점(`transform.position`) 전달 |
+| `UI/AudioManager.cs` | **전면 재작성.** 볼륨 계통 분리 · `PlaySfx`/`PlayBgm`/`StopBgm` · 보이스 풀 16 · 중복 컷 |
+| `Assets/Scenes/SampleScene.unity` | `TimerText`/`KillText` 신규 + `CurrencyText` 재배치, HUDManager 3필드 배선 |
+
+### 함정 세 개
+
+**1. HUD 는 `WaveManager` 를 구독하지 않고 폴링한다.**
+`OnTimerUpdated` 이벤트가 이미 있지만 쓰지 않았다. `GameManager.Instance.WaveManager` 는
+`GameManager.Start()` 에서 채워지는데 **모든 `Awake` 가 모든 `Start` 보다 먼저** 돌고
+`Start` 끼리의 순서는 보장되지 않는다. `Start` 에서 구독하면 조용히 null 을 잡고 **기능만 죽는다**
+— I-8 · I-38 과 정확히 같은 함정이다. 매 프레임 폴링 + 변경 감지가 안전하고 비용도 사실상 0.
+
+**2. 넉백은 `MoveTowardsPlayer()` 보다 먼저 `return` 해야 한다.**
+`MoveTowardsPlayer()` 가 `Rb.linearVelocity` 를 **통째로 덮어쓴다.** 넉백 속도를 넣어도
+다음 물리 프레임에 즉시 지워진다. `FixedUpdate` 맨 앞에서 `_knockbackTimer` 를 보고 빠져나가야 한다.
+
+**3. 히트스톱이 `Time.timeScale` 을 함부로 `1f` 로 되돌리면 일시정지가 저절로 풀린다.**
+이 프로젝트는 `WaveManager.PauseWave()`(0) · 일시정지 · 레벨업 · 스테이지 결과창이 전부
+같은 `Time.timeScale` 을 공유한다. 그래서 3중 가드를 걸었다 —
+(1) `CurrentState == Wave` 일 때만 시작 (2) 이미 `1f` 가 아니면 **손대지 않음**
+(3) 복구 시점에 **다시** `Wave` 인지 확인. 대기는 `WaitForSecondsRealtime`.
+
+### ROADMAP 과 다르게 간 것 두 가지
+
+| 항목 | ROADMAP | 실제 | 이유 |
+|---|---|---|---|
+| F-5 처치 흔들림 | "적 처치 시 미세 `Shake()`" | **엘리트/보스만** | 잡몹은 초당 수십 마리가 죽는다. 매번 흔들면 타격감이 아니라 멀미다 |
+| A-1 AudioMixer | Master/BGM/SFX 3그룹 믹서 | **믹서 없이 계통 분리** | ① 오디오 파일이 0개라 라우팅할 소리가 없다 ② 실제 버그는 믹서 없이 완전히 해결된다 ③ `.mixer` 를 스크립트로 만들려면 `AudioMixerController`(에디터 내부 API)에 `System.Reflection` 이 필요한데 **금지 사항**이고, YAML 수기 작성은 깨질 위험이 크다 |
+
+> 믹서가 실제로 필요한 시점은 **덕킹·필터 같은 DSP** 를 넣을 때다.
+> 그때 사람이 에디터에서 믹서를 만들고 `AudioManager` 에 `AudioMixerGroup` 필드만 꽂으면 되도록
+> 구조는 열어 뒀다. 재개 조건은 [`TODO.md`](TODO.md) 에 적었다.
+
+### 사망 연출을 파티클로 안 한 이유
+
+`ParticleSystem` 사용처가 프로젝트 전체에 **0건**이고 파티클 애셋도 없다.
+대신 **스케일 팝**(1 → 1.25 → 0, 0.14초)으로 대체했다. 이게 안전한 이유:
+`EnemyVisual` 은 셰이더 **정점**을 흔들 뿐 `localScale` 을 건드리지 않고,
+`OnInitialized()` 가 풀 재사용 때마다 `localScale` 을 다시 세팅하므로 잔재가 남지 않는다.
+연출 중에는 `Collider2D` 를 전부 꺼서 **시체에 부딪혀 피해를 입는 일**을 막았다.
+
+### 수치
+
+| 항목 | 값 | 근거 |
+|---|---|---|
+| 넉백 세기 / 지속 | `6.0` / `0.10s` | 잡몹 이동속도(1.6)의 약 4배. 확실히 밀리되 대열이 무너지진 않는 선 |
+| 넉백 저항 | 잡몹 `1.0` · 엘리트 `0.4` · 보스 `0.0` | 밀리는 보스는 위압감이 없고, **벽 없는 아레나**라 무한히 밀려나 도망가 버린다 |
+| 사망 팝 | `0.14s` (앞 30% 팽창 → 70% 수축) | 더 길면 시체가 쌓여 보이고, 더 짧으면 안 보인다 |
+| 히트스톱 | 엘리트 `0.05s` · 보스 `0.09s` | 0.1s 를 넘기면 "멈췄다"가 아니라 "렉"으로 느껴진다 |
+| 처치 흔들기 | 엘리트 `(0.20, 0.25)` · 보스 `(0.45, 0.50)` | 플레이어 피격(`shakeMagnitude`)보다 약하게 — 내가 맞은 게 더 중요하다 |
+| 타이머 경고색 | `≤ 10초` 부터 빨강 | |
+| SFX 보이스 | `16` | |
+| 중복 컷 창 | `0.04s` | 60fps 기준 약 2.4프레임. 같은 클립이 겹치면 위상이 뭉개져 "찢어지는" 소리가 난다 |
+
+### 검증 로그
+
+**HUD (임시 `HudSmokeTest`)**
+
+```
+[HUDTEST] state=Wave waveActive=True remain=86.0 kills=0 gold=164
+[HUDTEST] TimerText='1:26' KillText='0 Kills' CurrencyText='164 G'
+```
+
+레이아웃 겹침 없음 수치 확인: `CurrencyText` x[-250,-70] vs `OptionsButton` x[-52,4].
+`Unity_Camera_Capture` 는 **씬 뷰**를 찍으므로 Screen Space Overlay 캔버스가 안 보인다 → 로그로 검증.
+
+**게임 필 (임시 `FeelTest`)**
+
+```
+[FEELTEST] F-2 before=1.60 after=6.00 dirX=-6.00   ← 오른쪽에서 때려 왼쪽으로 밀림
+[FEELTEST] F-2 0.3s 후 vel=1.60                    ← 추적 속도로 복귀
+[FEELTEST] F-4 scale(전)=1 → (중)=0 → (후)=1        ← 히트스톱 진입·복구
+[FEELTEST] F-3 0.05s scale=0.95 active=True        ← 팝 애니메이션 진행 중
+[FEELTEST] F-3 0.20s active=False                  ← 풀 반환 완료
+```
+
+**오디오 (임시 `AudioTest`, 절차 생성 사인파 사용)**
+
+```
+[AUDIOTEST] A-3 보이스 풀 = 16개, AudioListener.volume=1
+[AUDIOTEST] A-4 같은 프레임 5회 요청 → 울리는 보이스 = 1개
+[AUDIOTEST] A-4 0.1s 뒤 재요청 → 울리는 보이스 = 2개
+[AUDIOTEST] A-1 SFX=0 일 때 BgmVolume=0.8 bgmSource.volume=0.8 listener=1   ← BGM 생존
+[AUDIOTEST] A-1 BGM=0 일 때 SfxVolume=1 bgmSource.volume=0                  ← SFX 생존
+[AUDIOTEST] A-3 서로 다른 클립 30회 → 울리는 보이스 = 16개                   ← 상한 동작
+```
+
+임시 스크립트 3종(`HudSmokeTest` · `FeelTest` · `AudioTest`)과 씬 오브젝트 **전부 삭제**,
+`Assets/Refresh` 후 **콘솔 0건**, `File/Save` 완료.
+
+---
+
+## 2-1. 이슈 목록 (I-1 ~ I-45 — 전부 해결됨)
 
 > 미해결 항목은 [`TODO.md`](TODO.md) 참조.
 
@@ -1387,6 +1509,9 @@ Lv1 무기가 매 발 쏘고 있었던 셈이다.
 | **I-40** | **폭발 스프라이트가 회색 네모** — `ICON/폭발 애니메이션 시퀀스.png` 는 배경이 불투명하게 구워진 30컷 몽타주였고, 슬라이스도 4장만 엉뚱한 좌표에 잡혀 있었다 | ✅ 해결 (2026-08-27 11차) — Unity AI 로 16프레임 시트 재생성 |
 | **I-41** | **AI 가 만든 스프라이트시트의 "투명 배경"이 가짜** — 알파 채널이 전부 255 이고 모델이 **체커보드 무늬를 RGB 에 그려 넣었다.** 그대로 넣으면 폭발 뒤에 체커 사각형이 보인다 | ✅ 해결 (2026-08-27 11차) — 체커 회색 씨앗 flood fill 로 알파 재생성 |
 | **I-42** | **폭발 그림과 피해 범위가 따로 놀았다** — 폭발이 반경과 무관하게 항상 scale 1(0.5유닛)로 떴다. I-39 에서 그림을 반경에 맞추자 `Weapon_Aoe.explosionRadius = 3`(**지름 6유닛 = 화면의 1/3**)이 드러났다 | ✅ 해결 (2026-08-27 11차 후속) — 반경 3 → **2** (곡사포와 동일). 사용자 결정 |
+| **I-43** | **HUD 에 타이머·킬 수·골드가 없다** — 플레이어가 "언제 끝나는지 / 몇 마리 잡았는지 / 돈이 얼마인지"를 알 방법이 없었다. `WaveManager` 는 남은 시간을 `TimerRoutine` 의 **지역 변수**로만 들고 있어 밖에서 읽을 수조차 없었고, `HUD/CurrencyText` 는 **아무 스크립트도 굴리지 않는 죽은 UI** 였다 | ✅ 해결 (2026-08-28 13차 → 2-17) |
+| **I-44** | **때려도 맞은 티가 안 난다** — 적이 **밀리지 않고**, 죽을 때 한 프레임에 사라졌다(`OnDeath()` 가 빈 함수). `Shake()` 호출자는 플레이어 **피격** 하나뿐이라 **적을 죽일 때 화면이 무반응** | ✅ 해결 (2026-08-28 13차 → 2-17) |
+| **I-45** | **SFX 슬라이더를 0 으로 내리면 BGM 도 꺼진다** — `SetSFXVolume()` 이 `AudioListener.volume`(**전역 마스터**)을 건드려 최종 음량이 `bgmSource.volume × SfxVolume` 이 됐다. 애초에 **효과음 재생 함수 자체가 없었다**(`PlaySfx` 0건) | ✅ 해결 (2026-08-28 13차 → 2-17) |
 
 ### 해결 상세
 
@@ -1580,8 +1705,17 @@ private void LateUpdate()
     오디오 **0개** · 적 행동 **1종** · 무기 진화 **없음** · HUD 에 타이머/킬/골드 **없음** ·
     `MetaScreen` **화면 없음** 을 확인하고 5단계 진행 순서를 잡았다.
     회귀 의심 3건(CanvasScaler · HUD 배선 · 무기 경로)은 **조사해서 기각**
-49. ⏳ **다음**: §1 런타임 재검증 → 스탯 재조정 → 재화 구조 결정 (→ [`TODO.md`](TODO.md) §6),
-    그리고 [`ROADMAP.md`](ROADMAP.md) §8 1단계(HUD 정보 3종 · 게임 필 · 오디오 배관)
+**13차 (2026-08-28)** — 상세는 2-17
+
+49. ✅ **HUD 정보 3종** (I-43). 생존 타이머(`0:00`, 10초 이하 빨강) · `N Kills` · `N G`.
+    `WaveManager` 에 `WaveRemainingTime`/`IsWaveActive` 노출. **구독이 아니라 폴링** — I-8·I-38 회피.
+    덤으로 **죽은 UI 였던 `CurrencyText`** 를 살렸다
+50. ✅ **타격 반응 4종** (I-44). 적 넉백(등급별 저항) · 사망 스케일 팝 · 히트스톱 · 처치 흔들기.
+    히트스톱은 `Time.timeScale` 공유 사고를 막으려 **3중 가드**를 걸었다
+51. ✅ **오디오 배관** (I-45). 볼륨 계통 분리 · `PlaySfx`/`PlayBgm`/`StopBgm` · 보이스 풀 16 ·
+    같은 클립 0.04초 중복 컷. **AudioMixer 는 만들지 않았다** (이유는 2-17)
+52. ⏳ **다음**: [`ROADMAP.md`](ROADMAP.md) §8 2단계(적 행동 다양화 · 동시 스폰 · 적 상한),
+    그 전에 §1 런타임 재검증 → 스탯 재조정 → 재화 구조 결정 (→ [`TODO.md`](TODO.md) §6)
 
 **16~17 과정에서 함께 처리한 것**
 
