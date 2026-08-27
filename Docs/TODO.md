@@ -1,8 +1,12 @@
 # VS_LIKE — 남은 작업 (Backlog)
 
-> **최종 갱신:** 2026-08-27 (11차 — 건물 확대 + 곡사포 폭탄 투사체 + 폭발 애니메이션(I-39~I-41) 반영)
+> **최종 갱신:** 2026-08-28 (장르 완성도 갭 분석 반영 — [`ROADMAP.md`](ROADMAP.md) 신설)
 > 완료 이력은 [`SETUP_STATUS.md`](SETUP_STATUS.md), 수치 관리법은 [`BALANCE.md`](BALANCE.md).
 > **이 문서는 "아직 안 된 것"만 다룬다.**
+>
+> ⚠️ 여기는 **버그·미검증·결정 대기** 같은 *지금 굴러가는 일*을 담는다.
+> "뱀서라이크로서 아직 없는 것"(오디오 0개 · 적 행동 분화 · 무기 진화 · 메타 화면 · 타격감)은
+> [`ROADMAP.md`](ROADMAP.md) 로 옮겼다.
 
 ---
 
@@ -11,6 +15,8 @@
 | 영역 | 상태 |
 |---|---|
 | 빌드 / 컴파일 | ✅ 에러 0 · 경고 0 |
+| **오디오 (BGM/SFX)** | ❌ **파일 0개.** `AudioManager` 에 재생 함수 자체가 없다 → [`ROADMAP.md`](ROADMAP.md) §1 |
+| **장르 완성도** | 📋 갭 분석 완료 (2026-08-28) → [`ROADMAP.md`](ROADMAP.md) |
 | 버전 관리 | ✅ **`popzap/VS_LIKE` (Private)** · `main` · 첫 커밋 완료. 규칙은 [`CLAUDE.md`](../CLAUDE.md) §5 |
 | 핵심 루프 (메뉴→맵→웨이브→클리어→종료) | ✅ 런타임 검증 완료 (18/18) |
 | Shop / Event / Pause / Retry 진행 버그 | ✅ **코드 수정 완료** (I-14~I-18) · ⚠️ **런타임 재검증 미완** (§1) |
@@ -175,13 +181,12 @@ _currentWaveData = node.StageType switch
 
 | 항목 | 현재 | 비고 |
 |---|---|---|
-| 적 AI | 전부 **플레이어에게 직진**만 함 | 원거리·돌진·소환 등 행동 분화 없음 |
-| **적 6종이 전부 등장하지 않음** | `Waves.csv` 의 `Spawns` 가 종을 골라 쓴다 — Normal 풀에는 Slime/Goblin/Zombie/Wolf 만, Demon/Ogre 는 후반·엘리트·보스에만 나온다 | **사용자가 "나중에" 로 미룸 (2026-08-27).** 재개 조건: §3 층별 난이도 스케일링을 정한 뒤. 종 배분은 난이도 곡선과 같이 잡아야 의미가 있다 |
+| 적 AI | 전부 **플레이어에게 직진**만 함 (`EnemyBase.MoveTowardsPlayer()`) | 원거리·돌진·소환 등 행동 분화 없음. 6종이 **프리팹까지 하나를 공유**하고 스프라이트·크기·스탯만 다르다. `MoveTowardsPlayer()` 가 이미 `protected virtual` 이라 상속만 하면 된다 → [`ROADMAP.md`](ROADMAP.md) §2-1 |
+| **적 6종이 전부 등장하지 않음** | **원인 규명됨 (2026-08-28).** 데이터 문제가 아니다 — `Waves.csv` 는 6종을 다 쓴다. `Spawns` 가 **순차** 소환이라(주석: "Goblin 18마리를 다 뿌린 뒤 Zombie 로 넘어간다") 뒤쪽 항목이 시간 안에 못 나온다. 예) `Normal3` 는 (36×0.8)+(24×0.9)+(8×1.5)+(40×0.6) = **86.4초**인데 `SurvivalTime` 이 90초라 마지막 Goblin 40마리가 사실상 안 나온다 | **사용자가 "나중에" 로 미룸 (2026-08-27).** 재개 조건: §3 층별 난이도 스케일링을 정한 뒤. 고치는 법은 `WaveSpawnEntry` 에 시간창(StartTime/EndTime)을 넣어 **병렬 소환**으로 바꾸는 것 → [`ROADMAP.md`](ROADMAP.md) §2-2. **적 수 상한과 반드시 같이** 해야 한다 |
 | **투사체가 날아가는 무기** | 11차에 **곡사포(Bombard)만** 폭탄 비행으로 바꿨다 | `AoeWeapon`(Fireball/Bomb)은 여전히 **목표 지점에 즉시** 터진다. 같은 느낌을 주려면 `BombProjectile` 을 재활용하면 된다 (`AoeWeapon` 이 `bombPrefab` 을 들고 `Initialize` 하면 끝) |
 | **설치 대기 건물 표시** | HUD에 **없음** | 지금은 `Z` 를 눌러 봐야 뭐가 세워질지 안다. `BuildingManager.PendingCount` / `NextPending` 은 이미 public |
 | **건물 산출 피드백** | 마을 XP·농장 골드가 **소리 없이** 들어옴 | `DamagePopupManager` 를 재활용해 "+2 XP" / "+1 G" 를 띄우면 건물이 일하고 있다는 게 보인다 |
 | **Village/Farm/Restaurant 수치** | 감으로 넣은 자리표시값 | `Buildings.csv` 의 `AttackCooldown` / `Output`. 특히 식당 회복량(15→85)과 농장 골드(1→6)는 근거 없음 |
-| `Building_Turret.prefab` | 쓰지 않는 `ObjectPool` 컴포넌트가 붙어 있음 | 씬의 공용 `ObjectPool` 을 쓰므로 무해하지만 혼동을 부른다. 제거 권장 |
 | **적** 프레임 애니메이션 | **0프레임.** 적 6종은 정지 이미지 | I-26 의 셰이더 바운스로 "살아 있는 느낌"은 냈지만, 공격 모션·사망 연출은 여전히 없다 (아래 절). **플레이어는 I-29 로 16프레임 확보** |
 | `AudioClip` | **0개** | BGM/SFX 전무 |
 | 경험치 곡선 | Normal1 하나로 **Lv6까지** 감 | 초반 레벨업이 지나치게 빠름. `XpDrop` 또는 `xpThresholds` 조정 필요 |

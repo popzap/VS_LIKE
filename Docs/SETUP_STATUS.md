@@ -6,7 +6,7 @@
 > 기존의 「C# 스크립트는 완성 단계」라는 전제와 「요청 없이 코드 건드리지 말 것」 규칙이 **해제됨**.
 > 이제 게임 완성을 위해 C# 스크립트 신규 작성·수정이 허용된다.
 >
-> **최종 갱신:** 2026-08-27 (11차 — 건물 확대 + 곡사포 폭탄 투사체 + 폭발 애니메이션 + 애셋 정리 + GitHub 연동)
+> **최종 갱신:** 2026-08-28 (12차 — 장르 완성도 갭 분석 · [`ROADMAP.md`](ROADMAP.md) 신설)
 > 검증 방식: Unity MCP + Play 모드 스모크 테스트 + YAML 직접 파싱
 > **검증 기준 파일:** `Assets/Scenes/SampleScene.unity`
 >
@@ -1293,6 +1293,52 @@ Lv1 무기가 매 발 쏘고 있었던 셈이다.
 
 ---
 
+## 2-16. ✅ 장르 완성도 갭 분석 — `ROADMAP.md` 신설 (2026-08-28 12차)
+
+### 왜
+
+"완전한 뱀서라이크가 되려면 뭐가 더 필요한가"를 **직접 코드·씬·애셋을 읽어** 정리했다.
+`TODO.md` 는 *버그와 미검증*을 담는 문서라 "장르로서 비어 있는 칸"을 넣기에 맞지 않았다.
+그래서 네 번째 문서를 만들고 역할을 갈랐다.
+
+### 결론 (요지)
+
+**뼈대는 다 섰고 살이 없다.** 런 루프는 전 구간 동작하지만
+**오디오 파일이 0개**, 적 6종이 **행동은 1종**, HUD 에 **타이머·킬·골드가 없다.**
+
+### 변경한 파일
+
+| 파일 | 변경 |
+|---|---|
+| `Docs/ROADMAP.md` | **신규.** 갭 분석 + 5단계 권장 순서 |
+| `CLAUDE.md` §1 | 문서 표에 `ROADMAP.md` 역할·갱신 시점 추가 |
+| `Docs/TODO.md` | §0 에 오디오/완성도 행 추가, 헤더에 역할 분리 명시, 적 AI·적 6종 항목에 원인·해법 보강, 해결된 `Building_Turret` 행 제거 |
+
+### 조사로 **기각한** 회귀 의심 3건
+
+사전 조사에서 아래 주장이 나왔으나 **전부 사실이 아니었다.** 문서가 맞다. 고친 것 없음.
+
+| 주장 | 실제 |
+|---|---|
+| CanvasScaler 가 Constant Pixel Size 800×600 으로 회귀 (I-4 깨짐) | ❌ 씬 오버라이드에 `m_UiScaleMode: 1`(ScaleWithScreenSize) · `1920×1080` · match 0.5. **정상** |
+| `HUDManager` 직렬화 필드가 **전부** 미할당 → HUD 무력화 | ❌ `UI Canvas.prefab` 에서는 `{fileID: 0}` 이지만 **씬 오버라이드로 10개가 배선**돼 있다. 빈 것은 표정 4장 + 레벨업 연출 2개뿐 — `TODO.md` §4 기재와 일치 |
+| 무기가 `Assets/Resources/Data/Weapons/` 의 Staff·Pistol·Flamethrower | ❌ `Assets/Resources/` **폴더 자체가 없다.** 무기는 `Assets/Game/WeaponData/` 의 Sword·Bow·Gun·Fireball·Bomb 5종 |
+
+> **교훈:** 프리팹의 `{fileID: 0}` 만 보고 "미할당"이라 단정하면 안 된다.
+> 씬의 `m_Modifications` 오버라이드를 같이 봐야 실제 배선을 알 수 있다.
+
+### 검증 로그
+
+- `find Assets -iname "*.wav" -o -iname "*.mp3" -o -iname "*.ogg"` → **0건**
+- `grep -rn "Evolv" Assets/Scripts` → **0건** (무기 진화 없음)
+- `grep -rn "ParticleSystem" Assets/Scripts` → **0건**
+- `grep -rn "\.Shake(" Assets/Scripts` → **1건** (`PlayerController.cs:128`, 플레이어 피격 전용)
+- `EnemyBase.OnDeath()` (`:152`) → `{ }` 빈 함수
+- `EnemyVisual.Flash()` **존재** — 적 피격 플래시는 I-26 으로 이미 완료. 초안에 "없음"으로 적었다가 정정
+- `GameState` 실제 항목 10개: MainMenu · StageMap · Wave · LevelUp · Shop · Event · Paused · GameOver · Victory · MetaScreen
+
+---
+
 ## 2-1. 이슈 목록 (I-1 ~ I-42 — 전부 해결됨)
 
 > 미해결 항목은 [`TODO.md`](TODO.md) 참조.
@@ -1513,7 +1559,29 @@ private void LateUpdate()
     `Classes.csv` 에 `WalkSheet` 열을 신설해 **CSV 파이프라인 안**에서 관리한다
 38. ✅ **씬 `Camera` 태그 `Untagged` → `MainCamera`** (I-30). 카메라 흔들기가 죽어 있었다
 39. ✅ **적 캡슐 콜라이더 0.5×1.0 → 0.34×0.36** (I-31). 그림보다 2배 길어 헛맞았다
-40. ⏳ **다음**: §1 런타임 재검증 → 스탯 재조정 → 재화 구조 결정 (→ [`TODO.md`](TODO.md) §6)
+
+**10차 (2026-08-27)** — 상세는 2-12
+
+40. ✅ **건물 5종 + `Z` 즉시 설치 FIFO** (I-36·I-37). 전투 2 + 경험치/골드/회복 3
+41. ✅ **패시브 레벨 누적 버그** (I-32). `BuildingCooldown` 이 음수 반전해 건물이 10배 빨랐다
+42. ✅ **리롤 고정 버그**(I-34) · **경험치 오브 크기**(I-33) · **클리어 화면 성장 표시**(I-35)
+43. ✅ **`Z` 가 안 먹던 원인** (I-38). `Awake` 에서 `GameManager.Instance.BuildingMgr` 캐시
+
+**11차 (2026-08-27)** — 상세는 2-13 ~ 2-15
+
+44. ✅ **곡사포 폭탄 투사체 + 16프레임 폭발** (I-39~I-41). 잔상 0 확인
+45. ✅ **건물 크기 1.30 유닛** · **폭발 반경 3 → 2** (I-42)
+46. ✅ **미사용 애셋 정리** — 스프라이트 5 · 스텁 스크립트 3 · 폰트 `web/` 24MB
+47. ✅ **GitHub 연동** — `popzap/VS_LIKE` (Private) · 3.1G → **677파일 / 83MB**
+
+**12차 (2026-08-28)** — 상세는 2-16
+
+48. ✅ **장르 완성도 갭 분석** — [`ROADMAP.md`](ROADMAP.md) 신설.
+    오디오 **0개** · 적 행동 **1종** · 무기 진화 **없음** · HUD 에 타이머/킬/골드 **없음** ·
+    `MetaScreen` **화면 없음** 을 확인하고 5단계 진행 순서를 잡았다.
+    회귀 의심 3건(CanvasScaler · HUD 배선 · 무기 경로)은 **조사해서 기각**
+49. ⏳ **다음**: §1 런타임 재검증 → 스탯 재조정 → 재화 구조 결정 (→ [`TODO.md`](TODO.md) §6),
+    그리고 [`ROADMAP.md`](ROADMAP.md) §8 1단계(HUD 정보 3종 · 게임 필 · 오디오 배관)
 
 **16~17 과정에서 함께 처리한 것**
 
