@@ -11,6 +11,7 @@
 | 영역 | 상태 |
 |---|---|
 | 빌드 / 컴파일 | ✅ 에러 0 · 경고 0 |
+| 버전 관리 | ✅ **`popzap/VS_LIKE` (Private)** · `main` · 첫 커밋 완료. 규칙은 [`CLAUDE.md`](../CLAUDE.md) §5 |
 | 핵심 루프 (메뉴→맵→웨이브→클리어→종료) | ✅ 런타임 검증 완료 (18/18) |
 | Shop / Event / Pause / Retry 진행 버그 | ✅ **코드 수정 완료** (I-14~I-18) · ⚠️ **런타임 재검증 미완** (§1) |
 | 콘텐츠 (적/무기/아이템/웨이브/이벤트) | ✅ 임시 콘텐츠 투입 완료 (적6·무기5·**건물5**·**패시브10**·**아이템20**·웨이브6·이벤트5) |
@@ -273,14 +274,14 @@ I-29 로 **플레이어도** MPB 를 쓴다(바운스·기울기) — 드로우�
 
 ### 남은 것
 
-- [ ] **`Assets/Fonts`** — 실제로 쓰이는 건 `public/static/alternative/Pretendard-Regular.ttf`
-      **한 장뿐**이다 (`Pretendard SDF.asset` 의 소스). 나머지는 전부 미사용:
-      - `Fonts/web/**` (39개) — woff/woff2/css. **Unity 가 아예 못 읽는다.** 지워도 잃을 게 없다
-      - `Fonts/public/**` 의 나머지 otf/ttf 18개 — Bold·SemiBold 등 다른 굵기.
-        지금은 안 쓰지만 **나중에 UI 강조용으로 쓸 수 있다.** 지우면 다시 받아야 한다
-      - `LICENSE.txt` 는 **재배포 조건이라 남겨야 한다**
+- [ ] **`Assets/Fonts/public/**` 의 안 쓰는 굵기 18개** (약 41MB) — 실제로 쓰이는 건
+      `public/static/alternative/Pretendard-Regular.ttf` **한 장뿐**이다 (`Pretendard SDF.asset` 의 소스).
+      나머지 otf/ttf 는 Bold·SemiBold 등으로 **나중에 UI 강조용으로 쓸 수 있어** 남겨 뒀다.
+      쓸 일이 없다고 판단되면 제거. `LICENSE.txt` 는 **재배포 조건이라 반드시 유지**
+      > ~~`Fonts/web/**`~~ (24MB, woff/woff2/css) 는 Unity 가 못 읽어 첫 커밋 전에 삭제했다
 - [ ] `Assets/_Recovery/0.unity` (512KB) — Unity 크래시 복구본으로 보인다.
       `SampleScene` 과 같은 오브젝트들을 물고 있다. **정말 백업이 필요 없는지 확인 후** 제거
+      (첫 커밋에 들어갔으므로 지워도 히스토리에서 되살릴 수 있다)
 - [ ] `GameObjects/EventSystem.prefab` — 참조 0건. 씬의 EventSystem 은 프리팹 인스턴스가 아니다.
       다른 인프라 프리팹과 짝을 이루고 있어 일단 남겼다
 
