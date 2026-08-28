@@ -6,7 +6,7 @@
 > 기존의 「C# 스크립트는 완성 단계」라는 전제와 「요청 없이 코드 건드리지 말 것」 규칙이 **해제됨**.
 > 이제 게임 완성을 위해 C# 스크립트 신규 작성·수정이 허용된다.
 >
-> **최종 갱신:** 2026-08-28 (13차 — ROADMAP 1단계: HUD 정보 3종 · 타격 반응 · 오디오 배관)
+> **최종 갱신:** 2026-08-28 (14차 — ROADMAP 3단계: 병렬 소환 · 적 행동 분화 · 보물상자/자석)
 > 검증 방식: Unity MCP + Play 모드 스모크 테스트 + YAML 직접 파싱
 > **검증 기준 파일:** `Assets/Scenes/SampleScene.unity`
 >
@@ -1461,7 +1461,183 @@ SFX 를 끄면 BGM 이 같이 죽었다. 애초에 **효과음을 재생하는 �
 
 ---
 
-## 2-1. 이슈 목록 (I-1 ~ I-45 — 전부 해결됨)
+## 2-18. ✅ ROADMAP 3단계 — 병렬 소환 · 적 행동 분화 · 보물상자/자석 (I-46~I-48, 2026-08-28 14차)
+
+[`ROADMAP.md`](ROADMAP.md) §8 의 3단계("**루프에 재미를 넣는다**") 세 항목을 통째로 실행했다.
+2단계(오디오 파일 확보)는 **음원 생성 수단이 정해지지 않아** 사용자 지시로 건너뛰었다 —
+ROADMAP §8 주석대로 2·3단계는 서로 의존하지 않는다.
+
+### 원인
+
+**I-46 — 웨이브에 적이 섞여 나오지 않고, 뒤쪽 적은 아예 안 나왔다**
+`SpawnRoutine()` 이 `foreach (var entry in Spawns)` 로 **한 항목을 다 뿌린 뒤 다음으로** 넘어갔다.
+그래서 `(마리수 × 간격)` 의 합이 `SurvivalTime` 을 넘으면 **뒤쪽 항목이 등장하지 못한 채 웨이브가 끝났다.**
+`Normal3` 가 (36×0.8)+(24×0.9)+(8×1.5)+(40×0.6) = **86.4초**인데 생존 시간이 90초라
+마지막 Goblin 40마리가 사실상 안 나왔다. 사용자가 말한 "몬스터가 전 종류 안 나온다"의 실제 원인이다.
+데이터가 아니라 **소환기 설계** 문제였다.
+
+동시에 **적 수 상한이 없었다.** 순차일 때는 한 번에 한 종류만 나와 터지지 않았지만,
+병렬로 바꾸는 순간 여러 항목이 동시에 쏟아진다. 게다가 넉백(I-44)으로 밀려나거나
+플레이어가 한 방향으로 계속 달리면 **적이 화면 밖에 줄줄이 남아** 상한만 잡아먹는다.
+
+**I-47 — 적 6종이 전부 같은 행동을 했다**
+`MoveTowardsPlayer()` 직선 추격 **하나**가 전부였다. Ogre 는 큰 고블린, Wolf 는 빠른 고블린이다.
+게다가 적 콜라이더가 전부 **트리거**라 물리 반발이 없어 **다 겹쳐서 한 덩어리로 뭉쳤다.**
+
+**I-48 — 필드 픽업이 2종뿐이었다**
+`ExpDrop_Small` 과 `HealPickup`. 엘리트를 잡아도 보상이 경험치뿐이라 **처치의 무게가 없었고**,
+화면 구석에 흩어진 경험치를 회수할 방법이 걸어가는 것밖에 없었다.
+
+### 변경한 파일
+
+| 파일 | 변경 |
+|---|---|
+| `Wave/WaveData.cs` | `WaveSpawnEntry` 에 `StartTime`/`EndTime` · `WaveData` 에 `MaxAlive`/`EliteTime`/`BossTime` |
+| `Wave/WaveManager.cs` | **소환기 재작성.** 항목마다 코루틴 하나(`SpawnEntryRoutine`) = 병렬. `WaitForSpawnSlot` 상한 대기 · `MaintainRoutine`(0.25초 주기) · `PruneAlive` · `RecycleFarEnemies`. `_enemiesAlive`(int) → `_alive`(List) |
+| `Enemy/EnemyData.cs` | `EnemyAI` enum(Chaser/Ranged/Charger) + 원거리 5필드 · 돌진 6필드 |
+| `Enemy/EnemyBase.cs` | `FixedUpdate` 의 `switch (Data.AI)` · `TickRanged`/`FireProjectile` · `TickCharger`(`ChargeState`) · `Steer`/`GetSeparation` 무리 분리 · `Reposition(Vector2)` · `IsElite`/`IsBoss` 노출 · `SharedPool` 캐시 |
+| `Enemy/EnemyProjectile.cs` | **신규.** 적탄. 콜라이더가 아니라 **거리**로 명중 판정 |
+| `Pickup/WorldPickup.cs` | **신규.** 보물상자·자석 공용. `PickupKind` enum |
+| `Experience/ExperienceManager.cs` | `SpawnChest`/`RollMagnetDrop`/`GrantChestReward` + `chestPrefab`/`magnetPrefab`/`magnetDropChance` |
+| `Experience/ExpDrop.cs` | `PullAllToPlayer()` static + `_forcePull`/`magnetSpeed 22`. 미사용 `_pickupRadius` 제거 |
+| `Balance/CsvTable.cs` | `CsvRow.Enum<T>` — 대소문자 무시. 오타는 경고 후 기본값 |
+| `Editor/BalanceImporter.cs` | `Enemies.csv` 의 AI 12열 임포트/익스포트 |
+| `Game/Balance/Enemies.csv` | AI 12열 신설. Wolf→Charger · Demon→Ranged |
+| `Game/Balance/Waves.csv` | `Spawns` 에 `:시작-종료` 시간창 · `MaxAlive`/`EliteTime`/`BossTime` 열 · 6웨이브 전면 재구성 |
+| `Game/Balance/SceneWiring.csv` | `ExperienceManager` 3행(상자·자석 프리팹, 드랍 확률) |
+| `Prefabs/Proj_EnemyBolt.prefab` | **신규.** 적탄 (붉은 총알, sortingOrder 5, 콜라이더 없음) |
+| `Prefabs/Pickup_Chest.prefab` · `Pickup_Magnet.prefab` | **신규.** `sortingOrder 1` (경험치 오브보다 위) |
+| `Game/Sprites/Pickups/Chest.png` · `Magnet.png` | **신규.** Unity AI `gpt-image-1-5` |
+
+### ROADMAP 과 다르게 간 것 네 가지
+
+| 항목 | ROADMAP | 실제 | 이유 |
+|---|---|---|---|
+| 적 행동 구현 | `RangedEnemy : EnemyBase` **상속** | **`EnemyAI` enum (데이터 주도)** | 상속으로 나누려면 **행동마다 프리팹이 따로 있어야 한다** — 컴포넌트 타입은 런타임에 못 바꾼다. 적 6종이 `Enemy_Goblin.prefab` **하나**를 공유하고 CSV 로만 구분하는 구조라, 프리팹을 5개로 늘리는 비용이 더 크다. `MoveTowardsPlayer` 는 여전히 `virtual` 이라 나중에 갈라도 된다 |
+| 무리 분리 | "**Goblin**" | **전 종류** | ROADMAP §6 은 겹침을 프로젝트 전체 문제로 적어 놨다. 한 종만 떼어 놓으면 나머지가 여전히 한 덩어리다 |
+| 적탄 충돌 | (언급 없음) | **거리 판정** (`HitRadius 0.45`) | Projectile 레이어는 **플레이어를 때리라고 만든 게 아니다.** 레이어 충돌 행렬을 건드리면 기존 무기 판정까지 흔들린다. 화면에 몇 발 없는 적탄 쪽을 거리 검사로 처리하는 게 싸고 안전하다 |
+| 보물상자 UI | "열면 무기 진화 / 다중 레벨업" | **레벨업 패널 재사용** | 무기 진화는 4단계(2-3) 미구현이고, 플레이어가 얻는 건 결국 같은 아이템 카드다. 화면이 하나 더 생기면 조작만 헷갈린다. **레벨은 오르지 않는다** — 경험치가 아니라 보상이다 |
+
+### 함정 다섯 개
+
+**1. 살아 있는 적을 `int` 카운터로 세면 안 된다.**
+적이 사라지는 경로가 **둘**이다 — 처치(`OnEnemyKilled`)와 `ForceDespawn`(웨이브 종료).
+한쪽에서만 빼면 수가 어긋나고, 상한이 걸린 순간 **소환이 영원히 막힌다.**
+그래서 `List<EnemyBase>` 를 두고 `PruneAlive()` 가 "오브젝트가 실제로 켜져 있는가"를 매번 다시 본다.
+게다가 I-44 의 사망 팝 연출 때문에 **죽은 시점과 꺼지는 시점이 다르다.**
+
+**2. 멀어진 적은 지우면 안 된다.** 경험치·골드가 증발한다. `RecycleFarEnemies()` 가
+소환 반경의 **1.9배**를 넘은 적을 **죽이지 않고** 플레이어 주변으로 옮긴다.
+단 **보스는 제외** — 갑자기 등 뒤에 나타나면 반칙처럼 느껴진다.
+
+**3. 엘리트/보스는 소환 상한을 무시해야 한다.** 잡몹이 상한을 채운 상태에서 보스가 대기하면
+**킬 클리어 웨이브가 영영 끝나지 않는다.** `OverrideSpawnRoutine()` 은 `WaitForSpawnSlot` 을 안 탄다.
+
+**4. 시간창은 `KillTarget` 을 깨뜨릴 수 있다.** 시간창이나 `MaxAlive` 때문에 소환 수가 줄면
+보스 웨이브의 `KillTarget=19` 를 못 채운다. 그래서 보스 웨이브만 시간창 안에 마리수가
+다 들어가도록 맞췄고(12×4=48<50, 6×8=48<53−5) 타이머 240초를 안전망으로 유지했다.
+
+**5. 적 콜라이더는 트리거라 물리로 못 떼어 놓는다.**
+`Physics2D.OverlapCircle` 이 트리거를 보게 하려면 `ContactFilter2D.useTriggers = true` 가 **필수**다.
+분리는 물리 반발이 아니라 **조향(steering)** 으로 넣었고, 매 프레임 이웃 검색은 비싸므로
+**4번째 물리 스텝마다** 개체별 랜덤 위상으로 흩어 돌린다. 버퍼는 `static Collider2D[12]` 재사용.
+
+### 자석을 static 플래그로 만들지 않은 이유
+
+`PullAllToPlayer()` 는 지속 시간이나 static 상태를 두지 않고 **그 순간 살아 있는 구슬에만**
+`_forcePull` 표시를 남긴다. 자석은 "지금 화면에 있는 걸 쓸어 담는" 물건이지
+**잠시 흡수 반경이 넓어지는 버프가 아니고**, static 상태는 플레이 모드를 다시 켰을 때 남는 사고가 잦다.
+풀 재사용 대비로 `Initialize()` 에서 `_forcePull = false` 를 명시한다.
+
+`WorldPickup.Update()` 는 `CurrentState == LevelUp` 이면 즉시 `return` 한다 —
+`timeScale = 0` 이어도 `Update` 는 계속 돌기 때문에, 막지 않으면 상자를 밟은 순간
+**패널이 떠 있는 상태에서 또 열려** 상태가 꼬인다.
+
+### 수치
+
+| 항목 | 값 | 근거 |
+|---|---|---|
+| `MaxAlive` | Normal 60/80/110 · Elite 110/130 · Boss 90 | 웨이브가 뒤로 갈수록 올린다. 보스 웨이브는 보스에 집중하도록 오히려 낮춘다 |
+| 재배치 거리 | 소환 반경 × **1.9** | 소환 반경(20) 바로 밖이면 정상적으로 다가오는 중일 수 있다. 38유닛이면 확실히 버려진 적 |
+| 유지보수 주기 | `0.25s` | 매 프레임 돌 이유가 없다 |
+| 분리 반경 / 가중치 | `0.85` × `localScale` / `0.9` | 반경은 적 몸통(0.5유닛)보다 약간 크게. 가중치가 1을 넘으면 추격보다 분리가 이겨 적이 안 다가온다 |
+| 분리 갱신 | **4스텝마다** (개체별 위상) | 50Hz 기준 초당 12.5회. 이웃 검색이 가장 비싸다 |
+| 이웃 버퍼 | `12` | 넘치면 잘리지만 12마리에게 밀리는 것으로 충분하다 |
+| Demon `PreferredRange`/`AttackCooldown` | `7` / `2.5s` | 화면 절반. 무기 사거리(3.5~6) 밖에서 쏜다 |
+| Demon 탄속/피해 | `6` / `12` | 접촉 피해(20)보다 낮게 — 원거리는 안전하니까 |
+| 적탄 수명 | `PreferredRange × 1.6 ÷ 탄속` | 사거리의 1.6배까지 날아가고 사라진다. 자동 계산이라 CSV 열이 없다 |
+| Wolf 돌진 | 예고 `0.45s` → 돌진 `0.4s` ×**3.0** 배속 → 경직 `0.6s`, 쿨 `3s` | 4.2×3×0.4 ≈ **5유닛** 돌진. 예고 0.45초는 피할 수 있는 최소치. ROADMAP 계획(3.5배)에서 낮춘 이유는 6유닛을 넘으면 사실상 회피 불가 |
+| 자석 드랍 확률 | `0.006` | 웨이브당 200~300마리가 죽으므로 **1~2개** 나온다 |
+| 자석 회수 속도 | `22` | 평소 흡수 속도(6)의 약 4배. 화면 끝에서 오는 것도 있다 |
+| 상자/자석 터치 반경 | `0.75` / `0.65` | 경험치 오브(0.3)보다 넉넉하게 — 놓치면 짜증난다 |
+| 상자 드랍 | 엘리트/보스 **확정** | 확률로 하면 "엘리트를 잡았다"는 사건이 흐려진다. 대신 엘리트는 **자석을 안 떨군다** (겹치면 뭘 먹었는지 모른다) |
+
+### 검증 로그
+
+**웨이브 병렬 소환 + 상한 + 재배치 (임시 `WaveTest`)**
+
+```
+[WAVETEST] t=  0s alive=  1 peak=  1 종류=Slime:1
+[WAVETEST] t= 10s alive=  5 peak=  5 종류=Slime:5
+[WAVETEST] t= 20s alive= 16 peak= 16 종류=Goblin:6 Slime:10
+[WAVETEST] 재배치 전 거리=200 → 1초 후 거리=18 (소환 반경 20 근처로 돌아와야 정상)
+[WAVETEST] t= 30s alive= 28 peak= 28 종류=Goblin:13 Slime:15
+[WAVETEST] t= 40s alive= 40 peak= 40 종류=Goblin:20 Slime:20
+[WAVETEST] t= 50s alive= 52 peak= 52 종류=Slime:25 Goblin:27
+[WaveManager] Wave Cleared!
+[WAVETEST] 웨이브 종료 t=60s peak=60 (MaxAlive 는 Normal1=60 / Normal2=80 / Normal3=110)
+```
+
+t=20s 부터 **두 종류가 동시에** 잡힌다 — 순차였다면 Slime 30마리(60초)를 다 뿌릴 때까지
+Goblin 이 한 마리도 안 나왔다. peak 가 `MaxAlive`(60)에서 정확히 멈춘다.
+
+**적 행동 분화 (임시 `AITest`)**
+
+```
+[AITEST] data goblin=Chaser demon=Ranged wolf=Charger
+[AITEST] 분리 t=0.0s 평균간격=0.050
+[AITEST] 분리 t=1.5s 평균간격=2.007  (커져야 정상)
+[AITEST] 원거리 t=1s 거리=11.20  탄=0
+[AITEST] 원거리 t=2s 거리= 8.40  탄=0
+[AITEST] 원거리 t=3s 거리= 6.95  탄=1
+[AITEST] 원거리 t=5s 거리= 7.00  탄=1
+[AITEST] 원거리 t=8s 거리= 6.95  탄=1
+[AITEST] 돌진 t=0.9s 속도= 4.20 (추격) → t=1.2s 0.00 (예고) → t=1.8s 12.60 (돌진) → t=2.1s 0.00 (경직) → t=2.7s 4.20
+[AITEST] 돌진 최고속도=12.60, 정지프레임=20/70
+```
+
+한 점에 겹쳐 놓은 적들이 1.5초 만에 **평균 간격 0.05 → 2.01** 로 벌어졌다.
+Demon 은 `PreferredRange`(7)에 **정확히 수렴**해 머문다. Wolf 는 4.2 → 0 → 12.6 → 0 → 4.2 로
+**예고·돌진·경직 4상태**가 전부 관측됐다 (12.6 = 4.2 × 3.0).
+
+**보물상자 / 자석 (임시 `PickupTest`)**
+
+```
+[PICKTEST] 자석 전   구슬=10 평균거리=16.12
+[PICKTEST] 자석 1.0s 구슬=0 평균거리=0.00
+[PICKTEST] 자석 3.0s 구슬=0 (0 이어야 정상)
+[PICKTEST] 픽업 배치 구슬=6 픽업활성=True
+[PICKTEST] 픽업 소멸=True 남은구슬=0 (둘 다 0/True 여야 정상)
+[PICKTEST] 상자 소멸=True state=MainMenu→LevelUp timeScale=0 레벨=3→3
+[PICKTEST] 패널 닫은 뒤 state=MainMenu timeScale=1
+[PICKTEST] 완료
+```
+
+16유닛 밖의 구슬 10개가 **1초 만에 전부** 회수됐다. 상자는 `LevelUp` 상태로 전환하고
+`timeScale` 을 0 으로 내리되 **레벨은 3→3 으로 그대로**다 (의도된 동작).
+패널을 닫으면 상태와 `timeScale` 이 정상 복구된다.
+
+> ⚠️ 이 테스트를 처음 돌렸을 때 **첫 줄만 찍히고 멈췄다.** 원인은 `XpToNext` 가 레벨 1에서 **5** 라
+> 구슬 10개를 먹으면 레벨업 패널이 떠 `timeScale = 0` 이 되고, 그러면 `WaitForSeconds` 가
+> 영원히 안 끝나기 때문이다. 테스트를 `WaitForSecondsRealtime` + 패널 자동 닫기로 고쳤다.
+> **레벨업이 시간을 멈춘다는 사실은 앞으로 모든 런타임 검증 코루틴에 영향을 준다.**
+
+임시 스크립트 3종(`WaveTest` · `AITest` · `PickupTest`)과 씬 오브젝트 **전부 삭제**,
+`Assets/Refresh` 후 **콘솔 0건**, `File/Save` 완료.
+
+---
+
+## 2-1. 이슈 목록 (I-1 ~ I-48 — 전부 해결됨)
 
 > 미해결 항목은 [`TODO.md`](TODO.md) 참조.
 
@@ -1512,6 +1688,9 @@ SFX 를 끄면 BGM 이 같이 죽었다. 애초에 **효과음을 재생하는 �
 | **I-43** | **HUD 에 타이머·킬 수·골드가 없다** — 플레이어가 "언제 끝나는지 / 몇 마리 잡았는지 / 돈이 얼마인지"를 알 방법이 없었다. `WaveManager` 는 남은 시간을 `TimerRoutine` 의 **지역 변수**로만 들고 있어 밖에서 읽을 수조차 없었고, `HUD/CurrencyText` 는 **아무 스크립트도 굴리지 않는 죽은 UI** 였다 | ✅ 해결 (2026-08-28 13차 → 2-17) |
 | **I-44** | **때려도 맞은 티가 안 난다** — 적이 **밀리지 않고**, 죽을 때 한 프레임에 사라졌다(`OnDeath()` 가 빈 함수). `Shake()` 호출자는 플레이어 **피격** 하나뿐이라 **적을 죽일 때 화면이 무반응** | ✅ 해결 (2026-08-28 13차 → 2-17) |
 | **I-45** | **SFX 슬라이더를 0 으로 내리면 BGM 도 꺼진다** — `SetSFXVolume()` 이 `AudioListener.volume`(**전역 마스터**)을 건드려 최종 음량이 `bgmSource.volume × SfxVolume` 이 됐다. 애초에 **효과음 재생 함수 자체가 없었다**(`PlaySfx` 0건) | ✅ 해결 (2026-08-28 13차 → 2-17) |
+| **I-46** | **웨이브 뒤쪽 적이 아예 등장하지 않는다** — `SpawnRoutine()` 이 소환 항목을 **순차** 처리해 앞 항목을 다 뿌려야 다음이 시작됐다. `(마리수 × 간격)` 합이 `SurvivalTime` 을 넘으면 뒤쪽 적은 등장 자체를 못 한다 (`Normal3` = 86.4초 소요 / 90초 생존 → Goblin 40마리 유실). 사용자가 말한 "몬스터가 전 종류 안 나온다"의 실제 원인. 동시에 **적 수 상한이 없어** 병렬화하면 즉시 프레임이 무너질 상태였다 | ✅ 해결 (2026-08-28 14차 → 2-18) |
+| **I-47** | **적 6종이 전부 같은 행동을 한다** — `MoveTowardsPlayer()` 직선 추격 하나가 전부라 Ogre 는 큰 고블린, Wolf 는 빠른 고블린이었다. 게다가 적 콜라이더가 전부 **트리거**라 물리 반발이 없어 **다 겹쳐 한 덩어리로 뭉쳤다** | ✅ 해결 (2026-08-28 14차 → 2-18) |
+| **I-48** | **필드 픽업이 2종뿐** — `ExpDrop_Small` / `HealPickup`. 엘리트를 잡아도 보상이 경험치뿐이라 **처치의 무게가 없었고**, 흩어진 경험치를 회수할 방법이 걸어가는 것밖에 없었다 | ✅ 해결 (2026-08-28 14차 → 2-18) |
 
 ### 해결 상세
 
@@ -1714,7 +1893,21 @@ private void LateUpdate()
     히트스톱은 `Time.timeScale` 공유 사고를 막으려 **3중 가드**를 걸었다
 51. ✅ **오디오 배관** (I-45). 볼륨 계통 분리 · `PlaySfx`/`PlayBgm`/`StopBgm` · 보이스 풀 16 ·
     같은 클립 0.04초 중복 컷. **AudioMixer 는 만들지 않았다** (이유는 2-17)
-52. ⏳ **다음**: [`ROADMAP.md`](ROADMAP.md) §8 2단계(적 행동 다양화 · 동시 스폰 · 적 상한),
+
+**14차 (2026-08-28)** — 상세는 2-18
+
+52. ✅ **웨이브 병렬 소환 + 적 수 상한 + 화면 밖 적 재배치** (I-46). 소환 항목마다 코루틴을
+    따로 띄우고 `Spawns` 에 **시간창**(`:시작-종료`)을 넣어 여러 종이 섞여 나오게 했다.
+    `MaxAlive` 상한은 **취소가 아니라 대기**이고, 소환 반경 1.9배 밖으로 나간 적은
+    **지우지 않고 옮긴다**(경험치 증발 방지). 살아 있는 수는 `int` 가 아니라 **목록 + 실물 확인**
+53. ✅ **적 행동 분화 3종** (I-47). Demon **원거리**(거리 유지 + 옆걸음 + 적탄) ·
+    Wolf **돌진**(예고→대시→경직) · **전 종류 무리 분리**(조향, 4스텝마다).
+    ROADMAP 의 상속 대신 **`EnemyAI` enum(데이터 주도)** — 이유는 2-18
+54. ✅ **보물상자 + 자석 픽업** (I-48). 엘리트/보스가 상자를 **확정** 드랍(레벨업 패널 재사용,
+    레벨은 안 오름), 잡몹이 `0.6%` 로 자석을 떨군다(웨이브당 1~2개). 자석은 **static 상태 없이**
+    그 순간 살아 있는 구슬에만 표시를 남긴다
+55. ⏳ **다음**: [`ROADMAP.md`](ROADMAP.md) §8 **2단계(오디오 파일 확보)** — 사용자 결정은
+    "**음원을 만들어서 사용**". 클립 참조를 어디에 들려 줄지는 아직 미정 (→ [`TODO.md`](TODO.md) §2).
     그 전에 §1 런타임 재검증 → 스탯 재조정 → 재화 구조 결정 (→ [`TODO.md`](TODO.md) §6)
 
 **16~17 과정에서 함께 처리한 것**

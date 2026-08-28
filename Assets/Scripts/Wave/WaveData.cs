@@ -1,12 +1,26 @@
 using System.Collections.Generic;
 using UnityEngine;
 
+/// <summary>
+/// 웨이브 안의 소환 항목 하나. <b>항목끼리는 동시에(병렬) 진행된다.</b>
+///
+/// <para>예전에는 순차였다 — 앞 항목의 마리수를 다 뿌려야 다음 항목이 시작됐다.
+/// 그래서 (마리수 x 간격) 의 합이 <c>SurvivalTime</c> 을 넘으면 뒤쪽 적은
+/// <b>아예 등장하지 못했다.</b> Normal3 의 Goblin 40마리가 그랬다.
+/// 지금은 각 항목이 자기 시간창 안에서 따로 돌기 때문에 여러 종이 섞여 나온다.</para>
+/// </summary>
 [System.Serializable]
 public class WaveSpawnEntry
 {
     public EnemyData Enemy;
     public int       Count;
     public float     SpawnInterval = 0.5f;
+
+    /// <summary>웨이브 시작 후 이 초가 지나야 소환을 시작한다.</summary>
+    public float StartTime;
+
+    /// <summary>이 초를 넘기면 남은 마리수가 있어도 그만둔다. <c>0</c> 이면 제한 없음.</summary>
+    public float EndTime;
 }
 
 /// <summary>
@@ -32,8 +46,23 @@ public class WaveData : ScriptableObject
     public List<WaveSpawnEntry> Spawns = new();
     public float                SpawnRadius = 20f;   // 플레이어 기준 소환 반경
 
+    /// <summary>
+    /// 동시에 살아 있을 수 있는 적의 최대 수. 차 있으면 소환이 <b>대기</b>한다(취소가 아니다).
+    ///
+    /// <para>순차 소환일 때는 필요 없었다 — 한 번에 한 종류만 나왔으니까.
+    /// 병렬로 바꾸면 여러 항목이 동시에 쏟아져 상한이 없으면 프레임이 무너진다.
+    /// 엘리트·보스 오버라이드는 이 상한을 무시한다 (보스가 못 나오면 웨이브가 끝나지 않는다).</para>
+    /// </summary>
+    public int MaxAlive = 100;
+
     [Header("엘리트 / 보스 오버라이드")]
     public EnemyData EliteOverride;   // Elite 스테이지에서 추가되는 특수 적
     public EnemyData BossOverride;    // Boss 스테이지 보스
     public int       EliteCount = 1;
+
+    /// <summary>엘리트를 소환할 시각(웨이브 시작 후 초). 여러 마리면 1.5초 간격으로 이어 나온다.</summary>
+    public float EliteTime = 40f;
+
+    /// <summary>보스를 소환할 시각(웨이브 시작 후 초).</summary>
+    public float BossTime = 2f;
 }

@@ -14,9 +14,11 @@ public class EnemyBase : MonoBehaviour
     protected int   CurrencyDrop;
 
     protected EnemyData    Data;
-    protected bool         IsElite;
-    protected bool         IsBoss;
     protected bool         IsDead;
+
+    // 등급은 밖에서도 읽는다 (WaveManager 가 보스는 재배치 대상에서 뺀다).
+    public bool IsElite { get; protected set; }
+    public bool IsBoss  { get; protected set; }
 
     protected Rigidbody2D Rb;
     protected Transform   PlayerTransform;
@@ -54,6 +56,16 @@ public class EnemyBase : MonoBehaviour
         _knockbackTimer = 0f;
         if (_deathPopRoutine != null) { StopCoroutine(_deathPopRoutine); _deathPopRoutine = null; }
         SetCollidersEnabled(true);
+
+        // ── 행동 상태 초기화 ─────────────────────────────────────
+        // 쿨다운에 랜덤 초기값을 주는 게 핵심이다. 0 으로 맞춰 두면 같은 프레임에 스폰된
+        // 무리가 전부 같은 순간에 쏘고 같은 순간에 돌진해 "한 몸"처럼 보인다.
+        _attackTimer  = Random.Range(0f, data.AttackCooldown);
+        _chargeCd     = Random.Range(0f, data.ChargeCooldown);
+        _chargeState  = ChargeState.Chase;
+        _strafeDir    = Random.value < 0.5f ? -1f : 1f;
+        _separation   = Vector2.zero;
+        _sepCountdown = Random.Range(1, SeparationEveryNSteps + 1);
 
         OnInitialized();
     }
@@ -122,13 +134,217 @@ public class EnemyBase : MonoBehaviour
             return;
         }
 
-        MoveTowardsPlayer();
+        switch (Data.AI)
+        {
+            case EnemyAI.Ranged:  TickRanged();  break;
+            case EnemyAI.Charger: TickCharger(); break;
+            default:              MoveTowardsPlayer(); break;
+        }
+    }
+
+    /// <summary>
+    /// 적을 다른 위치로 옮긴다. <b>죽이는 게 아니라 재활용</b>이다 (WaveManager 가 호출).
+    ///
+    /// <para>Rigidbody2D 는 <c>transform</c> 만 바꾸면 보간이 이전 위치에서 새 위치까지
+    /// 한 줄로 미끄러지듯 그려진다. <c>Rb.position</c> 을 같이 옮겨 그 잔상을 없앤다.</para>
+    /// </summary>
+    public void Reposition(Vector2 pos)
+    {
+        if (IsDead) return;
+
+        transform.position = pos;
+        Rb.position        = pos;
+        Rb.linearVelocity  = Vector2.zero;
+        _knockbackTimer    = 0f;
     }
 
     protected virtual void MoveTowardsPlayer()
     {
-        Vector2 dir = ((Vector2)(PlayerTransform.position - transform.position)).normalized;
-        Rb.linearVelocity = dir * MoveSpeed;
+        Rb.linearVelocity = Steer(ToPlayer().normalized) * MoveSpeed;
+    }
+
+    protected Vector2 ToPlayer() => (Vector2)PlayerTransform.position - (Vector2)transform.position;
+
+    // ── 무리 분리 (모든 적 공통) ─────────────────────────────────
+    //
+    // 예전에는 전원이 플레이어를 향해 정확히 같은 방향으로 달려서 좌표가 수렴하고
+    // 결국 한 점에 겹쳐 "한 덩어리"가 됐다. 겹친 적은 여러 마리인지 알 수가 없고,
+    // 광역기 한 방에 몰살돼 전투가 밋밋해진다.
+    //
+    // 물리 충돌로 밀어내지 않는 이유: 적 콜라이더는 트리거라 반발이 없고,
+    // 트리거를 끄면 접촉 피해 판정(OnTriggerStay2D)이 통째로 바뀐다.
+    // 그래서 이동 방향에 "이웃에서 멀어지는 성분"을 섞는 조향으로 푼다.
+
+    private const float SeparationRadius     = 0.85f;
+    private const float SeparationWeight     = 0.9f;
+    private const int   SeparationEveryNSteps = 4;
+
+    private static readonly Collider2D[] NeighborBuf = new Collider2D[12];
+    private static ContactFilter2D _enemyFilter;
+    private static bool            _enemyFilterReady;
+
+    private Vector2 _separation;
+    private int     _sepCountdown;
+
+    /// <summary>가려는 방향에 이웃 회피를 섞는다.</summary>
+    protected Vector2 Steer(Vector2 desired)
+    {
+        Vector2 sep = GetSeparation();
+        if (sep == Vector2.zero) return desired;
+        return (desired + sep * SeparationWeight).normalized;
+    }
+
+    private Vector2 GetSeparation()
+    {
+        // 매 물리 프레임 전부 재면 적 100마리 x 50Hz = 초당 5000번 질의다.
+        // 개체마다 다른 위상으로 4스텝에 한 번만 다시 재고 그 사이에는 값을 재사용한다.
+        if (--_sepCountdown > 0) return _separation;
+        _sepCountdown = SeparationEveryNSteps;
+
+        if (!_enemyFilterReady)
+        {
+            _enemyFilter = new ContactFilter2D { useTriggers = true };
+            _enemyFilter.SetLayerMask(LayerMask.GetMask("Enemy"));
+            _enemyFilter.useLayerMask = true;
+            _enemyFilterReady = true;
+        }
+
+        Vector2 pos = transform.position;
+        float   r   = SeparationRadius * Mathf.Max(0.5f, transform.localScale.x);
+
+        int n = Physics2D.OverlapCircle(pos, r, _enemyFilter, NeighborBuf);
+
+        Vector2 sum = Vector2.zero;
+        for (int i = 0; i < n; i++)
+        {
+            var c = NeighborBuf[i];
+            if (c == null || c.transform == transform) continue;
+
+            Vector2 away = pos - (Vector2)c.transform.position;
+            float   d    = away.magnitude;
+
+            // 완전히 겹친 경우엔 방향이 없다. 아무 쪽으로나 흩어뜨린다.
+            if (d < 0.0001f) { away = Random.insideUnitCircle.normalized; d = 0.01f; }
+
+            sum += away / (d * d);   // 가까울수록 강하게
+        }
+
+        _separation = Vector2.ClampMagnitude(sum, 1f);
+        return _separation;
+    }
+
+    // ── 원거리 (AI = Ranged) ─────────────────────────────────────
+
+    private float _attackTimer;
+    private float _strafeDir;   // +1 / -1. 개체마다 옆걸음 방향을 다르게
+
+    protected virtual void TickRanged()
+    {
+        Vector2 toPlayer = ToPlayer();
+        float   dist     = toPlayer.magnitude;
+        float   want     = Mathf.Max(1f, Data.PreferredRange);
+
+        Vector2 desired;
+        if      (dist > want)         desired =  toPlayer.normalized;                       // 접근
+        else if (dist < want * 0.7f)  desired = -toPlayer.normalized;                       // 후퇴
+        else                          desired = Vector2.Perpendicular(toPlayer).normalized  // 옆걸음
+                                              * _strafeDir;
+
+        Rb.linearVelocity = Steer(desired) * MoveSpeed;
+
+        _attackTimer -= Time.fixedDeltaTime;
+        if (_attackTimer > 0f || dist > want * 1.2f) return;
+
+        _attackTimer = Mathf.Max(0.2f, Data.AttackCooldown);
+        FireProjectile(toPlayer.normalized);
+    }
+
+    private void FireProjectile(Vector2 dir)
+    {
+        if (Data.ProjectilePrefab == null || SharedPool == null) return;
+
+        var go = SharedPool.Get(Data.ProjectilePrefab, transform.position, Quaternion.identity);
+        var p  = go.GetComponent<EnemyProjectile>();
+        if (p == null) return;
+
+        float dmg = Data.ProjectileDamage > 0f ? Data.ProjectileDamage : ContactDamage;
+
+        // 사거리를 시간으로 환산한다. 넉넉히 1.6배 — 옆걸음 중에 쏜 탄이 도중에 사라지면
+        // 플레이어 입장에선 그냥 안 맞은 것처럼 보인다.
+        float life = Data.PreferredRange * 1.6f / Mathf.Max(0.1f, Data.ProjectileSpeed);
+
+        p.Initialize(dir, dmg, Data.ProjectileSpeed, life, SharedPool);
+    }
+
+    // ── 돌진 (AI = Charger) ──────────────────────────────────────
+
+    private enum ChargeState { Chase, Windup, Dash, Recover }
+
+    private ChargeState _chargeState;
+    private float       _chargeTimer;
+    private float       _chargeCd;
+    private Vector2     _chargeDir;
+    private float       _blinkTimer;
+
+    protected virtual void TickCharger()
+    {
+        float dt = Time.fixedDeltaTime;
+        _chargeCd -= dt;
+
+        switch (_chargeState)
+        {
+            case ChargeState.Chase:
+                MoveTowardsPlayer();
+                if (_chargeCd <= 0f && ToPlayer().magnitude <= Data.ChargeRange)
+                {
+                    _chargeState = ChargeState.Windup;
+                    _chargeTimer = Data.ChargeWindup;
+                    _blinkTimer  = 0f;
+                }
+                break;
+
+            case ChargeState.Windup:
+                // 멈춰서 깜빡인다 = "지금 온다"는 예고. 이게 없으면 그냥 갑자기 빨라지는
+                // 적일 뿐이라 피할 방법이 없고, 맞으면 억울하다.
+                Rb.linearVelocity = Vector2.zero;
+                _chargeDir        = ToPlayer().normalized;   // 마지막 순간까지 조준을 갱신
+
+                _blinkTimer -= dt;
+                if (_blinkTimer <= 0f)
+                {
+                    _blinkTimer = 0.12f;
+                    if (Visual != null) Visual.Flash();
+                }
+
+                _chargeTimer -= dt;
+                if (_chargeTimer <= 0f)
+                {
+                    _chargeState = ChargeState.Dash;
+                    _chargeTimer = Data.ChargeDuration;
+                }
+                break;
+
+            case ChargeState.Dash:
+                // 돌진 중에는 조향하지 않는다. 유도되는 돌진은 피할 수 없다.
+                Rb.linearVelocity = _chargeDir * (MoveSpeed * Data.ChargeSpeedMult);
+                _chargeTimer -= dt;
+                if (_chargeTimer <= 0f)
+                {
+                    _chargeState = ChargeState.Recover;
+                    _chargeTimer = Data.ChargeRecover;
+                }
+                break;
+
+            case ChargeState.Recover:
+                Rb.linearVelocity = Vector2.zero;   // 경직 — 플레이어의 반격 기회
+                _chargeTimer -= dt;
+                if (_chargeTimer <= 0f)
+                {
+                    _chargeState = ChargeState.Chase;
+                    _chargeCd    = Data.ChargeCooldown;
+                }
+                break;
+        }
     }
 
     // ── 전투 ────────────────────────────────────────────────────
@@ -180,6 +396,12 @@ public class EnemyBase : MonoBehaviour
 
         // 경험치 드랍
         ExperienceManager.Instance?.SpawnExpDrop(transform.position, XpDrop);
+
+        // 보물상자 / 자석 드랍.
+        // 상자는 엘리트·보스 확정, 자석은 잡몹에게만 낮은 확률로 나온다 —
+        // 엘리트가 자석까지 떨구면 상자와 겹쳐 어느 쪽을 먹은 건지 알 수 없다.
+        if (IsElite || IsBoss) ExperienceManager.Instance?.SpawnChest(transform.position);
+        else                   ExperienceManager.Instance?.RollMagnetDrop(transform.position);
 
         // 재화 드랍 (GrantGold 가 GoldGain 배율을 적용한다)
         if (CurrencyDrop > 0)
@@ -256,10 +478,29 @@ public class EnemyBase : MonoBehaviour
     {
         IsDead = true;
         Rb.linearVelocity = Vector2.zero;
-        // 오브젝트 풀로 반환
-        var pool = FindFirstObjectByType<ObjectPool>();
-        if (pool != null) pool.Return(gameObject);
-        else gameObject.SetActive(false);
+
+        if (SharedPool != null) SharedPool.Return(gameObject);
+        else                    gameObject.SetActive(false);
+    }
+
+    // ── 오브젝트 풀 ──────────────────────────────────────────────
+    //
+    // 예전에는 ForceDespawn 마다 FindFirstObjectByType 을 돌렸다. 씬 전체 순회라
+    // 적이 초당 수십 마리씩 죽는 이 게임에서는 무시할 수 없는 비용이고,
+    // 적탄 발사까지 같은 조회를 하게 되면서 더 나빠졌다. 한 번 찾아 두고 재사용한다.
+    //
+    // 파괴된 오브젝트는 Unity 가 == null 을 true 로 만들어 주므로
+    // 씬을 다시 로드해도 알아서 다시 찾는다. (?. 는 그 판정을 못 한다 — I-24)
+
+    private static ObjectPool _sharedPool;
+
+    protected static ObjectPool SharedPool
+    {
+        get
+        {
+            if (_sharedPool == null) _sharedPool = FindFirstObjectByType<ObjectPool>();
+            return _sharedPool;
+        }
     }
 
     // ── 접촉 데미지 ──────────────────────────────────────────────

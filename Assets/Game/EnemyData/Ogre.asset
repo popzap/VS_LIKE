@@ -21,6 +21,18 @@ MonoBehaviour:
   MoveSpeed: 1.2
   ContactDamage: 25
   Armor: 6
+  AI: 0
+  ProjectilePrefab: {fileID: 0}
+  PreferredRange: 7
+  AttackCooldown: 2.5
+  ProjectileSpeed: 6
+  ProjectileDamage: 0
+  ChargeRange: 6
+  ChargeWindup: 0.45
+  ChargeSpeedMult: 3.5
+  ChargeDuration: 0.4
+  ChargeRecover: 0.6
+  ChargeCooldown: 3
   XpDrop: 18
   CurrencyDrop: 6
   EliteHpMult: 2

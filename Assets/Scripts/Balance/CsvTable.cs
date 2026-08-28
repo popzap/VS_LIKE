@@ -162,6 +162,22 @@ namespace Balance
             return result;
         }
 
+        /// <summary>
+        /// 열거형 값. 대소문자를 구분하지 않는다 — CSV 를 손으로 쓰기 때문에
+        /// <c>ranged</c> 라고 적었다가 조용히 기본값이 되는 사고를 막는다.
+        /// 이름이 아예 틀리면 경고를 남기고 <c>fallback</c> 을 쓴다.
+        /// </summary>
+        public static T Enum<T>(Dictionary<string, string> row, string key, T fallback)
+            where T : struct, System.Enum
+        {
+            var v = Str(row, key);
+            if (string.IsNullOrEmpty(v)) return fallback;
+            if (System.Enum.TryParse<T>(v, true, out var e)) return e;
+
+            Debug.LogWarning($"[CSV] '{key}' 열의 값 '{v}' 는 {typeof(T).Name} 에 없다. {fallback} 로 대체한다.");
+            return fallback;
+        }
+
         public static Color Color(Dictionary<string, string> row, string key, Color fallback)
         {
             var v = Str(row, key);

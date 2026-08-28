@@ -110,6 +110,21 @@ public static class BalanceImporter
             a.XpDrop        = CsvRow.Int  (row, "XpDrop",        a.XpDrop);
             a.CurrencyDrop  = CsvRow.Int  (row, "CurrencyDrop",  a.CurrencyDrop);
 
+            a.AI = CsvRow.Enum(row, "AI", a.AI);
+
+            a.ProjectilePrefab = LoadRef<GameObject>(row, "ProjectilePrefab", a.ProjectilePrefab);
+            a.PreferredRange   = CsvRow.Float(row, "PreferredRange",   a.PreferredRange);
+            a.AttackCooldown   = CsvRow.Float(row, "AttackCooldown",   a.AttackCooldown);
+            a.ProjectileSpeed  = CsvRow.Float(row, "ProjectileSpeed",  a.ProjectileSpeed);
+            a.ProjectileDamage = CsvRow.Float(row, "ProjectileDamage", a.ProjectileDamage);
+
+            a.ChargeRange     = CsvRow.Float(row, "ChargeRange",     a.ChargeRange);
+            a.ChargeWindup    = CsvRow.Float(row, "ChargeWindup",    a.ChargeWindup);
+            a.ChargeSpeedMult = CsvRow.Float(row, "ChargeSpeedMult", a.ChargeSpeedMult);
+            a.ChargeDuration  = CsvRow.Float(row, "ChargeDuration",  a.ChargeDuration);
+            a.ChargeRecover   = CsvRow.Float(row, "ChargeRecover",   a.ChargeRecover);
+            a.ChargeCooldown  = CsvRow.Float(row, "ChargeCooldown",  a.ChargeCooldown);
+
             a.EliteHpMult     = CsvRow.Float(row, "EliteHpMult",     a.EliteHpMult);
             a.EliteDamageMult = CsvRow.Float(row, "EliteDamageMult", a.EliteDamageMult);
             a.EliteSpeedMult  = CsvRow.Float(row, "EliteSpeedMult",  a.EliteSpeedMult);
@@ -277,7 +292,10 @@ public static class BalanceImporter
             a.UseKillClear  = CsvRow.Bool (row, "UseKillClear",  a.UseKillClear);
             a.KillTarget    = CsvRow.Int  (row, "KillTarget",    a.KillTarget);
             a.SpawnRadius   = CsvRow.Float(row, "SpawnRadius",   a.SpawnRadius);
+            a.MaxAlive      = CsvRow.Int  (row, "MaxAlive",      a.MaxAlive);
             a.EliteCount    = CsvRow.Int  (row, "EliteCount",    a.EliteCount);
+            a.EliteTime     = CsvRow.Float(row, "EliteTime",     a.EliteTime);
+            a.BossTime      = CsvRow.Float(row, "BossTime",      a.BossTime);
 
             a.EliteOverride = LoadById<EnemyData>(EnemyFolder, CsvRow.Str(row, "EliteOverride"), id, "EnemyData", log);
             a.BossOverride  = LoadById<EnemyData>(EnemyFolder, CsvRow.Str(row, "BossOverride"),  id, "EnemyData", log);
@@ -290,8 +308,11 @@ public static class BalanceImporter
     }
 
     /// <summary>
-    /// 스폰 셀 문법: <c>Goblin*18@0.9|Zombie*22@0.6</c>
-    /// (적Id * 마리수 @ 스폰간격초). 간격을 생략하면 0.5초.
+    /// 스폰 셀 문법: <c>Goblin*18@0.9:10-60|Zombie*22@0.6</c>
+    /// (적Id * 마리수 @ 스폰간격초 : 시작초-종료초).
+    ///
+    /// <para>간격을 생략하면 0.5초, 시간창을 생략하면 웨이브 내내(0부터 제한 없음)다.
+    /// 항목끼리는 <b>동시에</b> 진행되므로 시간창이 곧 난이도 곡선이다.</para>
     /// </summary>
     private static List<WaveSpawnEntry> ParseSpawns(string cell, string waveId, StringBuilder log)
     {
@@ -303,11 +324,28 @@ public static class BalanceImporter
             var part = chunk.Trim();
             if (part.Length == 0) continue;
 
+            // 시간창 ':시작-종료' — '@' 보다 먼저 떼야 한다 (뒤쪽에 붙기 때문)
+            float start = 0f, end = 0f;
+            int colon = part.IndexOf(':');
+            if (colon >= 0)
+            {
+                var window = part[(colon + 1)..].Trim();
+                part = part[..colon];
+
+                int dash = window.IndexOf('-');
+                if (dash >= 0)
+                {
+                    ParseFloat(window[..dash],        out start);
+                    ParseFloat(window[(dash + 1)..],  out end);
+                }
+                else ParseFloat(window, out start);
+            }
+
             float interval = 0.5f;
             int at = part.IndexOf('@');
             if (at >= 0)
             {
-                float.TryParse(part[(at + 1)..].Trim(), NumberStyles.Float, CultureInfo.InvariantCulture, out interval);
+                ParseFloat(part[(at + 1)..], out interval);
                 part = part[..at];
             }
 
@@ -322,10 +360,20 @@ public static class BalanceImporter
             var enemy = LoadById<EnemyData>(EnemyFolder, part.Trim(), waveId, "EnemyData", log);
             if (enemy == null) continue;
 
-            list.Add(new WaveSpawnEntry { Enemy = enemy, Count = count, SpawnInterval = interval });
+            list.Add(new WaveSpawnEntry
+            {
+                Enemy         = enemy,
+                Count         = count,
+                SpawnInterval = interval,
+                StartTime     = start,
+                EndTime       = end
+            });
         }
         return list;
     }
+
+    private static void ParseFloat(string s, out float value) =>
+        float.TryParse(s.Trim(), NumberStyles.Float, CultureInfo.InvariantCulture, out value);
 
     // ── 직업 (무기를 Id 로 참조) ───────────────────────────────────
 
@@ -515,10 +563,16 @@ public static class BalanceImporter
 
         ExportRows("Enemies.csv",
             "Id,EnemyName,Prefab,Sprite,Tint,SizeScale,MaxHp,MoveSpeed,ContactDamage,Armor,XpDrop,CurrencyDrop," +
+            "AI,ProjectilePrefab,PreferredRange,AttackCooldown,ProjectileSpeed,ProjectileDamage," +
+            "ChargeRange,ChargeWindup,ChargeSpeedMult,ChargeDuration,ChargeRecover,ChargeCooldown," +
             "EliteHpMult,EliteDamageMult,EliteSpeedMult,EliteXpMult,BossHpMult,BossDamageMult,BossSpeedMult,BossXpMult",
             LoadAll<EnemyData>(EnemyFolder), (a, id) => string.Join(",",
                 id, E(a.EnemyName), E(Path(a.Prefab)), E(Path(a.Sprite)), CsvTable.ToHex(a.Tint), N(a.SizeScale),
                 N(a.MaxHp), N(a.MoveSpeed), N(a.ContactDamage), N(a.Armor), a.XpDrop, a.CurrencyDrop,
+                a.AI, E(Path(a.ProjectilePrefab)), N(a.PreferredRange), N(a.AttackCooldown),
+                N(a.ProjectileSpeed), N(a.ProjectileDamage),
+                N(a.ChargeRange), N(a.ChargeWindup), N(a.ChargeSpeedMult),
+                N(a.ChargeDuration), N(a.ChargeRecover), N(a.ChargeCooldown),
                 N(a.EliteHpMult), N(a.EliteDamageMult), N(a.EliteSpeedMult), a.EliteXpMult,
                 N(a.BossHpMult), N(a.BossDamageMult), N(a.BossSpeedMult), a.BossXpMult));
 
@@ -561,11 +615,12 @@ public static class BalanceImporter
                 a.ShopPrice));
 
         ExportRows("Waves.csv",
-            "Id,UseTimerClear,SurvivalTime,UseKillClear,KillTarget,SpawnRadius,Spawns,EliteOverride,BossOverride,EliteCount",
+            "Id,UseTimerClear,SurvivalTime,UseKillClear,KillTarget,SpawnRadius,MaxAlive,Spawns,EliteOverride,BossOverride,EliteCount,EliteTime,BossTime",
             LoadAll<WaveData>(WaveFolder), (a, id) => string.Join(",",
                 id, a.UseTimerClear ? 1 : 0, N(a.SurvivalTime), a.UseKillClear ? 1 : 0, a.KillTarget,
-                N(a.SpawnRadius), E(JoinSpawns(a.Spawns)),
-                E(Name(a.EliteOverride)), E(Name(a.BossOverride)), a.EliteCount));
+                N(a.SpawnRadius), a.MaxAlive, E(JoinSpawns(a.Spawns)),
+                E(Name(a.EliteOverride)), E(Name(a.BossOverride)), a.EliteCount,
+                N(a.EliteTime), N(a.BossTime)));
 
         ExportRows("Classes.csv",
             "Id,ClassName,Description,StartingWeapon,StartingWeaponLevel,BonusMaxHp,BonusMoveSpeed,BonusDamage," +
@@ -593,7 +648,11 @@ public static class BalanceImporter
         foreach (var s in spawns)
         {
             if (s?.Enemy == null) continue;
-            parts.Add($"{s.Enemy.name}*{s.Count}@{N(s.SpawnInterval)}");
+
+            string window = (s.StartTime > 0f || s.EndTime > 0f)
+                          ? $":{N(s.StartTime)}-{N(s.EndTime)}"
+                          : "";
+            parts.Add($"{s.Enemy.name}*{s.Count}@{N(s.SpawnInterval)}{window}");
         }
         return string.Join(CsvTable.ArraySeparator.ToString(), parts);
     }

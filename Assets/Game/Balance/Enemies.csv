@@ -4,10 +4,23 @@
 # Tint 는 스프라이트에 곱해지는 색이다. 종별 고유 스프라이트가 생긴 뒤로는 #FFFFFF(원색 유지)가 기본.
 #   피격 점멸·상태이상 같은 연출용으로만 다른 색을 쓴다.
 # Elite*/Boss* 는 배율이다. 엘리트/보스 스테이지에서 같은 적을 재활용할 때 곱해진다.
-Id,EnemyName,Prefab,Sprite,Tint,SizeScale,MaxHp,MoveSpeed,ContactDamage,Armor,XpDrop,CurrencyDrop,EliteHpMult,EliteDamageMult,EliteSpeedMult,EliteXpMult,BossHpMult,BossDamageMult,BossSpeedMult,BossXpMult
-Slime,Slime,Assets/Prefabs/Enemy_Goblin.prefab,Assets/Game/Sprites/Enemies/Slime.png,#FFFFFF,0.9,45,1.4,6,1,4,1,2.5,1.5,1.2,3,10,2.5,0.8,10
-Goblin,Goblin,Assets/Prefabs/Enemy_Goblin.prefab,Assets/Game/Sprites/Enemies/Goblin.png,#FFFFFF,1,30,2.2,8,0,3,1,2.5,1.5,1.2,3,10,2.5,0.8,10
-Zombie,Zombie,Assets/Prefabs/Enemy_Goblin.prefab,Assets/Game/Sprites/Enemies/Zombie.png,#FFFFFF,1.05,70,1.6,12,2,6,2,2.5,1.5,1.2,3,10,2.5,0.8,10
-Wolf,Wolf,Assets/Prefabs/Enemy_Goblin.prefab,Assets/Game/Sprites/Enemies/Wolf.png,#FFFFFF,0.85,40,4.2,10,0,6,2,2.5,1.5,1.3,3,10,2.5,0.9,10
-Demon,Demon,Assets/Prefabs/Enemy_Goblin.prefab,Assets/Game/Sprites/Enemies/Demon.png,#FFFFFF,1.25,160,2.8,20,4,22,8,2.2,1.4,1.15,3,8,2.2,0.85,10
-Ogre,Ogre,Assets/Prefabs/Enemy_Goblin.prefab,Assets/Game/Sprites/Enemies/Ogre.png,#FFFFFF,1.6,220,1.2,25,6,18,6,2,1.4,1.2,3,7,2,0.9,10
+#
+# AI : Chaser(직진) / Ranged(거리 유지 + 사격) / Charger(예고 → 돌진 → 경직)
+#   프리팹 하나를 6종이 공유하므로 상속이 아니라 이 열로 행동을 고른다.
+#   ⚠️ 빈 칸은 0 이 아니라 "기존 값 유지"다. Chaser 행의 원거리/돌진 칸을 비워 둔 건
+#      그 행동을 쓰지 않아서지 값이 0 이라는 뜻이 아니다.
+#
+# Ranged  : PreferredRange 를 유지하려 한다 (멀면 접근, 70% 보다 가까우면 후퇴, 사이는 옆걸음).
+#   ProjectileDamage 가 0 이면 ContactDamage 를 그대로 쓴다.
+#   탄 수명은 PreferredRange x 1.6 / ProjectileSpeed 로 자동 계산된다 (코드).
+#
+# Charger : ChargeWindup 이 이 행동의 전부다. 멈춰서 깜빡이는 예고가 없으면
+#   그냥 갑자기 빨라지는 적이라 피할 수가 없다. 돌진 거리 = MoveSpeed x Mult x Duration.
+#   Wolf 는 4.2 x 3 x 0.4 = 약 5유닛. 플레이어 이동 속도로 옆으로 피할 수 있는 폭이다.
+Id,EnemyName,Prefab,Sprite,Tint,SizeScale,MaxHp,MoveSpeed,ContactDamage,Armor,XpDrop,CurrencyDrop,AI,ProjectilePrefab,PreferredRange,AttackCooldown,ProjectileSpeed,ProjectileDamage,ChargeRange,ChargeWindup,ChargeSpeedMult,ChargeDuration,ChargeRecover,ChargeCooldown,EliteHpMult,EliteDamageMult,EliteSpeedMult,EliteXpMult,BossHpMult,BossDamageMult,BossSpeedMult,BossXpMult
+Slime,Slime,Assets/Prefabs/Enemy_Goblin.prefab,Assets/Game/Sprites/Enemies/Slime.png,#FFFFFF,0.9,45,1.4,6,1,4,1,Chaser,,,,,,,,,,,,2.5,1.5,1.2,3,10,2.5,0.8,10
+Goblin,Goblin,Assets/Prefabs/Enemy_Goblin.prefab,Assets/Game/Sprites/Enemies/Goblin.png,#FFFFFF,1,30,2.2,8,0,3,1,Chaser,,,,,,,,,,,,2.5,1.5,1.2,3,10,2.5,0.8,10
+Zombie,Zombie,Assets/Prefabs/Enemy_Goblin.prefab,Assets/Game/Sprites/Enemies/Zombie.png,#FFFFFF,1.05,70,1.6,12,2,6,2,Chaser,,,,,,,,,,,,2.5,1.5,1.2,3,10,2.5,0.8,10
+Wolf,Wolf,Assets/Prefabs/Enemy_Goblin.prefab,Assets/Game/Sprites/Enemies/Wolf.png,#FFFFFF,0.85,40,4.2,10,0,6,2,Charger,,,,,,6,0.45,3,0.4,0.6,3,2.5,1.5,1.3,3,10,2.5,0.9,10
+Demon,Demon,Assets/Prefabs/Enemy_Goblin.prefab,Assets/Game/Sprites/Enemies/Demon.png,#FFFFFF,1.25,160,2.8,20,4,22,8,Ranged,Assets/Prefabs/Proj_EnemyBolt.prefab,7,2.5,6,12,,,,,,,2.2,1.4,1.15,3,8,2.2,0.85,10
+Ogre,Ogre,Assets/Prefabs/Enemy_Goblin.prefab,Assets/Game/Sprites/Enemies/Ogre.png,#FFFFFF,1.6,220,1.2,25,6,18,6,Chaser,,,,,,,,,,,,2,1.4,1.2,3,7,2,0.9,10

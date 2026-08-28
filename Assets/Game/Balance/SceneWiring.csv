@@ -10,3 +10,6 @@ WaveManager,eliteWaves,Assets/Game/WaveData/Elite1.asset|Assets/Game/WaveData/El
 WaveManager,bossWave,Assets/Game/WaveData/Boss1.asset,보스 스테이지 고정
 GameManager,classes,Assets/Game/ClassData/Warrior.asset|Assets/Game/ClassData/Ranger.asset|Assets/Game/ClassData/Mage.asset,직업 목록. 여기 없는 직업은 선택 화면에 뜨지 않는다
 BuildingManager,placementBlockLayer,Building,이 레이어와 겹치면 설치를 막는다. 레이어 "이름"을 | 로 나열
+ExperienceManager,chestPrefab,Assets/Prefabs/Pickup_Chest.prefab,엘리트/보스가 확정으로 떨구는 보물상자
+ExperienceManager,magnetPrefab,Assets/Prefabs/Pickup_Magnet.prefab,잡몹이 확률로 떨구는 자석
+ExperienceManager,magnetDropChance,0.006,잡몹 1마리당 자석 드랍 확률. 웨이브당 200~300 마리가 죽으므로 1~2개 나온다

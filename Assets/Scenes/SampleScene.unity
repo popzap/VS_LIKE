@@ -15545,6 +15545,14 @@ PrefabInstance:
       value: 
       objectReference: {fileID: 4808611742429082724}
     - target: {fileID: 3487634682706099646, guid: 662dda8a5b427484cbf8f24476baa8f0, type: 3}
+      propertyPath: chestPrefab
+      value: 
+      objectReference: {fileID: 4587116294629192180, guid: ad5b8435235bfb241a94ba50a2421c29, type: 3}
+    - target: {fileID: 3487634682706099646, guid: 662dda8a5b427484cbf8f24476baa8f0, type: 3}
+      propertyPath: magnetPrefab
+      value: 
+      objectReference: {fileID: 4471753706764302437, guid: 34f63be18fdf25d45800059eea4aa862, type: 3}
+    - target: {fileID: 3487634682706099646, guid: 662dda8a5b427484cbf8f24476baa8f0, type: 3}
       propertyPath: expDropPrefab
       value: 
       objectReference: {fileID: 5031122426119572849, guid: ab11ad2470e5bbd448f175b544113393, type: 3}

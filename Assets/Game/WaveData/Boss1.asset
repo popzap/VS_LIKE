@@ -19,11 +19,18 @@ MonoBehaviour:
   Spawns:
   - Enemy: {fileID: 11400000, guid: 6886e1064a7c8504cbefc1203a66f2bb, type: 2}
     Count: 12
-    SpawnInterval: 1.2
+    SpawnInterval: 4
+    StartTime: 0
+    EndTime: 50
   - Enemy: {fileID: 11400000, guid: 0a732f4198fbdec43a4e3a115015f59d, type: 2}
     Count: 6
-    SpawnInterval: 2
+    SpawnInterval: 8
+    StartTime: 5
+    EndTime: 53
   SpawnRadius: 22
+  MaxAlive: 90
   EliteOverride: {fileID: 0}
   BossOverride: {fileID: 11400000, guid: c1e01a681911aaa4784749a69ba1f58c, type: 2}
   EliteCount: 1
+  EliteTime: 40
+  BossTime: 3
