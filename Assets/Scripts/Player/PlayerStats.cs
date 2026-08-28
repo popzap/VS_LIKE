@@ -170,7 +170,11 @@ public class PlayerStats : MonoBehaviour
         float dmg = Mathf.Max(1, raw - Final.Armor);
         CurrentHp -= dmg;
         DamagePopupManager.Instance?.Show(transform.position, dmg);
-        if (CurrentHp <= 0) Die();
+
+        // 적 쪽과 같은 이유로, 죽는 타격에는 피격음을 내지 않는다.
+        if (CurrentHp <= 0) { Die(); return; }
+
+        AudioManager.Play(SfxId.PlayerHit);
     }
 
     public void Heal(float amount)
@@ -181,6 +185,7 @@ public class PlayerStats : MonoBehaviour
     private void Die()
     {
         IsDead = true;
+        AudioManager.Play(SfxId.PlayerDie);
         GameManager.Instance.OnPlayerDied();
     }
 }

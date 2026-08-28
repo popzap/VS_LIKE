@@ -18,6 +18,10 @@ public class AudioManager : MonoBehaviour
 {
     public static AudioManager Instance { get; private set; }
 
+    [Header("Library")]
+    [Tooltip("키(SfxId/BgmId) → 클립 표. 비어 있으면 소리만 안 날 뿐 게임은 정상 동작한다.")]
+    [SerializeField] private AudioLibrary library;
+
     [Header("BGM")]
     [SerializeField] private AudioSource bgmSource;
 
@@ -94,6 +98,44 @@ public class AudioManager : MonoBehaviour
         if (_sfxPool == null) return;
         for (int i = 0; i < _sfxPool.Length; i++)
             _sfxPool[i].volume = _sfxBaseVolume[i] * SfxVolume;
+    }
+
+    // ── 키로 재생 (호출부가 쓰는 입구) ────────────────────────────
+    //
+    // 호출부는 클립 참조를 들고 다니지 않는다. AudioManager.Play(SfxId.EnemyHit) 한 줄이면 끝이다.
+    // static 래퍼를 두는 이유 — 소리는 "있으면 좋고 없으면 마는" 부수 효과라
+    // 호출부마다 null 검사를 늘어놓게 하고 싶지 않다. 매니저가 아직/이미 없으면 조용히 넘어간다.
+
+    public AudioLibrary Library => library;
+
+    /// <summary>효과음을 키로 재생한다. 매니저나 클립이 없으면 아무 일도 하지 않는다.</summary>
+    public static void Play(SfxId id)
+    {
+        if (Instance == null) return;
+        Instance.PlaySfx(id);
+    }
+
+    /// <summary>배경음을 키로 튼다. 같은 곡이 이미 돌고 있으면 아무 일도 하지 않는다.</summary>
+    public static void PlayMusic(BgmId id, float fade = 1f)
+    {
+        if (Instance == null) return;
+        Instance.PlayBgm(id, fade);
+    }
+
+    public void PlaySfx(SfxId id)
+    {
+        if (library == null || id == SfxId.None) return;
+
+        var e = library.GetSfx(id);
+        if (e == null || e.Clip == null) return;   // 아직 안 만든 소리 — 조용히 넘어간다
+
+        PlaySfx(e.Clip, e.Volume, e.PitchJitter);
+    }
+
+    public void PlayBgm(BgmId id, float fade = 1f)
+    {
+        if (library == null || id == BgmId.None) return;
+        PlayBgm(library.GetBgm(id), fade);
     }
 
     // ── 효과음 ───────────────────────────────────────────────────

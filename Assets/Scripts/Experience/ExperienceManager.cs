@@ -87,10 +87,18 @@ public class ExperienceManager : MonoBehaviour
         CurrentXp += Mathf.Max(1, Mathf.RoundToInt(amount * mult));
         OnXpChanged?.Invoke(CurrentXp, XpToNext);
 
+        // 구슬이 초당 수십 개씩 들어오지만 AudioManager 의 0.04초 중복 컷이 걸러 준다.
+        AudioManager.Play(SfxId.XpPickup);
+
         while (CurrentXp >= XpToNext)
         {
             CurrentXp -= XpToNext;
             CurrentLevel++;
+
+            // 팡파레는 여기에만 둔다. TriggerLevelUp 은 보물상자 보상도 같이 쓰는데,
+            // 상자는 레벨이 오르는 게 아니라 카드만 한 번 더 고르는 것이라 소리가 달라야 한다.
+            AudioManager.Play(SfxId.LevelUp);
+
             OnLevelUp?.Invoke(CurrentLevel);
             TriggerLevelUp();
         }

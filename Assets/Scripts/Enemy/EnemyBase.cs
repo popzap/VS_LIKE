@@ -366,7 +366,10 @@ public class EnemyBase : MonoBehaviour
         // 데미지 팝업 (이벤트로 분리하거나 DamagePopupManager 사용)
         DamagePopupManager.Instance?.Show(transform.position, dmg);
 
+        // 죽는 타격에는 피격음을 내지 않는다 — 사망음과 겹쳐서 뭉개진다.
         if (CurrentHp <= 0) { Die(); return; }
+
+        AudioManager.Play(SfxId.EnemyHit);
 
         ApplyKnockback(from);
     }
@@ -411,6 +414,7 @@ public class EnemyBase : MonoBehaviour
         GameManager.Instance?.WaveManager.OnEnemyKilled(this);
 
         PlayDeathImpact();
+        AudioManager.Play(SfxId.EnemyDie);
 
         OnDeath();
 

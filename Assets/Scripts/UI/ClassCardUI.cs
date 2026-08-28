@@ -42,7 +42,11 @@ public class ClassCardUI : MonoBehaviour
         if (button != null)
         {
             button.onClick.RemoveAllListeners();
-            button.onClick.AddListener(() => onClick(index));
+            button.onClick.AddListener(() =>
+            {
+                AudioManager.Play(SfxId.UiSelect);
+                onClick(index);
+            });
             button.interactable = unlocked;
         }
 

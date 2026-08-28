@@ -6,7 +6,7 @@
 > 기존의 「C# 스크립트는 완성 단계」라는 전제와 「요청 없이 코드 건드리지 말 것」 규칙이 **해제됨**.
 > 이제 게임 완성을 위해 C# 스크립트 신규 작성·수정이 허용된다.
 >
-> **최종 갱신:** 2026-08-28 (14차 — ROADMAP 3단계: 병렬 소환 · 적 행동 분화 · 보물상자/자석)
+> **최종 갱신:** 2026-08-28 (15차 — ROADMAP 2단계: 오디오 · BGM 4곡 + SFX 14종 + 호출부 18곳)
 > 검증 방식: Unity MCP + Play 모드 스모크 테스트 + YAML 직접 파싱
 > **검증 기준 파일:** `Assets/Scenes/SampleScene.unity`
 >
@@ -1637,7 +1637,139 @@ Demon 은 `PreferredRange`(7)에 **정확히 수렴**해 머문다. Wolf 는 4.2
 
 ---
 
-## 2-1. 이슈 목록 (I-1 ~ I-48 — 전부 해결됨)
+## 2-19. ✅ ROADMAP 2단계 — 게임에 소리가 붙었다 (I-49, 2026-08-28 15차)
+
+[`ROADMAP.md`](ROADMAP.md) §8 의 **2단계("소리를 붓는다")** — A-5(BGM 4곡) + A-6(SFX 세트 + 호출부 연결).
+배관(A-1~A-4)은 13차의 I-45 로 이미 끝나 있었고, 이번에는 **클립과 호출부**를 채웠다.
+
+### 원인
+
+**I-49 — 배관은 다 깔렸는데 아무 소리도 안 났다**
+I-45 로 `PlaySfx`/`PlayBgm`/`StopBgm` 과 보이스 풀 16개, 중복 컷까지 만들었지만
+`Assets/` 안에 **오디오 파일이 0개**였고 `PlaySfx` 를 **부르는 곳도 0곳**이었다.
+즉 소리를 낼 능력은 있는데 **낼 것도, 낼 이유도 없는** 상태였다.
+
+막혀 있던 건 파일이 아니라 **결정 하나**였다 — 클립 참조를 어디에 둘 것인가.
+
+| 안 | 방식 | 문제 |
+|---|---|---|
+| (A) | 각 `WeaponData`/`EnemyData`/`BuildingData` 에 `AudioClip` 필드 추가 | **UI·시스템 소리는 갈 곳이 없다.** 그리고 무엇이 비었는지 보려면 애셋을 전부 열어야 한다 |
+| **(B)** | **SO 하나에 키→클립 표를 모으고 `AudioManager` 가 들고 있는다** | 이름 오타가 런타임에만 드러난다 → **문자열 대신 enum 으로 막았다** |
+
+**사용자 결정: (B)** (2026-08-28). (B) 의 유일한 약점이던 "이름 오타"는 키를 `string` 이 아니라
+`SfxId`/`BgmId` **enum** 으로 만들어 컴파일 타임에 잡히게 했다.
+
+> ⚠️ 그래서 클립은 CSV 파이프라인에 **넣지 않았다.** `AudioLibrary.asset` 은 CSV 임포터가
+> 건드리지 않는 애셋이라 **인스펙터에서 직접 고쳐도 되는 예외**다 (→ [`BALANCE.md`](BALANCE.md)).
+
+### 변경한 파일
+
+| 파일 | 변경 |
+|---|---|
+| `Assets/Scripts/Audio/AudioId.cs` | **신규** — `SfxId`(14종) · `BgmId`(4곡) enum |
+| `Assets/Scripts/Audio/AudioLibrary.cs` | **신규** — 키→클립 표 SO. 클립별 `Volume`·`PitchJitter` 포함 + `DescribeMissing()` |
+| `Assets/Scripts/UI/AudioManager.cs` | `library` 필드 + `AudioManager.Play(SfxId)` / `PlayMusic(BgmId, fade)` 정적 진입점 |
+| `Assets/Scripts/Core/GameManager.cs` | `ChangeState` 끝에 `UpdateBgm(newState)` — **BGM 전환의 유일한 지점** |
+| `Assets/Scripts/Wave/WaveManager.cs` | `IsBossWave` 프로퍼티 노출 + 클리어 징글 |
+| `Assets/Scripts/Enemy/EnemyBase.cs` | 피격·사망 (죽는 타격은 피격음 **생략**) |
+| `Assets/Scripts/Player/PlayerStats.cs` | 피격·사망 (동일 규칙) |
+| `Assets/Scripts/Weapon/ProjectileWeapon.cs` | 발사 — **볼리당 1회** |
+| `Assets/Scripts/Weapon/AoeWeapon.cs` · `AoeProjectile.cs` | 시전 · 폭발 |
+| `Assets/Scripts/Experience/ExperienceManager.cs` | 구슬 획득 · 레벨업 팡파레 |
+| `Assets/Scripts/Pickup/WorldPickup.cs` | 상자 · 자석 |
+| `Assets/Scripts/Building/BuildingManager.cs` | 설치 — **성공 경로에서만** |
+| `Assets/Scripts/LevelUp/ItemCardUI.cs` · `UI/ShopCardUI.cs` · `UI/ClassCardUI.cs` · `UI/StageMapUI.cs` | 선택음 |
+| `Assets/Game/Audio/` | **신규 22MB** — BGM 4 + SFX 14 (`.wav`, 전부 모노) + `AudioLibrary.asset` |
+
+### 설계에서 일부러 정한 것들
+
+**enum 값을 명시적으로 박았다** (`WeaponFire = 1`, `EnemyHit = 10`, …).
+직렬화된 `AudioLibrary.asset` 은 이름이 아니라 **정수**를 저장한다. 중간에 항목을 끼워 넣으면
+그 아래 매핑이 **통째로 한 칸씩 밀린다.** 새 항목은 반드시 끝에 추가한다.
+
+**"소리 뭉개짐"을 코드 구조로 막았다** — 나중에 튜닝으로 고치기 어려운 것들이라 처음부터 위치를 잡았다.
+
+| 규칙 | 이유 |
+|---|---|
+| 죽는 타격에는 **피격음을 안 낸다** | 같은 프레임에 사망음과 겹쳐 뭉갠다 (적·플레이어 양쪽) |
+| 다발 발사는 **한 번만** 운다 | 투사체 5개면 같은 클립이 5중으로 겹쳐 위상 간섭이 난다 |
+| 레벨업 팡파레는 `while` 루프 **안**에 | `TriggerLevelUp` 은 **보물상자 보상도 재사용**한다. 상자는 레벨이 오르는 게 아니라 카드만 한 번 더 고르는 것이라 소리가 달라야 한다 |
+| 건물 설치음은 **성공 경로에서만** | 자리를 못 찾아 실패한 것과 세워진 것을 **소리로 구분**할 수 있어야 한다 |
+| UI 선택음은 **확정 지점 4곳만** | 버튼 20개에 다 붙이면 화면 넘길 때마다 딸깍거린다 |
+
+**BGM 전환을 `GameManager.ChangeState` 한 곳에 몰았다.** 모든 화면 전환이 반드시 지나는 길목이라
+화면마다 흩어 놓으면 반드시 빠뜨리는 곳이 생긴다. 단 `LevelUp`·`Paused` 는 웨이브 위에 **끼어드는**
+상태라 곡을 바꾸지 않는다 — 레벨업이 뜰 때마다 음악이 끊기면 전투의 흐름이 매번 잘린다.
+
+**임포트 설정을 용도별로 갈랐다.**
+
+| 용도 | 설정 | 이유 |
+|---|---|---|
+| BGM | `Streaming` + Vorbis q0.7 + `loadInBackground` | 30초 스테레오 PCM 한 곡이 메모리에 **약 5MB** 상주한다 |
+| SFX | `DecompressOnLoad` + ADPCM | 초당 수십 번 울린다. **디코드 지연을 감당할 수 없다** |
+| 공통 | `forceToMono` | `spatialBlend = 0`(2D)이라 스테레오가 의미 없다. 용량 절반 |
+
+### 파일 크기에 대해
+
+`.wav` 총 **22MB**. ffmpeg 이 이 머신에 없어 **wav → ogg 트랜스코딩은 불가**했다.
+대신 `forceToMono` + `Unity_AudioClip_Edit(TrimSilence)` 로 원본 대비 **42~97%** 까지 줄였다.
+(`TrimSilence` 는 제자리 편집이 아니라 `"<원본> 1.wav"` 를 **새로 만든다** — 원본을 지우고 이름을 되돌렸다.)
+게임에 들어가는 실제 용량은 임포트 압축 후라 이보다 훨씬 작다.
+
+### 검증 로그
+
+```
+[AUDIOTEST] library=True bgmVol=0.80 sfxVol=1.00
+[AUDIOTEST] missing = (none)
+[AUDIOTEST] AudioSource 총 17개 (보이스 16 + bgm 1 = 17 이어야 정상)
+[AUDIOTEST] WeaponFire     clip=SFX_WeaponFire       len=0.45s vol=0.35 울리는보이스=2
+[AUDIOTEST] WeaponCast     clip=SFX_WeaponCast       len=0.53s vol=0.45 울리는보이스=3
+[AUDIOTEST] Explosion      clip=SFX_Explosion        len=0.57s vol=0.55 울리는보이스=3
+[AUDIOTEST] EnemyHit       clip=SFX_EnemyHit         len=0.48s vol=0.28 울리는보이스=3
+[AUDIOTEST] EnemyDie       clip=SFX_EnemyDie         len=0.45s vol=0.40 울리는보이스=4
+[AUDIOTEST] PlayerHit      clip=SFX_PlayerHit        len=1.02s vol=0.70 울리는보이스=4
+[AUDIOTEST] PlayerDie      clip=SFX_PlayerDie        len=1.36s vol=0.90 울리는보이스=3
+[AUDIOTEST] XpPickup       clip=SFX_XpPickup         len=0.49s vol=0.22 울리는보이스=4
+[AUDIOTEST] LevelUp        clip=SFX_LevelUp          len=1.02s vol=0.85 울리는보이스=5
+[AUDIOTEST] ChestOpen      clip=SFX_ChestOpen        len=1.01s vol=0.80 울리는보이스=4
+[AUDIOTEST] Magnet         clip=SFX_Magnet           len=0.69s vol=0.70 울리는보이스=5
+[AUDIOTEST] BuildingPlace  clip=SFX_BuildingPlace    len=0.47s vol=0.60 울리는보이스=6
+[AUDIOTEST] WaveClear      clip=SFX_WaveClear        len=1.17s vol=0.85 울리는보이스=5
+[AUDIOTEST] UiSelect       clip=SFX_UiSelect         len=0.13s vol=0.55 울리는보이스=3
+[AUDIOTEST] 중복컷 20회 연타 → 새로 울린 보이스=1 (1 이어야 정상)
+[AUDIOTEST] state=MainMenu  bgm=BGM_MainMenu     playing=True vol=0.80
+[AUDIOTEST] state=StageMap  bgm=BGM_Shop         playing=True vol=0.80
+[AUDIOTEST] state=Wave      bgm=BGM_WaveNormal   playing=True vol=0.80
+[AUDIOTEST] state=GameOver  bgm=(none)           playing=False vol=0.80
+[AUDIOTEST] 같은 곡 재요청 t=2.01 → 2.50 (되감기지 않고 늘어나야 정상)
+[AUDIOTEST] 완료
+```
+
+가장 중요한 두 줄은 **중복 컷**과 **재요청**이다.
+
+- `중복컷 20회 연타 → 1` — 경험치 구슬은 자석을 먹으면 **한 프레임에 수십 개**가 들어온다.
+  0.04초 창이 없으면 같은 클립이 20중으로 겹쳐 굉음이 된다. 실제로 걸러진다는 걸 확인했다.
+- `같은 곡 재요청 2.01 → 2.50` — 스테이지맵 ↔ 상점 ↔ 이벤트는 **같은 곡**을 쓴다.
+  전환할 때마다 되감기면 곡이 영영 도입부만 반복한다. 재생 위치가 유지된다.
+
+임포트 설정 확인:
+
+```
+missing after wiring = (none)
+SFX 14종 len=0.13~1.36s ch=1 / BGM 4곡 len=26.20·30.77·30.77·30.77s ch=1
+AudioManager active=True library=True bgmSource=True
+bgmSource loop=True playOnAwake=False spatialBlend=0
+```
+
+임시 스크립트 `AudioTest.cs` 와 씬 오브젝트 `__AudioTest` **삭제**,
+`Assets/Refresh` 후 **콘솔 0건**, `File/Save` 완료.
+
+> ⚠️ **로그로 검증한 것은 "울린다"까지다.** 음량 밸런스·곡의 어울림은 귀로만 판단할 수 있다
+> → [`TODO.md`](TODO.md) §1
+
+---
+
+## 2-1. 이슈 목록 (I-1 ~ I-49 — 전부 해결됨)
 
 > 미해결 항목은 [`TODO.md`](TODO.md) 참조.
 
@@ -1691,6 +1823,7 @@ Demon 은 `PreferredRange`(7)에 **정확히 수렴**해 머문다. Wolf 는 4.2
 | **I-46** | **웨이브 뒤쪽 적이 아예 등장하지 않는다** — `SpawnRoutine()` 이 소환 항목을 **순차** 처리해 앞 항목을 다 뿌려야 다음이 시작됐다. `(마리수 × 간격)` 합이 `SurvivalTime` 을 넘으면 뒤쪽 적은 등장 자체를 못 한다 (`Normal3` = 86.4초 소요 / 90초 생존 → Goblin 40마리 유실). 사용자가 말한 "몬스터가 전 종류 안 나온다"의 실제 원인. 동시에 **적 수 상한이 없어** 병렬화하면 즉시 프레임이 무너질 상태였다 | ✅ 해결 (2026-08-28 14차 → 2-18) |
 | **I-47** | **적 6종이 전부 같은 행동을 한다** — `MoveTowardsPlayer()` 직선 추격 하나가 전부라 Ogre 는 큰 고블린, Wolf 는 빠른 고블린이었다. 게다가 적 콜라이더가 전부 **트리거**라 물리 반발이 없어 **다 겹쳐 한 덩어리로 뭉쳤다** | ✅ 해결 (2026-08-28 14차 → 2-18) |
 | **I-48** | **필드 픽업이 2종뿐** — `ExpDrop_Small` / `HealPickup`. 엘리트를 잡아도 보상이 경험치뿐이라 **처치의 무게가 없었고**, 흩어진 경험치를 회수할 방법이 걸어가는 것밖에 없었다 | ✅ 해결 (2026-08-28 14차 → 2-18) |
+| **I-49** | **게임이 완전히 무음이다** — I-45 로 배관(`PlaySfx`/`PlayBgm`/보이스 풀/중복 컷)은 깔렸지만 `Assets/` 안에 **오디오 파일 0개**, `PlaySfx` **호출부 0곳**. 막고 있던 건 파일이 아니라 "**클립 참조를 어디에 둘 것인가**" 라는 미결정 하나였다 | ✅ 해결 (2026-08-28 15차 → 2-19) — (B)안 `AudioLibrary` SO + `SfxId`/`BgmId` enum |
 
 ### 해결 상세
 
@@ -1906,9 +2039,21 @@ private void LateUpdate()
 54. ✅ **보물상자 + 자석 픽업** (I-48). 엘리트/보스가 상자를 **확정** 드랍(레벨업 패널 재사용,
     레벨은 안 오름), 잡몹이 `0.6%` 로 자석을 떨군다(웨이브당 1~2개). 자석은 **static 상태 없이**
     그 순간 살아 있는 구슬에만 표시를 남긴다
-55. ⏳ **다음**: [`ROADMAP.md`](ROADMAP.md) §8 **2단계(오디오 파일 확보)** — 사용자 결정은
-    "**음원을 만들어서 사용**". 클립 참조를 어디에 들려 줄지는 아직 미정 (→ [`TODO.md`](TODO.md) §2).
-    그 전에 §1 런타임 재검증 → 스탯 재조정 → 재화 구조 결정 (→ [`TODO.md`](TODO.md) §6)
+
+**15차 (2026-08-28)** — 상세는 2-19
+
+55. ✅ **게임에 소리가 붙었다** (I-49). BGM **4곡** + SFX **14종** 생성 · 호출부 **18곳** 배선.
+    미결정이던 "클립을 어디에 둘 것인가"는 **(B) `AudioLibrary` SO 한 장**으로 확정(사용자 결정).
+    (B) 의 약점이던 이름 오타는 키를 `string` 이 아니라 **`SfxId`/`BgmId` enum** 으로 만들어 막았다
+56. ✅ **BGM 전환을 `GameManager.ChangeState` 한 곳에 몰았다.** 모든 화면 전환이 지나는 길목이라
+    화면마다 흩어 놓으면 반드시 빠뜨린다. `LevelUp`·`Paused` 는 **곡을 안 바꾼다** — 웨이브 위에
+    끼어드는 상태라, 레벨업마다 음악이 끊기면 전투의 흐름이 매번 잘린다
+57. ✅ **"소리 뭉개짐"을 코드 위치로 막았다** — 죽는 타격은 피격음 생략(사망음과 겹침) ·
+    다발 발사는 볼리당 1회 · 레벨업 팡파레는 `while` 안(보물상자와 구분) · 건물 설치음은 성공 경로만.
+    **중복 컷이 실제로 도는 것도 확인**(20회 연타 → 보이스 1개)
+58. ⏳ **다음**: [`ROADMAP.md`](ROADMAP.md) §8 — 남은 가장 큰 구멍은 **무기 진화 0**.
+    그 전에 §1 런타임 재검증(이제 **음량 밸런스 청취**가 추가됐다) → 스탯 재조정 →
+    재화 구조 결정 (→ [`TODO.md`](TODO.md) §6)
 
 **16~17 과정에서 함께 처리한 것**
 

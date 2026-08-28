@@ -10985,6 +10985,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6dd109e0b66624f448bed51d56d732f9, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::AudioManager
+  library: {fileID: 11400000, guid: 933298775c383b447bad92e153d7a113, type: 2}
   bgmSource: {fileID: 1668780260}
   sfxVoices: 16
 --- !u!82 &1668780260

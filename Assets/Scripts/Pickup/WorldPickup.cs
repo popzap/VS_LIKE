@@ -69,8 +69,15 @@ public class WorldPickup : MonoBehaviour
 
         switch (kind)
         {
-            case PickupKind.Chest:  ExperienceManager.Instance.GrantChestReward(); break;
-            case PickupKind.Magnet: ExpDrop.PullAllToPlayer();                     break;
+            case PickupKind.Chest:
+                AudioManager.Play(SfxId.ChestOpen);
+                ExperienceManager.Instance.GrantChestReward();
+                break;
+
+            case PickupKind.Magnet:
+                AudioManager.Play(SfxId.Magnet);
+                ExpDrop.PullAllToPlayer();
+                break;
         }
 
         Despawn();

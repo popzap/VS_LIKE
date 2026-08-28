@@ -64,7 +64,11 @@ public class ShopCardUI : MonoBehaviour
         // 구매 버튼
         soldOutOverlay.SetActive(false);
         buyButton.onClick.RemoveAllListeners();
-        buyButton.onClick.AddListener(() => manager.Purchase(slot));
+        buyButton.onClick.AddListener(() =>
+        {
+            AudioManager.Play(SfxId.UiSelect);
+            manager.Purchase(slot);
+        });
 
         RefreshAffordability(currentCurrency);
     }

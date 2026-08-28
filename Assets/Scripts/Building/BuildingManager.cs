@@ -99,6 +99,10 @@ public class BuildingManager : MonoBehaviour
         if (!_placedBuildings.ContainsKey(data)) _placedBuildings[data] = new List<BuildingBase>();
         _placedBuildings[data].Add(building);
         _pendingQueue.RemoveAt(0);
+
+        // 실제로 설치된 경로에서만 울린다. 위의 실패 반환들은 소리가 나면 안 된다 —
+        // 자리를 못 찾아 실패한 것과 설치된 것을 소리로 구분할 수 있어야 한다.
+        AudioManager.Play(SfxId.BuildingPlace);
         return true;
     }
 

@@ -110,7 +110,11 @@ public class StageMapUI : GameStatePanel
         {
             button.interactable = node.IsAvailable;
             var captured = node;                     // 클로저 캡처 주의
-            button.onClick.AddListener(() => OnNodeClicked(captured));
+            button.onClick.AddListener(() =>
+            {
+                AudioManager.Play(SfxId.UiSelect);
+                OnNodeClicked(captured);
+            });
         }
     }
 

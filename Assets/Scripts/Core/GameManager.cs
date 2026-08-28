@@ -117,6 +117,48 @@ public class GameManager : MonoBehaviour
         CurrentState = newState;
         OnStateChanged.Invoke(newState);
         Debug.Log($"[GameManager] State → {newState}");
+
+        UpdateBgm(newState);
+    }
+
+    /// <summary>
+    /// 상태에 맞는 배경음으로 갈아탄다. 모든 화면 전환이 <see cref="ChangeState"/> 를
+    /// 지나므로 여기 한 곳에만 두면 된다 — 화면마다 흩어 놓으면 빠뜨리는 경로가 생긴다.
+    ///
+    /// <para>같은 곡이면 <c>PlayBgm</c> 이 알아서 무시하므로, 웨이브 도중 레벨업으로
+    /// 상태가 들락거려도 음악이 처음부터 다시 시작되지 않는다.</para>
+    /// </summary>
+    private void UpdateBgm(GameState state)
+    {
+        switch (state)
+        {
+            case GameState.MainMenu:
+            case GameState.MetaScreen:
+                AudioManager.PlayMusic(BgmId.MainMenu);
+                break;
+
+            case GameState.StageMap:
+            case GameState.Shop:
+            case GameState.Event:
+            case GameState.Victory:
+                AudioManager.PlayMusic(BgmId.Shop);
+                break;
+
+            case GameState.Wave:
+                AudioManager.PlayMusic(WaveManager != null && WaveManager.IsBossWave
+                                       ? BgmId.WaveBoss : BgmId.WaveNormal);
+                break;
+
+            case GameState.GameOver:
+                if (AudioManager.Instance != null) AudioManager.Instance.StopBgm();
+                break;
+
+            // LevelUp · Paused 는 웨이브 위에 "끼어드는" 상태다. 음악을 바꾸지 않는다 —
+            // 레벨업이 뜰 때마다 곡이 끊기면 전투의 흐름이 매번 잘린다.
+            case GameState.LevelUp:
+            case GameState.Paused:
+                break;
+        }
     }
 
     // ── 런 흐름 ──────────────────────────────────────────────────

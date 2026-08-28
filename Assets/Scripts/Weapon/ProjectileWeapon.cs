@@ -21,5 +21,8 @@ public class ProjectileWeapon : WeaponBase
             proj.Initialize(dir, CalculateDamage(), Data.GetProjectileSize(Level),
                             Data.ProjectileSpeed, Data.GetRange(Level), Pool);
         }
+
+        // 발사체 개수만큼 울리면 소리가 뭉개진다. 한 번만 낸다.
+        AudioManager.Play(SfxId.WeaponFire);
     }
 }

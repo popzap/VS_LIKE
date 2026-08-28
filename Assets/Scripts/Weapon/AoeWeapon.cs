@@ -14,5 +14,7 @@ public class AoeWeapon : WeaponBase
         var go = Pool.Get(Data.ProjectilePrefab, target.position, Quaternion.identity);
         var proj = go.GetComponent<AoeProjectile>();
         proj.Initialize(CalculateDamage(), explosionRadius * Data.GetProjectileSize(Level), Pool);
+
+        AudioManager.Play(SfxId.WeaponCast);
     }
 }

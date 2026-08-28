@@ -18,6 +18,10 @@ public class ItemCardUI : MonoBehaviour
         categoryTag.text = data.Category.ToString().ToUpper();
 
         selectButton.onClick.RemoveAllListeners();
-        selectButton.onClick.AddListener(() => manager.SelectItem(data));
+        selectButton.onClick.AddListener(() =>
+        {
+            AudioManager.Play(SfxId.UiSelect);
+            manager.SelectItem(data);
+        });
     }
 }

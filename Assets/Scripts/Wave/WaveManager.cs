@@ -55,6 +55,9 @@ public class WaveManager : MonoBehaviour
     /// <summary>지금 필드에 살아 있는 적 수.</summary>
     public int   EnemiesAlive => _alive.Count;
 
+    /// <summary>지금 도는 웨이브가 보스전인지. BGM 선택에 쓴다.</summary>
+    public bool  IsBossWave => _currentNode != null && _currentNode.StageType == StageType.Boss;
+
     // ── 이벤트 ───────────────────────────────────────────────────
     public System.Action<float> OnTimerUpdated;   // 남은 시간
     public System.Action<int>   OnKillCountUpdated;
@@ -314,6 +317,7 @@ public class WaveManager : MonoBehaviour
         _alive.Clear();
 
         Debug.Log("[WaveManager] Wave Cleared!");
+        AudioManager.Play(SfxId.WaveClear);
         GameManager.Instance.OnWaveCleared(_currentNode);
     }
 }
