@@ -1,0 +1,22 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 15c69ad820399084fbb662141262a301, type: 3}
+  m_Name: Aegis
+  m_EditorClassIdentifier: Assembly-CSharp::ClassEvolutionData
+  EvolutionName: Aegis
+  Description: Turret plating worn as armor. The line does not break.
+  FromClass: {fileID: 11400000, guid: 451669291fe52024cb16daf186395e97, type: 2}
+  Ingredients:
+  - {fileID: 11400000, guid: 1d5a9c11bce1982419f24b1aabc2b2a0, type: 2}
+  - {fileID: 11400000, guid: 5427ef85d7ce9a344a3cff2a758b03d7, type: 2}
+  RequiredLevels: 0500000003000000
+  ResultClass: {fileID: 11400000, guid: 43b4f311628ad814197558a7d724e824, type: 2}

@@ -19,8 +19,26 @@ public class PlayerStats : MonoBehaviour
     // 런타임 수치 (base + meta + class + passive 합산)
     public StatBlock Final { get; private set; } = new();
 
-    /// <summary>이번 런의 직업. <see cref="ApplyClass"/> 로 정해진다.</summary>
-    public CharacterClassData Class { get; private set; }
+    /// <summary>
+    /// 이번 런에 거쳐 온 직업 사슬. 0번이 런 시작 직업(T1)이고 뒤로 갈수록 상위 직업이다.
+    ///
+    /// <para><b>왜 하나가 아니라 사슬인가</b> — 직업 진화는 갈아타는 게 아니라 <b>쌓는</b> 것이다.
+    /// 하나만 들고 교체하면 T2 로 올라가는 순간 T1 의 보너스와 소지 칸이 사라져,
+    /// 진화가 <b>손해가 되는 경우</b>가 생긴다 (Warrior 의 건물 5칸을 잃는 식).</para>
+    /// </summary>
+    private readonly List<CharacterClassData> _classChain = new();
+
+    /// <summary>현재(=가장 상위) 직업. 사슬이 비면 null.</summary>
+    public CharacterClassData Class => _classChain.Count > 0 ? _classChain[^1] : null;
+
+    /// <summary>런 시작 직업. 초상화·이름 표시가 T1 을 필요로 할 때 쓴다.</summary>
+    public CharacterClassData BaseClass => _classChain.Count > 0 ? _classChain[0] : null;
+
+    /// <summary>거쳐 온 직업 전부. 1 이면 아직 진화 전이다.</summary>
+    public IReadOnlyList<CharacterClassData> ClassChain => _classChain;
+
+    /// <summary>이 직업을 거쳐 왔는가. 승급 조건 판정이 매 프레임 물어서 LINQ 없이 둔다.</summary>
+    public bool HasClass(CharacterClassData cls) => cls != null && _classChain.Contains(cls);
 
     public float CurrentHp { get; private set; }
     public bool  IsDead    { get; private set; }
@@ -61,22 +79,58 @@ public class PlayerStats : MonoBehaviour
     /// </summary>
     public void ApplyClass(CharacterClassData cls)
     {
-        Class = cls;
+        _classChain.Clear();
+        if (cls != null) _classChain.Add(cls);
+
         RecalculateStats();
         CurrentHp = Final.MaxHp;
 
+        ApplyClassVisual(cls);
+    }
+
+    /// <summary>
+    /// 직업 진화 — 상위 직업을 사슬 <b>끝에 덧붙인다</b>. 교체가 아니다.
+    /// <see cref="EvolutionManager.EvolveClass"/> 가 호출한다.
+    ///
+    /// <para>체력은 <b>가득 채우지 않는다.</b> 진화는 필드에서 전투 중에 일어나므로
+    /// 완전 회복이 붙으면 "위험할 때 진화를 아껴 두는" 이상한 운용이 생긴다.
+    /// 대신 늘어난 최대치만큼은 그대로 얹어 준다 — 안 그러면 최대 체력이 올라도
+    /// 현재 체력은 그대로라 진화가 눈에 띄지 않는다.</para>
+    /// </summary>
+    public void EvolveClass(CharacterClassData cls)
+    {
+        if (cls == null || _classChain.Contains(cls)) return;
+
+        float before = Final.MaxHp;
+        _classChain.Add(cls);
+        RecalculateStats();
+
+        CurrentHp = Mathf.Min(Final.MaxHp, CurrentHp + Mathf.Max(0f, Final.MaxHp - before));
+
+        ApplyClassVisual(cls);
+    }
+
+    /// <summary>
+    /// 직업 외형 반영. 진화 직업이 그림을 안 들고 있으면 <b>이전 모습을 그대로 둔다</b> —
+    /// 빈 값으로 덮으면 플레이어가 프리팹 기본 스프라이트로 되돌아간다.
+    /// </summary>
+    private void ApplyClassVisual(CharacterClassData cls)
+    {
         if (cls == null) return;
 
         if (cls.BodySprite != null) _controller?.ApplyBodySprite(cls.BodySprite);
 
         // 걷기 프레임은 정지 그림 다음에 넘겨야 한다. PlayerVisual 이 첫 프레임으로
         // sr.sprite 를 다시 덮어쓰므로 순서가 뒤바뀌면 정지 그림이 이겨 버린다.
+        if (cls.WalkFrames == null || cls.WalkFrames.Length == 0) return;
+
         var visual = GetComponent<PlayerVisual>();
         if (visual != null) visual.SetWalkFrames(cls.WalkFrames);
     }
 
     /// <summary>
-    /// 이 직업이 동시에 지닐 수 있는 <b>아이템 종류 수</b>. 레벨이 아니라 종류를 센다.
+    /// 동시에 지닐 수 있는 <b>아이템 종류 수</b>. 레벨이 아니라 종류를 센다.
+    /// 직업 사슬 전체의 <see cref="CharacterClassData.BonusSlots"/> 합이다.
     ///
     /// <para>직업이 없으면 제한하지 않는다. 실제 런은 <see cref="GameManager.StartRun"/> 에서
     /// 반드시 직업을 받으므로 이 경로는 직업 없이 씬을 직접 재생할 때만 탄다 —
@@ -84,14 +138,13 @@ public class PlayerStats : MonoBehaviour
     /// </summary>
     public int SlotLimit(ItemCategory category)
     {
-        if (Class == null) return int.MaxValue;
+        if (_classChain.Count == 0) return int.MaxValue;
 
-        return category switch
-        {
-            ItemCategory.Weapon   => Class.MaxWeaponSlots,
-            ItemCategory.Building => Class.MaxBuildingSlots,
-            _                     => Class.MaxPassiveSlots,
-        };
+        int n = 0;
+        foreach (var cls in _classChain)
+            if (cls != null) n += cls.BonusSlots(category);
+
+        return n;
     }
 
     // ── Passive 등록 / 해제 ───────────────────────────────────────
@@ -155,7 +208,9 @@ public class PlayerStats : MonoBehaviour
             BuildingCooldown = baseStats.BuildingCooldown + meta.BuildingCooldown,
         };
 
-        Class?.ApplyBonus(Final);
+        // 사슬 전체를 더한다. 진화는 갈아타기가 아니라 쌓기이므로 T1 의 보너스도 계속 살아 있다.
+        foreach (var cls in _classChain)
+            if (cls != null) cls.ApplyBonus(Final);
 
         foreach (var p in _activePassives)
             p.Apply(Final);

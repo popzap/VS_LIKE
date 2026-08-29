@@ -6,7 +6,7 @@
 > 기존의 「C# 스크립트는 완성 단계」라는 전제와 「요청 없이 코드 건드리지 말 것」 규칙이 **해제됨**.
 > 이제 게임 완성을 위해 C# 스크립트 신규 작성·수정이 허용된다.
 >
-> **최종 갱신:** 2026-08-29 (18차 — 직업별 소지 상한)
+> **최종 갱신:** 2026-08-29 (19차 — 직업 승급)
 > 검증 방식: Unity MCP + Play 모드 스모크 테스트 + YAML 직접 파싱
 > **검증 기준 파일:** `Assets/Scenes/SampleScene.unity`
 >
@@ -1909,6 +1909,117 @@ Fireball 만 채우고 Bomb 은 비워 뒀다.
 
 ---
 
+## 2-23. ✅ 직업 승급 — 무기 + 건물 → 직업 (I-56, 2026-08-29 19차)
+
+### 왜 했나
+
+17차(I-54)에서 진화를 `패시브 · 무기 · 건물` 3조합으로 열어 뒀는데, 그 셋이 **전부 무기를 뱉었다.**
+그러면 건물이 재료로 들어가는 이유가 "제단이 필요해서"뿐이고, 조합마다 **결과가 달라지지 않는다.**
+
+사용자 지시로 조합을 결과별로 갈랐다.
+
+| 조합 | 결과 | 전달 경로 | 표 |
+|---|---|---|---|
+| 무기 + 무기 · 무기 + 패시브 | **진화 무기** | 보물상자 | `Evolutions.csv` |
+| 무기 + **건물** | **직업 (T2·T3…)** | **그 건물 앞 `E`** | **`ClassEvolutions.csv`** (신설) |
+
+기존 `Sentinel`·`Doomsday` 두 레시피가 정확히 "무기 + 건물"이었다 — 무기에서 **직업으로 옮겼다.**
+
+### 설계 결정 4가지 (사용자 답변)
+
+| 질문 | 답 | 구현 |
+|---|---|---|
+| ① 보너스는 누적인가 교체인가 | **누적** | `PlayerStats._classChain` — 직업을 하나가 아니라 **목록**으로 든다 |
+| ② 소지 상한도 승급으로 느나 | **직업마다 다르게 추가** | `Max*Slots` → **`Bonus*Slots`** 개명. 사슬 전체를 합산 |
+| ③ 캐릭터 이미지도 바뀌나 | **바뀌어야 한다** | `ApplyClassVisual` 을 승급에서도 태운다. **그림은 아직 없음** → `TODO.md` §4 |
+| ④ 레시피 관리 방식 | **별도 CSV** | `ClassEvolutions.csv` + `ClassEvolutionData` SO |
+
+### 왜 사슬(List)인가 — 교체하면 승급이 손해가 된다
+
+직업을 **하나만 들고 교체**하면 T2 로 올라가는 순간 T1 의 보너스와 소지 칸이 **사라진다.**
+`Warrior`(건물 5칸) 가 `Sentinel`(건물 +1) 로 갈아타면 건물이 **5 → 1** 이 되어,
+승급하면 할수록 약해지는 구조가 된다. 그래서 `Class` 필드를 `List<CharacterClassData>` 로 바꾸고
+`RecalculateStats`·`SlotLimit` 이 **사슬 전체를 합산**하게 했다.
+
+같은 이유로 `Bonus*Slots` 는 **총량이 아니라 더하는 값**이다. 총량으로 두면 승급 행에 "총 4"를
+적었을 때 `3 + 4 = 7` 이 되는 함정이 생긴다 — 데이터만 보고는 눈치챌 수 없는 종류다.
+
+### 무기 진화와 다른 세 가지
+
+- **재료를 소모하지 않는다.** 무기 진화는 무기를 먹고 더 센 무기를 돌려주니 교환이 성립하지만,
+  승급은 돌려주는 게 직업이라 재료까지 가져가면 **순수한 손해**다
+- **체력을 가득 채우지 않는다.** 승급은 필드에서 전투 중에 일어난다 — 완전 회복이 붙으면
+  "위험할 때 승급을 아껴 두는" 이상한 운용이 생긴다. 대신 **늘어난 최대치만큼은 얹는다**
+  (안 그러면 최대 체력이 올라도 현재 체력이 그대로라 승급이 눈에 안 띈다)
+- **제단이 필수다.** 무기 진화는 건물 재료가 없으면 보물상자로 새지만, 승급은 "건물 앞에서"가
+  규칙이라 건물이 없는 행은 **어디서도 발동 못 하는 죽은 레시피**다 → 임포트 시 `!` 경고
+
+### `FromClass` 는 "현재"가 아니라 "거쳐 왔는가"
+
+`ps.HasClass(evo.FromClass)` 로 **사슬 어디에든** 있으면 통과시킨다.
+끝(현재 직업)만 보면 같은 T2 에서 T3 두 갈래가 갈릴 때, 한쪽을 타는 순간 다른 쪽이 영영 막힌다.
+
+### 변경한 파일
+
+| 파일 | 변경 |
+|---|---|
+| `Scripts/Evolution/ClassEvolutionData.cs` | **신규.** 승급 레시피 SO. 제단은 `EvolutionData` 와 같은 방식으로 재료에서 파생 |
+| `Scripts/Evolution/EvolutionManager.cs` | `classEvolutions` 배열 · `IsClassSatisfied` · `GetReadyClassEvolutions` · `FindAltarClassEvolution` · `EvolveClass`. `TryEvolveAtAltar` 가 **승급을 먼저** 본다 |
+| `Scripts/Player/PlayerStats.cs` | `Class` 단일 필드 → `_classChain` 목록. `BaseClass`/`ClassChain`/`HasClass`/`EvolveClass` 추가. `RecalculateStats`·`SlotLimit` 이 사슬 합산. `ApplyClassVisual` 추출 |
+| `Scripts/Player/CharacterClassData.cs` | `Max*Slots` → `Bonus*Slots` (더하는 값). `BonusSlots(ItemCategory)` 추가 |
+| `Scripts/UI/EvolutionPromptUI.cs` | `[E] PROMOTE` / `PROMOTION READY` 분기 추가. **판정 순서를 `TryEvolveAtAltar` 와 일치**시켰다 |
+| `Scripts/Weapon/WeaponManager.cs` | 주석만 (사슬 합산으로 문구 수정) |
+| `Editor/BalanceImporter.cs` | `ImportClassEvolutions` + Export. 슬롯 3열 개명 반영 |
+| `Game/Balance/ClassEvolutions.csv` | **신규.** 승급 레시피 4종 |
+| `Game/Balance/Classes.csv` | 슬롯 3열 개명, T2 3종 + T3 1종 추가 |
+| `Game/Balance/Evolutions.csv` | `Sentinel`·`Doomsday` **제거** (5 → 3) |
+| `Game/Balance/Items.csv` · `Weapons.csv` | 위 2종의 무기·아이템 행 제거 |
+| `Game/Balance/SceneWiring.csv` | `allEvolutions` 3개로 축소, `classEvolutions` 행 추가 |
+| `Game/{Evolution,Item,Weapon}Data/` | `Sentinel`·`Doomsday` `.asset`+`.meta` 6쌍 삭제 (고아 애셋) |
+
+### 콘텐츠
+
+| Id | From | 재료 | 제단 | 결과 | 슬롯 보너스 |
+|---|---|---|---|---|---|
+| Sentinel | *(아무 직업)* | Gun Lv5 + **Turret Lv3** | Turret | Sentinel (T2) | W+0 P+1 B+1 |
+| Doomlord | *(아무 직업)* | Bomb Lv5 + **Bombard Lv3** | Bombard | Doomlord (T2) | W+1 P+1 B+0 |
+| Warden | *(아무 직업)* | Sword Lv5 + **Village Lv3** | Village | Warden (T2) | W+0 P+1 B+2 |
+| Aegis | **Sentinel** | Turret Lv5 + Armor Lv3 | Turret | Aegis (T3) | W+1 P+1 B+1 |
+
+> 수치는 **자리표시값**이다. 실사격 전 감으로 잡았다 → [`TODO.md`](TODO.md) §3
+
+### 검증 로그
+
+`Assets/Refresh` 후 **콘솔 0건**. CSV Import 도 경고 0건:
+
+```
+Weapons: 8  Items: 23  Classes: 7  Evolutions: 3  ClassEvos: 4  SceneWiring: 11/11
+```
+
+Play 모드에서 Warrior 로 런을 시작하고 `Unity_RunCommand` 로 재료를 지급한 뒤 승급:
+
+```
+[PROMO] before  class=Warrior  chain=1  maxHp=130  hp=130  armor=2  slots W3/P5/B5
+[PROMO] satisfied Sentinel=True  Aegis=False      ← Aegis 는 FromClass=Sentinel
+[PROMO] EvolveClass=True
+[PROMO] after   class=Sentinel chain=2  maxHp=150  hp=150  armor=3  slots W3/P6/B6
+[PROMO] base(T1)=Warrior   재승급 차단=True
+[PROMO] turret=5 armor=3   Aegis 가능=True
+[PROMO] EvolveClass(Aegis)=True  chain=3  maxHp=210  armor=9  slots W4/P7/B7
+```
+
+- **누적 확인** — T1 Warrior 의 `+30 HP` / `+2 방어` / `3-5-5 칸`이 승급 후에도 살아 있다
+- **HP 는 완전 회복이 아니다** — 130 → 150 (늘어난 최대치 +20 만큼만)
+- **`FromClass` 게이트 동작** — Aegis 는 Sentinel 승급 전 `false`, 후 `true`
+- **재승급 차단** — 사슬에 이미 있으면 조건 불성립
+- 방어 9 는 `Armor` **패시브 Lv3** 이 같이 들어간 값이다 (6 + 3)
+
+> ⚠️ **건물 앞 `E` 실조작은 아직 미검증이다.** 위는 `EvolveClass` 를 직접 부른 것이고,
+> `FindAltarClassEvolution` 은 이미 검증된 `FindAltarEvolution` 과 같은 로직이지만
+> **실제로 터렛을 세우고 다가가서 눌러 본 적은 없다** → [`TODO.md`](TODO.md) §1
+
+---
+
 ## 2-22. ✅ 직업별 소지 상한 (I-55, 2026-08-29 18차)
 
 ### 왜 했나
@@ -2178,7 +2289,7 @@ Play 모드 — 한 세션에서 두 경로 전부:
 
 ---
 
-## 2-1. 이슈 목록 (I-1 ~ I-55 — 전부 해결됨)
+## 2-1. 이슈 목록 (I-1 ~ I-56 — 전부 해결됨)
 
 > 미해결 항목은 [`TODO.md`](TODO.md) 참조.
 
@@ -2239,6 +2350,7 @@ Play 모드 — 한 세션에서 두 경로 전부:
 | **I-53** | **상점 UI 가 너무 작다** — 카드가 `160×220`, 설명 글자가 `10pt` 였다. 레벨업 카드는 11차에 이미 키웠는데 **상점만 옛 치수로 남아** 있었다. 곁들여 카드 라벨이 한글이었고(§3 규칙 위반), 리롤 버튼의 `🔀`(U+1F500)가 Pretendard SDF 에 없어 **`␡` 로 그려졌다**(16차 💰와 같은 함정) | ✅ 해결 (2026-08-29 17차 → 2-21) — 카드 **250×440** · 글자 최대 `38pt` · 영문화 · 이모지 제거 |
 | **I-54** | **무기 진화가 아예 없다.** 게다가 ROADMAP §2-3 의 원래 설계(`ItemData.EvolvesInto` + `RequiredPassive`)는 **"무기+패시브" 하나만 표현할 수 있어** 사용자가 요구한 `패시브·무기·건물` 3조합을 구조적으로 못 담았다 | ✅ 해결 (2026-08-29 17차 → 2-21) — 레시피를 **별도 `EvolutionData` SO** 로 분리(`ItemData[]` 재료). 전달 경로(상자 / 건물 앞 E)는 **열이 아니라 재료에서 파생** |
 | **I-55** | **직업이 시작 무기 말고는 다를 게 없다** — 3직업을 가르는 건 `Bonus*` 스탯뿐인데 차이가 몇 퍼센트라 플레이 중에 체감되지 않았다. 소지 상한은 무기에만(`WeaponManager.maxWeaponSlots = 6`) 있었고 **직업과 무관한 전역 상수**였으며, 건물·패시브에는 상한 개념 자체가 없었다. 곁들여 **`PickCandidates` 에 상한 검사가 없어**, 슬롯이 찬 상태로 새 무기를 고르면 `_inventory` 에는 기록되고 `WeaponManager` 는 경고만 남긴 채 거절해 **"보유 중인데 무기는 없는"** 유령 아이템이 만들어졌다(카드 가중치 2배 · 진화 재료 판정 통과). 상한 6 이라 잠복해 있었을 뿐 **상한 3 을 넣는 순간 즉시 터지는** 상태였다 | ✅ 해결 (2026-08-29 18차 → 2-22) — 상한을 `CharacterClassData` 로 옮기고 `PlayerStats.SlotLimit` → `LevelUpManager.CanAcquire` **단일 창구**로 통일 |
+| **I-56** | **진화 3조합이 전부 무기를 뱉었다** — 17차에 `패시브·무기·건물` 조합을 열어 뒀지만 결과가 다 무기라, 건물이 재료로 들어가는 이유가 "제단이 필요해서"뿐이고 **조합마다 결과가 달라지지 않았다**. 게다가 직업은 런 시작에 한 번 정해지면 끝이라 **성장 축이 없었다** | ✅ 해결 (2026-08-29 19차 → 2-23) — **무기+건물을 직업 승급으로 분리**(`ClassEvolutions.csv` + `ClassEvolutionData`). 직업을 사슬(`PlayerStats.ClassChain`)로 바꿔 **보너스·소지 칸을 누적**시켰다 (교체하면 승급이 손해가 된다) |
 
 ### 해결 상세
 
@@ -2532,10 +2644,33 @@ private void LateUpdate()
     — 조용히 return 하던 그 자리가 정확히 사고의 원인이었으므로 재발 시 드러나야 한다
 72. ✅ **꽉 찬 상태에서도 진화가 성사된다** — `Evolve()` 가 재료를 **먼저** 소모하기 때문이다.
     17차에 그 순서로 짜 둔 것이 여기서 값을 했다. 순서가 반대였다면 상한 3 에서 조용히 실패했을 것
-73. ⏳ **다음**: **직업 진화** — 무기+건물 → 상위 직업(그 건물 앞 `E`), 이후 패시브·무기 조건으로
-    같은 건물에서 계속 강화. 무기+무기 / 무기+패시브는 **보물상자**로 유지.
-    ⚠️ 현재 `Sentinel`(Gun+Turret) · `Doomsday`(Bomb+Bombard)가 **무기+건물인데 결과가 무기**라
-    새 분할과 충돌한다 (→ [`TODO.md`](TODO.md) §2)
+73. ✅ **다음 작업으로 직업 진화를 예고** → 19차에서 처리됨 (I-56)
+
+**19차 (2026-08-29)** — 상세는 2-23
+
+74. ✅ **무기 + 건물 → 직업 승급으로 분리** (I-56). 17차에 3조합을 열어 뒀지만 **결과가 전부 무기**라
+    건물이 재료인 이유가 "제단이 필요해서"뿐이었다. 이제 조합마다 결과가 다르다 —
+    무기+무기·무기+패시브는 **보물상자에서 무기**, 무기+건물은 **그 건물 앞 `E` 로 직업**.
+    `Sentinel`·`Doomsday` 두 레시피가 정확히 그 조합이었으므로 **무기에서 직업으로 옮겼다**
+75. ✅ **직업을 하나가 아니라 사슬로 들게 했다** (`PlayerStats._classChain`). 교체 방식이면
+    T2 로 올라가는 순간 T1 의 보너스와 칸이 사라져 **승급이 손해가 된다** —
+    Warrior(건물 5) → Sentinel(건물 1) 로 줄어드는 식. 스탯·소지 상한 모두 **사슬 전체를 합산**한다
+76. ✅ **`Max*Slots` → `Bonus*Slots` 개명.** 합산 구조에서 "총량"으로 두면 승급 행에 "총 4"를
+    적었을 때 `3 + 4 = 7` 이 되는 함정이 생긴다. **데이터만 봐서는 눈치챌 수 없는 종류**라
+    이름부터 `Bonus*` 스탯과 맞췄다
+77. ✅ **승급은 재료를 소모하지 않는다.** 무기 진화는 무기를 먹고 더 센 무기를 돌려주니 교환이지만,
+    승급은 돌려주는 게 직업이라 재료까지 가져가면 **순수한 손해**다.
+    체력도 **가득 채우지 않는다** — 완전 회복이 붙으면 "위험할 때 승급을 아껴 두는" 운용이 생긴다.
+    대신 늘어난 최대치만큼은 얹는다(130 → 150). 안 그러면 승급이 눈에 안 띈다
+78. ✅ **`FromClass` 는 "현재 직업"이 아니라 "거쳐 왔는가"를 본다.** 끝만 보면 같은 T2 에서
+    T3 두 갈래가 갈릴 때 한쪽을 타는 순간 다른 쪽이 영영 막힌다
+79. ✅ **프롬프트 판정 순서를 실행 순서와 일치**시켰다. `TryEvolveAtAltar` 가 승급을 먼저 보므로
+    `EvolutionPromptUI` 도 승급을 먼저 본다 — 안 그러면 `[E] EVOLVE` 라 써 놓고 승급이 일어난다.
+    실행 순서가 승급 우선인 이유는, 무기 진화가 재료를 먹어 치우면
+    **그 무기를 재료로 쓰던 승급이 조용히 불가능해지기 때문**이다
+80. ⏳ **남은 것**: ① 승급 직업 4종의 **캐릭터 그림이 없다**(현재는 승급 전 모습 유지) ·
+    ② **건물 앞 `E` 실조작 미검증** (로직은 검증된 무기 제단과 동일하나 실제로 눌러 본 적 없음) ·
+    ③ 승급 수치는 전부 **자리표시값** (→ [`TODO.md`](TODO.md) §1·§3·§4)
 
 **16~17 과정에서 함께 처리한 것**
 

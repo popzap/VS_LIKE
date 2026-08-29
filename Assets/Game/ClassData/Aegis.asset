@@ -1,0 +1,37 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 74ae27f0940bc414f86b6c2b546dc0c3, type: 3}
+  m_Name: Aegis
+  m_EditorClassIdentifier: Assembly-CSharp::CharacterClassData
+  ClassName: Aegis
+  Description: A walking bulwark of turret plating. Nothing gets through the line.
+  StartingWeapon: {fileID: 0}
+  StartingWeaponLevel: 1
+  BonusMaxHp: 60
+  BonusMoveSpeed: 0
+  BonusDamage: 0.15
+  BonusAttackSpeed: -0.05
+  BonusProjectileSize: 0
+  BonusPickupRadius: 0
+  BonusCritChance: 0
+  BonusArmor: 3
+  BonusXpGain: 0
+  BonusGoldGain: 0
+  BonusWeaponSlots: 1
+  BonusPassiveSlots: 1
+  BonusBuildingSlots: 1
+  Portrait: {fileID: 0}
+  BodySprite: {fileID: 0}
+  WalkFrames: []
+  ModelPrefab: {fileID: 0}
+  UnlockedByDefault: 1
+  UnlockCost: 0

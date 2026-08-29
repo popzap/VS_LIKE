@@ -14,6 +14,10 @@ using UnityEngine;
 ///       (<see cref="TryEvolveAtAltar"/>).</item>
 /// </list>
 ///
+/// <para><b>직업 승급</b>(<see cref="ClassEvolutionData"/>)도 같은 제단·같은 E 키를 쓴다.
+/// 무기 진화와 달리 재료를 <b>소모하지 않고</b>, 결과가 아이템이 아니라
+/// <see cref="PlayerStats.EvolveClass"/> 로 사슬에 덧붙는 직업이다.</para>
+///
 /// <para>판정에 쓰는 인벤토리는 <see cref="LevelUpManager"/> 한 곳뿐이다 —
 /// 무기·건물·패시브가 전부 거기 <see cref="ItemData"/> 로 들어가 있어서
 /// 카테고리별로 다른 시스템을 뒤질 필요가 없다.</para>
@@ -23,8 +27,11 @@ public class EvolutionManager : MonoBehaviour
     public static EvolutionManager Instance { get; private set; }
 
     [Header("레시피")]
-    [Tooltip("모든 진화 레시피. SceneWiring.csv 의 EvolutionManager,allEvolutions 로 배선한다.")]
+    [Tooltip("모든 무기 진화 레시피. SceneWiring.csv 의 EvolutionManager,allEvolutions 로 배선한다.")]
     [SerializeField] private EvolutionData[] allEvolutions;
+
+    [Tooltip("모든 직업 승급 레시피. SceneWiring.csv 의 EvolutionManager,classEvolutions 로 배선한다.")]
+    [SerializeField] private ClassEvolutionData[] classEvolutions;
 
     [Header("제단")]
     [Tooltip("건물에서 이 거리 안에 있어야 E 로 최종 진화를 할 수 있다. 건물 설치 간격(1.2)보다 넉넉해야 한다.")]
@@ -183,10 +190,99 @@ public class EvolutionManager : MonoBehaviour
         return null;
     }
 
-    /// <summary>E 키가 호출한다. 조건이 맞으면 그 자리에서 완성한다.</summary>
+    /// <summary>
+    /// E 키가 호출한다. 조건이 맞으면 그 자리에서 완성한다.
+    ///
+    /// <para><b>직업 승급을 먼저 본다.</b> 한 건물에 두 레시피가 걸릴 수 있는데,
+    /// 직업 승급은 재료를 안 먹고 무기 진화는 먹는다 — 무기가 먼저 사라지면
+    /// 그 무기를 재료로 쓰던 승급이 조용히 불가능해진다.</para>
+    /// </summary>
     public bool TryEvolveAtAltar(Vector2 origin)
     {
+        var cls = FindAltarClassEvolution(origin);
+        if (cls != null && EvolveClass(cls)) return true;
+
         var evo = FindAltarEvolution(origin);
         return evo != null && Evolve(evo);
+    }
+
+    // ── 직업 승급 ────────────────────────────────────────────────
+
+    /// <summary>
+    /// 이 승급이 지금 가능한가.
+    ///
+    /// <para>"이미 했다"는 <see cref="PlayerStats.ClassChain"/> 로 판정한다.
+    /// 무기 진화처럼 별도 완료 집합을 두지 않는 이유는, 직업은 팔거나 잃을 수 없어서
+    /// 사슬 자체가 곧 이력이기 때문이다 — 런 초기화도 따로 필요 없다.</para>
+    /// </summary>
+    public bool IsClassSatisfied(ClassEvolutionData evo)
+    {
+        if (evo == null || evo.ResultClass == null) return false;
+
+        var ps = PlayerStats.Current;
+        if (ps == null) return false;
+        if (ps.HasClass(evo.ResultClass)) return false;
+
+        // 선행 직업 지정이 있으면 사슬 어딘가에 있어야 한다. 끝(현재 직업)만 보면
+        // 같은 T2 에서 갈라지는 T3 두 갈래 중 하나를 타는 순간 다른 쪽이 막힌다.
+        if (evo.FromClass != null && !ps.HasClass(evo.FromClass)) return false;
+
+        var lm = LevelUp;
+        if (lm == null) return false;
+
+        if (evo.Ingredients == null || evo.Ingredients.Length == 0) return false;
+
+        for (int i = 0; i < evo.Ingredients.Length; i++)
+        {
+            var item = evo.Ingredients[i];
+            if (item == null) return false;
+            if (lm.GetItemLevel(item) < evo.GetRequiredLevel(i)) return false;
+        }
+        return true;
+    }
+
+    /// <summary>완성 가능한 승급 전부. 프롬프트 안내에 쓴다.</summary>
+    public List<ClassEvolutionData> GetReadyClassEvolutions()
+    {
+        var list = new List<ClassEvolutionData>();
+        if (classEvolutions == null) return list;
+
+        foreach (var evo in classEvolutions)
+            if (IsClassSatisfied(evo)) list.Add(evo);
+
+        return list;
+    }
+
+    /// <summary><paramref name="origin"/> 근처 건물에서 가능한 승급. 없으면 null.</summary>
+    public ClassEvolutionData FindAltarClassEvolution(Vector2 origin)
+    {
+        var bm = GameManager.Instance != null ? GameManager.Instance.BuildingMgr : null;
+        if (bm == null) return null;
+
+        var building = bm.FindNearestPlaced(origin, altarRadius);
+        if (building == null || building.DataRef == null) return null;
+
+        foreach (var evo in GetReadyClassEvolutions())
+            if (evo.AltarBuilding == building.DataRef) return evo;
+
+        return null;
+    }
+
+    /// <summary>
+    /// 승급을 실행한다. <b>재료는 그대로 둔다</b> — 돌려받는 게 무기가 아니라 직업이라
+    /// 재료까지 먹으면 순수한 손해가 된다 (<see cref="ClassEvolutionData"/> 참고).
+    /// </summary>
+    public bool EvolveClass(ClassEvolutionData evo)
+    {
+        if (!IsClassSatisfied(evo)) return false;
+
+        var ps = PlayerStats.Current;
+        if (ps == null) return false;
+
+        ps.EvolveClass(evo.ResultClass);
+
+        AudioManager.Play(SfxId.LevelUp);
+        Debug.Log($"[EvolutionManager] 직업 승급 — {evo.EvolutionName} → {evo.ResultClass.ClassName}");
+        return true;
     }
 }

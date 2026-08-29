@@ -65,20 +65,35 @@ public class EvolutionPromptUI : MonoBehaviour
         var player = PlayerStats.Current;
         if (player == null) return null;
 
-        // ① 지금 누를 수 있다
+        // ① 지금 누를 수 있다. 승급을 먼저 본다 — TryEvolveAtAltar 가 그 순서로 처리하므로
+        //    안내와 실제 결과가 어긋나지 않아야 한다.
+        var classAtAltar = em.FindAltarClassEvolution(player.transform.position);
+        if (classAtAltar != null)
+            return $"<color=#F0C040>[E]</color>  PROMOTE  —  {classAtAltar.ResultClass.ClassName}";
+
         var atAltar = em.FindAltarEvolution(player.transform.position);
         if (atAltar != null)
             return $"<color=#F0C040>[E]</color>  EVOLVE  —  {atAltar.ResultItem.ItemName}";
 
         var ready = em.GetReadyEvolutions();
-        if (ready.Count == 0) return null;
 
-        // ② 상자에서 나온다
+        // ② 상자에서 나온다 — 가만히 있어도 언젠가 들어오므로 "찾아가야 하는" 것보다 뒤로 밀 이유가 없다
         foreach (var evo in ready)
             if (!evo.IsFinalEvolution)
                 return $"<color=#8A8F98>EVOLUTION READY</color>  {evo.ResultItem.ItemName}  —  open a treasure chest";
 
         // ③ 제단을 찾아가야 한다
+        var readyClass = em.GetReadyClassEvolutions();
+        if (readyClass.Count > 0)
+        {
+            var promo = readyClass[0];
+            var site  = promo.AltarBuilding;
+            return $"<color=#8A8F98>PROMOTION READY</color>  {promo.ResultClass.ClassName}  —  " +
+                   $"stand by your {(site != null ? site.BuildingName : "building")} and press E";
+        }
+
+        if (ready.Count == 0) return null;
+
         var final = ready[0];
         var altar = final.AltarBuilding;
         return $"<color=#8A8F98>EVOLUTION READY</color>  {final.ResultItem.ItemName}  —  " +

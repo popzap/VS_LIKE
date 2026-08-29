@@ -34,6 +34,7 @@ public static class BalanceImporter
     private const string WaveFolder     = "Assets/Game/WaveData";
     private const string ClassFolder    = "Assets/Game/ClassData";
     private const string EvolutionFolder= "Assets/Game/EvolutionData";
+    private const string ClassEvoFolder = "Assets/Game/ClassEvolutionData";
 
     // ════════════════════════════════════════════════════════════════
     //  Import
@@ -78,8 +79,9 @@ public static class BalanceImporter
         AssetDatabase.SaveAssets();
         AssetDatabase.Refresh();
 
-        // 3차: 아이템을 참조하는 테이블 (아이템이 디스크에 올라온 뒤라야 LoadById 가 찾는다)
+        // 3차: 아이템·직업을 참조하는 테이블 (그것들이 디스크에 올라온 뒤라야 LoadById 가 찾는다)
         ImportEvolutions(log);
+        ImportClassEvolutions(log);
 
         AssetDatabase.SaveAssets();
         AssetDatabase.Refresh();
@@ -317,6 +319,51 @@ public static class BalanceImporter
         log.AppendLine($"  Evolutions: {table.RowCount}");
     }
 
+    // ── 직업 승급 ───────────────────────────────────────────────────
+
+    /// <summary>
+    /// <c>ClassEvolutions.csv</c> → <see cref="ClassEvolutionData"/>.
+    /// 아이템과 직업을 둘 다 참조하므로 <see cref="ImportItems"/>·<see cref="ImportClasses"/> 이후에 돌아야 한다.
+    /// </summary>
+    private static void ImportClassEvolutions(StringBuilder log)
+    {
+        var table = LoadCsv("ClassEvolutions.csv", log);
+        if (table == null) return;
+
+        foreach (var row in table.Rows)
+        {
+            var id = CsvRow.Str(row, "Id");
+            if (string.IsNullOrEmpty(id)) continue;
+
+            var a = GetOrCreate<ClassEvolutionData>(ClassEvoFolder, id);
+            a.EvolutionName = CsvRow.Str(row, "EvolutionName", id);
+            a.Description   = CsvRow.Str(row, "Description", a.Description);
+
+            // FromClass 는 비워도 된다 (아무 직업에서나). LoadById 가 빈 Id 에 null 을 준다.
+            a.FromClass   = LoadById<CharacterClassData>(ClassFolder, CsvRow.Str(row, "FromClass"),   id, "CharacterClassData", log);
+            a.ResultClass = LoadById<CharacterClassData>(ClassFolder, CsvRow.Str(row, "ResultClass"), id, "CharacterClassData", log);
+
+            var ids = SplitIds(CsvRow.Str(row, "Ingredients"));
+            a.Ingredients = new ItemData[ids.Length];
+            for (int i = 0; i < ids.Length; i++)
+                a.Ingredients[i] = LoadById<ItemData>(ItemFolder, ids[i], id, "ItemData", log);
+
+            a.RequiredLevels = CsvRow.Ints(row, "RequiredLevels", a.RequiredLevels);
+
+            if (a.RequiredLevels == null || a.RequiredLevels.Length != a.Ingredients.Length)
+                log.AppendLine($"    ! {id}: Ingredients({a.Ingredients.Length}) 와 RequiredLevels" +
+                               $"({(a.RequiredLevels == null ? 0 : a.RequiredLevels.Length)}) 개수가 다르다");
+
+            // 승급은 제단(건물) 앞에서만 한다. 건물 재료가 없으면 어디서도 발동하지 않는
+            // 죽은 레시피가 되므로 런타임이 아니라 여기서 잡는다.
+            if (a.AltarBuilding == null)
+                log.AppendLine($"    ! {id}: 건물 재료가 없어 제단이 정해지지 않는다 (승급 불가)");
+
+            EditorUtility.SetDirty(a);
+        }
+        log.AppendLine($"  ClassEvos : {table.RowCount}");
+    }
+
     /// <summary>'|' 로 나뉜 Id 목록. 빈 칸은 버린다.</summary>
     private static string[] SplitIds(string raw)
     {
@@ -463,9 +510,9 @@ public static class BalanceImporter
             a.BonusXpGain         = CsvRow.Float(row, "BonusXpGain",         a.BonusXpGain);
             a.BonusGoldGain       = CsvRow.Float(row, "BonusGoldGain",       a.BonusGoldGain);
 
-            a.MaxWeaponSlots   = CsvRow.Int(row, "MaxWeaponSlots",   a.MaxWeaponSlots);
-            a.MaxPassiveSlots  = CsvRow.Int(row, "MaxPassiveSlots",  a.MaxPassiveSlots);
-            a.MaxBuildingSlots = CsvRow.Int(row, "MaxBuildingSlots", a.MaxBuildingSlots);
+            a.BonusWeaponSlots   = CsvRow.Int(row, "BonusWeaponSlots",   a.BonusWeaponSlots);
+            a.BonusPassiveSlots  = CsvRow.Int(row, "BonusPassiveSlots",  a.BonusPassiveSlots);
+            a.BonusBuildingSlots = CsvRow.Int(row, "BonusBuildingSlots", a.BonusBuildingSlots);
 
             a.Portrait    = LoadRef<Sprite>    (row, "Portrait",    a.Portrait);
             a.BodySprite  = LoadRef<Sprite>    (row, "BodySprite",  a.BodySprite);
@@ -684,6 +731,13 @@ public static class BalanceImporter
                 E(JoinNames(a.Ingredients)), CsvTable.JoinArray(a.RequiredLevels),
                 E(Name(a.ResultItem))));
 
+        ExportRows("ClassEvolutions.csv",
+            "Id,EvolutionName,Description,FromClass,Ingredients,RequiredLevels,ResultClass",
+            LoadAll<ClassEvolutionData>(ClassEvoFolder), (a, id) => string.Join(",",
+                id, E(a.EvolutionName), E(a.Description), E(Name(a.FromClass)),
+                E(JoinNames(a.Ingredients)), CsvTable.JoinArray(a.RequiredLevels),
+                E(Name(a.ResultClass))));
+
         ExportRows("Waves.csv",
             "Id,UseTimerClear,SurvivalTime,UseKillClear,KillTarget,SpawnRadius,MaxAlive,Spawns,EliteOverride,BossOverride,EliteCount,EliteTime,BossTime",
             LoadAll<WaveData>(WaveFolder), (a, id) => string.Join(",",
@@ -695,14 +749,14 @@ public static class BalanceImporter
         ExportRows("Classes.csv",
             "Id,ClassName,Description,StartingWeapon,StartingWeaponLevel,BonusMaxHp,BonusMoveSpeed,BonusDamage," +
             "BonusAttackSpeed,BonusProjectileSize,BonusPickupRadius,BonusCritChance,BonusArmor,BonusXpGain,BonusGoldGain," +
-            "MaxWeaponSlots,MaxPassiveSlots,MaxBuildingSlots," +
+            "BonusWeaponSlots,BonusPassiveSlots,BonusBuildingSlots," +
             "Portrait,BodySprite,WalkSheet,ModelPrefab,UnlockedByDefault,UnlockCost",
             LoadAll<CharacterClassData>(ClassFolder), (a, id) => string.Join(",",
                 id, E(a.ClassName), E(a.Description), E(Name(a.StartingWeapon)), a.StartingWeaponLevel,
                 N(a.BonusMaxHp), N(a.BonusMoveSpeed), N(a.BonusDamage), N(a.BonusAttackSpeed),
                 N(a.BonusProjectileSize), N(a.BonusPickupRadius), N(a.BonusCritChance),
                 N(a.BonusArmor), N(a.BonusXpGain), N(a.BonusGoldGain),
-                a.MaxWeaponSlots, a.MaxPassiveSlots, a.MaxBuildingSlots,
+                a.BonusWeaponSlots, a.BonusPassiveSlots, a.BonusBuildingSlots,
                 E(Path(a.Portrait)), E(Path(a.BodySprite)),
                 // 프레임은 전부 같은 .png 에서 나오므로 시트 경로 한 줄이면 복원된다.
                 E(a.WalkFrames != null && a.WalkFrames.Length > 0 ? Path(a.WalkFrames[0]) : ""),

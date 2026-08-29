@@ -25,7 +25,7 @@ public class WeaponManager : MonoBehaviour
             return;
         }
 
-        // 상한은 직업이 정한다 (CharacterClassData.MaxWeaponSlots).
+        // 상한은 직업 사슬이 정한다 (CharacterClassData.BonusWeaponSlots 의 합).
         // 여기까지 온 것 자체가 이미 이상하다 — LevelUpManager.CanAcquire 가 꽉 찬 카테고리의
         // 신규 아이템을 후보에서 빼기 때문이다. 그래도 남겨 두는 이유는, 예전에 이 자리에서
         // 조용히 return 하는 동안 인벤토리에는 아이템이 기록되어 "보유 중인데 무기는 없는"

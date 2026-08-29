@@ -1,0 +1,22 @@
+# ClassEvolutions.csv — 직업 승급 레시피 원본. Id 가 곧 Assets/Game/ClassEvolutionData/{Id}.asset 파일명이다.
+#
+# 무기 진화(Evolutions.csv)와 갈라 둔 이유 — 조합마다 경로가 다르다.
+#   무기 + 무기 / 무기 + 패시브 → 진화 무기 (보물상자)      … Evolutions.csv
+#   무기 + 건물                  → 직업 승급 (그 건물 앞 E)  … 여기
+#
+# Ingredients    = Items.csv 의 Id 를 | 로 나열한다. **건물이 하나는 있어야 한다** —
+#                  그 건물이 제단이 되고, 없으면 어디서도 발동 못 하는 죽은 레시피라 임포트 때 경고한다.
+# RequiredLevels = 각 재료의 최소 레벨. Ingredients 와 같은 순서·같은 개수.
+# FromClass      = Classes.csv 의 Id. 비우면 아무 직업에서나 승급할 수 있다(T1→T2 는 보통 비운다).
+#                  적으면 그 직업을 **거쳐 왔는지**만 본다. 현재 직업일 필요는 없다 —
+#                  같은 T2 에서 T3 두 갈래가 갈릴 때 하나를 타면 다른 쪽이 막히지 않게.
+# ResultClass    = Classes.csv 의 Id. 사슬 끝에 덧붙는다. 이전 직업의 보너스는 그대로 남는다.
+#
+# ⚠️ 재료는 소모하지 않는다. 무기 진화는 무기를 먹고 더 센 무기를 돌려주니 교환이 되지만,
+#    승급은 돌려주는 게 직업이라 재료까지 가져가면 순수한 손해가 된다.
+# ⚠️ ResultClass 는 SceneWiring.csv 의 GameManager,classes 에 넣지 말 것 — 시작 선택 화면에 뜬다.
+Id,EvolutionName,Description,FromClass,Ingredients,RequiredLevels,ResultClass
+Sentinel,Sentinel,Turret targeting doctrine welded onto your gun.,,Gun|Turret,5|3,Sentinel
+Doomlord,Doomlord,The bombard crews answer to you now.,,Bomb|Bombard,5|3,Doomlord
+Warden,Warden,The village named you its shield.,,Sword|Village,5|3,Warden
+Aegis,Aegis,Turret plating worn as armor. The line does not break.,Sentinel,Turret|Armor,5|3,Aegis

@@ -31,5 +31,3 @@ BuildingCooldown,Building Speed,Buildings work more often.,Assets/Game/Sprites/P
 Excalibur,Excalibur,Evolved Sword. A wide arc that cleaves five foes at once.,Assets/Game/Sprites/Weapons/Sword.png,Weapon,1,Excalibur,0
 Windforce,Windforce,Evolved Bow. Six arrows fan out at blinding speed.,Assets/Game/Sprites/Weapons/Bow.png,Weapon,1,Windforce,0
 Devastator,Devastator,Evolved Gun fused with Fireball. Relentless heavy fire.,Assets/Game/Sprites/Weapons/Gun.png,Weapon,1,Devastator,0
-Sentinel,Sentinel,Turret technology built into your gun. Never stops firing.,Assets/Game/Sprites/Weapons/Gun.png,Weapon,1,Sentinel,0
-Doomsday,Doomsday,Bombard shells loaded into your bomb. The ground itself breaks.,Assets/Game/Sprites/Weapons/Bomb.png,Weapon,1,Doomsday,0

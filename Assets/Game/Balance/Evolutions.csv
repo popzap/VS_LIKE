@@ -8,11 +8,13 @@
 #    재료에 건물이 섞여 있으면 "최종 진화"라 그 건물 앞에서 E 를 눌러야 하고,
 #    아니면 보물상자를 열 때 확정으로 나온다. (EvolutionData.IsFinalEvolution)
 #
+# ⚠️ 무기 + 건물은 여기가 아니라 ClassEvolutions.csv 다 (19차 / I-56).
+#    조합을 경로별로 갈라 두었다 — 무기+무기·무기+패시브는 보물상자에서 무기가 되고,
+#    무기+건물은 그 건물 앞에서 **직업**이 된다. 여기에 건물 재료를 넣으면 두 규칙이 겹친다.
+#
 # 소모 규칙: 무기 재료만 사라진다. 패시브와 건물은 남는다 —
 #    건물이 사라지면 "제단 앞에서 눌렀더니 제단이 증발"하는 꼴이 된다.
 Id,EvolutionName,Description,Ingredients,RequiredLevels,ResultItem
 Excalibur,Excalibur,Sword sharpened by raw power.,Sword|Damage,5|3,Excalibur
 Windforce,Windforce,A bow that finds every weak point.,Bow|CritChance,5|3,Windforce
 Devastator,Devastator,Gunfire that detonates on impact.,Gun|Fireball,5|5,Devastator
-Sentinel,Sentinel,Turret targeting welded onto your gun.,Gun|Turret,5|3,Sentinel
-Doomsday,Doomsday,Siege shells in the palm of your hand.,Bomb|Bombard,5|3,Doomsday

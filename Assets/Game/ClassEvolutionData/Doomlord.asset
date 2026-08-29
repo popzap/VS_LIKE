@@ -9,13 +9,14 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 7cf41c1dcc07f434b9cc6891edd401fb, type: 3}
-  m_Name: Doomsday
-  m_EditorClassIdentifier: Assembly-CSharp::EvolutionData
-  EvolutionName: Doomsday
-  Description: Siege shells in the palm of your hand.
+  m_Script: {fileID: 11500000, guid: 15c69ad820399084fbb662141262a301, type: 3}
+  m_Name: Doomlord
+  m_EditorClassIdentifier: Assembly-CSharp::ClassEvolutionData
+  EvolutionName: Doomlord
+  Description: The bombard crews answer to you now.
+  FromClass: {fileID: 0}
   Ingredients:
   - {fileID: 11400000, guid: 5f5cf26f2969c004db39bdbc566bb6bf, type: 2}
   - {fileID: 11400000, guid: f9cb0a286a011fc40826df52f5327ebd, type: 2}
   RequiredLevels: 0500000003000000
-  ResultItem: {fileID: 11400000, guid: 430b17ce635996c48a85846df100dbd4, type: 2}
+  ResultClass: {fileID: 11400000, guid: 65a0944c8122ce643a5891253168046d, type: 2}

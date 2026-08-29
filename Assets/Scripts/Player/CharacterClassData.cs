@@ -38,13 +38,18 @@ public class CharacterClassData : ScriptableObject
     // 직업을 가르는 두 번째 축. 스탯이 "얼마나 센가"라면 이쪽은 "무엇을 할 수 있는가"다.
     // 세는 단위는 **아이템 종류 수**이지 레벨이 아니다 — Sword Lv5 도 1칸이다.
     // 건물은 "같은 건물을 몇 채 세우나"(BuildingData.MaxCount)와 다르다. 여기는 종류 수다.
-    [Header("소지 상한 (종류 수)")]
-    [Tooltip("동시에 들 수 있는 무기 종류. 진화는 재료를 소모하므로 칸이 늘지 않는다.")]
-    public int MaxWeaponSlots   = 6;
-    [Tooltip("동시에 들 수 있는 패시브 종류.")]
-    public int MaxPassiveSlots  = 6;
-    [Tooltip("동시에 해금할 수 있는 건물 종류.")]
-    public int MaxBuildingSlots = 4;
+    //
+    // ⚠️ 위 Bonus* 와 똑같이 **더해지는 값**이다. 총량이 아니다.
+    //    기본 상한이 0 이라 1차 직업에서는 "총량 == 더하는 값" 이지만, 직업이 진화하면
+    //    사슬(PlayerStats.ClassChain) 전체가 합산된다 — Warrior(3) → Sentinel(+1) = 4칸.
+    //    상위 직업 행에 "총 4" 를 적으면 7칸이 된다.
+    [Header("소지 상한 보너스 (종류 수 · 더해진다)")]
+    [Tooltip("무기 종류 칸을 이만큼 늘린다. 진화는 재료를 소모하므로 칸을 추가로 먹지 않는다.")]
+    public int BonusWeaponSlots;
+    [Tooltip("패시브 종류 칸을 이만큼 늘린다.")]
+    public int BonusPassiveSlots;
+    [Tooltip("건물 종류 칸을 이만큼 늘린다.")]
+    public int BonusBuildingSlots;
 
     [Header("연출")]
     [Tooltip("메뉴/HUD 초상화")]
@@ -75,4 +80,12 @@ public class CharacterClassData : ScriptableObject
         s.XpGain         += BonusXpGain;
         s.GoldGain       += BonusGoldGain;
     }
+
+    /// <summary>이 직업이 더하는 소지 칸 수. <see cref="PlayerStats.SlotLimit"/> 가 사슬 전체를 합산한다.</summary>
+    public int BonusSlots(ItemCategory category) => category switch
+    {
+        ItemCategory.Weapon   => BonusWeaponSlots,
+        ItemCategory.Building => BonusBuildingSlots,
+        _                     => BonusPassiveSlots,
+    };
 }

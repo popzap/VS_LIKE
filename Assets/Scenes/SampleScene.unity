@@ -15102,8 +15102,11 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 6c26fdf87f463ac45ad7bd4a69764731, type: 2}
   - {fileID: 11400000, guid: 74cbd8dbeda31d04780844978b5f2881, type: 2}
   - {fileID: 11400000, guid: 459b6040c84fdaf4ab0039c0dee9eb12, type: 2}
-  - {fileID: 11400000, guid: f93dad960b603a54c840e48640a063c3, type: 2}
-  - {fileID: 11400000, guid: 934f881c2c4afc34bbfe867df41c865b, type: 2}
+  classEvolutions:
+  - {fileID: 11400000, guid: d4fcf7964f12bc545a2488edc5a75e4d, type: 2}
+  - {fileID: 11400000, guid: 5384c7e8e3121a149b294da81f1ac760, type: 2}
+  - {fileID: 11400000, guid: 6dcff189fae37f7468f1e0cc7df7c4ab, type: 2}
+  - {fileID: 11400000, guid: 8d0701fd0e204eb4c9ec91f2c2d72137, type: 2}
   altarRadius: 2.2
 --- !u!1 &2103583617
 GameObject:

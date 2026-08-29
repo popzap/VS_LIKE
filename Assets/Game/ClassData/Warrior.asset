@@ -27,9 +27,9 @@ MonoBehaviour:
   BonusArmor: 2
   BonusXpGain: 0
   BonusGoldGain: 0
-  MaxWeaponSlots: 3
-  MaxPassiveSlots: 5
-  MaxBuildingSlots: 5
+  BonusWeaponSlots: 3
+  BonusPassiveSlots: 5
+  BonusBuildingSlots: 5
   Portrait: {fileID: 21300000, guid: f02e8961e0e84b84abf77e91a232f234, type: 3}
   BodySprite: {fileID: -251139876, guid: 4a835d77cce42c74cab5adc8c7f7f6c7, type: 3}
   WalkFrames:
