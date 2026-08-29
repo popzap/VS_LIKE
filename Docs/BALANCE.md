@@ -1,6 +1,6 @@
 # VS_LIKE — 밸런스 데이터 가이드
 
-> **작성:** 2026-08-26 · **최종 갱신:** 2026-08-29 (22차 — `TUNING.md` 포인터 / I-59)
+> **작성:** 2026-08-26 · **최종 갱신:** 2026-08-29 (23차 — 폰트 문자표 절 추가 / I-60)
 > 이 문서는 **수치를 어디서 어떻게 고치는가**를 설명한다.
 > 완료 이력은 [`SETUP_STATUS.md`](SETUP_STATUS.md), 남은 작업은 [`TODO.md`](TODO.md).
 >
@@ -22,6 +22,9 @@
 > ⚠️ **딱 하나 예외가 있다 — 오디오 음량.**
 > `Assets/Game/Audio/AudioLibrary.asset` 은 **CSV 임포터가 건드리지 않는다.**
 > 소리 크기·피치는 여기서 **인스펙터로 직접** 고치는 게 맞다 (→ §2 마지막).
+>
+> 🔤 **CSV 에 문자열을 쓸 때**: 폰트가 **Static** 이라 문자표에 없는 글자는 **빈칸으로 나온다** (I-60).
+> 지금 굽혀 있는 건 **ASCII 전부 + 기호 20개**뿐이다. 한글·이모지는 없다 (→ §2 마지막).
 
 ---
 
@@ -790,6 +793,52 @@ CSV 임포터가 이 파일을 대상으로 잡지 않으므로 Import 를 돌�
 
 전역 슬라이더(`AudioManager` 의 `BgmVolume` 0.8 / `SfxVolume` 1.0)는 **계통 전체**를 움직인다.
 개별 소리가 튀면 여기가 아니라 위 표를 고친다.
+
+---
+
+### `Pretendard SDF.asset` — 폰트 문자표 (⚠️ **CSV 가 아니다**)
+
+경로: `Assets/Fonts/Pretendard SDF.asset` · **23차(I-60)부터 `atlasPopulationMode = Static`.**
+
+Static 이라 **문자표에 없는 글자는 빈칸으로 나온다.** 현재 굽혀 있는 것은 **115자**:
+
+| 구간 | 내용 |
+|---|---|
+| ASCII 32~126 | 95자 **전부** |
+| 기호 (실사용 확인) | `…`U+2026 `—`U+2014 `□`U+25A1 `·`U+00B7 `▲`U+25B2 `→`U+2192 |
+| 기호 (여유) | `←` `▼` `–` `×` `•` `★` `☆` `©` `®` `°` `±` `≤` `≥` `∞` |
+
+**한글은 없다.** UI 문자열은 영문이라는 규칙(CLAUDE.md §3) 때문에 뺐다.
+한글이나 이모지를 UI 에 쓰려면 **먼저 폰트를 다시 구워야 한다.**
+
+#### 다시 굽는 법
+
+`Unity_RunCommand` 로 아래를 돌린다. **문자만 다시 채우고 애셋 자체는 그대로 둔다.**
+
+```csharp
+var fa = AssetDatabase.LoadAssetAtPath<TMP_FontAsset>("Assets/Fonts/Pretendard SDF.asset");
+fa.atlasPopulationMode = AtlasPopulationMode.Dynamic;   // 굽는 동안만 Dynamic
+fa.ClearFontAssetData(true);
+fa.TryAddCharacters(target, out string missing);        // target = 기존 115자 + 새 문자
+fa.atlasPopulationMode = AtlasPopulationMode.Static;    // 다시 잠근다
+EditorUtility.SetDirty(fa); AssetDatabase.SaveAssets();
+```
+
+> 🔴 **`TMP_FontAsset.CreateFontAsset` 으로 새로 만들지 말 것.**
+> GUID 가 바뀌어 씬·프리팹의 폰트 참조가 **전부** 끊긴다.
+>
+> ⚠️ `target` 에 **기존 115자를 반드시 다시 포함**할 것. `ClearFontAssetData` 가 전부 지운다.
+>
+> ⚠️ 한글을 넣으면 아틀라스가 폭발한다 — `samplingPointSize` 90 · `padding` 9 라
+> 1024×1024 한 장에 **약 81자**밖에 안 들어간다. 대량으로 넣어야 하면
+> `isMultiAtlasTexturesEnabled`(현재 `true`)로 장수를 늘리거나 Dynamic 으로 되돌리는 쪽이 낫다.
+> 단 **Dynamic 으로 되돌리면 커밋마다 25만 줄 diff 가 돌아온다** (그게 I-60 의 이유였다).
+
+#### 왜 Static 인가
+
+Dynamic 은 런타임에 처음 만난 글리프를 그 자리에서 굽고 애셋을 dirty 로 만든다.
+즉 **플레이만 해도 파일이 바뀐다.** 그 대신 Dynamic 은 **빠진 글리프를 숨긴다** —
+굽기 전 이 폰트에는 ASCII 가 72자뿐이었는데(23자 누락) 아무도 몰랐다.
 
 ---
 
