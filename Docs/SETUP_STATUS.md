@@ -6,14 +6,17 @@
 > 기존의 「C# 스크립트는 완성 단계」라는 전제와 「요청 없이 코드 건드리지 말 것」 규칙이 **해제됨**.
 > 이제 게임 완성을 위해 C# 스크립트 신규 작성·수정이 허용된다.
 >
-> **최종 갱신:** 2026-08-28 (15차 — ROADMAP 2단계: 오디오 · BGM 4곡 + SFX 14종 + 호출부 18곳)
+> **최종 갱신:** 2026-08-29 (16차 — 옵션창 유령 표시 · ESC 시 BGM 정지 · 파이어볼 투사체)
 > 검증 방식: Unity MCP + Play 모드 스모크 테스트 + YAML 직접 파싱
 > **검증 기준 파일:** `Assets/Scenes/SampleScene.unity`
 >
 > **현재 상태: 메인메뉴 → 스테이지맵 → 웨이브 → 클리어 → 게임오버 전체 루프 런타임 검증 완료 (18/18 PASS), 콘솔 에러 0 / 경고 0.**
 > [`ROADMAP.md`](ROADMAP.md) §8 의 **1·2·3단계 완료** (I-43~I-49) — HUD 정보 · 타격 반응 · 오디오 ·
 > 병렬 소환 · 적 행동 분화 · 보물상자/자석. **"조용한 프로토타입" 단계는 끝났다.**
-> 원격 동기화: `popzap/VS_LIKE` `main` @ **`df01a61`** (2026-08-28)
+> 원격 동기화: `popzap/VS_LIKE` `main` @ **`8737492`** (2026-08-28) — 16차는 아직 푸시 전
+>
+> 🎯 **16차는 처음으로 "직접 플레이해서 나온" 버그 보고에서 출발했다** (I-50).
+> 로그로만 검증하던 단계에서는 절대 발견할 수 없는 종류였다 — 자세한 건 2-20.
 >
 > ⚠️ **지금 가장 필요한 것은 코드가 아니라 "직접 플레이"다.**
 > 최근 6개 작업(I-44·I-46~I-49)은 전부 **로그로만** 검증했다. 로그가 증명하는 것은
@@ -1710,6 +1713,10 @@ I-45 로 `PlaySfx`/`PlayBgm`/`StopBgm` 과 보이스 풀 16개, 중복 컷까지
 화면마다 흩어 놓으면 반드시 빠뜨리는 곳이 생긴다. 단 `LevelUp`·`Paused` 는 웨이브 위에 **끼어드는**
 상태라 곡을 바꾸지 않는다 — 레벨업이 뜰 때마다 음악이 끊기면 전투의 흐름이 매번 잘린다.
 
+> ⚠️ **16차에 `Paused` 는 이 판단에서 빠졌다** (I-51). 사용자가 직접 플레이해 보고
+> "ESC 눌렀을 때 BGM 정지"를 요구했다. 레벨업(0.5~2초)과 달리 일시정지는 **플레이어가 게임을
+> 손에서 놓는 시간**이라 성격이 다르다. `LevelUp` 만 여전히 곡을 유지한다. → 2-20
+
 **임포트 설정을 용도별로 갈랐다.**
 
 | 용도 | 설정 | 이유 |
@@ -1778,7 +1785,131 @@ bgmSource loop=True playOnAwake=False spatialBlend=0
 
 ---
 
-## 2-1. 이슈 목록 (I-1 ~ I-49 — 전부 해결됨)
+## 2-20. ✅ 직접 플레이에서 나온 첫 버그 3건 (I-50~I-52, 2026-08-29 16차)
+
+15차 문서에 "지금 가장 필요한 것은 코드가 아니라 직접 플레이다"라고 적어 뒀는데,
+**실제로 플레이하자마자 로그로는 절대 안 잡히는 버그가 나왔다.** 그 기록이다.
+
+### 원인
+
+**I-50 — 첫 전투를 시작하면 옵션창이 화면에 튀어나온다**
+
+정적 분석으로는 아무 문제가 없었다. 씬의 `OptionSubPanel` 은 **비활성**이고,
+버튼 배선도 전부 정상이며(`MainMenuUI`·`PauseMenuUI`·`HUDManager` 사이에 교차 배선 없음),
+씬 전체를 `SerializedObject` 로 훑어 `OptionSubPanel` 을 참조하는 컴포넌트를 찾아도
+**`MainMenuUI.optionSubPanel` 과 `PauseMenuUI.optionSubPanel` 딱 둘뿐**이었다.
+스크립트로 `onClick.Invoke()` 를 눌러 메인메뉴→직업선택→맵→전투까지 재현해도 `opt=False` 였다.
+
+놓친 것은 **재현 경로 자체**였다. 원인이 둘 겹쳐 있었다.
+
+| | 문제 | 왜 안 보였나 |
+|---|---|---|
+| (a) | `UI Canvas` 자식 10개가 **전부 전체화면 1920×1080** 이고 `Canvas` 정렬 오버라이드가 없다 → **형제 순서 = 그리는 순서**. `OptionSubPanel` 이 **3번**인데 `MainMenuPanel` **5**, `StageMapPanel` **6**, `ClassSelectPanel` **9** | 메뉴에서 옵션을 켜면 **패널 뒤에 깔려 안 보인다** |
+| (b) | `MainMenuUI.OnOptionClicked()` 은 `SetActive(true)` 만 한다. **상태가 바뀔 때 옵션창을 닫는 코드가 어디에도 없었다** | 켜진 채로 계속 남는다 |
+
+합치면 — **메인메뉴에서 Option 을 누른다 → 뒤에 깔려 안 보인다 → 그냥 Start 를 누른다 →
+전투 진입에서 메뉴 패널이 전부 꺼진다 → 켜져 있던 옵션창만 화면에 남는다.**
+"Option 을 눌러 봤는데 아무 반응이 없더라"는 **사용자만 아는 사실**이라 로그에는 흔적이 없었다.
+
+**I-51 — ESC 로 멈춰도 음악은 계속 나온다**
+
+15차(I-49)에 `LevelUp`·`Paused` 를 묶어 "웨이브 위에 끼어드는 상태라 곡을 안 바꾼다"고
+**일부러** 정했던 판단이다. 직접 플레이해 보니 둘은 성격이 달랐다 —
+레벨업은 0.5~2초 만에 끝나지만, 일시정지는 **플레이어가 게임을 손에서 놓는 시간**이다.
+`LevelUp` 은 그대로 두고 `Paused` 만 뺐다.
+
+**I-52 — 파이어볼이 날아오지 않고 적 발밑에서 그냥 터진다**
+
+`AoeWeapon` 은 `FindNearestEnemy()` 위치에 폭발을 바로 꺼내 놓았다.
+곡사포(`BombardBuilding`)는 11차에 이미 `BombProjectile` 로 "날아가는 시간"을 얻었는데
+무기 쪽은 안 되어 있었다 — [`TODO.md`](TODO.md) §3 에 재사용 경로까지 적혀 있던 항목이다.
+
+걸림돌은 **Fireball 과 Bomb 이 같은 `Weapon_Aoe.prefab` 을 공유한다**는 점이었다.
+프리팹에 `bombPrefab` 필드를 달면 **폭탄까지 같이 날아간다.** 요청은 파이어볼만이었다.
+→ 프리팹이 아니라 **데이터로 갈랐다**: `WeaponData.TravelPrefab` (CSV 열) 을 신설해
+Fireball 만 채우고 Bomb 은 비워 뒀다.
+
+### 변경한 파일
+
+| 파일 | 변경 |
+|---|---|
+| `Assets/Scenes/SampleScene.unity` | `PausePanel` → 8번, `OptionSubPanel` → 9번 (오버레이를 **맨 위**로) |
+| `Assets/Scripts/UI/MainMenuUI.cs` | `OnHidden()` 추가 — 메인메뉴를 떠날 때 옵션창을 닫는다 |
+| `Assets/Scripts/UI/PauseMenuUI.cs` | `Close()` 에서 `CloseOption()` 호출 — 옵션창을 연 채 Resume 을 눌러도 안 남는다 |
+| `Assets/Scripts/UI/AudioManager.cs` | `PauseBgm()`/`ResumeBgm()` + static 래퍼, `_bgmPaused` 플래그. `PlayBgm` 이 "멈춰 있던 같은 곡"이면 이어서 재생 |
+| `Assets/Scripts/Core/GameManager.cs` | `UpdateBgm` 에서 `Paused` 를 `LevelUp` 과 분리 → `PauseBgm()` |
+| `Assets/Scripts/Weapon/WeaponData.cs` | `TravelPrefab` 필드 신설 |
+| `Assets/Scripts/Weapon/AoeWeapon.cs` | `LaunchTravel()` / `Explode()` 로 분리. TravelPrefab 이 있고 속도>0 이면 날려 보낸다 |
+| `Assets/Editor/BalanceImporter.cs` | `TravelPrefab` 열 임포트 **+ 익스포트 헤더에도 추가** |
+| `Assets/Game/Balance/Weapons.csv` | `TravelPrefab` 열 추가. Fireball 속도 `0 → 11` |
+| `Assets/Prefabs/Proj_Fireball.prefab` | **신규.** `Proj_Bomb` 복제 → Fireball 스프라이트, `arcHeight 0`·`spinSpeed 0` |
+| `Assets/Game/WeaponData/*.asset` | CSV 임포트 산출물 5개 |
+
+### 설계에서 일부러 정한 것들
+
+**옵션창은 코드와 씬 양쪽에서 막았다.** `OnHidden()` 만 고치면 지금 이 경로는 막히지만,
+**새 전체화면 패널을 추가할 때마다 같은 함정을 다시 밟는다.** 오버레이(`PausePanel`·
+`OptionSubPanel`)를 캔버스 맨 뒤로 옮겨 **"오버레이는 항상 맨 위"** 를 구조로 만들었다.
+
+**`StopBgm` 이 아니라 `PauseBgm` 이다.** `StopBgm` 은 `bgmSource.clip` 을 `null` 로 만든다.
+그대로 쓰면 ESC 를 누를 때마다 **곡의 도입부만 반복해서 듣게 된다.**
+`AudioSource` 에는 "지금 일시정지 중인가"를 묻는 프로퍼티가 없어(`Pause()` 해도 `isPlaying` 은
+그냥 `false`) `_bgmPaused` 를 직접 들고 있다. 이게 없으면 `Close()` → `ChangeState(Wave)` →
+`PlayMusic(WaveNormal)` 이 "`isPlaying == false` 니까 새로 틀자"고 판단해 **처음부터 다시 튼다.**
+
+**`LevelUp` 은 그대로 뒀다.** 레벨업 카드는 몇 초 만에 닫히는데 그때마다 곡이 끊기면
+전투의 흐름이 매번 잘린다. 일시정지와 레벨업은 **길이가 다르다.**
+
+**AoE 무기의 비행체를 프리팹이 아니라 `WeaponData` 에 뒀다.** Fireball·Bomb 이 프리팹을
+공유하므로 프리팹 필드로 만들면 갈라낼 수가 없다. CSV 열 하나면 **앞으로 새 AoE 무기마다
+즉발/비행을 데이터로 고를 수 있다.**
+
+**`TravelPrefab` 은 `ProjectileSpeed > 0` 일 때만 발동한다.** 프리팹만 꽂고 속도를 0 으로 두면
+목표에 영원히 도달하지 못한다. 두 조건을 함께 걸어 그 상태를 만들 수 없게 했다.
+
+### 검증 로그
+
+임시 `PauseDbg` 로 **사용자가 실제로 했을 경로**(메인메뉴에서 옵션을 켠 채 시작)를 재현했다.
+
+```
+[PAUSEDBG] 클릭 → MainMenu.Option (state=MainMenu)
+[PAUSEDBG] ① 옵션 연 직후 opt=True (기대: True)
+[PAUSEDBG] 클릭 → MainMenu.Start (state=MainMenu)
+[PAUSEDBG] ① 메인메뉴 떠난 뒤 opt=False (기대: False)
+[PAUSEDBG] ① 전투 진입 opt=False pause=False state=Wave (기대: False/False/Wave)
+
+[PAUSEDBG] ② 일시정지 전 playing=True time=1.98 clip=BGM_WaveNormal
+[GameManager] State → Paused
+[PAUSEDBG] ② 일시정지 중 playing=False time=1.98 state=Paused (기대: False/Paused)
+[GameManager] State → Wave
+[PAUSEDBG] ② 재개 후 playing=True time=2.97 (기대: True, time 이 1.98 부근에서 이어짐 — 0 이면 처음부터 다시 튼 것)
+
+[PAUSEDBG] ③ Fireball 지급
+[PAUSEDBG] ③ 날아다니는 Proj_Fireball 최대 동시 개수=1 (기대: 1 이상)
+```
+
+②의 `time` 이 **0 이 아니라 2.97** 인 것이 핵심이다 — 멈춘 지점(1.98)에서 이어졌다는 뜻이다.
+③은 쿨다운 2.2초 · 속도 11 이라 동시 1개가 정상이다.
+
+데이터 배선도 따로 확인했다:
+
+```
+[WPN] Fireball travel=Proj_Fireball explode=Proj_Aoe(Boom) speed=11
+[WPN] Bomb     travel=(없음)        explode=Proj_Aoe(Boom) speed=0    ← 즉발 유지
+[WPN] Sword    travel=(없음)        explode=Proj_Bullet     speed=8
+[WPN] Proj_Fireball arc=0 spin=0 sprite=Fireball layer=8
+```
+
+임시 스크립트 `PauseDbg.cs` 와 씬 오브젝트 `__PauseDbg` **삭제**,
+`Assets/Refresh` 후 **콘솔 0건**, `File/Save` 완료.
+
+> ⚠️ **여기서도 로그가 증명한 것은 "동작한다"까지다.** 파이어볼의 비행 속도 11 이
+> 답답한지 빠른지, 옵션창이 이제 제대로 보이는지는 **눈으로만** 판단할 수 있다
+> → [`TODO.md`](TODO.md) §1
+
+---
+
+## 2-1. 이슈 목록 (I-1 ~ I-52 — 전부 해결됨)
 
 > 미해결 항목은 [`TODO.md`](TODO.md) 참조.
 
@@ -1833,6 +1964,9 @@ bgmSource loop=True playOnAwake=False spatialBlend=0
 | **I-47** | **적 6종이 전부 같은 행동을 한다** — `MoveTowardsPlayer()` 직선 추격 하나가 전부라 Ogre 는 큰 고블린, Wolf 는 빠른 고블린이었다. 게다가 적 콜라이더가 전부 **트리거**라 물리 반발이 없어 **다 겹쳐 한 덩어리로 뭉쳤다** | ✅ 해결 (2026-08-28 14차 → 2-18) |
 | **I-48** | **필드 픽업이 2종뿐** — `ExpDrop_Small` / `HealPickup`. 엘리트를 잡아도 보상이 경험치뿐이라 **처치의 무게가 없었고**, 흩어진 경험치를 회수할 방법이 걸어가는 것밖에 없었다 | ✅ 해결 (2026-08-28 14차 → 2-18) |
 | **I-49** | **게임이 완전히 무음이다** — I-45 로 배관(`PlaySfx`/`PlayBgm`/보이스 풀/중복 컷)은 깔렸지만 `Assets/` 안에 **오디오 파일 0개**, `PlaySfx` **호출부 0곳**. 막고 있던 건 파일이 아니라 "**클립 참조를 어디에 둘 것인가**" 라는 미결정 하나였다 | ✅ 해결 (2026-08-28 15차 → 2-19) — (B)안 `AudioLibrary` SO + `SfxId`/`BgmId` enum |
+| **I-50** | **전투를 시작하자마자 옵션창이 화면을 덮었다** — 원인이 **둘**이다. ① `UI Canvas` 자식 10개가 전부 전체화면(1920×1080)인데 `Canvas` 정렬 오버라이드가 없어 **형제 순서 = 그리기 순서**였고, `OptionSubPanel` 이 index 3(메뉴 패널들보다 뒤)이라 메인 메뉴에서 옵션을 눌러도 **아무 변화가 없어 보였다.** ② `MainMenuUI` 에 옵션창을 닫는 코드가 아예 없어 켜진 채로 남았다. 전투 진입에서 앞의 메뉴 패널이 전부 꺼지는 순간 그것만 남아 튀어나왔다 | ✅ 해결 (2026-08-29 16차 → 2-20) — 코드(`OnHidden`/`Close`)와 구조(오버레이를 맨 위로) **양쪽** 수정 |
+| **I-51** | **ESC 로 멈춰도 BGM 이 계속 흘렀다** — 15차에서 `Paused` 를 `LevelUp` 과 묶어 "곡을 안 바꾸는 상태"로 정했는데(아래 2-19 ⚠️), 실제로 플레이해 보니 **손에서 게임을 놓은 시간에 음악만 도는 게 어색**했다. `StopBgm` 은 곡을 버려서 재개 때 도입부가 다시 나오므로 쓸 수 없었다 | ✅ 해결 (2026-08-29 16차 → 2-20) — `PauseBgm`/`ResumeBgm` + `_bgmPaused` 플래그(`AudioSource` 에 `isPaused` 가 없다) |
+| **I-52** | **파이어볼이 날아오지 않고 적 위에서 그냥 터졌다** — `AoeWeapon` 은 목표 지점에 폭발을 바로 생성했다. 그런데 파이어볼과 폭탄이 **`Weapon_Aoe.prefab` 하나를 공유**해서, 프리팹에 몸체 필드를 달면 폭탄까지 날아가 버린다 | ✅ 해결 (2026-08-29 16차 → 2-20) — `WeaponData.TravelPrefab` + CSV 열로 **데이터 쪽에서** 갈랐다 |
 
 ### 해결 상세
 
@@ -2057,10 +2191,28 @@ private void LateUpdate()
 56. ✅ **BGM 전환을 `GameManager.ChangeState` 한 곳에 몰았다.** 모든 화면 전환이 지나는 길목이라
     화면마다 흩어 놓으면 반드시 빠뜨린다. `LevelUp`·`Paused` 는 **곡을 안 바꾼다** — 웨이브 위에
     끼어드는 상태라, 레벨업마다 음악이 끊기면 전투의 흐름이 매번 잘린다
+    (⚠️ `Paused` 는 **16차 I-51 에서 뒤집혔다** — 아래 60번)
 57. ✅ **"소리 뭉개짐"을 코드 위치로 막았다** — 죽는 타격은 피격음 생략(사망음과 겹침) ·
     다발 발사는 볼리당 1회 · 레벨업 팡파레는 `while` 안(보물상자와 구분) · 건물 설치음은 성공 경로만.
     **중복 컷이 실제로 도는 것도 확인**(20회 연타 → 보이스 1개)
-58. ⏳ **다음**: [`ROADMAP.md`](ROADMAP.md) §8 — 남은 가장 큰 구멍은 **무기 진화 0**.
+
+**16차 (2026-08-29)** — 상세는 2-20
+
+58. ✅ **전투 시작하자마자 옵션창이 튀어나오던 버그** (I-50). 원인이 둘 겹쳤다 —
+    `UI Canvas` 자식 10개가 전부 전체화면이라 **형제 순서 = 그리는 순서**인데 `OptionSubPanel` 이
+    메뉴 패널들보다 **뒤**에 있었고(안 보임), 상태가 바뀔 때 **아무도 안 꺼줬다**.
+    메뉴에서 옵션을 누르면 보이지도 않은 채 켜져 있다가, 전투 진입에서 앞 패널이 전부 꺼지는
+    순간 화면에 남았다. **사용자가 직접 플레이해서 잡아낸 첫 버그**
+59. ✅ **오버레이 2종을 캔버스 맨 뒤(= 맨 위)로 옮겼다** — `PausePanel` 8, `OptionSubPanel` 9.
+    코드로만 막으면 새 패널을 추가할 때마다 같은 함정을 다시 밟는다
+60. ✅ **ESC 일시정지가 BGM 을 멈춘다** (I-51). `StopBgm` 이 아니라 **`PauseBgm`** 이다 —
+    `StopBgm` 은 곡을 버려서 재개할 때 도입부만 반복해 듣게 된다. `AudioSource` 에는
+    "일시정지 중인가"를 묻는 프로퍼티가 없어 `_bgmPaused` 를 직접 들고 있고,
+    같은 곡을 다시 요청받으면 `PlayBgm` 이 처음부터 틀지 않고 **이어서 재생**한다
+61. ✅ **파이어볼이 날아간다** (I-52). Fireball 과 Bomb 이 **같은 `Weapon_Aoe.prefab`** 을 쓰므로
+    프리팹이 아니라 **데이터로 갈랐다** — `WeaponData.TravelPrefab` 신설(CSV 열 추가).
+    Fireball 은 `Proj_Fireball`(직선·무회전) 을 속도 11 로 쏘고, Bomb 은 비워 둬 **즉발 유지**
+62. ⏳ **다음**: [`ROADMAP.md`](ROADMAP.md) §8 — 남은 가장 큰 구멍은 **무기 진화 0**.
     그 전에 §1 런타임 재검증(이제 **음량 밸런스 청취**가 추가됐다) → 스탯 재조정 →
     재화 구조 결정 (→ [`TODO.md`](TODO.md) §6)
 

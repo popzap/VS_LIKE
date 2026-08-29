@@ -46,6 +46,10 @@ public class AudioManager : MonoBehaviour
 
     private Coroutine _bgmFade;
 
+    // AudioSource 에는 "지금 일시정지 상태인가"를 묻는 프로퍼티가 없다 (Pause 해도 isPlaying 은
+    // 그냥 false 가 된다). 멈춘 곡을 처음부터 다시 트는 사고를 막으려면 직접 들고 있어야 한다.
+    private bool _bgmPaused;
+
     // ────────────────────────────────────────────────────────────
 
     private void Awake()
@@ -122,6 +126,12 @@ public class AudioManager : MonoBehaviour
         Instance.PlayBgm(id, fade);
     }
 
+    /// <summary>BGM 을 그 자리에서 멈춘다 (일시정지). 재생 위치는 유지된다.</summary>
+    public static void PauseMusic()  { if (Instance != null) Instance.PauseBgm(); }
+
+    /// <summary>일시정지된 BGM 을 멈춘 지점부터 이어서 재생한다.</summary>
+    public static void ResumeMusic() { if (Instance != null) Instance.ResumeBgm(); }
+
     public void PlaySfx(SfxId id)
     {
         if (library == null || id == SfxId.None) return;
@@ -186,8 +196,14 @@ public class AudioManager : MonoBehaviour
     public void PlayBgm(AudioClip clip, float fade = 1f)
     {
         if (bgmSource == null || clip == null) return;
+
+        // 일시정지로 멈춰 있던 곡을 다시 요청받았다면 처음부터 틀지 말고 이어서 재생한다.
+        // (ESC 로 멈췄다 풀면 GameManager 가 같은 곡을 다시 요청하게 된다)
+        if (_bgmPaused && bgmSource.clip == clip) { ResumeBgm(); return; }
+
         if (bgmSource.clip == clip && bgmSource.isPlaying) return;
 
+        _bgmPaused = false;   // 다른 곡으로 갈아탄다 — 멈춰 뒀던 재생 위치는 버린다
         if (_bgmFade != null) StopCoroutine(_bgmFade);
 
         if (fade <= 0f)
@@ -201,12 +217,33 @@ public class AudioManager : MonoBehaviour
         _bgmFade = StartCoroutine(SwapBgmRoutine(clip, fade));
     }
 
-    /// <summary>BGM 을 멈춘다.</summary>
+    /// <summary>BGM 을 멈춘다. 곡 자체를 버리므로 다시 틀면 처음부터 나온다.</summary>
     public void StopBgm(float fade = 0.5f)
     {
         if (bgmSource == null) return;
+        _bgmPaused = false;
         if (_bgmFade != null) StopCoroutine(_bgmFade);
         _bgmFade = StartCoroutine(SwapBgmRoutine(null, fade));
+    }
+
+    /// <summary>BGM 을 그 자리에서 멈춘다. 재생 위치가 남아 <see cref="ResumeBgm"/> 로 이어 들을 수 있다.</summary>
+    public void PauseBgm()
+    {
+        if (bgmSource == null || !bgmSource.isPlaying) return;
+
+        // 페이드 도중에 멈추면 음량이 어중간한 값에 얼어붙는다. 페이드를 끊고 제 음량으로 맞춘다.
+        if (_bgmFade != null) { StopCoroutine(_bgmFade); _bgmFade = null; bgmSource.volume = BgmVolume; }
+
+        bgmSource.Pause();
+        _bgmPaused = true;
+    }
+
+    /// <summary>일시정지된 BGM 을 멈춘 지점부터 이어서 재생한다.</summary>
+    public void ResumeBgm()
+    {
+        if (bgmSource == null || !_bgmPaused) return;
+        _bgmPaused = false;
+        bgmSource.UnPause();
     }
 
     // 소스가 하나뿐이라 진짜 크로스페이드가 아니라 "내렸다 올리기"다.

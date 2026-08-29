@@ -153,10 +153,16 @@ public class GameManager : MonoBehaviour
                 if (AudioManager.Instance != null) AudioManager.Instance.StopBgm();
                 break;
 
-            // LevelUp · Paused 는 웨이브 위에 "끼어드는" 상태다. 음악을 바꾸지 않는다 —
+            // 레벨업은 웨이브 위에 "끼어드는" 상태다. 음악을 바꾸지 않는다 —
             // 레벨업이 뜰 때마다 곡이 끊기면 전투의 흐름이 매번 잘린다.
             case GameState.LevelUp:
+                break;
+
+            // 일시정지는 다르다. 플레이어가 게임을 손에서 놓는 순간이므로 소리도 같이 멈춘다.
+            // StopBgm 이 아니라 PauseBgm 인 이유 — 재개할 때 곡이 처음부터 다시 나오면
+            // ESC 를 누를 때마다 도입부만 반복해서 듣게 된다.
             case GameState.Paused:
+                if (AudioManager.Instance != null) AudioManager.Instance.PauseBgm();
                 break;
         }
     }

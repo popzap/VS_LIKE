@@ -157,6 +157,7 @@ public static class BalanceImporter
             a.WeaponPrefab    = LoadRef<GameObject>(row, "WeaponPrefab",     a.WeaponPrefab);
             a.Icon            = LoadRef<Sprite>    (row, "Icon",             a.Icon);
             a.ProjectilePrefab= LoadRef<GameObject>(row, "ProjectilePrefab", a.ProjectilePrefab);
+            a.TravelPrefab    = LoadRef<GameObject>(row, "TravelPrefab",     a.TravelPrefab);
 
             a.ProjectileSpeed = CsvRow.Float (row, "ProjectileSpeed", a.ProjectileSpeed);
             a.Damage          = CsvRow.Floats(row, "Damage",          a.Damage);
@@ -577,9 +578,10 @@ public static class BalanceImporter
                 N(a.BossHpMult), N(a.BossDamageMult), N(a.BossSpeedMult), a.BossXpMult));
 
         ExportRows("Weapons.csv",
-            "Id,WeaponName,WeaponPrefab,Icon,ProjectilePrefab,ProjectileSpeed,Damage,Cooldown,ProjectileSize,ProjectileCount,Range",
+            "Id,WeaponName,WeaponPrefab,Icon,ProjectilePrefab,TravelPrefab,ProjectileSpeed,Damage,Cooldown,ProjectileSize,ProjectileCount,Range",
             LoadAll<WeaponData>(WeaponFolder), (a, id) => string.Join(",",
                 id, E(a.WeaponName), E(Path(a.WeaponPrefab)), E(Path(a.Icon)), E(Path(a.ProjectilePrefab)),
+                E(Path(a.TravelPrefab)),
                 N(a.ProjectileSpeed), CsvTable.JoinArray(a.Damage), CsvTable.JoinArray(a.Cooldown),
                 CsvTable.JoinArray(a.ProjectileSize), CsvTable.JoinArray(a.ProjectileCount), CsvTable.JoinArray(a.Range)));
 

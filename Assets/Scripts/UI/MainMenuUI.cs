@@ -43,6 +43,14 @@ public class MainMenuUI : GameStatePanel
         RefreshCurrency();
     }
 
+    // 메인 메뉴를 떠날 때 옵션창을 반드시 닫는다.
+    // 안 닫으면 켜진 채로 남아 있다가, 전투 진입에서 앞의 패널들이 전부 꺼지는 순간
+    // 갑자기 화면에 튀어나온다 (I-50).
+    protected override void OnHidden()
+    {
+        if (optionSubPanel != null) optionSubPanel.SetActive(false);
+    }
+
     private void RefreshCurrency()
     {
         if (currencyText == null) return;

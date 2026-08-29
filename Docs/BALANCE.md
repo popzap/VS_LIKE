@@ -1,6 +1,6 @@
 # VS_LIKE — 밸런스 데이터 가이드
 
-> **작성:** 2026-08-26 · **최종 갱신:** 2026-08-28 (15차 — 오디오 음량은 CSV 밖이다 → §2 `AudioLibrary.asset`)
+> **작성:** 2026-08-26 · **최종 갱신:** 2026-08-29 (16차 — `Weapons.csv` 에 `TravelPrefab` 열 추가 / I-52)
 > 이 문서는 **수치를 어디서 어떻게 고치는가**를 설명한다.
 > 완료 이력은 [`SETUP_STATUS.md`](SETUP_STATUS.md), 남은 작업은 [`TODO.md`](TODO.md).
 
@@ -249,12 +249,32 @@ Assets/Game/Balance/*.csv
 | Sword | `ProjectileWeapon` | `Weapon_Sword` + `Proj_Bullet` | 기준점. 중간 사거리/피해 |
 | Bow | `ProjectileWeapon` | `Weapon_Sword` + `Proj_Bullet` | 사거리 길고 투사체 수가 빨리 늘어남 |
 | Gun | `ProjectileWeapon` | `Weapon_Sword` + `Proj_Bullet` | 쿨 0.45→0.22. 저피해 연사 |
-| Fireball | `AoeWeapon` | `Weapon_Aoe` + `Proj_Aoe(Boom)` | 가장 가까운 적 위치에 폭발 |
-| Bomb | `AoeWeapon` | `Weapon_Aoe` + `Proj_Aoe(Boom)` | 쿨 길고 피해 큼 |
+| Fireball | `AoeWeapon` | `Weapon_Aoe` + **`Proj_Fireball`** → `Proj_Aoe(Boom)` | 불덩이가 **직선으로 날아가** 착탄 지점에서 폭발 |
+| Bomb | `AoeWeapon` | `Weapon_Aoe` + `Proj_Aoe(Boom)` | 쿨 길고 피해 큼. **즉시 폭발** |
 
-> `AoeWeapon` 은 `ProjectileCount` / `ProjectileSpeed` 를 **쓰지 않는다.**
+> `AoeWeapon` 은 `ProjectileCount` 를 **쓰지 않는다.**
 > 폭발 반경은 `Weapon_Aoe.prefab` 의 `explosionRadius`(**2**) × `ProjectileSize` 다.
-> **날아가는 시간이 없다** — 목표 지점에 즉시 터진다. 비행하는 건 곡사포뿐이다(11차).
+>
+> #### `TravelPrefab` — 날아가는 몸체 (16차 / I-52)
+>
+> AoE 무기 전용 열이다. **폭발(`ProjectilePrefab`) 이 터지기 전에 목표까지 날아가는 몸체**를 지정한다.
+>
+> | `TravelPrefab` | `ProjectileSpeed` | 결과 |
+> |---|---|---|
+> | 비어 있음 | (무시) | 목표 지점에서 **즉시 폭발** — Bomb |
+> | 프리팹 지정 | `> 0` | 몸체가 날아간 뒤 **착탄 지점에서 폭발** — Fireball (속도 **11**) |
+> | 프리팹 지정 | `0` | 즉시 폭발로 **되돌아간다** (안 날아가는 투사체가 생기는 사고를 막는 안전장치) |
+>
+> 지정하는 프리팹에는 **`BombProjectile` 컴포넌트가 있어야 한다.** 없으면 즉시 폭발로 떨어진다.
+> Fireball 과 Bomb 은 **`Weapon_Aoe.prefab` 하나를 공유**하므로, 이 갈림길은 프리팹이 아니라
+> **CSV(데이터)에서** 갈라야 한다. 프리팹 필드로 만들면 폭탄까지 같이 날아간다.
+>
+> `Proj_Fireball` 은 곡사포 폭탄(`Proj_Bomb`)을 복제해 `arcHeight = 0` / `spinSpeed = 0`
+> 으로 맞춘 것이다 — 마법 투사체는 포물선이나 회전 없이 **곧게** 날아가는 편이 읽기 쉽다.
+> ⚠️ 속도 11 은 **감으로 넣은 자리표시값**이다 (사거리 12 기준 약 1.1초).
+>
+> ⚠️ 날아가는 동안 적이 움직이면 **빗나간다.** 목표를 Transform 이 아니라 **좌표로 굳혀** 쏘기
+> 때문인데, 이건 의도된 것이다 — 적이 죽으면 그 Transform 은 풀에서 재사용돼 엉뚱한 자리로 간다.
 >
 > ⚠️ 11차부터 폭발 그림이 **반경에 맞춰 커진다** (`scale = 반경 ÷ 0.4`).
 > 예전엔 반경과 무관하게 항상 0.5유닛이라 피해 범위와 그림이 따로 놀았다.

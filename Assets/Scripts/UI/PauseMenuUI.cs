@@ -94,6 +94,9 @@ public class PauseMenuUI : MonoBehaviour
         _targetAlpha   = 0f;
         Time.timeScale = 1f;
 
+        // 옵션창을 열어 둔 채 Resume 을 누르면 옵션창만 전투 위에 남는다 (I-50).
+        CloseOption();
+
         var gm = GameManager.Instance;
         // 무조건 Wave 로 되돌리면 맵·상점에서 일시정지했을 때 상태가 깨진다.
         if (gm != null && gm.CurrentState == GameState.Paused)

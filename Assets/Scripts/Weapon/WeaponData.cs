@@ -17,6 +17,11 @@ public class WeaponData : ScriptableObject
     public float      ProjectileSpeed = 8f;
     public GameObject ProjectilePrefab;
 
+    [Header("AoE 전용")]
+    [Tooltip("폭발(ProjectilePrefab) 이 터지기 전에 목표까지 날아가는 몸체. " +
+             "비워 두면 목표 지점에서 곧바로 터진다. BombProjectile 컴포넌트가 있어야 한다.")]
+    public GameObject TravelPrefab;
+
     public float GetDamage(int level)         => Damage        [Mathf.Clamp(level - 1, 0, Damage.Length - 1)];
     public float GetCooldown(int level)       => Cooldown      [Mathf.Clamp(level - 1, 0, Cooldown.Length - 1)];
     public float GetProjectileSize(int level) => ProjectileSize[Mathf.Clamp(level - 1, 0, ProjectileSize.Length - 1)];
