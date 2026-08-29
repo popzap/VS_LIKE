@@ -6,7 +6,7 @@
 > 기존의 「C# 스크립트는 완성 단계」라는 전제와 「요청 없이 코드 건드리지 말 것」 규칙이 **해제됨**.
 > 이제 게임 완성을 위해 C# 스크립트 신규 작성·수정이 허용된다.
 >
-> **최종 갱신:** 2026-08-29 (23차 — 폰트 정리 · SDF Static 고정, I-60)
+> **최종 갱신:** 2026-08-29 (24차 — 승급 배타 + 승급 전용 직업 차단, I-61)
 > 검증 방식: Unity MCP + Play 모드 스모크 테스트 + YAML 직접 파싱
 > **검증 기준 파일:** `Assets/Scenes/SampleScene.unity`
 >
@@ -2023,6 +2023,86 @@ Play 모드에서 Warrior 로 런을 시작하고 `Unity_RunCommand` 로 재료�
 
 ---
 
+## 2-28. ✅ 승급 배타 + 승급 전용 직업 차단 — `Tier` 신설 (I-61, 2026-08-29 24차)
+
+### 왜 했나
+
+결정 5·6 의 구현이다.
+
+**(1) 배타가 없었다.** 조건만 채우면 T2 세 갈래(Sentinel · Doomlord · Warden)를 **다 먹을 수 있었다.**
+직업 사슬은 보너스가 **누적**되므로(`PlayerStats.SlotLimit` · `ApplyBonus` 가 사슬 전체를 합산),
+다 모으면 갈래가 사라질 뿐 아니라 **후반이 일방적으로 세진다.**
+
+> 왜 배타인가: 이래야 직업이 **"빌드가 도달하는 지점"** 이 된다.
+
+**(2) 승급 전용 직업을 데이터가 아니라 배선으로만 막고 있었다.**
+`SceneWiring.csv` 의 `GameManager,classes` 에 안 적는 것이 유일한 방어선이었다.
+나중에 직업 해금 흐름을 붙일 때 **실수로 넣으면 T2 로 런이 시작된다.**
+
+### 🔑 `Tier` 를 어디에 둘 것인가 — TODO 의 전제가 틀렸다
+
+`TODO.md` §2-C 는 `Tier` 열을 **`ClassEvolutions.csv`(레시피)** 에 두는 것을 전제했다. 그런데
+배타 판정이 실제로 묻는 것은 **"내 사슬에 이미 같은 티어가 있나"** 이고,
+`PlayerStats.ClassChain` 이 들고 있는 건 레시피가 아니라 **`CharacterClassData`** 다.
+
+레시피에 두면 사슬의 각 직업을 "그걸 만들어 낸 레시피"로 **역추적**해야 하는데,
+**T1(Warrior·Ranger·Mage)은 자기를 만든 레시피가 아예 없다.** 역추적이 성립하지 않는다.
+
+→ **`Classes.csv` 에 두는 것이 맞다.**
+
+### 🔑 `IsPromotionOnly` 는 열이 아니라 파생 프로퍼티로
+
+결정 6 은 `IsPromotionOnly` **열** 추가였지만, 그 값은 정확히 `Tier > 1` 이다.
+CSV 열 두 개가 같은 사실을 말하면 **어긋날 길이 생기고, 어긋나면 T2 로 런을 시작하는 사고**가 난다.
+이름과 용도는 그대로 두되 **단일 출처(`Tier`)에서 파생**시켰다.
+
+```csharp
+public bool IsPromotionOnly => Tier > 1;
+```
+
+### 한 일
+
+| 파일 | 변경 |
+|---|---|
+| `Player/CharacterClassData.cs` | `Tier`(기본 1) 필드 + `IsPromotionOnly` 파생 프로퍼티 |
+| `Player/PlayerStats.cs` | `HasTier(int)` — 사슬에 그 티어가 있는지. LINQ 없이(매 프레임 호출된다) |
+| `Evolution/EvolutionManager.cs` | `IsClassSatisfied` 에 `if (ps.HasTier(evo.ResultClass.Tier)) return false;` |
+| `UI/ClassSelectUI.cs` | `BuildCards` 가 `IsPromotionOnly` 를 걸러내고 경고 · `Select` 도 같이 막음 |
+| `Editor/BalanceImporter.cs` | `Tier` 임포트(`Mathf.Max(1, …)`) + Export 헤더에 추가 |
+| `Game/Balance/Classes.csv` | `Tier` 열 신설 — T1×3 / T2×3 / T3×1 + 주석 |
+
+`ClassSelectUI.Select` 도 같이 막은 이유: `OnShown` 이 **저장된 `SelectedClassIndex` 를 그대로** 넘기므로,
+그 인덱스가 승급 전용을 가리키면 **카드는 없는데 Start 버튼만 살아나** 필터가 무의미해진다.
+
+### 검증 로그 (Play 모드)
+
+Warrior 로 시작해 Gun5·Turret5·Bomb5·Bombard3·Armor3 을 지급하고 실행:
+
+```
+[TIER] BEFORE  chainCount=1  ready=Sentinel Doomlord      ← T2 두 갈래 다 열려 있다
+[TIER] AFTER   evolved=True  chain=Warrior(T1) Sentinel(T2)  ready=(none)
+[TIER] Doomlord satisfied=False   HasTier2=True HasTier3=False
+
+[TIER] Turret=5  ready=Aegis                              ← T3 은 막히면 안 된다
+[TIER] evolved=True  chain=Warrior(T1) Sentinel(T2) Aegis(T3)  HasTier3=True
+
+[SEL] wired=4  cards=3   ← Sentinel 을 목록에 끼워 넣자 카드에서 빠졌다
+[Warning] [ClassSelectUI] 'Sentinel' 은 Tier 2 승급 전용이라 선택 화면에서 제외했다.
+[SEL] forced selectedIdx=3 -> Sentinel
+[SEL] after reopen selectedIdx=0 -> Warrior                ← Select 가드
+```
+
+> 🔑 **"막힌다"만 확인하면 반쪽이다.** 티어 규칙이 *모든* 승급을 막고 있어도 같은 로그가 나온다.
+> **T3(Aegis)이 열리는 것까지** 확인해야 "같은 티어만 막는다"가 증명된다.
+
+> `[SEL]` 검증은 승급 직업을 **플레이 모드에서** `classes` 배열에 끼워 넣어 만든 상황이다.
+> 플레이 종료 후 씬이 `Warrior Ranger Mage` 로 되돌아온 것을 확인했다.
+
+> ✅ 곁들여 확인된 것 — **위 플레이 세션 뒤에도 `Pretendard SDF.asset` 이 안 바뀌었다.**
+> I-60 의 Static 화가 실제로 먹혔다는 증거다.
+
+---
+
 ## 2-27. ✅ 폰트 정리 — 미사용 18장 삭제 · SDF Static 고정 (I-60, 2026-08-29 23차)
 
 ### 왜 했나
@@ -2633,7 +2713,7 @@ Play 모드 — 한 세션에서 두 경로 전부:
 
 ---
 
-## 2-1. 이슈 목록 (I-1 ~ I-60 — 전부 해결됨)
+## 2-1. 이슈 목록 (I-1 ~ I-61 — 전부 해결됨)
 
 > 미해결 항목은 [`TODO.md`](TODO.md) 참조.
 
@@ -2699,6 +2779,7 @@ Play 모드 — 한 세션에서 두 경로 전부:
 | **I-58** | **적 걷기 시트 6장이 놀고 있었다** — 20차에 뽑아 놓고 소비할 코드가 없어 뒀다(사용자 승인). 적은 항상 화면에 수십 마리가 있는데 정지 그림 한 장이 셰이더 바운스로만 흔들려 **미끄러지듯** 다가왔다. 더 나쁜 건 20차가 커밋한 시트 PPU 가 **1024(=0.25유닛)** 라, 그대로 배선했으면 **애니메이션이 켜지는 순간 적 6종이 전부 절반으로 줄어들** 상태였다는 점이다 | ✅ 해결 (2026-08-29 21차 → 2-25) — PPU **512** 로 교정 후 `EnemyData.WalkFrames` + `Enemies.csv` 의 `WalkSheet` 열 + `EnemyVisual.StepFrames` 로 배선. `EnemyVisual` 은 **이미 있던** 컴포넌트라 인자 하나를 늘리는 것으로 끝났다 |
 | **I-59** | **"플레이해 보고 정할 것"이 문서 세 곳에 흩어져 있었다** — `TODO.md` §0 의 꼬리표 · §1 의 체크박스 · §3 의 자리표시 수치표. 게다가 §1 이 **"동작하나?"(한 번 확인하면 끝)** 와 **"느낌이 맞나?"(고치고 다시 플레이하는 반복)** 를 섞고 있어 §1 이 영원히 줄어들지 않는 구조였다. 사용자가 **"수치는 완성 먼저 하고 진행하면서 조절한다"** 로 방침을 정하면서 그 목록을 한곳에 모을 필요가 생겼다 | ✅ 해결 (2026-08-29 22차 → 2-26) — `Docs/TUNING.md` 신설. 항목마다 **무엇을 보나 → 어느 파일의 무엇을 얼마나** 형식. 곁들여 **적 타격 반응 5개가 CSV 가 아니라 `EnemyBase.cs` 의 `const`** 인 것을 발견해 기록했다 (고치지는 않음) |
 | **I-60** | **`Pretendard SDF.asset` 이 커밋마다 25만 줄씩 바뀌었다** — TMP 폰트가 **Dynamic** 이라 런타임에 처음 만난 글리프를 그 자리에서 굽고 애셋을 dirty 로 만든다. 즉 **플레이만 해도 파일이 바뀌어** 이 파일 하나만 계속 staging 에서 빼 왔다(결정 1). 겸사겸사 폰트 원본 19장 중 **18장이 아무 데서도 안 쓰이고** 있었다 (`Assets/Fonts` 55MB) | ✅ 해결 (2026-08-29 23차 → 2-27) — 18장 GUID 참조 0건 확인 후 삭제(55MB→4.8MB), SDF 는 **ASCII 32~126 전부 + 기호 20개 = 115자**로 다시 구워 `atlasPopulationMode = Static` 고정. 굽기 전 ASCII 가 **72자뿐**이었던 것(23자 누락)을 이때 발견했다 |
+| **I-61** | **T2 세 갈래를 다 먹을 수 있었다** — 조건만 채우면 Sentinel·Doomlord·Warden 을 전부 가질 수 있었고, 직업 사슬은 보너스가 **누적**되므로 갈래가 사라질 뿐 아니라 후반이 일방적으로 세졌다. 게다가 승급 전용 직업을 데이터가 아니라 **SceneWiring 배선으로만** 막고 있어서, 직업 해금 흐름을 붙일 때 실수로 넣으면 **T2 로 런이 시작될** 상태였다 | ✅ 해결 (2026-08-29 24차 → 2-28) — `Classes.csv` 에 **`Tier` 열 신설**(레시피가 아니라 직업 쪽 — 사슬이 들고 있는 게 직업이고 T1 은 레시피가 없다). 같은 티어는 하나만(`PlayerStats.HasTier`), `Tier > 1` 이면 선택 화면에서 제외. `IsPromotionOnly` 는 **열이 아니라 파생 프로퍼티**로 둬 어긋날 길을 없앴다 |
 
 ### 해결 상세
 
@@ -3084,6 +3165,21 @@ private void LateUpdate()
     C# 리터럴은 8건이 걸렸지만 전부 `Tooltip`·주석이라 TMP 로 안 간다
 99. ✅ **삭제 전 GUID 로 참조를 확인한다.** 18장의 GUID 를 `.unity`/`.prefab`/`.asset`/`.mat`
     전체에서 검색해 0건인 것을 확인하고 지웠다. `Assets/Fonts` 55MB → 4.8MB
+
+**24차 (I-61) — 승급 배타**
+
+100. 🔑 **판정식이 무엇을 들고 있는지가 데이터 위치를 정한다.** `TODO.md` 는 `Tier` 를
+     레시피(`ClassEvolutions.csv`)에 두려 했지만, 배타 판정은 "**내 사슬**에 같은 티어가 있나"를
+     묻고 사슬이 들고 있는 건 `CharacterClassData` 다. 게다가 **T1 은 자기를 만든 레시피가 없어**
+     역추적이 아예 성립하지 않는다 → `Classes.csv` 가 맞다
+101. 🔑 **같은 사실을 말하는 열을 두 개 두지 않는다.** `IsPromotionOnly` 는 정확히 `Tier > 1` 이라
+     별도 열로 두면 어긋날 수 있고, **어긋나면 T2 로 런이 시작된다.** 파생 프로퍼티로 뒀다
+102. 🔴 **"막힌다"만 확인하면 반쪽짜리 검증이다.** 티어 규칙이 *모든* 승급을 막고 있어도
+     "Doomlord 가 잠겼다"는 같은 로그가 나온다. **T3(Aegis)이 열리는 것까지** 확인해야
+     "같은 티어만 막는다"가 증명된다
+103. ⚠️ **UI 필터는 표시만 막고 선택은 안 막는다.** `ClassSelectUI.BuildCards` 에서 걸러도
+     `OnShown` 이 **저장된 `SelectedClassIndex` 를 그대로** `Select` 에 넘기므로,
+     그 인덱스가 승급 전용을 가리키면 **카드는 없는데 Start 버튼만 살아난다.** 두 곳을 같이 막았다
 
 **16~17 과정에서 함께 처리한 것**
 

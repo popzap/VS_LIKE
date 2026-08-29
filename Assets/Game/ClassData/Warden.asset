@@ -15,6 +15,7 @@ MonoBehaviour:
   ClassName: Warden
   Description: Sworn to the settlement you raised. Tough, and with room to build
     more of it.
+  Tier: 2
   StartingWeapon: {fileID: 0}
   StartingWeaponLevel: 1
   BonusMaxHp: 50

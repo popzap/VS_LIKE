@@ -15,6 +15,7 @@ MonoBehaviour:
   ClassName: Ranger
   Description: Fast skirmisher. Starts with a Bow. Holds every weapon, but barely
     builds.
+  Tier: 1
   StartingWeapon: {fileID: 11400000, guid: 56ae650b5ce5be245b72acdab53d8897, type: 2}
   StartingWeaponLevel: 1
   BonusMaxHp: -15

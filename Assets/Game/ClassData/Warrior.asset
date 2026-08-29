@@ -15,6 +15,7 @@ MonoBehaviour:
   ClassName: Warrior
   Description: Tough melee fighter. Starts with a Sword. Builds freely, but carries
     few weapons.
+  Tier: 1
   StartingWeapon: {fileID: 11400000, guid: 1564dd8096332d94fb75c6cfc16461f5, type: 2}
   StartingWeaponLevel: 1
   BonusMaxHp: 30

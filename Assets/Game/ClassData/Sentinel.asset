@@ -15,6 +15,7 @@ MonoBehaviour:
   ClassName: Sentinel
   Description: Turret doctrine folded into your gunplay. Steadier fire, one more
     emplacement.
+  Tier: 2
   StartingWeapon: {fileID: 0}
   StartingWeaponLevel: 1
   BonusMaxHp: 20

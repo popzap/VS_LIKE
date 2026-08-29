@@ -223,6 +223,11 @@ public class EvolutionManager : MonoBehaviour
         if (ps == null) return false;
         if (ps.HasClass(evo.ResultClass)) return false;
 
+        // 배타 — 한 티어에 하나만. T2 를 하나 타면 다른 T2 는 여기서 전부 막힌다.
+        // 이래야 직업이 "빌드가 도달하는 지점"이 된다. 다 모을 수 있으면 갈래가
+        // 사라지고, 사슬 보너스가 전부 누적되므로 후반이 일방적으로 세진다.
+        if (ps.HasTier(evo.ResultClass.Tier)) return false;
+
         // 선행 직업 지정이 있으면 사슬 어딘가에 있어야 한다. 끝(현재 직업)만 보면
         // 같은 T2 에서 갈라지는 T3 두 갈래 중 하나를 타는 순간 다른 쪽이 막힌다.
         if (evo.FromClass != null && !ps.HasClass(evo.FromClass)) return false;

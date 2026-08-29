@@ -40,6 +40,18 @@ public class PlayerStats : MonoBehaviour
     /// <summary>이 직업을 거쳐 왔는가. 승급 조건 판정이 매 프레임 물어서 LINQ 없이 둔다.</summary>
     public bool HasClass(CharacterClassData cls) => cls != null && _classChain.Contains(cls);
 
+    /// <summary>
+    /// 이 티어의 직업을 이미 가지고 있는가. <b>승급 배타의 판정식</b>이다 —
+    /// 한 티어에 하나만 가질 수 있으므로, T2 를 하나 타면 다른 T2 는 전부 막힌다
+    /// (<see cref="EvolutionManager.IsClassSatisfied"/>).
+    /// </summary>
+    public bool HasTier(int tier)
+    {
+        foreach (var cls in _classChain)
+            if (cls != null && cls.Tier == tier) return true;
+        return false;
+    }
+
     public float CurrentHp { get; private set; }
     public bool  IsDead    { get; private set; }
 

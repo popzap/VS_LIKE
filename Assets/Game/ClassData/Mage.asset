@@ -15,6 +15,7 @@ MonoBehaviour:
   ClassName: Mage
   Description: Fragile caster with area damage. Starts with a Fireball. Grows through
     passives.
+  Tier: 1
   StartingWeapon: {fileID: 11400000, guid: 7c114a75b8d81e143809bdb21236c823, type: 2}
   StartingWeaponLevel: 1
   BonusMaxHp: -25

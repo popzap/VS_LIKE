@@ -14,6 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::CharacterClassData
   ClassName: Aegis
   Description: A walking bulwark of turret plating. Nothing gets through the line.
+  Tier: 3
   StartingWeapon: {fileID: 0}
   StartingWeaponLevel: 1
   BonusMaxHp: 60

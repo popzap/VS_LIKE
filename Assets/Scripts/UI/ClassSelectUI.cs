@@ -84,6 +84,16 @@ public class ClassSelectUI : GameStatePanel
         {
             if (classes[i] == null) continue;
 
+            // 승급 전용 직업은 여기 뜨면 안 된다. 지금까지는 SceneWiring.csv 의
+            // GameManager,classes 에 안 적는 것만으로 막고 있었는데, 나중에 직업 해금
+            // 흐름을 붙일 때 실수로 넣으면 T2 로 런을 시작해 버린다. 데이터로 막는다.
+            if (classes[i].IsPromotionOnly)
+            {
+                Debug.LogWarning($"[ClassSelectUI] '{classes[i].name}' 은 Tier {classes[i].Tier} 승급 전용이라 " +
+                                 "선택 화면에서 제외했다. SceneWiring.csv 의 GameManager,classes 에서 빼는 게 맞다.");
+                continue;
+            }
+
             var card = Instantiate(cardPrefab, cardParent);
             card.Setup(classes[i], i, IsUnlocked(classes[i]), Select);
             _cards.Add(card);
@@ -102,6 +112,15 @@ public class ClassSelectUI : GameStatePanel
     {
         var classes = GameManager.Instance?.Classes;
         if (classes == null || index < 0 || index >= classes.Length) return;
+
+        // 카드에서 걸러 낸 직업이라도 여기로는 들어올 수 있다 — OnShown 이
+        // 저장된 SelectedClassIndex 를 그대로 넘기기 때문이다. 그 인덱스가 승급 전용을
+        // 가리키면 카드는 없는데 Start 버튼만 살아나 T2 로 런이 시작된다. 첫 정상 카드로 옮긴다.
+        if (classes[index] == null || classes[index].IsPromotionOnly)
+        {
+            if (_cards.Count == 0) return;
+            index = _cards[0].Index;
+        }
 
         _selected = index;
         GameManager.Instance.SelectClass(index);

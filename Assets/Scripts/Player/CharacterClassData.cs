@@ -17,6 +17,26 @@ public class CharacterClassData : ScriptableObject
     public string ClassName;
     [TextArea] public string Description;
 
+    // 승급 단계. 1 = 시작 직업, 2 이상 = 승급으로만 도달하는 직업.
+    //
+    // 이 값이 하는 일은 두 가지다.
+    //   ① 승급 배타 — 한 티어에 하나만 가질 수 있다 (EvolutionManager.IsClassSatisfied).
+    //   ② 선택 화면 차단 — Tier > 1 이면 시작 직업 목록에서 걸러진다 (ClassSelectUI).
+    //
+    // ⚠️ 티어를 레시피(ClassEvolutionData)가 아니라 여기 둔 이유:
+    //    배타 판정은 "내 사슬에 이미 같은 티어가 있나"를 묻는데, PlayerStats.ClassChain 이
+    //    들고 있는 건 레시피가 아니라 이 클래스다. 레시피에 두면 사슬의 각 직업을
+    //    "그걸 만든 레시피"로 역추적해야 하는데, T1 은 레시피가 없어 그 역추적이 성립하지 않는다.
+    [Header("승급 단계")]
+    [Tooltip("1 = 시작 직업. 2 이상 = 승급 전용. 같은 티어는 한 런에 하나만 가질 수 있다.")]
+    public int Tier = 1;
+
+    /// <summary>
+    /// 시작 직업 선택 화면에 뜨면 안 되는 직업인가. <b>티어에서 파생된다</b> —
+    /// 별도 플래그를 두면 티어와 어긋날 수 있고, 어긋나면 T2 로 런을 시작하는 사고가 난다.
+    /// </summary>
+    public bool IsPromotionOnly => Tier > 1;
+
     [Header("시작 무기")]
     public WeaponData StartingWeapon;
     public int        StartingWeaponLevel = 1;

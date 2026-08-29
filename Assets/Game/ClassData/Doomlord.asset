@@ -15,6 +15,7 @@ MonoBehaviour:
   ClassName: Doomlord
   Description: You stopped throwing bombs and started calling down sieges. Slower,
     far wider.
+  Tier: 2
   StartingWeapon: {fileID: 0}
   StartingWeaponLevel: 1
   BonusMaxHp: 20

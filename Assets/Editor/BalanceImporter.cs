@@ -496,6 +496,7 @@ public static class BalanceImporter
             var a = GetOrCreate<CharacterClassData>(ClassFolder, id);
             a.ClassName   = CsvRow.Str(row, "ClassName", id);
             a.Description = CsvRow.Str(row, "Description", a.Description);
+            a.Tier        = Mathf.Max(1, CsvRow.Int(row, "Tier", a.Tier));
 
             a.StartingWeapon      = LoadById<WeaponData>(WeaponFolder, CsvRow.Str(row, "StartingWeapon"), id, "WeaponData", log);
             a.StartingWeaponLevel = CsvRow.Int(row, "StartingWeaponLevel", a.StartingWeaponLevel);
@@ -750,12 +751,12 @@ public static class BalanceImporter
                 N(a.EliteTime), N(a.BossTime)));
 
         ExportRows("Classes.csv",
-            "Id,ClassName,Description,StartingWeapon,StartingWeaponLevel,BonusMaxHp,BonusMoveSpeed,BonusDamage," +
+            "Id,ClassName,Description,Tier,StartingWeapon,StartingWeaponLevel,BonusMaxHp,BonusMoveSpeed,BonusDamage," +
             "BonusAttackSpeed,BonusProjectileSize,BonusPickupRadius,BonusCritChance,BonusArmor,BonusXpGain,BonusGoldGain," +
             "BonusWeaponSlots,BonusPassiveSlots,BonusBuildingSlots," +
             "Portrait,BodySprite,WalkSheet,ModelPrefab,UnlockedByDefault,UnlockCost",
             LoadAll<CharacterClassData>(ClassFolder), (a, id) => string.Join(",",
-                id, E(a.ClassName), E(a.Description), E(Name(a.StartingWeapon)), a.StartingWeaponLevel,
+                id, E(a.ClassName), E(a.Description), a.Tier, E(Name(a.StartingWeapon)), a.StartingWeaponLevel,
                 N(a.BonusMaxHp), N(a.BonusMoveSpeed), N(a.BonusDamage), N(a.BonusAttackSpeed),
                 N(a.BonusProjectileSize), N(a.BonusPickupRadius), N(a.BonusCritChance),
                 N(a.BonusArmor), N(a.BonusXpGain), N(a.BonusGoldGain),
