@@ -1,6 +1,6 @@
 # VS_LIKE — 밸런스 데이터 가이드
 
-> **작성:** 2026-08-26 · **최종 갱신:** 2026-08-29 (16차 — `Weapons.csv` 에 `TravelPrefab` 열 추가 / I-52)
+> **작성:** 2026-08-26 · **최종 갱신:** 2026-08-29 (17차 — `Evolutions.csv` 신설 / I-54)
 > 이 문서는 **수치를 어디서 어떻게 고치는가**를 설명한다.
 > 완료 이력은 [`SETUP_STATUS.md`](SETUP_STATUS.md), 남은 작업은 [`TODO.md`](TODO.md).
 
@@ -29,7 +29,7 @@ Assets/Game/Balance/*.csv        ← 원본(authoring source). 사람이 고치�
         │
         │  Game/Balance/Import CSV -> ScriptableObjects
         ▼
-Assets/Game/{EnemyData,WeaponData,BuildingData,PassiveData,ItemData,WaveData,ClassData}/*.asset
+Assets/Game/{EnemyData,WeaponData,BuildingData,PassiveData,ItemData,WaveData,ClassData,EvolutionData}/*.asset
 Assets/Scenes/SampleScene.unity  ← Economy / SceneWiring / Events 는 씬 컴포넌트에 직접 기록
         │
         │  Game/Balance/Export ScriptableObjects -> CSV   (역방향, SO 전용)
@@ -382,8 +382,13 @@ Gun 이 단일 대상 DPS는 높지만 사거리·투사체 크기가 작고, Ao
 - `Description` 은 UI에 그대로 나오므로 **영문 유지**
 - 제거 환급은 `ShopPrice × ShopManager.refundRate(0.5)`
 
-총 **20종**: 무기 5 + 건물 5 + 패시브 10.
+총 **25종**: 무기 5 + 건물 5 + 패시브 10 + **진화 결과 5**.
 가격대는 패시브 5~7G, 무기 8~11G, 건물 10~12G.
+
+> ⚠️ **진화 결과 5종(Excalibur/Windforce/Devastator/Sentinel/Doomsday)은 이 표에 있지만
+> `SceneWiring.csv` 의 `LevelUpManager,allItems` 에는 없다.** 넣으면 레벨업 3택과 상점에
+> 그냥 뽑혀 나와 진화라는 절차 자체가 무의미해진다. `MaxLevel = 1`, `ShopPrice = 0`(미사용).
+> 새 진화를 추가할 때도 **`allItems` 에는 절대 넣지 말 것.**
 
 **레벨업 카드 3장은 가중치 비복원 추첨으로 뽑는다** (`LevelUpManager.PickCandidates`).
 후보 = 미보유 전체 + 보유 중 최대레벨이 아닌 것. 보유 아이템의 가중치는 `OwnedWeight = 2`,
@@ -393,6 +398,84 @@ Gun 이 단일 대상 DPS는 높지만 사거리·투사체 크기가 작고, Ao
 
 > 아이템 Id `Speed` 는 이동속도 패시브다. 기존 애셋 이름을 유지하려고 `MoveSpeed` 로 안 바꿨다
 > (`RefId` 는 `MoveSpeed` 를 가리킨다).
+
+### `Evolutions.csv` — 무기 진화 레시피 (17차 / I-54)
+
+한 행이 레시피 하나다. **재료 카테고리를 섞을 수 있다** — 패시브+무기, 무기+무기, **건물+무기**
+셋 다 같은 행 모양으로 표현된다. `ItemData` 가 세 종류를 모두 담는 단일 타입이라 가능한 구조다.
+
+| 열 | 뜻 |
+|---|---|
+| `Id` | 애셋 파일명 (`Assets/Game/EvolutionData/<Id>.asset`) |
+| `EvolutionName` / `Description` | 표시용 |
+| `Ingredients` | **`Items.csv` 의 Id** 를 `|` 로 나열. 개수 제한 없음 |
+| `RequiredLevels` | 각 재료의 최소 레벨. **`Ingredients` 와 같은 순서·같은 개수** |
+| `ResultItem` | `Items.csv` 의 Id. 진화 결과 아이템 |
+
+현재 5종:
+
+| Id | 재료 | 조합 유형 | 전달 경로 |
+|---|---|---|---|
+| Excalibur | Sword Lv5 + Damage Lv3 | 무기 + **패시브** | 보물상자 |
+| Windforce | Bow Lv5 + CritChance Lv3 | 무기 + **패시브** | 보물상자 |
+| Devastator | Gun Lv5 + Fireball Lv5 | 무기 + **무기** | 보물상자 |
+| Sentinel | Gun Lv5 + Turret Lv3 | 무기 + **건물** | **제단 (E)** |
+| Doomsday | Bomb Lv5 + Bombard Lv3 | 무기 + **건물** | **제단 (E)** |
+
+#### 전달 경로는 열이 아니라 재료가 정한다
+
+`DeliveryKind` 같은 플래그 열은 **없다.** `EvolutionData.IsFinalEvolution` 이
+"재료에 건물이 섞여 있는가"를 보고 스스로 판단한다.
+
+- 건물이 **없으면** → 보물상자를 열 때 **확정으로** 그 카드 하나만 뜬다
+  (`ExperienceManager.GrantChestReward` 가 진화를 평범한 카드보다 **먼저** 준다)
+- 건물이 **있으면** → 그 건물이 **제단**이다. 필드에 실제로 세워 둔 건물 반경
+  `EvolutionManager.altarRadius`(**2.2**) 안에서 **E** 를 눌러야 완성된다
+
+> 왜 열을 안 뒀나 — 열을 두면 "건물이 재료인데 상자 경로"라는 **데이터로만 깨질 수 있는 상태**가
+> 생긴다. 제단이 될 건물이 없는데 제단에서 기다리게 되는 것이다. 재료에서 유도하면 그 상태가
+> 애초에 표현 불가능하다. 제단 전용 프리팹도 필요 없다 — 이미 세워 둔 건물이 그대로 제단이다.
+
+#### 소모 규칙 — 무기만 사라진다
+
+`EvolutionManager.Evolve()` 는 **`Category == Weapon` 인 재료만** 회수한다.
+패시브와 건물은 레벨 그대로 남는다.
+
+- **건물을 남기는 이유**: "제단 앞에서 눌렀더니 제단이 증발"하는 꼴이 된다.
+  건물은 필드에 실제로 서 있는 물건이라 사라지면 화면에서 눈에 띄게 어색하다
+- **패시브를 남기는 이유**: 패시브는 스탯 한 줄이라 회수해도 플레이어가 뭘 잃었는지 못 느끼고,
+  체감으로는 그냥 약해지기만 한다
+- **무기를 먼저 비우는 순서에는 이유가 있다** — 무기 슬롯이 6칸이라 꽉 찬 상태에서
+  결과를 먼저 넣으면 `WeaponManager` 가 **조용히 거절**한다 (경고 로그만 남는다)
+
+#### 진화 무기 수치 — 전부 자리표시값
+
+`Weapons.csv` 아래쪽 "진화 무기" 블록이다. **레벨이 없다** — 배열은 값 1개뿐이고
+`Items.csv` 의 `MaxLevel` 도 1 이다.
+
+기준은 **재료 무기의 Lv5 대비 약 1.7배**. 근거가 있는 값이 아니라 "확실히 세다고 느껴질 만큼"으로
+잡은 감이다. 실사격 후 조정할 것 (→ [`TODO.md`](TODO.md) §3).
+
+| Id | Damage | Cooldown | ProjectileCount | Range | 성격 |
+|---|---:|---:|---:|---:|---|
+| Excalibur | 70 | 0.55 | 5 | 16 | 광범위 다중 타격 |
+| Windforce | 55 | 0.40 | 6 | 20 | 최다 투사체 + 최장 사거리 |
+| Devastator | 34 | 0.15 | 4 | 17 | 최속 연사 |
+| Sentinel | 28 | 0.18 | 3 | 18 | 연사형 (포탑 계열) |
+| Doomsday | 200 | 1.50 | 1 | 13 | 단발 초고피해 AoE |
+
+> 아이콘은 **재료 무기의 것을 그대로 쓴다.** 전용 스프라이트가 아직 없다 (→ [`TODO.md`](TODO.md) §4).
+> `WeaponPrefab` 도 마찬가지로 기존 `Weapon_Sword` / `Weapon_Aoe` 를 재사용한다.
+
+#### 임포트 순서 주의
+
+`Evolutions.csv` 는 **Items 다음의 별도 단계**에서 임포트된다.
+`LoadById` 가 쓰는 `AssetDatabase.LoadAssetAtPath` 는 **같은 `StartAssetEditing` 블록 안에서
+방금 만든 애셋을 못 본다.** 그래서 Items 단계가 `SaveAssets()+Refresh()` 로 끝난 뒤에야
+Evolutions 가 돈다. 새로 아이템을 참조하는 표를 추가할 때도 같은 자리에 넣을 것.
+
+`Ingredients` 와 `RequiredLevels` 의 **개수가 어긋나면 임포트 로그에 `!` 경고**가 뜬다.
+경고를 무시하면 `GetRequiredLevel` 이 조용히 1 로 떨어져 **아무 때나 진화**하게 된다.
 
 ### `Waves.csv` — 웨이브
 

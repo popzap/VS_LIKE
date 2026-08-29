@@ -126,6 +126,33 @@ public class BuildingManager : MonoBehaviour
     private bool CanPlaceAt(Vector2 pos)
         => Physics2D.OverlapCircle(pos, placeClearRadius, placementBlockLayer) == null;
 
+    // ── 조회 ─────────────────────────────────────────────────────
+
+    /// <summary>
+    /// <paramref name="origin"/> 에서 <paramref name="radius"/> 안에 있는 가장 가까운 설치 건물.
+    /// 없으면 null. 진화 제단(건물 앞 상호작용) 판정이 쓴다.
+    /// </summary>
+    public BuildingBase FindNearestPlaced(Vector2 origin, float radius)
+    {
+        BuildingBase nearest = null;
+        float minSqr = radius * radius;
+
+        foreach (var pair in _placedBuildings)
+        {
+            foreach (var b in pair.Value)
+            {
+                if (b == null || !b.gameObject.activeInHierarchy) continue;
+
+                float sqr = ((Vector2)b.transform.position - origin).sqrMagnitude;
+                if (sqr > minSqr) continue;
+
+                minSqr  = sqr;
+                nearest = b;
+            }
+        }
+        return nearest;
+    }
+
     // ── 정리 ─────────────────────────────────────────────────────
 
     /// <summary>새 런 시작 시 <see cref="GameManager.StartRun"/> 가 호출한다.</summary>

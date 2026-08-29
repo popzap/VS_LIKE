@@ -1,0 +1,18 @@
+# Evolutions.csv — 무기 진화 레시피 원본.
+#
+# Ingredients    = Items.csv 의 Id 를 | 로 나열한다. 카테고리를 섞어도 된다.
+# RequiredLevels = 각 재료의 최소 레벨. Ingredients 와 같은 순서·같은 개수여야 한다.
+# ResultItem     = Items.csv 의 Id. 진화 결과 아이템(MaxLevel 1).
+#
+# ⚠️ 전달 경로는 여기에 적지 않는다 — 재료가 스스로 정한다.
+#    재료에 건물이 섞여 있으면 "최종 진화"라 그 건물 앞에서 E 를 눌러야 하고,
+#    아니면 보물상자를 열 때 확정으로 나온다. (EvolutionData.IsFinalEvolution)
+#
+# 소모 규칙: 무기 재료만 사라진다. 패시브와 건물은 남는다 —
+#    건물이 사라지면 "제단 앞에서 눌렀더니 제단이 증발"하는 꼴이 된다.
+Id,EvolutionName,Description,Ingredients,RequiredLevels,ResultItem
+Excalibur,Excalibur,Sword sharpened by raw power.,Sword|Damage,5|3,Excalibur
+Windforce,Windforce,A bow that finds every weak point.,Bow|CritChance,5|3,Windforce
+Devastator,Devastator,Gunfire that detonates on impact.,Gun|Fireball,5|5,Devastator
+Sentinel,Sentinel,Turret targeting welded onto your gun.,Gun|Turret,5|3,Sentinel
+Doomsday,Doomsday,Siege shells in the palm of your hand.,Bomb|Bombard,5|3,Doomsday

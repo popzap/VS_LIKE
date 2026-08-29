@@ -1,0 +1,23 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7c00dd7d5c5afcf40af02e50e0b97ffc, type: 3}
+  m_Name: Sentinel
+  m_EditorClassIdentifier: Assembly-CSharp::ItemData
+  ItemName: Sentinel
+  Description: Turret technology built into your gun. Never stops firing.
+  Icon: {fileID: 21300000, guid: 0cfefbeb330f45c42918c8beb48a1d2d, type: 3}
+  Category: 0
+  MaxLevel: 1
+  WeaponRef: {fileID: 11400000, guid: ae0586ddff209eb41a73eb08488623ba, type: 2}
+  BuildingRef: {fileID: 0}
+  PassiveRef: {fileID: 0}
+  ShopPrice: 0

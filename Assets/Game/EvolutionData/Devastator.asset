@@ -1,0 +1,21 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7cf41c1dcc07f434b9cc6891edd401fb, type: 3}
+  m_Name: Devastator
+  m_EditorClassIdentifier: Assembly-CSharp::EvolutionData
+  EvolutionName: Devastator
+  Description: Gunfire that detonates on impact.
+  Ingredients:
+  - {fileID: 11400000, guid: 9caa18afa7c1d954ea2f595dcf6fa786, type: 2}
+  - {fileID: 11400000, guid: 251cc7735d1a0a745a47d137914ef935, type: 2}
+  RequiredLevels: 0500000005000000
+  ResultItem: {fileID: 11400000, guid: 7026d5582022a0f49bbebb687d7fa686, type: 2}

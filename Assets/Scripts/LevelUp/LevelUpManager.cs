@@ -26,6 +26,10 @@ public class LevelUpManager : MonoBehaviour
     private List<ItemData> _currentChoices = new();
     private bool _rerollUsed;
 
+    // 진화처럼 "후보를 미리 정해 놓고 띄운" 경우의 선택 처리기.
+    // null 이면 평범한 레벨업이라 고른 아이템을 그대로 적용한다.
+    private System.Action<ItemData> _forcedChoiceHandler;
+
     // ── Public API ───────────────────────────────────────────────
 
     /// <summary>
@@ -48,8 +52,25 @@ public class LevelUpManager : MonoBehaviour
 
     public void ShowLevelUpPanel()
     {
-        _rerollUsed     = false;   // 리롤 횟수는 레벨업 1회마다 초기화된다
+        _forcedChoiceHandler = null;   // 진화 패널이 취소된 채 남아 있으면 다음 선택을 가로챈다
+        _rerollUsed     = false;       // 리롤 횟수는 레벨업 1회마다 초기화된다
         _currentChoices = PickItems(cards.Length);
+        RefreshPanel();
+        levelUpPanel.SetActive(true);
+    }
+
+    /// <summary>
+    /// 후보를 <b>강제로 지정해</b> 같은 패널을 띄운다 (진화 제안용).
+    ///
+    /// <para>고른 카드는 <paramref name="onSelected"/> 로 넘어간다 — 진화는 결과 아이템을
+    /// 주기 전에 재료를 소모해야 하므로 <see cref="ApplyItem"/> 를 그냥 태울 수 없다.
+    /// 리롤은 막는다. 후보가 한 장뿐인데 다시 뽑는다는 개념이 성립하지 않는다.</para>
+    /// </summary>
+    public void ShowForcedChoices(List<ItemData> choices, System.Action<ItemData> onSelected)
+    {
+        _forcedChoiceHandler = onSelected;
+        _rerollUsed          = true;
+        _currentChoices      = choices;
         RefreshPanel();
         levelUpPanel.SetActive(true);
     }
@@ -63,7 +84,13 @@ public class LevelUpManager : MonoBehaviour
     // 카드 선택 (ItemCardUI 버튼에서 호출)
     public void SelectItem(ItemData item)
     {
-        ApplyItem(item);
+        // 처리기를 먼저 비운 뒤에 부른다 — 안에서 예외가 나도 다음 레벨업까지 물고 늘어지지 않게.
+        var handler = _forcedChoiceHandler;
+        _forcedChoiceHandler = null;
+
+        if (handler != null) handler(item);
+        else                 ApplyItem(item);
+
         HidePanel();
     }
 
@@ -191,6 +218,13 @@ public class LevelUpManager : MonoBehaviour
 
     /// <summary>현재 런에서 해당 아이템을 보유 중인지 확인.</summary>
     public bool HasItem(ItemData item) => _inventory.ContainsKey(item);
+
+    /// <summary>보유 레벨. 없으면 0. 진화 조건 판정이 쓴다.</summary>
+    public int GetItemLevel(ItemData item)
+        => item != null && _inventory.TryGetValue(item, out int lv) ? lv : 0;
+
+    /// <summary>진화 결과를 지급한다 (레벨업/상점과 같은 경로).</summary>
+    public void GrantEvolvedItem(ItemData item) => ApplyItem(item);
 
     /// <summary>
     /// 아이템을 인벤토리에서 완전히 제거하고 각 시스템에서 효과를 해제한다.

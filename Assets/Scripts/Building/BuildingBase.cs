@@ -14,6 +14,9 @@ public class BuildingBase : MonoBehaviour
     protected int          Level;
     protected ObjectPool   Pool;
 
+    /// <summary>이 인스턴스가 어떤 건물인지. 진화 제단 판정이 쓴다.</summary>
+    public BuildingData DataRef => Data;
+
     private float _timer;
 
     /// <summary>

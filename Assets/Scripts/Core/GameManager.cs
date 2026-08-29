@@ -54,6 +54,7 @@ public class GameManager : MonoBehaviour
     public ExperienceManager      ExpManager      { get; private set; }
     public BuildingManager        BuildingMgr     { get; private set; }
     public ShopManager            ShopMgr         { get; private set; }
+    public EvolutionManager       EvolutionMgr    { get; private set; }
 
     // 씬 리로드를 넘어 살아남아야 하는 값 (Retry 여부 / 고른 직업)
     private static bool _autoStartRunOnLoad;
@@ -79,6 +80,7 @@ public class GameManager : MonoBehaviour
         ExpManager      = FindFirstObjectByType<ExperienceManager>();
         BuildingMgr     = FindFirstObjectByType<BuildingManager>();
         ShopMgr         = FindFirstObjectByType<ShopManager>();
+        EvolutionMgr    = FindFirstObjectByType<EvolutionManager>();
 
         MetaProgression.Load();
 
@@ -174,7 +176,8 @@ public class GameManager : MonoBehaviour
     {
         // ItemData.CurrentLevel 은 SO 애셋에 남는 런타임 값이라 씬 리로드만으로는 지워지지 않는다.
         LevelUpManager.ResetRunState();
-        if (BuildingMgr != null) BuildingMgr.ResetRunState();
+        if (BuildingMgr != null)  BuildingMgr.ResetRunState();
+        if (EvolutionMgr != null) EvolutionMgr.ResetRunState();
         ApplySelectedClass();
         StageMap.GenerateMap();
         ChangeState(GameState.StageMap);

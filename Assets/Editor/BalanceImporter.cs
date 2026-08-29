@@ -33,6 +33,7 @@ public static class BalanceImporter
     private const string ItemFolder     = "Assets/Game/ItemData";
     private const string WaveFolder     = "Assets/Game/WaveData";
     private const string ClassFolder    = "Assets/Game/ClassData";
+    private const string EvolutionFolder= "Assets/Game/EvolutionData";
 
     // ════════════════════════════════════════════════════════════════
     //  Import
@@ -77,7 +78,13 @@ public static class BalanceImporter
         AssetDatabase.SaveAssets();
         AssetDatabase.Refresh();
 
-        // 3차: 씬 컴포넌트에 직접 써 넣는 테이블
+        // 3차: 아이템을 참조하는 테이블 (아이템이 디스크에 올라온 뒤라야 LoadById 가 찾는다)
+        ImportEvolutions(log);
+
+        AssetDatabase.SaveAssets();
+        AssetDatabase.Refresh();
+
+        // 4차: 씬 컴포넌트에 직접 써 넣는 테이블
         ImportEvents(log);
         ImportEconomy(log);
 
@@ -273,6 +280,56 @@ public static class BalanceImporter
             EditorUtility.SetDirty(a);
         }
         log.AppendLine($"  Items     : {table.RowCount}");
+    }
+
+    // ── 진화 레시피 (아이템을 Id 로 참조) ──────────────────────────
+
+    private static void ImportEvolutions(StringBuilder log)
+    {
+        var table = LoadCsv("Evolutions.csv", log);
+        if (table == null) return;
+
+        foreach (var row in table.Rows)
+        {
+            var id = CsvRow.Str(row, "Id");
+            if (string.IsNullOrEmpty(id)) continue;
+
+            var a = GetOrCreate<EvolutionData>(EvolutionFolder, id);
+            a.EvolutionName = CsvRow.Str(row, "EvolutionName", id);
+            a.Description   = CsvRow.Str(row, "Description", a.Description);
+            a.ResultItem    = LoadById<ItemData>(ItemFolder, CsvRow.Str(row, "ResultItem"), id, "ItemData", log);
+
+            var ids = SplitIds(CsvRow.Str(row, "Ingredients"));
+            a.Ingredients = new ItemData[ids.Length];
+            for (int i = 0; i < ids.Length; i++)
+                a.Ingredients[i] = LoadById<ItemData>(ItemFolder, ids[i], id, "ItemData", log);
+
+            a.RequiredLevels = CsvRow.Ints(row, "RequiredLevels", a.RequiredLevels);
+
+            // 길이가 어긋나면 GetRequiredLevel 이 조용히 1 로 떨어져 "아무 때나 진화"가 된다.
+            // 데이터 실수라 런타임이 아니라 임포트 시점에 잡아야 한다.
+            if (a.RequiredLevels == null || a.RequiredLevels.Length != a.Ingredients.Length)
+                log.AppendLine($"    ! {id}: Ingredients({a.Ingredients.Length}) 와 RequiredLevels" +
+                               $"({(a.RequiredLevels == null ? 0 : a.RequiredLevels.Length)}) 개수가 다르다");
+
+            EditorUtility.SetDirty(a);
+        }
+        log.AppendLine($"  Evolutions: {table.RowCount}");
+    }
+
+    /// <summary>'|' 로 나뉜 Id 목록. 빈 칸은 버린다.</summary>
+    private static string[] SplitIds(string raw)
+    {
+        if (string.IsNullOrEmpty(raw)) return new string[0];
+
+        var parts  = raw.Split(CsvTable.ArraySeparator);
+        var result = new List<string>(parts.Length);
+        foreach (var p in parts)
+        {
+            var t = p.Trim();
+            if (t.Length > 0) result.Add(t);
+        }
+        return result.ToArray();
     }
 
     // ── 웨이브 ──────────────────────────────────────────────────────
@@ -616,6 +673,13 @@ public static class BalanceImporter
                 }),
                 a.ShopPrice));
 
+        ExportRows("Evolutions.csv",
+            "Id,EvolutionName,Description,Ingredients,RequiredLevels,ResultItem",
+            LoadAll<EvolutionData>(EvolutionFolder), (a, id) => string.Join(",",
+                id, E(a.EvolutionName), E(a.Description),
+                E(JoinNames(a.Ingredients)), CsvTable.JoinArray(a.RequiredLevels),
+                E(Name(a.ResultItem))));
+
         ExportRows("Waves.csv",
             "Id,UseTimerClear,SurvivalTime,UseKillClear,KillTarget,SpawnRadius,MaxAlive,Spawns,EliteOverride,BossOverride,EliteCount,EliteTime,BossTime",
             LoadAll<WaveData>(WaveFolder), (a, id) => string.Join(",",
@@ -779,4 +843,13 @@ public static class BalanceImporter
     private static string N(float v)      => v.ToString("0.####", CultureInfo.InvariantCulture);
     private static string Path(Object o)  => o == null ? "" : AssetDatabase.GetAssetPath(o);
     private static string Name(Object o)  => o == null ? "" : o.name;
+
+    /// <summary>애셋 배열을 Id('|' 구분) 문자열로. <see cref="SplitIds"/> 의 역연산이다.</summary>
+    private static string JoinNames(Object[] items)
+    {
+        if (items == null || items.Length == 0) return "";
+        var parts = new string[items.Length];
+        for (int i = 0; i < items.Length; i++) parts[i] = Name(items[i]);
+        return string.Join(CsvTable.ArraySeparator.ToString(), parts);
+    }
 }

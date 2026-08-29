@@ -76,6 +76,12 @@ public class PlayerController : MonoBehaviour
             var bm = BuildingMgr;
             if (bm != null) bm.PlaceNext(transform.position);
         }
+
+        // ── 최종 진화 (E) ───────────────────────────────────
+        // 재료에 건물이 섞인 레시피는 그 건물 앞에서만 완성된다.
+        // 조건이 안 맞으면 아무 일도 일어나지 않는다 — 실패 소리도 내지 않는다.
+        if (kb != null && kb.eKey.wasPressedThisFrame && EvolutionManager.Instance != null)
+            EvolutionManager.Instance.TryEvolveAtAltar(transform.position);
     }
 
     /// <summary>

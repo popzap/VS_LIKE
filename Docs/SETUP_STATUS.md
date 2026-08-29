@@ -6,7 +6,7 @@
 > 기존의 「C# 스크립트는 완성 단계」라는 전제와 「요청 없이 코드 건드리지 말 것」 규칙이 **해제됨**.
 > 이제 게임 완성을 위해 C# 스크립트 신규 작성·수정이 허용된다.
 >
-> **최종 갱신:** 2026-08-29 (16차 — 옵션창 유령 표시 · ESC 시 BGM 정지 · 파이어볼 투사체)
+> **최종 갱신:** 2026-08-29 (17차 — 상점 UI 가시성 · 무기 진화 3조합)
 > 검증 방식: Unity MCP + Play 모드 스모크 테스트 + YAML 직접 파싱
 > **검증 기준 파일:** `Assets/Scenes/SampleScene.unity`
 >
@@ -1909,7 +1909,150 @@ Fireball 만 채우고 Bomb 은 비워 뒀다.
 
 ---
 
-## 2-1. 이슈 목록 (I-1 ~ I-52 — 전부 해결됨)
+## 2-21. ✅ 상점 가시성 + 무기 진화 3조합 (I-53~I-54, 2026-08-29 17차)
+
+> 사용자 지시 두 건. **① 상점 UI 가 너무 작다** (스크린샷 첨부), **② 무기 진화를 넣되
+> "패시브+무기 / 무기+무기" 뿐 아니라 `패시브·무기·건물` 세 종류의 조합이 전부 가능한 구조로** 설계할 것.
+
+### I-53 — 상점 UI 가시성
+
+**원인.** 상점 카드는 `160×220`, 아이콘 `55×55`, 설명 글자 `10pt` 였다.
+1920×1080 에서 한 카드가 화면 세로의 **1/5** 을 차지하지 못하고, 10pt 는
+게임을 플레이하는 거리(모니터 앞 60~70cm)에서 **읽으려면 몸을 기울여야 하는 크기**다.
+레벨업 카드는 11차에 이미 한 번 키웠는데(사용자: "뱀파이어 서바이벌처럼 한눈에 딱")
+**상점만 옛날 치수로 남아 있었다.**
+
+덤으로 두 가지가 같이 걸렸다 —
+① 카드 라벨이 `무기`/`건물`/`패시브`/`신규` 로 **한글**이었다 (CLAUDE.md §3: UI 문자열은 영문).
+② 리롤 버튼이 `"🔀 리롤 ({cost}G)"` 였는데 **U+1F500 이 Pretendard SDF 에도 폴백에도 없다.**
+16차에서 💰(U+1F4B0)로 똑같이 데였던 자리다 — 콘솔 경고와 함께 `␡` 가 그려진다.
+
+| 파일 | 변경 |
+|---|---|
+| `Assets/Prefabs/Prefab_ShopCard.prefab` | 카드 **160×220 → 250×440** · 아이콘 **55×55 → 110×110** · 글자 `13→24` `14→24` `20→38` `11→17` `10→18` |
+| `Assets/Prefabs/Prefab_ShopRemoveRow.prefab` | **200×50 → 240×70** |
+| `Assets/Scenes/SampleScene.unity` | 상점 패널 4종 `700×420→820×460` `400×700→440×900` `760×700→900×900` `360×560→400×760` · 간격 `16→22` `6→10` · 글자 `20→26` `22→30` `26→34` `18→24` |
+| `Assets/Scripts/UI/ShopCardUI.cs` | `무기`/`건물`/`패시브` → `WEAPON`/`BUILDING`/`PASSIVE`, `신규` → `NEW` |
+| `Assets/Scripts/UI/ShopRemoveRowUI.cs` | 위와 동일 |
+| `Assets/Scripts/UI/ShopUI.cs` | NPC 대사 5종 영문화 · 리롤 `🔀 리롤 (nG)` → **`Cost n G`** · KILLS/LEVEL/TIME 라벨에 `<color=#8A8F98>` |
+
+> ⚠️ **Screen Space Overlay 캔버스는 `Unity_Camera_Capture` 에 안 찍힌다.**
+> 그래서 검증은 그림이 아니라 **프리팹/씬 YAML 의 수치를 직접 읽어** 했다.
+> **눈으로 보는 확인은 아직 안 했다** → [`TODO.md`](TODO.md) §1
+
+### I-54 — 무기 진화 (패시브 · 무기 · 건물 3조합)
+
+**원인.** 진화 자체가 없었다. 그런데 [`ROADMAP.md`](ROADMAP.md) §2-3 에 적혀 있던 **원래 설계안이
+사용자 요구를 구조적으로 표현할 수 없었다.**
+
+```
+(폐기된 안)  ItemData.EvolvesInto  +  ItemData.RequiredPassive
+```
+
+이 모양은 "무기 1 + 패시브 1" 만 쓸 수 있다. **건물 + 무기**도, **무기 + 무기**도 못 적는다.
+그래서 아이템에 필드를 붙이는 대신 **레시피를 별도 SO 로 분리**했다.
+
+```
+EvolutionData :  ItemData[] Ingredients  +  int[] RequiredLevels  →  ItemData ResultItem
+```
+
+`ItemData` 는 원래부터 `WeaponRef`/`BuildingRef`/`PassiveRef` + `ItemCategory` 를 함께 든
+**단일 타입**이다. 재료를 `ItemData[]` 로 두는 순간 레시피는 **카테고리를 신경 쓰지 않게** 되고,
+3조합이 특별 취급 없이 그냥 표현된다. 재료 개수도 가변이 된다.
+
+**전달 경로는 열이 아니라 재료가 정한다.** (사용자 결정: "보물상자 1안으로 가되 최종 진화는
+해당 건물 앞에서 상호작용 키")
+
+```csharp
+public BuildingData AltarBuilding   // 재료 중 첫 Building 의 BuildingRef, 없으면 null
+public bool IsFinalEvolution => AltarBuilding != null;
+```
+
+플래그 열(`DeliveryType`)을 두지 않은 이유는 **데이터만으로 깨진 상태가 만들어지기 때문**이다 —
+"건물이 재료인데 상자에서 나온다" 같은 조합을 CSV 가 허용해 버린다. 파생값이면 모순이 불가능하다.
+건물은 이미 `BuildingManager._placedBuildings` 로 맵에 실재하므로 **제단 프리팹도 필요 없다.**
+
+| 파일 | 변경 |
+|---|---|
+| `Assets/Scripts/Evolution/EvolutionData.cs` | **신규** — 레시피 SO. `AltarBuilding` / `IsFinalEvolution` 은 재료에서 파생 |
+| `Assets/Scripts/Evolution/EvolutionManager.cs` | **신규** — 싱글턴. `IsSatisfied` / `GetReadyEvolutions` / `Evolve` / `TryOfferChestEvolution` / `FindAltarEvolution` / `TryEvolveAtAltar` / `ResetRunState` |
+| `Assets/Scripts/UI/EvolutionPromptUI.cs` | **신규** — HUD 하단 3단계 안내 (① 지금 E ② 상자에서 ③ 제단으로) |
+| `Assets/Game/Balance/Evolutions.csv` | **신규** — 레시피 5종 |
+| `Assets/Game/Balance/Items.csv` · `Weapons.csv` | 진화 결과 5종 추가 (아이템 20 → **25**, 무기 5 → **10**) |
+| `Assets/Game/Balance/SceneWiring.csv` | `EvolutionManager,allEvolutions` 행 추가 |
+| `Assets/Editor/BalanceImporter.cs` | `Evolutions` 단계 추가. **Items 단계의 `SaveAssets`+`Refresh` 뒤에 따로** 돌려야 한다 (아래 ⚠️) |
+| `Assets/Scenes/SampleScene.unity` | `ExperienceManager` 에 `EvolutionManager` 부착 · `HUD` 에 `EvolutionPromptUI` + `EvolutionPromptText` 신설 |
+| `Assets/Scripts/LevelUp/LevelUpManager.cs` | **`ShowForcedChoices(choices, onSelected)`** — 후보를 강제 지정해 같은 패널을 띄운다. 진화는 결과를 주기 **전에 재료를 소모**해야 해서 `ApplyItem` 을 그냥 태울 수 없다. 리롤은 막는다(후보 1장을 다시 뽑는다는 개념이 없다) |
+| `Assets/Scripts/Experience/ExperienceManager.cs` | `GrantChestReward()` 가 **진화를 먼저** 시도. 무기를 다 키워 놓고도 상자에서 평범한 카드만 나오면 "모아 봐야 도착점이 없다"가 된다 |
+| `Assets/Scripts/Building/BuildingManager.cs` | `FindNearestPlaced(origin, radius)` — 제단 판정용 최근접 설치 건물 조회 |
+| `Assets/Scripts/Building/BuildingBase.cs` | `DataRef` 노출 — 인스턴스가 어떤 건물인지 알아야 재료와 대조할 수 있다 |
+| `Assets/Scripts/Core/GameManager.cs` | `EvolutionMgr` 프로퍼티 + `StartRun()` 에서 `ResetRunState()` 호출 |
+| `Assets/Scripts/Player/PlayerController.cs` | `E` 키 → `TryEvolveAtAltar(transform.position)`. 조건이 안 맞으면 **아무 일도 안 한다** — 실패음도 안 낸다 |
+
+**레시피 5종 — 3조합이 전부 들어 있다.**
+
+| 결과 | 재료 | 조합 | 전달 |
+|---|---|---|---|
+| Excalibur | Sword Lv5 + Damage Lv3 | 무기 + **패시브** | 보물상자 |
+| Windforce | Bow Lv5 + CritChance Lv3 | 무기 + **패시브** | 보물상자 |
+| Devastator | Gun Lv5 + Fireball Lv5 | **무기 + 무기** | 보물상자 |
+| Sentinel | Gun Lv5 + Turret Lv3 | **무기 + 건물** | **제단(E)** |
+| Doomsday | Bomb Lv5 + Bombard Lv3 | **무기 + 건물** | **제단(E)** |
+
+**소모 규칙 — 무기 재료만 사라진다.** (사용자 미응답 → 기본값 선택 후 명시)
+① 제단 앞에서 눌렀는데 **제단이 증발**하면 납득이 안 된다.
+② `WeaponManager` 슬롯이 **6칸 상한**이라 재료 무기를 먼저 비우지 않으면
+`AddOrUpgradeWeapon` 이 경고만 남기고 **조용히 거절**한다.
+③ 패시브는 스탯 누적이라 회수하면 진화가 오히려 손해가 된다.
+
+> ⚠️ **`BalanceImporter` 단계 순서.** `LoadById` 는 `AssetDatabase.LoadAssetAtPath` 를 쓰는데
+> **같은 `StartAssetEditing` 블록 안에서 만든 애셋은 보이지 않는다.** 진화는 아이템을 참조하므로
+> Items 단계가 `SaveAssets()` + `Refresh()` 로 끝난 **뒤에** Evolutions 단계가 시작돼야 한다.
+
+> ⚠️ **진화 결과 5종을 `LevelUpManager,allItems` 에 넣지 말 것.** 레벨업 카드에 그냥 떠 버린다.
+> 대신 `allItems` 밖에 있으므로 `LevelUpManager.ResetRunState()` 가 이들의 `CurrentLevel` 을
+> 못 지운다 — `EvolutionManager.ResetRunState()` 가 **직접** 0 으로 되돌린다 (I-17 과 같은 함정).
+
+**검증 중 고친 것 — 안내 문구가 한 번도 안 떴다.**
+`EvolutionPromptUI` 를 `StageMap` 에서도 뜨게 짰는데 `[EVOTEST]` 로그가 `HUD active=False` 를
+찍었다. **HUD 자체가 `StateVisibilityBinder` 로 Wave/LevelUp/Paused 에서만 켜진다** —
+`StageMap` 분기는 **도달 불가**였다. 반대로 레벨업 카드 위에 안내가 겹칠 여지가 있어
+`GameState.Wave` **하나만** 남겼다.
+
+### 검증 로그
+
+CSV Import — `!` 줄 없음:
+
+```
+Weapons: 10 · Buildings: 5 · Passives: 10 · Enemies: 6 · Items: 25
+Waves: 6 · Classes: 3 · Evolutions: 5 · Events: 5
+Economy 31/31 · SceneWiring 10/10
+[EVOWIRE] ExperienceManager 에 붙음 · allEvolutions = 5개 · altarRadius = 2.2
+          allItems = 20개 · 진화 결과 유출 = 0건
+[EVOUI]   생성 완료 · font=Pretendard SDF · promptText=OK
+```
+
+Play 모드 — 한 세션에서 두 경로 전부:
+
+| 검증 | 로그 |
+|---|---|
+| 상자 경로 조건 | `Sword Lv5 · Damage Lv3` → `준비된 레시피 1개 : Excalibur(최종=False)` → `상자 제안 = True · state = LevelUp` |
+| 상자 경로 소모 | `Excalibur Lv1 · Sword Lv0 · Damage Lv3` · `무기=[Excalibur]` |
+| 제단 경로 조건 | `Gun Lv5 · Turret Lv3` → `근처건물=Turret` → `제단 판정 = Sentinel` → `E 진화 = True` |
+| 제단 경로 소모 | `Sentinel Lv1 · Gun Lv0 · Turret Lv3` · **`건물 여전히 존재=True`** |
+| 프롬프트 ② | `<color=#8A8F98>EVOLUTION READY</color>  Windforce  —  open a treasure chest` |
+| 프롬프트 ① | `<color=#F0C040>[E]</color>  EVOLVE  —  Doomsday` |
+
+`Assets/Refresh` 후 **콘솔 0건**(`Types:["All"]`), `File/Save` 완료.
+검증은 `Unity_RunCommand` 로만 했으므로 **씬에 남긴 임시 오브젝트·스크립트가 없다.**
+
+> ⚠️ 프롬프트 **③**("stand by your \<Building\> and press E")은 화면에 직접 띄우지 못했다.
+> 준비된 레시피가 2개이고 그중 하나가 비-최종이면 ②가 항상 먼저 이긴다.
+> 같은 코드 경로의 문자열 하나라 위험은 낮다고 보고 넘겼다 → [`TODO.md`](TODO.md) §1
+
+---
+
+## 2-1. 이슈 목록 (I-1 ~ I-54 — 전부 해결됨)
 
 > 미해결 항목은 [`TODO.md`](TODO.md) 참조.
 
@@ -1967,6 +2110,8 @@ Fireball 만 채우고 Bomb 은 비워 뒀다.
 | **I-50** | **전투를 시작하자마자 옵션창이 화면을 덮었다** — 원인이 **둘**이다. ① `UI Canvas` 자식 10개가 전부 전체화면(1920×1080)인데 `Canvas` 정렬 오버라이드가 없어 **형제 순서 = 그리기 순서**였고, `OptionSubPanel` 이 index 3(메뉴 패널들보다 뒤)이라 메인 메뉴에서 옵션을 눌러도 **아무 변화가 없어 보였다.** ② `MainMenuUI` 에 옵션창을 닫는 코드가 아예 없어 켜진 채로 남았다. 전투 진입에서 앞의 메뉴 패널이 전부 꺼지는 순간 그것만 남아 튀어나왔다 | ✅ 해결 (2026-08-29 16차 → 2-20) — 코드(`OnHidden`/`Close`)와 구조(오버레이를 맨 위로) **양쪽** 수정 |
 | **I-51** | **ESC 로 멈춰도 BGM 이 계속 흘렀다** — 15차에서 `Paused` 를 `LevelUp` 과 묶어 "곡을 안 바꾸는 상태"로 정했는데(아래 2-19 ⚠️), 실제로 플레이해 보니 **손에서 게임을 놓은 시간에 음악만 도는 게 어색**했다. `StopBgm` 은 곡을 버려서 재개 때 도입부가 다시 나오므로 쓸 수 없었다 | ✅ 해결 (2026-08-29 16차 → 2-20) — `PauseBgm`/`ResumeBgm` + `_bgmPaused` 플래그(`AudioSource` 에 `isPaused` 가 없다) |
 | **I-52** | **파이어볼이 날아오지 않고 적 위에서 그냥 터졌다** — `AoeWeapon` 은 목표 지점에 폭발을 바로 생성했다. 그런데 파이어볼과 폭탄이 **`Weapon_Aoe.prefab` 하나를 공유**해서, 프리팹에 몸체 필드를 달면 폭탄까지 날아가 버린다 | ✅ 해결 (2026-08-29 16차 → 2-20) — `WeaponData.TravelPrefab` + CSV 열로 **데이터 쪽에서** 갈랐다 |
+| **I-53** | **상점 UI 가 너무 작다** — 카드가 `160×220`, 설명 글자가 `10pt` 였다. 레벨업 카드는 11차에 이미 키웠는데 **상점만 옛 치수로 남아** 있었다. 곁들여 카드 라벨이 한글이었고(§3 규칙 위반), 리롤 버튼의 `🔀`(U+1F500)가 Pretendard SDF 에 없어 **`␡` 로 그려졌다**(16차 💰와 같은 함정) | ✅ 해결 (2026-08-29 17차 → 2-21) — 카드 **250×440** · 글자 최대 `38pt` · 영문화 · 이모지 제거 |
+| **I-54** | **무기 진화가 아예 없다.** 게다가 ROADMAP §2-3 의 원래 설계(`ItemData.EvolvesInto` + `RequiredPassive`)는 **"무기+패시브" 하나만 표현할 수 있어** 사용자가 요구한 `패시브·무기·건물` 3조합을 구조적으로 못 담았다 | ✅ 해결 (2026-08-29 17차 → 2-21) — 레시피를 **별도 `EvolutionData` SO** 로 분리(`ItemData[]` 재료). 전달 경로(상자 / 건물 앞 E)는 **열이 아니라 재료에서 파생** |
 
 ### 해결 상세
 
@@ -2212,9 +2357,33 @@ private void LateUpdate()
 61. ✅ **파이어볼이 날아간다** (I-52). Fireball 과 Bomb 이 **같은 `Weapon_Aoe.prefab`** 을 쓰므로
     프리팹이 아니라 **데이터로 갈랐다** — `WeaponData.TravelPrefab` 신설(CSV 열 추가).
     Fireball 은 `Proj_Fireball`(직선·무회전) 을 속도 11 로 쏘고, Bomb 은 비워 둬 **즉발 유지**
-62. ⏳ **다음**: [`ROADMAP.md`](ROADMAP.md) §8 — 남은 가장 큰 구멍은 **무기 진화 0**.
-    그 전에 §1 런타임 재검증(이제 **음량 밸런스 청취**가 추가됐다) → 스탯 재조정 →
-    재화 구조 결정 (→ [`TODO.md`](TODO.md) §6)
+62. ⏳ **다음**: [`ROADMAP.md`](ROADMAP.md) §8 — 남은 가장 큰 구멍은 **무기 진화 0**
+    (→ **17차에서 해결**, 아래 63~66번)
+
+**17차 (2026-08-29)** — 상세는 2-21
+
+63. ✅ **상점 UI 를 읽을 수 있게 키웠다** (I-53). 카드 `160×220` → **`250×440`**,
+    설명 글자 `10pt` → `18pt`, 이름 `20` → `38`. 레벨업 카드는 11차에 이미 키웠는데
+    **상점만 옛 치수로 남아 있던 것**이다. 라벨 영문화 + 리롤 버튼의 `🔀` 제거
+    (U+1F500 이 Pretendard SDF 에 없어 `␡` 로 그려졌다 — 16차 💰와 같은 함정)
+64. ✅ **무기 진화가 붙었다** (I-54). ROADMAP 의 원래 안(`ItemData.EvolvesInto` +
+    `RequiredPassive`)은 **"무기+패시브" 하나밖에 표현 못 한다** — 사용자가 요구한
+    `패시브·무기·건물` 3조합을 담으려면 아이템에 필드를 붙이는 방식 자체를 버려야 했다.
+    레시피를 **별도 `EvolutionData` SO** 로 빼고 재료를 `ItemData[]` 로 두자
+    카테고리가 무의미해져 3조합이 특별 취급 없이 표현된다. 재료 개수도 가변
+65. ✅ **전달 경로를 플래그가 아니라 재료에서 파생시켰다.** 재료에 건물이 있으면
+    **그 건물이 제단**(앞에서 `E`), 없으면 **보물상자**. `DeliveryType` 열을 뒀다면
+    "건물이 재료인데 상자에서 나온다" 같은 **데이터만으로 깨진 상태**를 CSV 가 허용한다.
+    건물은 이미 맵에 실재하므로 제단 프리팹도 필요 없었다.
+    소모는 **무기 재료만** — 제단이 증발하면 납득이 안 되고, 무기 슬롯 6칸 상한 때문에
+    재료 무기를 먼저 비우지 않으면 결과가 **조용히 거절**된다
+66. ✅ **`EvolutionPromptUI` 3단계 안내** — ① 지금 `E` ② 상자에서 나온다 ③ 제단으로 가라.
+    진화는 **조건이 조용히 충족돼서** 표시가 없으면 플레이어가 영영 모른다.
+    검증 중 `HUD` 가 **`StateVisibilityBinder` 로 Wave/LevelUp/Paused 에서만 켜지는** 걸
+    발견해 `StageMap` 분기(도달 불가)를 지우고 **`Wave` 하나만** 남겼다
+67. ⏳ **다음**: [`ROADMAP.md`](ROADMAP.md) §8 4단계 9번 — **메타 강화 화면**
+    (`MetaScreen` UI 0개 / `UpgradeDefinition` 애셋 0개). 그 전에 §1 런타임 재검증에
+    **상점 확대 눈 확인 · 진화 2경로 실플레이**가 추가됐다 (→ [`TODO.md`](TODO.md) §1)
 
 **16~17 과정에서 함께 처리한 것**
 

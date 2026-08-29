@@ -34,9 +34,9 @@ public class ShopRemoveRowUI : MonoBehaviour
 
         string catLabel = item.Category switch
         {
-            ItemCategory.Weapon   => "무기",
-            ItemCategory.Building => "건물",
-            ItemCategory.Passive  => "패시브",
+            ItemCategory.Weapon   => "WEAPON",
+            ItemCategory.Building => "BUILDING",
+            ItemCategory.Passive  => "PASSIVE",
             _                     => ""
         };
         string levelLabel = item.CurrentLevel > 0 ? $"Lv.{item.CurrentLevel}" : "Lv.1";

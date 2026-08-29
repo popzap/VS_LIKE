@@ -46,11 +46,11 @@ public class ShopUI : MonoBehaviour
     [Header("NPC 대사 (랜덤)")]
     [SerializeField] private string[] npcDialogues = new[]
     {
-        "좋은 물건만 골라왔지.\n마음에 드는 게 없으면\n리롤도 해드릴 수 있어…",
-        "오늘 특가! 빨리 사지 않으면\n다음 손님이 가져가지.",
-        "뭔가 찾고 있나? 내가 도와줄 수 있어.\n물론 공짜는 아니지만.",
-        "강한 적들이 기다리고 있다네.\n준비를 단단히 하게나.",
-        "제거 비용은 저렴해. 짐은 가볍게\n다니는 게 좋다고 생각하거든."
+        "Only the finest goods here.\nNothing you fancy?\nI can reroll the lot.",
+        "Today's bargain! Buy quick,\nor the next customer will.",
+        "Looking for something?\nI can help. For a price.",
+        "Stronger foes are waiting.\nCome prepared, friend.",
+        "Removing is cheap. Travel light,\nthat's what I always say."
     };
 
     // ── 페이드 설정 ──────────────────────────────────────────────
@@ -214,7 +214,10 @@ public class ShopUI : MonoBehaviour
     private void RefreshRerollButton()
     {
         int cost = ShopManager.Instance.CurrentRerollCost;
-        rerollCostText.text          = $"🔀 리롤  ({cost}G)";
+
+        // 이모지(🔀)를 쓰지 말 것 — Pretendard SDF 에 없는 글리프라 콘솔 경고와 함께
+        // 대체 문자(␡)가 그려진다. 폰트 아틀라스에 있는 글자만 쓴다.
+        rerollCostText.text          = $"Cost {cost} G";
         rerollButton.interactable    = ShopManager.Instance.CanReroll();
     }
 
@@ -255,14 +258,15 @@ public class ShopUI : MonoBehaviour
         var wave = GameManager.Instance.WaveManager;
         var exp  = GameManager.Instance.ExpManager;
 
-        if (killCountText  && wave != null) killCountText.text  = $"{wave.TotalKillCount}";
-        if (playerLevelText && exp != null) playerLevelText.text = $"Lv.{exp.CurrentLevel}";
+        // 숫자만 띄우면 그게 킬인지 시간인지 레벨인지 알 수 없다. 라벨을 앞에 붙인다.
+        if (killCountText  && wave != null) killCountText.text  = $"<color=#8A8F98>KILLS</color>   {wave.TotalKillCount}";
+        if (playerLevelText && exp != null) playerLevelText.text = $"<color=#8A8F98>LEVEL</color>   {exp.CurrentLevel}";
 
         // 경과 시간은 WaveManager 에서 누적값 제공 (없으면 "-" 표시)
-        if (elapsedTimeText && wave != null)
-            elapsedTimeText.text = FormatTime(wave.TotalElapsedTime);
-        else if (elapsedTimeText)
-            elapsedTimeText.text = "--:--";
+        if (elapsedTimeText)
+            elapsedTimeText.text = wave != null
+                ? $"<color=#8A8F98>TIME</color>   {FormatTime(wave.TotalElapsedTime)}"
+                : "<color=#8A8F98>TIME</color>   --:--";
     }
 
     private static string FormatTime(float seconds)

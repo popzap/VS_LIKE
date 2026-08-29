@@ -24,3 +24,12 @@ XpGain,Experience Gain,Increases experience gained.,Assets/Game/Sprites/Passives
 GoldGain,Gold Gain,Increases gold gained.,Assets/Game/Sprites/Passives/GoldGain.png,Passive,5,GoldGain,6
 CritChance,Critical Chance,Increases critical hit chance.,Assets/Game/Sprites/Passives/CritChance.png,Passive,5,CritChance,7
 BuildingCooldown,Building Speed,Buildings work more often.,Assets/Game/Sprites/Passives/BuildingCooldown.png,Passive,5,BuildingCooldown,7
+# ── 진화 결과 아이템 ────────────────────────────────────────────────────────
+# ⚠️ 이 아이템들은 SceneWiring.csv 의 LevelUpManager,allItems 에 넣지 말 것.
+#    넣으면 레벨업 3택과 상점에 그냥 나와서 진화라는 절차 자체가 무의미해진다.
+# MaxLevel 은 1 — 진화 무기는 더 성장하지 않는다. ShopPrice 는 쓰이지 않는다.
+Excalibur,Excalibur,Evolved Sword. A wide arc that cleaves five foes at once.,Assets/Game/Sprites/Weapons/Sword.png,Weapon,1,Excalibur,0
+Windforce,Windforce,Evolved Bow. Six arrows fan out at blinding speed.,Assets/Game/Sprites/Weapons/Bow.png,Weapon,1,Windforce,0
+Devastator,Devastator,Evolved Gun fused with Fireball. Relentless heavy fire.,Assets/Game/Sprites/Weapons/Gun.png,Weapon,1,Devastator,0
+Sentinel,Sentinel,Turret technology built into your gun. Never stops firing.,Assets/Game/Sprites/Weapons/Gun.png,Weapon,1,Sentinel,0
+Doomsday,Doomsday,Bombard shells loaded into your bomb. The ground itself breaks.,Assets/Game/Sprites/Weapons/Bomb.png,Weapon,1,Doomsday,0

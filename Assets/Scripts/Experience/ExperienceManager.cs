@@ -76,7 +76,17 @@ public class ExperienceManager : MonoBehaviour
     /// 결국 같은 아이템 카드이기 때문이다. 화면이 하나 더 생기면 조작만 헷갈린다.
     /// (레벨은 오르지 않는다 — 경험치가 아니라 보상이다)</para>
     /// </summary>
-    public void GrantChestReward() => TriggerLevelUp();
+    /// <remarks>
+    /// 진화가 먼저다. 무기를 최대까지 키워 놓고도 상자에서 계속 평범한 카드만 나오면
+    /// "모아 봐야 도착점이 없다"는 인상이 남는다. 완성 가능한 레시피가 있으면 그것부터 준다.
+    /// </remarks>
+    public void GrantChestReward()
+    {
+        if (EvolutionManager.Instance != null &&
+            EvolutionManager.Instance.TryOfferChestEvolution()) return;
+
+        TriggerLevelUp();
+    }
 
     // ── 흡수 (ExpDrop 오브젝트가 호출) ─────────────────────────
 

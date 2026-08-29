@@ -40,9 +40,9 @@ public class ShopCardUI : MonoBehaviour
         // 카테고리 태그
         categoryTag.text  = item.Category switch
         {
-            ItemCategory.Weapon   => "무기",
-            ItemCategory.Building => "건물",
-            ItemCategory.Passive  => "패시브",
+            ItemCategory.Weapon   => "WEAPON",
+            ItemCategory.Building => "BUILDING",
+            ItemCategory.Passive  => "PASSIVE",
             _                     => ""
         };
         categoryTag.color = item.Category switch
@@ -56,7 +56,7 @@ public class ShopCardUI : MonoBehaviour
         if (slot.IsUpgrade)
             levelText.text = $"Lv.<color=#F0C040>{item.CurrentLevel}</color> → {item.CurrentLevel + 1}";
         else
-            levelText.text = "<color=#AAAAAA>신규</color>";
+            levelText.text = "<color=#AAAAAA>NEW</color>";
 
         // 설명
         descText.text = item.Description;
