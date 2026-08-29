@@ -6,14 +6,14 @@
 > 기존의 「C# 스크립트는 완성 단계」라는 전제와 「요청 없이 코드 건드리지 말 것」 규칙이 **해제됨**.
 > 이제 게임 완성을 위해 C# 스크립트 신규 작성·수정이 허용된다.
 >
-> **최종 갱신:** 2026-08-29 (19차 — 직업 승급)
+> **최종 갱신:** 2026-08-29 (20차 — 승급/진화/적 애셋 17장, I-57)
 > 검증 방식: Unity MCP + Play 모드 스모크 테스트 + YAML 직접 파싱
 > **검증 기준 파일:** `Assets/Scenes/SampleScene.unity`
 >
 > **현재 상태: 메인메뉴 → 스테이지맵 → 웨이브 → 클리어 → 게임오버 전체 루프 런타임 검증 완료 (18/18 PASS), 콘솔 에러 0 / 경고 0.**
 > [`ROADMAP.md`](ROADMAP.md) §8 의 **1·2·3단계 완료** (I-43~I-49) — HUD 정보 · 타격 반응 · 오디오 ·
 > 병렬 소환 · 적 행동 분화 · 보물상자/자석. **"조용한 프로토타입" 단계는 끝났다.**
-> 원격 동기화: `popzap/VS_LIKE` `main` @ **`109280f`** (2026-08-29, 17차)
+> 원격 동기화: `popzap/VS_LIKE` `main` @ **`4b06d70`** (2026-08-29, 19차 + 결정 8건)
 >
 > 🎯 **16차는 처음으로 "직접 플레이해서 나온" 버그 보고에서 출발했다** (I-50).
 > 로그로만 검증하던 단계에서는 절대 발견할 수 없는 종류였다 — 자세한 건 2-20.
@@ -2020,6 +2020,123 @@ Play 모드에서 Warrior 로 런을 시작하고 `Unity_RunCommand` 로 재료�
 
 ---
 
+## 2-24. ✅ 승급 직업·진화 무기·적 걷기 애셋 17장 (I-57, 2026-08-29 20차)
+
+### 왜 했나
+
+19차(I-56)로 직업 승급이 **동작하게** 됐지만, 승급해도 **화면에서는 아무 일도 일어나지 않았다.**
+`Classes.csv` 의 `Portrait`/`BodySprite`/`WalkSheet` 세 열이 승급 4행에서 전부 비어 있었고,
+`PlayerStats.ApplyClassVisual` 은 그 경우 조기 반환한다 — 승급 전 모습이 그대로 유지된다.
+게임에서 가장 큰 성취인 승급이 **로그로만 존재**했다.
+
+진화 무기 3종도 같은 상태였다. `Items.csv` 의 `Icon` 이 재료 무기의 아이콘을 그대로 재사용해서
+레벨업 카드에서 `Sword` 와 `Excalibur` 가 **같은 그림**으로 떴다.
+
+그리고 애셋 생성을 **먼저** 한 이유가 하나 더 있다 — Unity AI 체험 기간이 끝나면
+포인트 할당이 끊기고, 그건 이 백로그에서 **되돌릴 방법이 없는 유일한 항목**이다
+(코드·수치는 언제든 고칠 수 있다). [`TODO.md`](TODO.md) §6 이 애셋 생성을 0순위로 둔 근거다.
+
+### 만든 것 — 17장
+
+| 분류 | 파일 | 참조 원화 | 비고 |
+|---|---|---|---|
+| 승급 원화 4 | `Sprites/Classes/{Sentinel,Doomlord,Warden,Aegis}.png` | Ranger / Mage / Warrior / **Sentinel** | 1024², T1 을 참조로 넘겨 "같은 인물의 강화형" |
+| 승급 걷기 4 | `Sprites/Classes/Walk/{Id}_Walk.png` | 위 4장 | 1024² · 4×4 16프레임 · PPU **256** |
+| 진화 아이콘 3 | `Sprites/Weapons/{Excalibur,Windforce,Devastator}.png` | Sword / Bow / Gun | 512² · Single · PPU **512** |
+| 적 걷기 6 | `Sprites/Enemies/Walk/{Slime,Goblin,Zombie,Wolf,Demon,Ogre}_Walk.png` | 각 정지 스프라이트 | 1024² · 4×4 16프레임 · PPU **1024** |
+
+**Aegis 만 T1 이 아니라 `Sentinel` 결과물을 참조로 썼다.** `ClassEvolutions.csv` 에서
+`Aegis.FromClass = Sentinel` 이므로, 데이터상의 사슬을 그림에서도 그대로 이었다 —
+Aegis 가 Sentinel 의 실루엣·색계열을 유지한 채 두꺼워진다.
+
+### 바꾼 파일
+
+| 파일 | 변경 |
+|---|---|
+| `Assets/Game/Balance/Classes.csv` | 승급 4행의 `Portrait` / `BodySprite` / `WalkSheet` 채움 |
+| `Assets/Game/Balance/Items.csv` | 진화 3행의 `Icon` 을 재료 무기 → 전용 아이콘으로 교체 |
+| `Assets/Game/ClassData/{Sentinel,Doomlord,Warden,Aegis}.asset` | Import 산출물 |
+| `Assets/Game/ItemData/{Excalibur,Windforce,Devastator}.asset` | Import 산출물 |
+| `Assets/Game/Sprites/**` (17 png + meta) | 신규 |
+
+### 🔴 I-41 이 그대로 재현됐다 — 그리고 해법을 찾았다
+
+CLAUDE.md 가 경고한 **"AI 스프라이트의 투명 배경은 가짜"** 가 이번에도 **17장 전부**에서 나왔다.
+알파가 전 픽셀 `255` 이고 흰 배경이 RGB 에 그려져 있다. 그대로 넣으면 캐릭터마다
+**흰 사각형이 따라다닌다.**
+
+지금까지의 대응은 "재생성"이었지만(그래도 알파는 가짜였다), 이번에 실제로 통하는 경로를 찾았다:
+
+```
+Unity_AssetGeneration_GenerateAsset(command: "RemoveImageBackground", targetAssetPath: <png>)
+```
+
+- `savePath` 는 **무시된다.** 원본을 제자리에서 고치므로 **GUID 가 보존**된다 (배선이 안 끊긴다)
+- `referenceImageInstanceId` 로는 안 된다 — `'targetAssetPath' is required` 로 거절당한다
+- **스프라이트시트의 4×4 슬라이싱도 보존된다** (16프레임 · `frame_0` 그대로)
+
+배경 제거 전후 (`Warrior` = 정상 T1 기준):
+
+```
+[A] Warrior   alpha 0~255    transparent 62.5%  OK        ← 기준
+[A] Sentinel  alpha 255~255  transparent  0.0%  FAKE-ALPHA  →  alpha 0~255  72.2%  OK
+[A] Doomlord  alpha 255~255  transparent  0.0%  FAKE-ALPHA  →  alpha 0~255  71.2%  OK
+[A] Warden    alpha 255~255  transparent  0.0%  FAKE-ALPHA  →  alpha 0~255  54.5%  OK
+[A] Aegis     alpha 255~255  transparent  0.0%  FAKE-ALPHA  →  alpha 0~255  58.4%  OK
+```
+
+### 함정 — 생성물의 임포터 설정이 규약을 안 따른다
+
+생성 직후 PPU 가 **텍스처 크기와 같게** 박힌다(1024² → PPU 1024). 그대로 두면 크기가 어긋난다.
+전부 기존 규약에 맞춰 다시 임포트했다:
+
+| 종류 | 생성 직후 | 교정 후 | 근거 |
+|---|---|---|---|
+| 승급 걷기 시트 | PPU 1024 | **256** | `Warrior_Walk` 와 동일 (프레임 256px = 1유닛) |
+| 진화 아이콘 | PPU 1024 | **512** | `Sword.png` 와 동일 |
+| 적 걷기 시트 | PPU 1024 | **1024** | `Slime.png` 가 512px/PPU 2048 = **0.25유닛**. 프레임 256px 이므로 1024 가 같은 크기 |
+
+> 요청 해상도도 무시된다 — `width/height: 512` 로 요청해도 산출물은 1024² 다.
+> 아이콘은 `maxTextureSize 512` 로 눌러 기존 무기 아이콘과 맞췄다.
+
+### 검증
+
+CSV Import → `File/Save` 후 SO 를 직접 읽었다.
+
+```
+[V] Warrior   portrait=Warrior   body=frame_0  walkFrames=16  first=frame_0
+[V] Ranger    portrait=Ranger    body=frame_0  walkFrames=16  first=frame_0
+[V] Mage      portrait=Mage      body=frame_0  walkFrames=16  first=frame_0
+[V] Sentinel  portrait=Sentinel  body=frame_0  walkFrames=16  first=frame_0
+[V] Doomlord  portrait=Doomlord  body=frame_0  walkFrames=16  first=frame_0
+[V] Warden    portrait=Warden    body=frame_0  walkFrames=16  first=frame_0
+[V] Aegis     portrait=Aegis     body=frame_0  walkFrames=16  first=frame_0
+
+[C] Sword=Sword  Bow=Bow  Gun=Gun
+[C] Excalibur=Excalibur  Windforce=Windforce  Devastator=Devastator
+
+[E] Slime/Goblin/Zombie/Wolf/Demon/Ogre  1024x1024  alpha 0~255  sprites 16  ppu 1024  OK
+```
+
+**승급 4종이 T1 3종과 완전히 같은 형태**(포트레이트 + 16프레임 걷기)가 됐다.
+
+> ⚠️ **`BodySprite` 만 채워서는 소용없다.** `PlayerVisual` 이 `sr.sprite` 를 걷기 프레임 0 으로
+> 덮어쓰므로 `WalkSheet` 이 있어야 겉모습이 바뀐다. 그래서 T1 과 똑같이 **두 열 모두** 시트 경로를 적었다.
+
+### ⚠️ 적 걷기 시트 6장은 **아직 아무 데도 안 붙어 있다** (사용자 승인)
+
+걷기 프레임을 소비하는 코드는 `PlayerVisual` **하나뿐**이다. `EnemyData` 에 `WalkFrames` 필드가,
+`Enemies.csv` 에 `WalkSheet` 열이 없어서 시트를 넣을 자리가 없다.
+
+사용자에게 물었고 **"지금 뽑고 배선은 다음에"** 로 결정됐다 — 애셋 생성만이 되돌릴 수 없는 자원이기 때문.
+배선(= `EnemyVisual` 컴포넌트 + `EnemyData.WalkFrames` + CSV 열 + 임포터 대응)은
+[`TODO.md`](TODO.md) §1 에 **I-58** 로 남겼다.
+
+> ⚠️ 여기서도 로그가 증명한 것은 **"배선됐다"까지다.** 승급했을 때 실제로 그림이 바뀌는지,
+> 새 아이콘이 카드에서 구분되는지는 **눈으로만** 확인할 수 있다 → [`TODO.md`](TODO.md) §1
+
+---
+
 ## 2-22. ✅ 직업별 소지 상한 (I-55, 2026-08-29 18차)
 
 ### 왜 했나
@@ -2289,7 +2406,7 @@ Play 모드 — 한 세션에서 두 경로 전부:
 
 ---
 
-## 2-1. 이슈 목록 (I-1 ~ I-56 — 전부 해결됨)
+## 2-1. 이슈 목록 (I-1 ~ I-57 — 전부 해결됨)
 
 > 미해결 항목은 [`TODO.md`](TODO.md) 참조.
 
@@ -2351,6 +2468,7 @@ Play 모드 — 한 세션에서 두 경로 전부:
 | **I-54** | **무기 진화가 아예 없다.** 게다가 ROADMAP §2-3 의 원래 설계(`ItemData.EvolvesInto` + `RequiredPassive`)는 **"무기+패시브" 하나만 표현할 수 있어** 사용자가 요구한 `패시브·무기·건물` 3조합을 구조적으로 못 담았다 | ✅ 해결 (2026-08-29 17차 → 2-21) — 레시피를 **별도 `EvolutionData` SO** 로 분리(`ItemData[]` 재료). 전달 경로(상자 / 건물 앞 E)는 **열이 아니라 재료에서 파생** |
 | **I-55** | **직업이 시작 무기 말고는 다를 게 없다** — 3직업을 가르는 건 `Bonus*` 스탯뿐인데 차이가 몇 퍼센트라 플레이 중에 체감되지 않았다. 소지 상한은 무기에만(`WeaponManager.maxWeaponSlots = 6`) 있었고 **직업과 무관한 전역 상수**였으며, 건물·패시브에는 상한 개념 자체가 없었다. 곁들여 **`PickCandidates` 에 상한 검사가 없어**, 슬롯이 찬 상태로 새 무기를 고르면 `_inventory` 에는 기록되고 `WeaponManager` 는 경고만 남긴 채 거절해 **"보유 중인데 무기는 없는"** 유령 아이템이 만들어졌다(카드 가중치 2배 · 진화 재료 판정 통과). 상한 6 이라 잠복해 있었을 뿐 **상한 3 을 넣는 순간 즉시 터지는** 상태였다 | ✅ 해결 (2026-08-29 18차 → 2-22) — 상한을 `CharacterClassData` 로 옮기고 `PlayerStats.SlotLimit` → `LevelUpManager.CanAcquire` **단일 창구**로 통일 |
 | **I-56** | **진화 3조합이 전부 무기를 뱉었다** — 17차에 `패시브·무기·건물` 조합을 열어 뒀지만 결과가 다 무기라, 건물이 재료로 들어가는 이유가 "제단이 필요해서"뿐이고 **조합마다 결과가 달라지지 않았다**. 게다가 직업은 런 시작에 한 번 정해지면 끝이라 **성장 축이 없었다** | ✅ 해결 (2026-08-29 19차 → 2-23) — **무기+건물을 직업 승급으로 분리**(`ClassEvolutions.csv` + `ClassEvolutionData`). 직업을 사슬(`PlayerStats.ClassChain`)로 바꿔 **보너스·소지 칸을 누적**시켰다 (교체하면 승급이 손해가 된다) |
+| **I-57** | **승급해도 화면에서는 아무 일도 일어나지 않았다** — `Classes.csv` 의 `Portrait`/`BodySprite`/`WalkSheet` 가 승급 4행에서 전부 비어 있었고, `PlayerStats.ApplyClassVisual` 은 그 경우 **조기 반환**한다. 게임에서 가장 큰 성취인 승급이 **로그로만 존재**했다. 진화 무기 3종도 재료 무기의 아이콘을 재사용해 레벨업 카드에서 `Sword` 와 `Excalibur` 가 **같은 그림**으로 떴다 | ✅ 해결 (2026-08-29 20차 → 2-24) — 애셋 **17장** 생성·배선. 곁들여 **I-41(가짜 투명 배경)의 실제 해법**을 찾았다 — `RemoveImageBackground` + `targetAssetPath` 는 원본을 제자리에서 고쳐 **GUID·슬라이싱을 보존**한다 |
 
 ### 해결 상세
 
@@ -2668,9 +2786,28 @@ private void LateUpdate()
     `EvolutionPromptUI` 도 승급을 먼저 본다 — 안 그러면 `[E] EVOLVE` 라 써 놓고 승급이 일어난다.
     실행 순서가 승급 우선인 이유는, 무기 진화가 재료를 먹어 치우면
     **그 무기를 재료로 쓰던 승급이 조용히 불가능해지기 때문**이다
-80. ⏳ **남은 것**: ① 승급 직업 4종의 **캐릭터 그림이 없다**(현재는 승급 전 모습 유지) ·
-    ② **건물 앞 `E` 실조작 미검증** (로직은 검증된 무기 제단과 동일하나 실제로 눌러 본 적 없음) ·
-    ③ 승급 수치는 전부 **자리표시값** (→ [`TODO.md`](TODO.md) §1·§3·§4)
+80. ✅ ~~승급 직업 4종의 캐릭터 그림이 없다~~ → **20차에서 해결** (I-57, 아래 81).
+    남은 것: ① **건물 앞 `E` 실조작 미검증** (로직은 검증된 무기 제단과 동일하나 실제로 눌러 본 적 없음) ·
+    ② 승급 수치는 전부 **자리표시값** (→ [`TODO.md`](TODO.md) §1·§3)
+
+**20차 (I-57) — 애셋 17장**
+
+81. ✅ **승급해도 겉모습이 안 바뀌던 문제를 그림으로 메꿨다** (I-57). `Classes.csv` 의
+    `Portrait`/`BodySprite`/`WalkSheet` 가 승급 4행에서 비어 있으면 `ApplyClassVisual` 이
+    **조기 반환**한다 — 승급이라는 가장 큰 성취가 **로그로만 존재**했다
+82. ✅ **`BodySprite` 만 채우면 소용없다.** `PlayerVisual` 이 `sr.sprite` 를 걷기 프레임 0 으로
+    덮어쓰므로 **`WalkSheet` 이 있어야** 겉모습이 바뀐다. T1 과 똑같이 두 열 모두 시트 경로를 적었다
+83. 🔴 **I-41(가짜 투명 배경)이 17장 전부에서 재현됐고, 이번에 해법을 찾았다** —
+    `GenerateAsset(command: "RemoveImageBackground", targetAssetPath: <png>)`.
+    `savePath` 를 무시하고 **원본을 제자리에서** 고쳐서 **GUID 와 4×4 슬라이싱이 보존**된다.
+    `referenceImageInstanceId` 로는 안 되고 `targetAssetPath` 여야 한다
+84. ⚠️ **생성물의 임포터 설정은 규약을 안 따른다.** PPU 가 텍스처 크기와 같게(1024) 박히고
+    요청 해상도(`width: 512`)도 무시된다. 걷기 시트 **256** / 아이콘 **512** / 적 시트 **1024** 로
+    각각 기존 애셋에 맞춰 다시 임포트했다
+85. ✅ **Aegis 만 T1 이 아니라 Sentinel 결과물을 참조**로 썼다. `Aegis.FromClass = Sentinel` 이라는
+    데이터상의 사슬을 그림에서도 이어, Sentinel 의 실루엣을 유지한 채 두꺼워지게 했다
+86. ⏳ **적 걷기 시트 6장은 아직 안 붙어 있다** (사용자 승인). 걷기 프레임을 소비하는 코드가
+    `PlayerVisual` 하나뿐이라 `EnemyData`·`Enemies.csv` 쪽 배선이 필요하다 → **I-58**
 
 **16~17 과정에서 함께 처리한 것**
 
@@ -2753,7 +2890,7 @@ Retry 버튼의 `GameManager.ReloadScene(true)` 씬 리로드
 | 🔴 구조적 공백 | **층별 난이도 스케일링 없음** — `StartWave()` 가 풀에서 무작위로 뽑아 1층에 Normal3 이 나올 수 있음 |
 | 🔴 미조정 수치 | I-21 로 실효 스탯이 절반이 된 뒤 **아무도 재조정하지 않았다.** 직업 `Bonus*` 도 감으로 넣은 자리표시값 |
 | ⚠️ 미연결 시스템 | `MetaScreen` 전환 코드 0 · `UpgradeDefinition` 애셋 0 · 캐릭터/스킨 해금 호출자 0 · **직업 해금 흐름 없음**(`UnlockedByDefault` 만 봄) |
-| ⚠️ 콘텐츠 잔여 | ~~적 스프라이트 1장 공유 · 무기 아이콘 재사용 · 직업 일러스트 0~~ → **I-25 로 26종 생성·배선 완료.** 남은 것: **적 AI 직진뿐** · **AudioClip 0** · 경험치 곡선 과속 · ~~애니메이션 0프레임~~ → **I-26 으로 걷기 바운스·좌우·피격 플래시 완료**(공격·사망 모션은 여전히 없음) |
+| ⚠️ 콘텐츠 잔여 | ~~적 스프라이트 1장 공유 · 무기 아이콘 재사용 · 직업 일러스트 0~~ → **I-25 로 26종 생성·배선 완료.** ~~승급 직업 그림 0 · 진화 무기 아이콘 재사용~~ → **I-57 로 17장 생성·배선 완료.** 남은 것: **적 걷기 시트 6장이 미배선**(I-58) · 공격·사망 모션 없음 |
 | ⚠️ 빈 슬롯 | 배치 커서 · HUD 표정/레벨업 연출 (전부 null 가드 — I-24 로 `?.` 가 아닌 `!= null` 로 교정) |
 | 미검증 경로 | Shop · Event · Boss/Victory · Retry · 피격/사망 · 건물 배치 · **신규 무기 5종 실사격** |
 

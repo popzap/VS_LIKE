@@ -30,9 +30,25 @@ MonoBehaviour:
   BonusWeaponSlots: 1
   BonusPassiveSlots: 1
   BonusBuildingSlots: 0
-  Portrait: {fileID: 0}
-  BodySprite: {fileID: 0}
-  WalkFrames: []
+  Portrait: {fileID: 21300000, guid: 9124b7c58bee3cc43880dfa3be724bfe, type: 3}
+  BodySprite: {fileID: -1676552303, guid: 45da14a0b31207946a118e23eca042d6, type: 3}
+  WalkFrames:
+  - {fileID: -1676552303, guid: 45da14a0b31207946a118e23eca042d6, type: 3}
+  - {fileID: 160495061, guid: 45da14a0b31207946a118e23eca042d6, type: 3}
+  - {fileID: -2022264316, guid: 45da14a0b31207946a118e23eca042d6, type: 3}
+  - {fileID: 636412128, guid: 45da14a0b31207946a118e23eca042d6, type: 3}
+  - {fileID: 143647495, guid: 45da14a0b31207946a118e23eca042d6, type: 3}
+  - {fileID: 140292071, guid: 45da14a0b31207946a118e23eca042d6, type: 3}
+  - {fileID: 1376181400, guid: 45da14a0b31207946a118e23eca042d6, type: 3}
+  - {fileID: -1960704475, guid: 45da14a0b31207946a118e23eca042d6, type: 3}
+  - {fileID: 1591889174, guid: 45da14a0b31207946a118e23eca042d6, type: 3}
+  - {fileID: -1932460512, guid: 45da14a0b31207946a118e23eca042d6, type: 3}
+  - {fileID: 882199826, guid: 45da14a0b31207946a118e23eca042d6, type: 3}
+  - {fileID: -114402803, guid: 45da14a0b31207946a118e23eca042d6, type: 3}
+  - {fileID: 714973809, guid: 45da14a0b31207946a118e23eca042d6, type: 3}
+  - {fileID: 1321089800, guid: 45da14a0b31207946a118e23eca042d6, type: 3}
+  - {fileID: -1299836012, guid: 45da14a0b31207946a118e23eca042d6, type: 3}
+  - {fileID: 1462321145, guid: 45da14a0b31207946a118e23eca042d6, type: 3}
   ModelPrefab: {fileID: 0}
   UnlockedByDefault: 1
   UnlockCost: 0

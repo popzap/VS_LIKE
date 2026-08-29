@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ItemData
   ItemName: Windforce
   Description: Evolved Bow. Six arrows fan out at blinding speed.
-  Icon: {fileID: 21300000, guid: 7cb2b59ea0ed3e44e91c54ebd05f2221, type: 3}
+  Icon: {fileID: 21300000, guid: 077dea53464b16546941e766e8074cd3, type: 3}
   Category: 0
   MaxLevel: 1
   WeaponRef: {fileID: 11400000, guid: 65cdd11733308414f93c7156e97be089, type: 2}

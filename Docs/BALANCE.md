@@ -1,6 +1,6 @@
 # VS_LIKE — 밸런스 데이터 가이드
 
-> **작성:** 2026-08-26 · **최종 갱신:** 2026-08-29 (19차 — `ClassEvolutions.csv` 직업 승급 / I-56)
+> **작성:** 2026-08-26 · **최종 갱신:** 2026-08-29 (20차 — 승급/진화/적 애셋 17장 / I-57)
 > 이 문서는 **수치를 어디서 어떻게 고치는가**를 설명한다.
 > 완료 이력은 [`SETUP_STATUS.md`](SETUP_STATUS.md), 남은 작업은 [`TODO.md`](TODO.md).
 
@@ -168,7 +168,8 @@ Assets/Game/Balance/*.csv
 | 건물 5종 | `Sprites/Buildings` | 512 | 1024 | 0.50 | **2.6** | **1.30** (11차) |
 | 경험치 오브 | `Game/ICON/Exp_Orb.gif` | 150 | **460** | 0.33 | 1.0 | **0.33** (I-33) |
 | 직업 정지그림 3종 | `Sprites/Classes/*.png` | 512 | 512 | 1.00 | 1.0 | **1.00** |
-| 직업 걷기 프레임 | `Sprites/Classes/Walk/*_Walk.png` | 256 | 256 | 1.00 | 1.0 | **1.00** |
+| 직업 걷기 프레임 | `Sprites/Classes/Walk/*_Walk.png` (7종) | 256 | 256 | 1.00 | 1.0 | **1.00** |
+| 적 걷기 프레임 (미배선) | `Sprites/Enemies/Walk/*_Walk.png` (6종) | 256 | **1024** | 0.25 | 1.0 | **0.25** (I-57) |
 | 바닥 타일 10종 | `Sprites/Tiles/*.png` | 256 | 256 | 1.00 | — | **1.00** (= Grid `cellSize`) |
 | 폭발 프레임 16장 | `Sprites/Effects/Explosion.png` | 256 | 256 | 1.00 | **반경에 비례** | **반경 ÷ 0.4 × 1.0** (11차) |
 | 폭탄 | `Sprites/Weapons/Bomb.png` | — | — | 2.00 | **0.225** | **0.45** (11차) |
@@ -465,8 +466,10 @@ Gun 이 단일 대상 DPS는 높지만 사거리·투사체 크기가 작고, Ao
 | Windforce | 55 | 0.40 | 6 | 20 | 최다 투사체 + 최장 사거리 |
 | Devastator | 34 | 0.15 | 4 | 17 | 최속 연사 |
 
-> 아이콘은 **재료 무기의 것을 그대로 쓴다.** 전용 스프라이트가 아직 없다 (→ [`TODO.md`](TODO.md) §4).
-> `WeaponPrefab` 도 마찬가지로 기존 `Weapon_Sword` / `Weapon_Aoe` 를 재사용한다.
+> **20차(I-57)에 전용 아이콘 3장을 넣었다** (`Sprites/Weapons/{Excalibur,Windforce,Devastator}.png`,
+> PPU 512 / `maxTextureSize` 512 — `Sword.png` 와 같은 규격). 그전에는 재료 무기의 아이콘을
+> 그대로 써서 레벨업 카드에서 `Sword` 와 `Excalibur` 가 같은 그림이었다.
+> `WeaponPrefab` 은 여전히 기존 `Weapon_Sword` / `Weapon_Aoe` 를 재사용한다.
 
 #### 임포트 순서 주의
 
@@ -672,8 +675,12 @@ Warrior+Sentinel   maxHp 150  armor 3  slots W3/P6/B6
 `Portrait`/`BodySprite`/`WalkSheet` 를 비우면 **승급 전 모습을 그대로 유지한다**
 (`PlayerStats.ApplyClassVisual` 이 빈 값으로 덮지 않는다). 빈 값으로 덮으면 플레이어가
 프리팹 기본 스프라이트로 되돌아가 버리기 때문이다.
-현재 T2/T3 4종은 **전부 비어 있다** — 그림은 아직 없다 (→ [`TODO.md`](TODO.md) §4).
-`Portrait` 는 선택 화면 전용이라 승급 직업에는 **애초에 필요 없다.**
+**20차(I-57)에 T2/T3 4종의 그림 3열을 전부 채웠다.** 비어 있던 동안은 승급해도 화면이
+그대로였다 — 게임에서 가장 큰 성취가 로그로만 존재했다.
+⚠️ **`BodySprite` 만 채우는 것으로는 안 된다.** `PlayerVisual` 이 `sr.sprite` 를 걷기
+프레임 0 으로 덮어쓰므로 **`WalkSheet` 이 있어야** 겉모습이 실제로 바뀐다.
+`Portrait` 는 선택 화면 전용이라 승급 직업에는 기능상 필요 없지만, 나중에 승급 연출/도감에
+쓸 원화를 같은 이름으로 남겨 두는 편이 낫다고 보아 4장 모두 채웠다.
 
 #### 그림 열 세 개 (I-29 로 `WalkSheet` 추가)
 
