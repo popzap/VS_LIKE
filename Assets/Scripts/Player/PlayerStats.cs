@@ -75,6 +75,25 @@ public class PlayerStats : MonoBehaviour
         if (visual != null) visual.SetWalkFrames(cls.WalkFrames);
     }
 
+    /// <summary>
+    /// 이 직업이 동시에 지닐 수 있는 <b>아이템 종류 수</b>. 레벨이 아니라 종류를 센다.
+    ///
+    /// <para>직업이 없으면 제한하지 않는다. 실제 런은 <see cref="GameManager.StartRun"/> 에서
+    /// 반드시 직업을 받으므로 이 경로는 직업 없이 씬을 직접 재생할 때만 탄다 —
+    /// 거기서 상한을 걸면 원인 모를 "카드가 안 뜬다"가 된다.</para>
+    /// </summary>
+    public int SlotLimit(ItemCategory category)
+    {
+        if (Class == null) return int.MaxValue;
+
+        return category switch
+        {
+            ItemCategory.Weapon   => Class.MaxWeaponSlots,
+            ItemCategory.Building => Class.MaxBuildingSlots,
+            _                     => Class.MaxPassiveSlots,
+        };
+    }
+
     // ── Passive 등록 / 해제 ───────────────────────────────────────
 
     /// <summary>

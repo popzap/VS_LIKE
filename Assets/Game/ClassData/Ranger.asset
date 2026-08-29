@@ -13,7 +13,8 @@ MonoBehaviour:
   m_Name: Ranger
   m_EditorClassIdentifier: Assembly-CSharp::CharacterClassData
   ClassName: Ranger
-  Description: Fast skirmisher. Starts with a Bow.
+  Description: Fast skirmisher. Starts with a Bow. Holds every weapon, but barely
+    builds.
   StartingWeapon: {fileID: 11400000, guid: 56ae650b5ce5be245b72acdab53d8897, type: 2}
   StartingWeaponLevel: 1
   BonusMaxHp: -15
@@ -26,6 +27,9 @@ MonoBehaviour:
   BonusArmor: 0
   BonusXpGain: 0
   BonusGoldGain: 0
+  MaxWeaponSlots: 5
+  MaxPassiveSlots: 4
+  MaxBuildingSlots: 2
   Portrait: {fileID: 21300000, guid: d138124b5892ca54b846acd1e187fa53, type: 3}
   BodySprite: {fileID: -756708257, guid: 87bb800ad61c9854ababf57ee773bec2, type: 3}
   WalkFrames:

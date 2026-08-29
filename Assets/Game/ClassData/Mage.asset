@@ -13,7 +13,8 @@ MonoBehaviour:
   m_Name: Mage
   m_EditorClassIdentifier: Assembly-CSharp::CharacterClassData
   ClassName: Mage
-  Description: Fragile caster with area damage. Starts with a Fireball.
+  Description: Fragile caster with area damage. Starts with a Fireball. Grows through
+    passives.
   StartingWeapon: {fileID: 11400000, guid: 7c114a75b8d81e143809bdb21236c823, type: 2}
   StartingWeaponLevel: 1
   BonusMaxHp: -25
@@ -26,6 +27,9 @@ MonoBehaviour:
   BonusArmor: -1
   BonusXpGain: 0.1
   BonusGoldGain: 0
+  MaxWeaponSlots: 3
+  MaxPassiveSlots: 8
+  MaxBuildingSlots: 3
   Portrait: {fileID: 21300000, guid: 74ede91af4b4f704db34abc8b47e23d2, type: 3}
   BodySprite: {fileID: -1580832813, guid: ca13f1427624ec3429386bcac16ff1b6, type: 3}
   WalkFrames:

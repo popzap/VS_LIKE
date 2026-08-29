@@ -6,14 +6,14 @@
 > 기존의 「C# 스크립트는 완성 단계」라는 전제와 「요청 없이 코드 건드리지 말 것」 규칙이 **해제됨**.
 > 이제 게임 완성을 위해 C# 스크립트 신규 작성·수정이 허용된다.
 >
-> **최종 갱신:** 2026-08-29 (17차 — 상점 UI 가시성 · 무기 진화 3조합)
+> **최종 갱신:** 2026-08-29 (18차 — 직업별 소지 상한)
 > 검증 방식: Unity MCP + Play 모드 스모크 테스트 + YAML 직접 파싱
 > **검증 기준 파일:** `Assets/Scenes/SampleScene.unity`
 >
 > **현재 상태: 메인메뉴 → 스테이지맵 → 웨이브 → 클리어 → 게임오버 전체 루프 런타임 검증 완료 (18/18 PASS), 콘솔 에러 0 / 경고 0.**
 > [`ROADMAP.md`](ROADMAP.md) §8 의 **1·2·3단계 완료** (I-43~I-49) — HUD 정보 · 타격 반응 · 오디오 ·
 > 병렬 소환 · 적 행동 분화 · 보물상자/자석. **"조용한 프로토타입" 단계는 끝났다.**
-> 원격 동기화: `popzap/VS_LIKE` `main` @ **`db4a56f`** (2026-08-29, 16차)
+> 원격 동기화: `popzap/VS_LIKE` `main` @ **`109280f`** (2026-08-29, 17차)
 >
 > 🎯 **16차는 처음으로 "직접 플레이해서 나온" 버그 보고에서 출발했다** (I-50).
 > 로그로만 검증하던 단계에서는 절대 발견할 수 없는 종류였다 — 자세한 건 2-20.
@@ -1909,6 +1909,132 @@ Fireball 만 채우고 Bomb 은 비워 뒀다.
 
 ---
 
+## 2-22. ✅ 직업별 소지 상한 (I-55, 2026-08-29 18차)
+
+### 왜 했나
+
+사용자 요구: **"각 캐릭터당 소지가능한 무기, 패시브, 건물 개수도 다르게"**.
+
+배경은 이렇다. 지금까지 3직업을 가르는 건 `Bonus*` 스탯뿐이었는데 그 차이가 몇 퍼센트라
+**플레이 중에 체감되지 않았다.** 시작 무기만 다르고 나머지는 같은 게임이 세 번 도는 셈이다.
+소지 상한은 성격이 다르다 — 무기를 3종밖에 못 드는 것과 5종을 다 드는 것은
+**런 전체의 모양**이 달라진다. 스탯이 "얼마나 센가"라면 상한은 "무엇을 할 수 있는가"다.
+
+### 상한을 어디에 둘 것인가
+
+`WeaponManager` 에 이미 `maxWeaponSlots = 6` 이 있었지만 **무기 전용**이었고,
+건물·패시브에는 상한이라는 개념 자체가 없었다. 세 곳에 각각 숫자를 두면 직업마다 다르게 만들 수 없다.
+
+```
+CharacterClassData.Max{Weapon,Passive,Building}Slots   ← 원본 (Classes.csv)
+        ↓
+PlayerStats.SlotLimit(ItemCategory)                    ← 조회 단일 창구
+        ↓
+LevelUpManager.CanAcquire(ItemData)                    ← 판정 단일 창구
+        ↓          ↘
+   PickCandidates   ApplyItem
+   (카드 · 상점)     (지급)
+```
+
+**`PickCandidates` 하나가 레벨업 카드와 상점 진열 양쪽을 먹인다**
+(`GetShopCandidates(count) => PickCandidates(count)`). 그래서 거기 한 줄만 막으면 두 화면이 같이 잡힌다.
+
+`WeaponManager.maxWeaponSlots` 는 **삭제**했다. `Economy.csv` 에 그 행이 없는 것을 먼저 확인했다
+(§3 규칙 — C# 필드를 지우면 CSV 행도 같이 지워야 한다).
+`BuildingManager` 에는 별도 상한을 넣지 않았다 — `UnlockBuilding` 의 유일한 호출자가 `ApplyItem` 이라
+그 앞의 가드가 이미 덮는다. 두 곳에 검사를 두면 서로 어긋날 때를 걱정해야 한다.
+
+### ⚠️ 부수 발견 — "보유 중인데 무기는 없는" 유령 아이템
+
+작업 중 드러난 기존 버그다. 상한이 6이라 잠복해 있었지만 **상한 3을 넣는 순간 즉시 터진다.**
+
+```
+[예전] 무기 슬롯이 찬 상태로 새 무기 카드를 고른다
+   ApplyItem      → _inventory[item]++ · item.CurrentLevel = 1     (기록됨)
+   AddOrUpgrade   → Debug.LogWarning 후 조용히 return              (무기는 안 생김)
+```
+
+결과는 단순한 "무기 하나 손해"가 아니다. 그 아이템은 이후 **보유로 취급**되어
+
+- 카드 가중치가 `OwnedWeight = 2` 배가 된다 → **없는 무기의 레벨업 카드가 계속 뜬다**
+- `GetItemLevel` 이 레벨을 돌려준다 → **진화 재료 판정을 통과한다**
+
+`ApplyItem` 맨 앞의 `if (!CanAcquire(item)) return;` 로 막았다.
+`WeaponManager` 쪽 검사는 **지우지 않고 경고 로그로 남겼다** — 조용히 return 하던 그 자리가
+정확히 이 사고의 원인이었으므로, 같은 경로가 다시 생기면 로그로 드러나야 한다.
+
+### 변경한 파일
+
+| 파일 | 변경 |
+|---|---|
+| `Assets/Scripts/Player/CharacterClassData.cs` | `MaxWeaponSlots` / `MaxPassiveSlots` / `MaxBuildingSlots` 3필드 + 헤더 |
+| `Assets/Scripts/Player/PlayerStats.cs` | `SlotLimit(ItemCategory)` 신설. **직업이 없으면 `int.MaxValue`** |
+| `Assets/Scripts/Weapon/WeaponManager.cs` | `maxWeaponSlots` 필드 **삭제** → 직업 값 조회. 검사는 경고 로그로 존치 |
+| `Assets/Scripts/LevelUp/LevelUpManager.cs` | `CanAcquire` / `CountOwned` 신설 · `PickCandidates` 필터 · `ApplyItem` 가드 |
+| `Assets/Game/Balance/Classes.csv` | 3열 추가 + 3직업 차등 + 머리말 설명 |
+| `Assets/Editor/BalanceImporter.cs` | `ImportClasses` 읽기 3줄 · `ExportRows` 헤더/값 3열 |
+| `Assets/Game/ClassData/*.asset` | Import 로 재생성 (3종) |
+
+### 수치와 근거
+
+| Id | 무기 | 패시브 | 건물 | 의도 |
+|---|---:|---:|---:|---|
+| Warrior | **3** | 5 | **5** | 무기는 적게, **건물은 전부**. 진지 구축형 |
+| Ranger | **5** | 4 | **2** | **무기 전종**, 건물은 거의 못 세운다. 순수 화력형 |
+| Mage | 3 | **8** | 3 | 무기·건물이 좁은 대신 패시브로 큰다 |
+
+콘텐츠 총량이 **무기 5 · 건물 5 · 패시브 10** 이므로 Warrior 의 건물 5 와 Ranger 의 무기 5 는
+**의도적으로 상한 없음**이다 — "이 축은 자유롭다"를 표현한 것이다.
+
+`Bonus*` 스탯은 **일부러 건드리지 않았다.** 이미 차등화되어 있고,
+[`TODO.md`](TODO.md) §3 에서 실플레이 후 재조정 대상으로 이미 잡혀 있다.
+한 번에 두 축을 같이 흔들면 어느 쪽이 효과를 냈는지 알 수 없다.
+
+### 검증 로그
+
+`CLSVERIFY` (에디트 모드 — CSV Import 결과가 SO 에 실제로 들어갔는가)
+
+```
+[CLS] Warrior  weapon=3 passive=5 building=5 start=Sword    hp=+30 armor=+2
+[CLS] Ranger   weapon=5 passive=4 building=2 start=Bow      hp=-15 speed=+0.6
+[CLS] Mage     weapon=3 passive=8 building=3 start=Fireball hp=-25 dmg=+0.2
+[CLS] 콘텐츠 총량 : 무기 10(진화 포함) · 건물 5 · 패시브 10
+```
+
+`SLOTTEST1` (플레이 모드 — 상한이 실제로 걸리는가 · 유령 기록이 남는가)
+
+```
+[SLOT] 직업=Warrior 상한 무기=3 패시브=5 건물=5
+[SLOT] Sword     CanAcquire=True  → 보유무기종류=1 실제장착=1 HasItem=True
+[SLOT] Bow       CanAcquire=True  → 보유무기종류=2 실제장착=2 HasItem=True
+[SLOT] Gun       CanAcquire=True  → 보유무기종류=3 실제장착=3 HasItem=True
+[SLOT] Fireball  CanAcquire=False → 보유무기종류=3 실제장착=3 HasItem=False
+```
+
+마지막 줄이 핵심이다 — **거절되었고 `_inventory` 에도 안 남았다.** 예전이면 `HasItem=True` 인데
+`실제장착=3` 인 어긋난 상태가 됐다.
+
+`SLOTTEST2` (플레이 모드 — 후보 풀 · 다른 카테고리 · 진화 상호작용)
+
+```
+[SLOT] 후보 60장 : 신규무기=0 (0 이어야 함) · 보유무기업글=16 · 그 외=44
+[SLOT] 건물 보유=5 / 상한 5
+[SLOT] 패시브 Damage=O Speed=O AttackSpeed=O MaxHp=O Armor=O PickupRadius=X XpGain=X → 보유=5 / 상한 5
+[SLOT] 진화 전 : Sword Lv5 · Damage Lv3 · 무기 3/3
+[SLOT] 준비된 레시피 1개 : Excalibur
+[SLOT] 진화 후 : Excalibur Lv1 · Sword Lv0 · 무기 3/3 · 실제장착=3
+```
+
+- **신규무기 0 · 보유무기업글 16** — 상한이 찼어도 **육성 카드는 계속 뜬다.** 상한은 칸만 막는다
+- **건물·패시브도 동일하게 동작** — 무기 전용 로직이 아님이 확인됐다
+- **꽉 찬 상태에서도 진화가 성사된다** — `Evolve()` 가 재료를 **먼저** 소모하기 때문이다.
+  순서가 반대였다면 여기서 조용히 실패했을 것이다 (17차에 이미 그 순서로 짜 둔 게 여기서 값을 했다)
+
+컴파일: `Assets/Refresh` 후 콘솔 **0건**.
+검증은 전부 `Unity_RunCommand` 로만 했다 — **임시 MonoBehaviour 나 씬 오브젝트를 만들지 않았으므로 정리할 잔여물이 없다.**
+
+---
+
 ## 2-21. ✅ 상점 가시성 + 무기 진화 3조합 (I-53~I-54, 2026-08-29 17차)
 
 > 사용자 지시 두 건. **① 상점 UI 가 너무 작다** (스크린샷 첨부), **② 무기 진화를 넣되
@@ -2052,7 +2178,7 @@ Play 모드 — 한 세션에서 두 경로 전부:
 
 ---
 
-## 2-1. 이슈 목록 (I-1 ~ I-54 — 전부 해결됨)
+## 2-1. 이슈 목록 (I-1 ~ I-55 — 전부 해결됨)
 
 > 미해결 항목은 [`TODO.md`](TODO.md) 참조.
 
@@ -2112,6 +2238,7 @@ Play 모드 — 한 세션에서 두 경로 전부:
 | **I-52** | **파이어볼이 날아오지 않고 적 위에서 그냥 터졌다** — `AoeWeapon` 은 목표 지점에 폭발을 바로 생성했다. 그런데 파이어볼과 폭탄이 **`Weapon_Aoe.prefab` 하나를 공유**해서, 프리팹에 몸체 필드를 달면 폭탄까지 날아가 버린다 | ✅ 해결 (2026-08-29 16차 → 2-20) — `WeaponData.TravelPrefab` + CSV 열로 **데이터 쪽에서** 갈랐다 |
 | **I-53** | **상점 UI 가 너무 작다** — 카드가 `160×220`, 설명 글자가 `10pt` 였다. 레벨업 카드는 11차에 이미 키웠는데 **상점만 옛 치수로 남아** 있었다. 곁들여 카드 라벨이 한글이었고(§3 규칙 위반), 리롤 버튼의 `🔀`(U+1F500)가 Pretendard SDF 에 없어 **`␡` 로 그려졌다**(16차 💰와 같은 함정) | ✅ 해결 (2026-08-29 17차 → 2-21) — 카드 **250×440** · 글자 최대 `38pt` · 영문화 · 이모지 제거 |
 | **I-54** | **무기 진화가 아예 없다.** 게다가 ROADMAP §2-3 의 원래 설계(`ItemData.EvolvesInto` + `RequiredPassive`)는 **"무기+패시브" 하나만 표현할 수 있어** 사용자가 요구한 `패시브·무기·건물` 3조합을 구조적으로 못 담았다 | ✅ 해결 (2026-08-29 17차 → 2-21) — 레시피를 **별도 `EvolutionData` SO** 로 분리(`ItemData[]` 재료). 전달 경로(상자 / 건물 앞 E)는 **열이 아니라 재료에서 파생** |
+| **I-55** | **직업이 시작 무기 말고는 다를 게 없다** — 3직업을 가르는 건 `Bonus*` 스탯뿐인데 차이가 몇 퍼센트라 플레이 중에 체감되지 않았다. 소지 상한은 무기에만(`WeaponManager.maxWeaponSlots = 6`) 있었고 **직업과 무관한 전역 상수**였으며, 건물·패시브에는 상한 개념 자체가 없었다. 곁들여 **`PickCandidates` 에 상한 검사가 없어**, 슬롯이 찬 상태로 새 무기를 고르면 `_inventory` 에는 기록되고 `WeaponManager` 는 경고만 남긴 채 거절해 **"보유 중인데 무기는 없는"** 유령 아이템이 만들어졌다(카드 가중치 2배 · 진화 재료 판정 통과). 상한 6 이라 잠복해 있었을 뿐 **상한 3 을 넣는 순간 즉시 터지는** 상태였다 | ✅ 해결 (2026-08-29 18차 → 2-22) — 상한을 `CharacterClassData` 로 옮기고 `PlayerStats.SlotLimit` → `LevelUpManager.CanAcquire` **단일 창구**로 통일 |
 
 ### 해결 상세
 
@@ -2381,9 +2508,34 @@ private void LateUpdate()
     진화는 **조건이 조용히 충족돼서** 표시가 없으면 플레이어가 영영 모른다.
     검증 중 `HUD` 가 **`StateVisibilityBinder` 로 Wave/LevelUp/Paused 에서만 켜지는** 걸
     발견해 `StageMap` 분기(도달 불가)를 지우고 **`Wave` 하나만** 남겼다
-67. ⏳ **다음**: [`ROADMAP.md`](ROADMAP.md) §8 4단계 9번 — **메타 강화 화면**
-    (`MetaScreen` UI 0개 / `UpgradeDefinition` 애셋 0개). 그 전에 §1 런타임 재검증에
-    **상점 확대 눈 확인 · 진화 2경로 실플레이**가 추가됐다 (→ [`TODO.md`](TODO.md) §1)
+67. ✅ **17차 마무리** — `109280f` 로 커밋·푸시 완료
+
+**18차 (2026-08-29)** — 상세는 2-22
+
+68. ✅ **직업마다 소지 상한이 다르다** (I-55). 3직업을 가르는 게 `Bonus*` 스탯뿐이었는데
+    차이가 몇 퍼센트라 **플레이 중에 체감되지 않았다.** 상한은 성격이 다르다 —
+    무기 3종과 5종은 **런 전체의 모양**이 달라진다. 스탯이 "얼마나 센가"라면 상한은
+    "무엇을 할 수 있는가"다. Warrior 3/5/5(진지형) · Ranger 5/4/2(화력형) · Mage 3/8/3(패시브형)
+69. ✅ **상한 원본을 `CharacterClassData` 로 옮겼다.** `WeaponManager.maxWeaponSlots`(전역 상수 6)는
+    **삭제** — `Economy.csv` 에 그 행이 없음을 먼저 확인했다(§3 규칙).
+    조회는 `PlayerStats.SlotLimit`, 판정은 `LevelUpManager.CanAcquire` **한 곳씩**이다.
+    `BuildingManager` 에는 상한을 따로 안 넣었다 — `UnlockBuilding` 의 유일한 호출자가
+    `ApplyItem` 이라 그 앞 가드가 이미 덮는다. 두 곳에 두면 서로 어긋날 때를 걱정해야 한다
+70. ✅ **레벨업 카드와 상점이 한 번에 잡혔다** — 둘 다 `PickCandidates` 를 지난다
+    (`GetShopCandidates => PickCandidates`). 필터 한 줄이 두 화면을 먹인다
+71. ⚠️ **부수 발견: "보유 중인데 무기는 없는" 유령 아이템.** `PickCandidates` 에 상한 검사가
+    없어서, 슬롯이 찬 채로 새 무기를 고르면 `_inventory` 에는 기록되고 `WeaponManager` 는
+    **경고만 남긴 채 조용히 거절**했다. 손해가 무기 하나로 끝나지 않는다 — 그 아이템이
+    이후 **보유로 취급**되어 카드 가중치가 2배가 되고(없는 무기의 레벨업 카드가 계속 뜬다)
+    **진화 재료 판정까지 통과**한다. 상한 6 이라 잠복했을 뿐 **상한 3 을 넣는 순간 터진다.**
+    `ApplyItem` 맨 앞 가드로 막고, `WeaponManager` 의 검사는 **지우지 않고 경고 로그로 남겼다**
+    — 조용히 return 하던 그 자리가 정확히 사고의 원인이었으므로 재발 시 드러나야 한다
+72. ✅ **꽉 찬 상태에서도 진화가 성사된다** — `Evolve()` 가 재료를 **먼저** 소모하기 때문이다.
+    17차에 그 순서로 짜 둔 것이 여기서 값을 했다. 순서가 반대였다면 상한 3 에서 조용히 실패했을 것
+73. ⏳ **다음**: **직업 진화** — 무기+건물 → 상위 직업(그 건물 앞 `E`), 이후 패시브·무기 조건으로
+    같은 건물에서 계속 강화. 무기+무기 / 무기+패시브는 **보물상자**로 유지.
+    ⚠️ 현재 `Sentinel`(Gun+Turret) · `Doomsday`(Bomb+Bombard)가 **무기+건물인데 결과가 무기**라
+    새 분할과 충돌한다 (→ [`TODO.md`](TODO.md) §2)
 
 **16~17 과정에서 함께 처리한 것**
 

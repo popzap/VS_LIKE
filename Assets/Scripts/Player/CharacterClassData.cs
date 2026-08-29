@@ -35,6 +35,17 @@ public class CharacterClassData : ScriptableObject
     public float BonusXpGain;
     public float BonusGoldGain;
 
+    // 직업을 가르는 두 번째 축. 스탯이 "얼마나 센가"라면 이쪽은 "무엇을 할 수 있는가"다.
+    // 세는 단위는 **아이템 종류 수**이지 레벨이 아니다 — Sword Lv5 도 1칸이다.
+    // 건물은 "같은 건물을 몇 채 세우나"(BuildingData.MaxCount)와 다르다. 여기는 종류 수다.
+    [Header("소지 상한 (종류 수)")]
+    [Tooltip("동시에 들 수 있는 무기 종류. 진화는 재료를 소모하므로 칸이 늘지 않는다.")]
+    public int MaxWeaponSlots   = 6;
+    [Tooltip("동시에 들 수 있는 패시브 종류.")]
+    public int MaxPassiveSlots  = 6;
+    [Tooltip("동시에 해금할 수 있는 건물 종류.")]
+    public int MaxBuildingSlots = 4;
+
     [Header("연출")]
     [Tooltip("메뉴/HUD 초상화")]
     public Sprite     Portrait;

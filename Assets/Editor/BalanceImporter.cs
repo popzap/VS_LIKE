@@ -463,6 +463,10 @@ public static class BalanceImporter
             a.BonusXpGain         = CsvRow.Float(row, "BonusXpGain",         a.BonusXpGain);
             a.BonusGoldGain       = CsvRow.Float(row, "BonusGoldGain",       a.BonusGoldGain);
 
+            a.MaxWeaponSlots   = CsvRow.Int(row, "MaxWeaponSlots",   a.MaxWeaponSlots);
+            a.MaxPassiveSlots  = CsvRow.Int(row, "MaxPassiveSlots",  a.MaxPassiveSlots);
+            a.MaxBuildingSlots = CsvRow.Int(row, "MaxBuildingSlots", a.MaxBuildingSlots);
+
             a.Portrait    = LoadRef<Sprite>    (row, "Portrait",    a.Portrait);
             a.BodySprite  = LoadRef<Sprite>    (row, "BodySprite",  a.BodySprite);
             a.WalkFrames  = LoadSpriteSheet    (row, "WalkSheet",   a.WalkFrames);
@@ -691,12 +695,14 @@ public static class BalanceImporter
         ExportRows("Classes.csv",
             "Id,ClassName,Description,StartingWeapon,StartingWeaponLevel,BonusMaxHp,BonusMoveSpeed,BonusDamage," +
             "BonusAttackSpeed,BonusProjectileSize,BonusPickupRadius,BonusCritChance,BonusArmor,BonusXpGain,BonusGoldGain," +
+            "MaxWeaponSlots,MaxPassiveSlots,MaxBuildingSlots," +
             "Portrait,BodySprite,WalkSheet,ModelPrefab,UnlockedByDefault,UnlockCost",
             LoadAll<CharacterClassData>(ClassFolder), (a, id) => string.Join(",",
                 id, E(a.ClassName), E(a.Description), E(Name(a.StartingWeapon)), a.StartingWeaponLevel,
                 N(a.BonusMaxHp), N(a.BonusMoveSpeed), N(a.BonusDamage), N(a.BonusAttackSpeed),
                 N(a.BonusProjectileSize), N(a.BonusPickupRadius), N(a.BonusCritChance),
                 N(a.BonusArmor), N(a.BonusXpGain), N(a.BonusGoldGain),
+                a.MaxWeaponSlots, a.MaxPassiveSlots, a.MaxBuildingSlots,
                 E(Path(a.Portrait)), E(Path(a.BodySprite)),
                 // 프레임은 전부 같은 .png 에서 나오므로 시트 경로 한 줄이면 복원된다.
                 E(a.WalkFrames != null && a.WalkFrames.Length > 0 ? Path(a.WalkFrames[0]) : ""),

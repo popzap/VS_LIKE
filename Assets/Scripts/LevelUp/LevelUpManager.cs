@@ -112,6 +112,14 @@ public class LevelUpManager : MonoBehaviour
 
     private void ApplyItem(ItemData item)
     {
+        // 슬롯이 꽉 찬 카테고리의 신규 아이템은 여기서 막는다.
+        //
+        // 예전에는 이 검사가 없어서, 무기 슬롯이 찬 상태로 새 무기를 고르면
+        // _inventory 에는 기록되고 WeaponManager 는 경고만 남긴 채 거절해
+        // **"보유 목록에는 있는데 무기는 없는"** 상태가 됐다. 그 아이템은 이후
+        // 보유로 취급돼 카드 가중치가 2배가 되고 진화 재료 판정까지 통과한다.
+        if (!CanAcquire(item)) return;
+
         if (!_inventory.ContainsKey(item)) _inventory[item] = 0;
         _inventory[item]++;
         item.CurrentLevel = _inventory[item];
@@ -162,6 +170,7 @@ public class LevelUpManager : MonoBehaviour
         {
             if (item == null) continue;
             if (_inventory.ContainsKey(item) && item.IsMaxLevel) continue;
+            if (!CanAcquire(item)) continue;   // 꽉 찬 카테고리의 신규 아이템은 카드에 띄우지 않는다
             pool.Add(item);
         }
 
@@ -218,6 +227,35 @@ public class LevelUpManager : MonoBehaviour
 
     /// <summary>현재 런에서 해당 아이템을 보유 중인지 확인.</summary>
     public bool HasItem(ItemData item) => _inventory.ContainsKey(item);
+
+    // ── 소지 상한 ────────────────────────────────────────────────
+
+    /// <summary>
+    /// 이 아이템을 지금 얻을 수 있는가. <b>이미 보유 중이면 항상 참</b>이다 —
+    /// 상한은 "칸을 새로 차지하는가"만 막지 레벨업을 막지 않는다.
+    ///
+    /// <para>레벨업 카드와 상점 진열은 둘 다 <see cref="PickCandidates"/> 를 지나므로
+    /// 여기 한 곳만 막으면 두 경로가 같이 잡힌다.</para>
+    /// </summary>
+    public bool CanAcquire(ItemData item)
+    {
+        if (item == null) return false;
+        if (_inventory.ContainsKey(item)) return true;
+
+        var player = PlayerStats.Current;
+        if (player == null) return true;
+
+        return CountOwned(item.Category) < player.SlotLimit(item.Category);
+    }
+
+    /// <summary>보유 중인 <b>종류 수</b>. 레벨은 세지 않는다.</summary>
+    public int CountOwned(ItemCategory category)
+    {
+        int n = 0;
+        foreach (var pair in _inventory)
+            if (pair.Key != null && pair.Key.Category == category) n++;
+        return n;
+    }
 
     /// <summary>보유 레벨. 없으면 0. 진화 조건 판정이 쓴다.</summary>
     public int GetItemLevel(ItemData item)
