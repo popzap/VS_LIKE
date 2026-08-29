@@ -109,6 +109,7 @@ public static class BalanceImporter
             a.EnemyName    = CsvRow.Str  (row, "EnemyName", id);
             a.Prefab       = LoadRef<GameObject>(row, "Prefab", a.Prefab);
             a.Sprite       = LoadRef<Sprite>    (row, "Sprite", a.Sprite);
+            a.WalkFrames   = LoadSpriteSheet    (row, "WalkSheet", a.WalkFrames);
             a.Tint         = CsvRow.Color(row, "Tint", a.Tint);
             a.SizeScale    = CsvRow.Float(row, "SizeScale",     a.SizeScale);
 
@@ -671,12 +672,14 @@ public static class BalanceImporter
         EnsureFolder(CsvFolder);
 
         ExportRows("Enemies.csv",
-            "Id,EnemyName,Prefab,Sprite,Tint,SizeScale,MaxHp,MoveSpeed,ContactDamage,Armor,XpDrop,CurrencyDrop," +
+            "Id,EnemyName,Prefab,Sprite,WalkSheet,Tint,SizeScale,MaxHp,MoveSpeed,ContactDamage,Armor,XpDrop,CurrencyDrop," +
             "AI,ProjectilePrefab,PreferredRange,AttackCooldown,ProjectileSpeed,ProjectileDamage," +
             "ChargeRange,ChargeWindup,ChargeSpeedMult,ChargeDuration,ChargeRecover,ChargeCooldown," +
             "EliteHpMult,EliteDamageMult,EliteSpeedMult,EliteXpMult,BossHpMult,BossDamageMult,BossSpeedMult,BossXpMult",
             LoadAll<EnemyData>(EnemyFolder), (a, id) => string.Join(",",
-                id, E(a.EnemyName), E(Path(a.Prefab)), E(Path(a.Sprite)), CsvTable.ToHex(a.Tint), N(a.SizeScale),
+                id, E(a.EnemyName), E(Path(a.Prefab)), E(Path(a.Sprite)),
+                E(a.WalkFrames != null && a.WalkFrames.Length > 0 ? Path(a.WalkFrames[0]) : ""),
+                CsvTable.ToHex(a.Tint), N(a.SizeScale),
                 N(a.MaxHp), N(a.MoveSpeed), N(a.ContactDamage), N(a.Armor), a.XpDrop, a.CurrencyDrop,
                 a.AI, E(Path(a.ProjectilePrefab)), N(a.PreferredRange), N(a.AttackCooldown),
                 N(a.ProjectileSpeed), N(a.ProjectileDamage),

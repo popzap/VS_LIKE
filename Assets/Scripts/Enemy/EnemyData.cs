@@ -32,6 +32,11 @@ public class EnemyData : ScriptableObject
     public Color Tint      = Color.white;
     public float SizeScale = 1f;
 
+    [Tooltip("걷기 프레임. Enemies.csv 의 WalkSheet 열에 적은 스프라이트시트에서 잘라 온 것이라 " +
+             "인스펙터에서 직접 채워도 다음 CSV Import 때 덮어써진다. " +
+             "비면 Sprite 한 장으로 버틴다(EnemyVisual 의 셰이더 바운스는 그대로 동작).")]
+    public Sprite[] WalkFrames;
+
     [Header("스탯")]
     public float MaxHp        = 30f;
     public float MoveSpeed    = 2f;

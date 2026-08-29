@@ -3,9 +3,12 @@ using UnityEngine;
 /// <summary>
 /// 적의 "살아 있어 보이는" 연출만 담당한다. 전투/이동 로직은 EnemyBase 소관.
 ///
-/// 스프라이트가 전부 1프레임 정지 이미지라 그냥 두면 미끄러지듯 이동한다.
-/// 프레임 애니메이션을 새로 뽑는 대신 셰이더로 흉내 낸다.
+/// 원래는 스프라이트가 전부 1프레임 정지 이미지라 셰이더 바운스로만 흉내 냈다.
+/// I-58 에서 <c>EnemyData.WalkFrames</c> 가 생겨 진짜 프레임 애니메이션이 붙는다.
+/// 시트가 없는 적은 예전처럼 정지 그림 한 장으로 버틴다 — 바운스는 양쪽 다 걸린다.
 ///
+/// - 걷기 프레임 : 시트가 있을 때만. 개체마다 시작 프레임을 어긋나게 줘서 무리가
+///                한 몸처럼 발을 맞추지 않게 한다 (바운스 위상과 같은 이유).
 /// - 걷기 바운스 : VS_LIKE/SpriteOutline 의 버텍스 애니메이션. 개체마다 위상을 어긋나게
 ///                줘서 무리가 한 몸처럼 출렁이지 않게 한다.
 /// - 좌우 방향   : SpriteRenderer.flipX. 원본 스프라이트는 "오른쪽을 본다"가 규약이다.
@@ -16,6 +19,12 @@ using UnityEngine;
 [DisallowMultipleComponent]
 public class EnemyVisual : MonoBehaviour
 {
+    [Header("걷기 프레임 (WalkFrames 가 있을 때만)")]
+    [Tooltip("초당 넘길 프레임 수. 이 적의 기본 이동 속도를 1배로 보고 실제 속도에 비례해 조절된다")]
+    [SerializeField] private float framesPerSecond = 10f;
+    [Tooltip("이 속도 미만이면 멈춘 것으로 보고 기본 프레임으로 돌아간다")]
+    [SerializeField] private float moveDeadzone = 0.15f;
+
     [Header("걷기 바운스")]
     [Tooltip("초당 사이클. 값이 클수록 종종거린다")]
     [SerializeField] private float bounceSpeed = 9f;
@@ -40,8 +49,16 @@ public class EnemyVisual : MonoBehaviour
     private float _flashTimer;
     private bool  _facingRight = true;
 
+    private Sprite[] _frames;
+    private Sprite   _idleFrame;
+    private float    _frameTimer;
+    private int      _frameIndex;
+    private float    _speedRef = 1f;
+
     /// <summary>EnemyBase.OnInitialized 에서 호출. 풀에서 재사용될 때마다 다시 불린다.</summary>
-    public void Setup(SpriteRenderer sr, float moveSpeed)
+    /// <param name="moveSpeed">등급 배율까지 곱해진 실제 이동 속도. 바운스와 걸음 속도의 기준값이 된다.</param>
+    /// <param name="frames">걷기 시트. null 이거나 비면 정지 그림 한 장으로 동작한다.</param>
+    public void Setup(SpriteRenderer sr, float moveSpeed, Sprite[] frames = null)
     {
         _sr = sr != null ? sr : GetComponent<SpriteRenderer>();
         if (_rb == null)  _rb  = GetComponent<Rigidbody2D>();
@@ -51,6 +68,23 @@ public class EnemyVisual : MonoBehaviour
         _flashTimer  = 0f;
         _facingRight = true;
         _sr.flipX    = false;
+
+        // ⚠️ 풀 재사용 대비. 이전 생애가 시트를 쓰던 적이었다면 반드시 지워야 한다 —
+        //    안 그러면 갓 스폰된 슬라임이 늑대 프레임으로 걷는다.
+        _speedRef = Mathf.Max(0.1f, moveSpeed);
+        if (frames == null || frames.Length == 0)
+        {
+            _frames = null;
+        }
+        else
+        {
+            _frames    = frames;
+            _idleFrame = frames[0];
+            // 무리가 발을 맞추지 않게 시작 프레임을 개체마다 어긋나게 준다.
+            _frameIndex = Random.Range(0, frames.Length);
+            _frameTimer = 0f;
+            _sr.sprite  = frames[_frameIndex];
+        }
 
         float speed = bounceSpeed * (scaleWithSpeed ? Mathf.Clamp(moveSpeed, 0.5f, 3f) : 1f);
 
@@ -73,7 +107,33 @@ public class EnemyVisual : MonoBehaviour
         if (_sr == null) return;
 
         UpdateFacing();
+        StepFrames();
         UpdateFlash();
+    }
+
+    private void StepFrames()
+    {
+        if (_frames == null || _rb == null) return;
+
+        float speed = _rb.linearVelocity.magnitude;
+        if (speed <= moveDeadzone)
+        {
+            // 멈추면 항상 같은 자세로 선다. Charger 의 예고/경직이 여기 걸린다 —
+            // 마지막 프레임에서 얼어붙으면 "멈췄다"가 아니라 "끊겼다"로 보인다.
+            _frameIndex = 0;
+            _frameTimer = 0f;
+            _sr.sprite  = _idleFrame;
+            return;
+        }
+
+        // 자기 기본 속도를 1배로 본다. 느린 오우거는 느리게, 돌진 중인 늑대는 빠르게 걷는다.
+        _frameTimer += Time.deltaTime * framesPerSecond * Mathf.Clamp(speed / _speedRef, 0.5f, 2.5f);
+        while (_frameTimer >= 1f)
+        {
+            _frameTimer -= 1f;
+            _frameIndex = (_frameIndex + 1) % _frames.Length;
+        }
+        _sr.sprite = _frames[_frameIndex];
     }
 
     private void UpdateFacing()

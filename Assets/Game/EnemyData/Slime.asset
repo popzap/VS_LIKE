@@ -17,6 +17,23 @@ MonoBehaviour:
   Sprite: {fileID: 21300000, guid: 0ad0062c5397add4696c77ee6635b474, type: 3}
   Tint: {r: 1, g: 1, b: 1, a: 1}
   SizeScale: 0.9
+  WalkFrames:
+  - {fileID: -238755560, guid: 1d4da5d289c3ae64e9d38fa0f9aa4439, type: 3}
+  - {fileID: 768243379, guid: 1d4da5d289c3ae64e9d38fa0f9aa4439, type: 3}
+  - {fileID: 1445602676, guid: 1d4da5d289c3ae64e9d38fa0f9aa4439, type: 3}
+  - {fileID: -688231938, guid: 1d4da5d289c3ae64e9d38fa0f9aa4439, type: 3}
+  - {fileID: 1677197796, guid: 1d4da5d289c3ae64e9d38fa0f9aa4439, type: 3}
+  - {fileID: 423675231, guid: 1d4da5d289c3ae64e9d38fa0f9aa4439, type: 3}
+  - {fileID: -1404860315, guid: 1d4da5d289c3ae64e9d38fa0f9aa4439, type: 3}
+  - {fileID: -1132037424, guid: 1d4da5d289c3ae64e9d38fa0f9aa4439, type: 3}
+  - {fileID: 1303240610, guid: 1d4da5d289c3ae64e9d38fa0f9aa4439, type: 3}
+  - {fileID: 786680222, guid: 1d4da5d289c3ae64e9d38fa0f9aa4439, type: 3}
+  - {fileID: 1589765453, guid: 1d4da5d289c3ae64e9d38fa0f9aa4439, type: 3}
+  - {fileID: -1322767897, guid: 1d4da5d289c3ae64e9d38fa0f9aa4439, type: 3}
+  - {fileID: 1059960608, guid: 1d4da5d289c3ae64e9d38fa0f9aa4439, type: 3}
+  - {fileID: 538065461, guid: 1d4da5d289c3ae64e9d38fa0f9aa4439, type: 3}
+  - {fileID: -58592284, guid: 1d4da5d289c3ae64e9d38fa0f9aa4439, type: 3}
+  - {fileID: -2013713923, guid: 1d4da5d289c3ae64e9d38fa0f9aa4439, type: 3}
   MaxHp: 45
   MoveSpeed: 1.4
   ContactDamage: 6

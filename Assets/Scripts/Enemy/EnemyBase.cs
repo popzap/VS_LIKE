@@ -90,7 +90,8 @@ public class EnemyBase : MonoBehaviour
         transform.localScale = Vector3.one * scale;
 
         // 바운스 속도는 이동 속도에 맞춘다. 스케일이 아니다 — 큰 보스가 종종거리면 우스꽝스럽다.
-        if (Visual != null) Visual.Setup(sr, MoveSpeed);
+        // 걷기 시트도 여기서 넘긴다. 시트가 없는 적은 위에서 넣은 Data.Sprite 한 장으로 버틴다.
+        if (Visual != null) Visual.Setup(sr, MoveSpeed, Data.WalkFrames);
     }
 
     // ── 등급 외곽선 ──────────────────────────────────────────────
