@@ -295,4 +295,11 @@ public class LevelUpManager : MonoBehaviour
     public List<ItemData> GetShopCandidates(int count) => PickCandidates(count);
 
     public List<ItemData> GetInventoryItems() => new(_inventory.Keys);
+
+    /// <summary>
+    /// 배선된 아이템 DB 전체. <c>DevPanel</c> 이 목록을 그리는 데 쓴다
+    /// (그쪽은 에디터/개발 빌드 전용이라 cref 로 걸지 않는다).
+    /// 읽기 전용으로만 다룰 것 — 이 배열은 씬에 직렬화된 원본이다.
+    /// </summary>
+    public IReadOnlyList<ItemData> AllItems => allItems;
 }
