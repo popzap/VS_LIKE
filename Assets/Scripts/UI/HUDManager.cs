@@ -49,6 +49,15 @@ public class HUDManager : MonoBehaviour
     private static readonly Color ColorTimerNormal = new(0.92f, 0.92f, 0.88f);
     private static readonly Color ColorTimerUrgent = new(0.96f, 0.35f, 0.30f);
 
+    // ── 설치 대기 건물 (B3) ─────────────────────────────────
+    //
+    // `Z` 를 누르면 대기열 맨 앞이 나가는데, 그게 뭔지 화면에 안 나와서
+    // "Village 를 얻었는데 Turret 이 나온다"로 보였다. 대기열은 정상 동작 중이고
+    // (건물은 레벨이 오르면 MaxCount 가 늘어 대기열에 조용히 더 쌓인다)
+    // 진짜 문제는 **무엇이 설치될지 모른다**는 것이라 표시만 한다.
+    [Header("설치 대기 건물")]
+    [SerializeField] private TextMeshProUGUI buildPromptText;
+
     // ── 옵션 버튼 (우측 상단) ───────────────────────────────
     [Header("옵션 버튼")]
     [SerializeField] private Button optionsButton;
@@ -162,6 +171,49 @@ public class HUDManager : MonoBehaviour
                 currencyText.text = $"{gold} G";
             }
         }
+
+        RefreshBuildPrompt(gm);
+    }
+
+    // ── 설치 대기 건물 (B3) ──────────────────────────────────
+
+    private BuildingData _lastPending;
+    private int          _lastPendingCount = -1;
+
+    /// <summary>
+    /// 다음에 `Z` 로 나갈 건물을 알린다. 대기열은 FIFO 라 <b>가장 먼저 얻은 것</b>이 먼저 나가는데,
+    /// 건물은 레벨이 오를 때마다 <c>MaxCount</c> 가 늘어 대기열에 조용히 더 쌓인다.
+    /// 그래서 새 건물을 얻어도 밀린 예전 건물이 먼저 나온다 — 동작은 맞지만 알 방법이 없었다.
+    /// </summary>
+    private void RefreshBuildPrompt(GameManager gm)
+    {
+        if (buildPromptText == null) return;
+
+        var bm      = gm.BuildingMgr;
+        var pending = bm != null ? bm.NextPending : null;
+        int count   = bm != null ? bm.PendingCount : 0;
+
+        if (pending == null || count <= 0)
+        {
+            if (buildPromptText.gameObject.activeSelf)
+                buildPromptText.gameObject.SetActive(false);
+            _lastPending      = null;
+            _lastPendingCount = -1;
+            return;
+        }
+
+        if (!buildPromptText.gameObject.activeSelf)
+            buildPromptText.gameObject.SetActive(true);
+
+        // 문자열은 바뀔 때만 만든다 — 이 메서드는 매 프레임 돈다.
+        if (pending == _lastPending && count == _lastPendingCount) return;
+        _lastPending      = pending;
+        _lastPendingCount = count;
+
+        string name = string.IsNullOrEmpty(pending.BuildingName) ? pending.name : pending.BuildingName;
+        // 남은 수를 같이 보여야 "왜 새로 얻은 게 안 나오나"가 설명된다.
+        buildPromptText.text = count > 1 ? $"[Z] Build: {name}  (+{count - 1} queued)"
+                                         : $"[Z] Build: {name}";
     }
 
     // ── HP 갱신 ──────────────────────────────────────────────
