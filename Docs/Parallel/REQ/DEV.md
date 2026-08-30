@@ -15,7 +15,7 @@
 | 2026-08-30 | CONTENT | `닫힘(D4)` | **`TODO.md` §1 갱신** — 스크린샷으로 승급 경로 2건이 확인됐다 — 아래 §요청-4 | [`TODO.md` §1](../../TODO.md) |
 | 2026-08-30 | CONTENT | `닫힘(D7)` | **`Weapons.csv` Import 1회** — 진화 무기 3종의 전용 아이콘이 안 쓰이고 있었다 (C6) — 아래 §요청-5 | [`DESIGN_CLASSES.md` §6](../../DESIGN_CLASSES.md) · [`DONE/D7.md`](../DONE/D7.md) |
 | 2026-08-30 | CONTENT | `닫힘(D9)` | **화살 PNG 임포트(PPU 512) + `Proj_Arrow.prefab` 신설 + `Weapons.csv` Import** (C7) — 아래 §요청-6 | [`DESIGN_CLASSES.md` §6 1단계](../../DESIGN_CLASSES.md) · [`DONE/D9.md`](../DONE/D9.md) |
-| 2026-08-30 | CONTENT | `열림` | **수리검 + 검 근접화 — 그림은 다 나왔고 코드만 남았다** (C8) — 아래 §요청-7 | [`DESIGN_CLASSES.md` §5-A](../../DESIGN_CLASSES.md) |
+| 2026-08-30 | CONTENT | `닫힘(D10)` | **수리검 + 검 근접화 — 그림은 다 나왔고 코드만 남았다** (C8) — 아래 §요청-7 · ⏸ **⑤는 CSV 대기** → [`REQ/CONTENT.md`](CONTENT.md) 요청-4 | [`DESIGN_CLASSES.md` §5-A](../../DESIGN_CLASSES.md) · [`DONE/D10.md`](../DONE/D10.md) |
 | 2026-08-30 | CONTENT | `열림` | **바닥 폭탄 + 독 장판 — 그림은 다 나왔고 코드만 남았다** (C9) — 아래 §요청-8 | [`DESIGN_CLASSES.md` §5-A](../../DESIGN_CLASSES.md) |
 
 > 상태값: `열림` · `진행중` · `닫힘(D3)` · `보류(사유)`
@@ -450,6 +450,27 @@ Excalibur=Sword+Damage · Windforce=Bow+CritChance · Devastator=Gun+Fireball.
 ---
 
 ## 요청-7 — 수리검 신규 + 검 근접화 (C8 / `DESIGN_CLASSES.md` §6 2단계)
+
+> ✅ **D10 으로 닫혔다 (2026-08-30, DEV).** 상세: [`DONE/D10.md`](../DONE/D10.md)
+>
+> - 그림 3장 임포트 · 프리팹 3개 신설 · `MeleeWeapon`·`SwingArcFx` 신설 ·
+>   `ProjectileBase` 에 관통+자전. **기존 파일 수정은 `ProjectileBase.cs` 하나뿐이다**
+> - 🔴 **⑦(호의 중심·크기)을 눈으로 봤다.** 6프레임은 0.2초라 그냥 찍으면 한 장밖에 안 잡혀서,
+>   **프레임 전부를 플레이어 중심에 겹쳐 세워** 부채꼴을 한 장으로 만들고 반지름 **정확히 2.0** 위에
+>   빨간 점 13개, 플레이어 자리에 초록 점을 찍어 게임 카메라로 캡처했다.
+>   **오목한 안쪽이 초록 점을 감싸고, 바깥 흰 테두리가 빨간 점들 위에 정확히 얹혀 있다.**
+> - 🔴 **③(관통 회귀)은 `Proj_Bullet` 을 대조군으로 같이 쏴서 봤다.** 일렬 3마리에서
+>   총알은 **1번째** 적 0.63 앞, 수리검은 **3번째** 적 0.63 앞에서 소멸.
+>   기존 프리팹은 `pierce=1 spin=0` 이고 `.prefab` **파일 자체가 미변경**이다
+> - ⚠️ **요청서의 "셀 반지름 128px" 전제가 틀렸다** — 실측 **107.4px** 이다.
+>   `localScale = Range` 로 뒀으면 **호가 사거리를 7% 부풀려 보여 준다**(계약 ② 위반).
+>   `spriteRadiusAtScaleOne = 1.074` 로 나눠서 맞췄다. **이 값은 실측이니 흔들지 말 것**
+> - ⚠️ **자전을 넣으면 발사체가 나선을 그린다** — 이동이 `Translate(Space.Self)` 였다.
+>   월드 `_direction` 으로 분리했고, **기존 발사체에게는 수식이 완전히 같다**
+> - ⏸ **⑤(레벨업 3택·상점에 Shuriken)만 못 닫았다 — CSV 3줄이 없어서다.**
+>   → [`REQ/CONTENT.md`](CONTENT.md) **요청-4** 로 넘겼다. **CSV 가 들어와야 게임에 나온다**
+> - `_Incoming/{Projectiles/Shuriken.png, ICON/Shuriken.png, Effects/SwingArc.png}` 삭제 완료.
+>   `BombGround.png`·`ToxinField.png`·`ICON/Toxin.png` 는 **요청-8 용이라 남겼다**
 
 > 🟡 **지금 당장 하라는 요청이 아니다.** 요청-6(화살) 이 닫힌 뒤에 연다.
 > **그림은 이미 다 나왔다** — 남은 게 코드뿐이라 여기 미리 적어 둔다.

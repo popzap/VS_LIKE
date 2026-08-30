@@ -11,6 +11,7 @@
 | 2026-08-30 | DEV | `닫힘(C1)` | **Goblin·Slime 걷기 시트 재생성** (16칸 중 12칸이 깨졌다) — 아래 §요청-1 | [`BUGS.md` B2](../BUGS.md) |
 | 2026-08-30 | DEV | `닫힘(C10)` | **신규 SFX 6종의 볼륨·피치를 `TUNING.md` 에 등재** (D8 산출) — 아래 §요청-2 | [`DONE/D8.md`](../DONE/D8.md) |
 | 2026-08-30 | DEV | `닫힘(C11)` | **화살 크기(PPU 512) 체감 항목을 `TUNING.md` §3 에 실측값으로 확정** (D9 산출) — 아래 §요청-3 | [`DONE/D9.md`](../DONE/D9.md) |
+| 2026-08-30 | DEV | `열림` | 🔴 **수리검 CSV 3줄 추가 + 검을 근접으로 재해석** — 프리팹은 D10 이 다 만들어 놨다. **CSV 가 들어와야 게임에 나온다** — 아래 §요청-4 | [`DONE/D10.md`](../DONE/D10.md) |
 
 > 상태값: `열림` · `진행중` · `닫힘(C2)` · `보류(사유)`
 > 처리했으면 상태만 바꾼다. **줄을 지우지 않는다.**
@@ -192,6 +193,148 @@ AI 재생성은 같은 사이클로 이어지는 16장을 보장하지 못하는
 
 **판정은 아직 못 했다** — 화면을 봐야 하는 항목이라 그대로 `TUNING.md` 에 남는다.
 숫자를 정하면 `REQ/DEV.md` 로 재임포트 요청을 넣는다.
+
+---
+
+## 요청-4 — 수리검 CSV 3줄 추가 + 검을 근접으로 재해석 (D10)
+
+**왜** — D10 이 `DESIGN_CLASSES.md` §6 2단계의 **코드·프리팹·그림을 전부 만들어 놨다.**
+지금 게임을 켜면 **아직 아무것도 안 보인다** — CSV 에 줄이 없어서다.
+수리검은 레벨업 3택에 안 뜨고, 검은 여전히 총알을 쏜다.
+**이 요청이 처리되어야 2단계가 실제로 굴러간다.**
+
+DEV 가 만들어 둔 것 (전부 검증 끝, `Assets/` 안에 이미 있다):
+
+| 프리팹 / 그림 | 무엇 |
+|---|---|
+| `Assets/Prefabs/Proj_Shuriken.prefab` | 수리검 발사체. **관통 3** · 자전 540°/s |
+| `Assets/Game/Sprites/Projectiles/Shuriken.png` | 발사체 그림 (PPU 512 → `0.5 × 0.5` 유닛) |
+| `Assets/Game/Sprites/Weapons/Shuriken.png` | 아이콘 (1024², `Sword.png` 와 같은 규격) |
+| `Assets/Prefabs/Weapon_Melee.prefab` | **근접 무기 본체** (`MeleeWeapon`) |
+| `Assets/Prefabs/Fx_SwingArc.prefab` | 휘두름 호 이펙트 (6프레임, 30fps) |
+
+---
+
+### 4-A. `Weapons.csv` — 수리검 줄 **추가**
+
+헤더는 이렇다 (12열):
+
+```
+Id,WeaponName,WeaponPrefab,Icon,ProjectilePrefab,TravelPrefab,ProjectileSpeed,Damage,Cooldown,ProjectileSize,ProjectileCount,Range
+```
+
+수리검은 **원거리 무기 그대로**다. `WeaponPrefab` 은 기존 `Weapon_Sword.prefab`
+(= `ProjectileWeapon` 컴포넌트)을 **그대로 쓴다.** 새 파생 클래스는 만들지 않았다.
+
+```
+Shuriken,Shuriken,Assets/Prefabs/Weapon_Sword.prefab,Assets/Game/Sprites/Weapons/Shuriken.png,Assets/Prefabs/Proj_Shuriken.prefab,,<speed>,<damage>,<cooldown>,<size>,<count>,<range>
+```
+
+- `TravelPrefab` 은 **빈칸**(쉼표 두 개 연속). 수리검은 잔상 프리팹이 없다
+- 🔴 `<>` 안의 6개는 **CONTENT 가 정한다.** 감으로 넣지 말고 **기존 무기 줄과 나란히 놓고**
+  정할 것 — 관통 3 이라 같은 피해면 실질 3배다. 정한 근거는 `BALANCE.md` 에 남긴다
+
+### 4-B. `Weapons.csv` — `Sword` 줄 **재해석** (열 추가 없음)
+
+지금 줄:
+
+```
+Sword,Sword,Assets/Prefabs/Weapon_Sword.prefab,Assets/Game/Sprites/Weapons/Sword.png,Assets/Prefabs/Proj_Bullet.prefab,,8,10|15|22|30|40,1.5|1.3|1.1|0.9|0.7,1|1.1|1.2|1.3|1.5,1|1|2|2|3,10|10|12|12|15
+```
+
+바꿀 열은 **4개**다. 나머지는 건드리지 않는다.
+
+| 열 | 지금 | 바꿀 값 | 왜 |
+|---|---|---|---|
+| `WeaponPrefab` | `Assets/Prefabs/Weapon_Sword.prefab` | **`Assets/Prefabs/Weapon_Melee.prefab`** | 발사체를 쏘지 않고 부채꼴을 벤다 |
+| `ProjectilePrefab` | `Assets/Prefabs/Proj_Bullet.prefab` | **`Assets/Prefabs/Fx_SwingArc.prefab`** | 이 열이 근접에서는 **휘두름 이펙트**를 뜻한다 |
+| `ProjectileSpeed` | `8` | **`0`** | 근접은 이 열을 안 쓴다 |
+| `Range` | `10\|10\|12\|12\|15` | **`2\|2\|2.2\|2.2\|2.5`** | 🔴 **뜻이 달라졌다** — 아래 |
+
+🔴 **`Range` 의 뜻이 바뀐다.** 원거리에서 `Range` 는 *발사체가 날아가는 거리*(10~15)였는데,
+근접에서는 **플레이어를 중심으로 한 호의 바깥 반지름**이다. `10` 을 그대로 두면
+**화면 전체를 한 번에 베는 무기**가 된다. 반드시 2 안팎으로 내릴 것.
+
+`ProjectileCount` (`1|1|2|2|3`) 도 뜻이 바뀌지만 **값은 그대로 둬도 된다** —
+원거리에선 *동시에 쏘는 발사체 수*, 근접에선 *한 쿨다운에 몇 번 베는지(연타)* 다.
+1발 → 1번 베기, 3발 → 3연타. 숫자의 체감이 비슷해서 그대로 굴러간다.
+
+🔴 **`Damage` 는 올려야 한다. 다만 얼마나 올릴지는 이 요청에서 정하지 않는다.**
+사거리가 10 → 2 로 **5분의 1**이 됐다. 같은 피해면 검은 그냥 약해진 무기다.
+그런데 근접의 세기는 *"적에게 붙어 있는 시간"* 이 정하는 값이라 **플레이해 봐야 안다.**
+→ **`TUNING.md` 에 항목으로 올리고, 첫 값은 지금 값 그대로 두거나 보수적으로만 올린다.**
+숫자를 감으로 확정해서 CSV 에 박아 넣지 말 것.
+
+### 4-C. `Items.csv` — 수리검 줄 **추가**
+
+헤더: `Id,ItemName,Description,Icon,Category,MaxLevel,RefId,ShopPrice`
+
+```
+Shuriken,Shuriken,<영문 설명>,Assets/Game/Sprites/Weapons/Shuriken.png,Weapon,5,Shuriken,<price>
+```
+
+- `RefId` 는 **`Weapons.csv` 의 `Id` 와 정확히 같아야** 물린다 → `Shuriken`
+- 🔴 **`Description` 은 화면에 뜬다 → 영문으로 쓸 것** (`CLAUDE.md` §3).
+  `Sword` 줄이 `Swings a blade at the nearest enemy.` 인 것과 같은 톤으로.
+  **관통한다는 것**이 이 무기의 정체성이니 설명에 드러나야 한다
+- `MaxLevel` 은 `Weapons.csv` 의 배열 길이(5)와 맞춘다
+
+### 4-D. `SceneWiring.csv` — 레벨업 후보에 등록
+
+7번째 줄 `LevelUpManager,allItems,…` 의 경로 목록 **끝**에 붙인다:
+
+```
+|Assets/Game/ItemData/Shuriken.asset
+```
+
+🔴 **이 줄을 빼먹으면 `Items.csv` 를 넣어도 레벨업 3택·상점에 안 나온다.**
+D10 의 판정 기준 ⑤ 가 바로 이것이라 **아직 미검증 상태로 남아 있다.**
+
+### 4-E. `TUNING.md` 에 올릴 체감 항목
+
+D10 이 정한 값 중 **로그로는 판정할 수 없는 것**들이다. 전부 "돌아가긴 하는데
+느낌이 맞는지는 모르는" 상태다.
+
+| 값 | 지금 | 어디 | 무엇을 보나 · 이상하면 |
+|---|---:|---|---|
+| 수리검 `pierceCount` | `3` | `Proj_Shuriken.prefab` | 3명 뚫는 게 **과한가.** 과하면 2로 |
+| 수리검 `spinSpeed` | `540` | `Proj_Shuriken.prefab` | 자전이 **어지러운가.** 빠르면 360 |
+| 검 `halfAngle` | `70` | `Weapon_Melee.prefab` | 앞쪽 **140°**를 벤다. 옆의 적이 안 맞아 답답하면 올린다 |
+| 검 `hitDelay` | `0.067` | `Weapon_Melee.prefab` | 칼이 몸을 지나는 순간에 피가 뜨나. 늦게 뜨면 내린다 |
+| 검 `comboInterval` | `0.18` | `Weapon_Melee.prefab` | 연타가 **따로 노나 / 겹쳐 보이나** |
+| `SwingArcFx.frameRate` | `30` | `Fx_SwingArc.prefab` | 휘두름이 **0.2초**다. 굼뜨면 올린다 |
+| `spriteRadiusAtScaleOne` | `1.074` | `Fx_SwingArc.prefab` | 🔴 **실측값이다. 손대지 말 것** — 아래 |
+
+🔴 **`spriteRadiusAtScaleOne = 1.074` 는 체감값이 아니라 그림의 실측값이다.**
+`SwingArc.png` 셀 256px 중 호의 바깥 반지름이 **107.4px**, PPU 100 이라 1.074 유닛.
+호를 `Range` 에 정확히 맞추는 나눗셈에 쓰인다. 이걸 흔들면 **그림이 사거리를 속인다**
+(호는 2 만큼 보이는데 실제로는 2.2 를 벤다). 크기를 바꾸고 싶으면 `Range` 를 고칠 것.
+
+**⚠️ 근접 전용 효과음이 없다.** 지금은 원거리와 같은 `SfxId.WeaponFire` 를 재사용한다.
+칼 휘두르는 소리가 총소리로 나므로 **"베는 느낌"이 안 산다.** 새 SFX 가 필요하면
+`_Incoming/Audio/` 에 넣고 `REQ/DEV.md` 로 배선 요청할 것.
+
+### 4-F. ⚠️ 이번 요청에 **묶지 말 것** — Excalibur / Windforce / Devastator
+
+이 3개도 `WeaponPrefab` 이 `Weapon_Sword.prefab`, `ProjectilePrefab` 이 `Proj_Bullet.prefab` 이다.
+검이 근접이 되어도 **이 셋은 원거리인 채로 남는다** — 프리팹 경로를 각자 들고 있어서
+`Sword` 줄만 고치면 서로 영향이 없다. **깨지지 않는다.**
+
+다만 *"검의 상위 무기인 Excalibur 가 왜 총알을 쏘지"* 라는 위화감은 남는다.
+이건 §6 2단계의 범위가 아니고, 진화·상위 무기 설계와 같이 봐야 하는 문제다.
+**이번에 같이 바꾸지 말고 `DESIGN_CLASSES.md` 에 숙제로 적어 둘 것.**
+
+### 4-G. 판정 기준
+
+1. `Weapons.csv` · `Items.csv` · `SceneWiring.csv` 3파일이 **저장**되어 있다
+2. Import 후 `Assets/Game/WeaponData/Shuriken.asset` · `Assets/Game/ItemData/Shuriken.asset` 생성
+3. 🔴 **레벨업 3택 / 상점에 `Shuriken` 이 뜬다** ← D10 판정 ⑤. 이게 되면 2단계가 닫힌다
+4. 검을 들고 플레이 — **총알이 안 나가고 호가 그려진다.** 호의 바깥 끝이 `Range` 와 같다
+5. `Weapons.csv` 의 열 **개수가 12개 그대로**다 (열 추가 없음)
+
+🔴 **Import 는 에디터라 DEV 몫이다.** CSV 를 저장한 뒤 [`DEV.md`](DEV.md) 에
+`Game/Balance/Import CSV -> ScriptableObjects` 실행을 요청할 것.
+**플레이 모드에서는 Import 가 실패한다** — BOARD §2 가 `PLAYING` 이면 밀린다.
 
 ---
 
