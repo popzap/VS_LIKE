@@ -25,8 +25,20 @@ Shader "VS_LIKE/SpriteOutline"
         _FlashColor   ("Flash Color", Color) = (1,1,1,1)
         _FlashAmount  ("Flash Amount", Range(0,1)) = 0
         // _MainTex_TexelSize 를 쓰면 2D SRP Batcher 가 이 머티리얼을 통째로 배칭에서
-        // 제외한다. 스프라이트가 전부 512px 로 통일돼 있으니 참조 크기를 직접 넘긴다.
+        // 제외한다. 그래서 텍스처 크기를 직접 넘긴다 — 이 값이 실제 텍스처 크기와
+        // 다르면 _OutlineWidth 가 "텍셀 수"라는 뜻을 잃는다.
+        //
+        // ⚠️ 512 로 굳어 있던 게 B1 의 진짜 원인이었다. I-58 이 적을 1024 시트로 바꾸면서
+        //    선이 14텍셀 → 28텍셀로 굵어졌고, 프레임 자체가 130~230텍셀뿐이라
+        //    실루엣이 통째로 덮였다(키의 2.7% → 13.6~23.8%).
+        //    EnemyVisual 이 스프라이트마다 실제 크기를 넘긴다.
         _OutlineTexSize ("Outline Ref Texture Size (px)", Float) = 512
+
+        // 이 스프라이트가 텍스처의 어느 사각형인지 (uv, xy=좌하 zw=우상).
+        // 시트에서 잘라 온 프레임은 uv 가 0~1 이 아니다. 이 값이 없으면 외곽선이
+        // 옆 칸(다음 걷기 프레임)의 알파를 빨아들인다 (B1).
+        // 기본값 (0,0,1,1) = 텍스처 전체 = 낱장 png 일 때의 올바른 값이다.
+        _SpriteRect ("Sprite Rect in Texture (uv)", Vector) = (0,0,1,1)
 
         // ── 걷기 바운스 (버텍스) ──────────────────────────────────
         // 스케일을 코드로 흔들면 CapsuleCollider2D 까지 같이 늘어나 판정이 변한다.
@@ -88,6 +100,7 @@ Shader "VS_LIKE/SpriteOutline"
                 half4  _OutlineColor;
                 half   _OutlineWidth;
                 float  _OutlineTexSize;
+                float4 _SpriteRect;
                 half4  _FlashColor;
                 half   _FlashAmount;
                 float  _AnimSpeed;
@@ -128,8 +141,14 @@ Shader "VS_LIKE/SpriteOutline"
 
             half SampleAlpha(float2 uv)
             {
-                // 스프라이트 UV 밖은 아틀라스의 다른 그림일 수 있다. 0 으로 막는다.
-                if (uv.x < 0 || uv.x > 1 || uv.y < 0 || uv.y > 1) return 0;
+                // 이 스프라이트 칸 밖은 시트의 다른 그림이다. 0 으로 막는다.
+                //
+                // ⚠️ 예전에는 `0~1` 로 검사했는데 그건 틀린 검사였다. IN.uv 는
+                //    **텍스처 전체 기준**이라 1024 시트에서 잘라 온 256 프레임의 uv 는
+                //    예컨대 x∈[0.25,0.5] 다 → 검사가 한 번도 안 걸리고 외곽선이
+                //    옆 칸 알파를 빨아들였다 (B1). 낱장 png 시절엔 우연히 맞았다.
+                if (uv.x < _SpriteRect.x || uv.x > _SpriteRect.z ||
+                    uv.y < _SpriteRect.y || uv.y > _SpriteRect.w) return 0;
                 return SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, uv).a;
             }
 

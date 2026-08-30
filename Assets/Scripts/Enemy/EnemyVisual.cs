@@ -41,6 +41,8 @@ public class EnemyVisual : MonoBehaviour
     private static readonly int AnimSpeedId   = Shader.PropertyToID("_AnimSpeed");
     private static readonly int AnimPhaseId   = Shader.PropertyToID("_AnimPhase");
     private static readonly int FlashAmountId = Shader.PropertyToID("_FlashAmount");
+    private static readonly int SpriteRectId  = Shader.PropertyToID("_SpriteRect");
+    private static readonly int OutlineTexSizeId = Shader.PropertyToID("_OutlineTexSize");
 
     private SpriteRenderer       _sr;
     private Rigidbody2D          _rb;
@@ -51,6 +53,7 @@ public class EnemyVisual : MonoBehaviour
 
     private Sprite[] _frames;
     private Sprite   _idleFrame;
+    private Sprite   _rectSprite;   // _SpriteRect 를 마지막으로 넘긴 스프라이트
     private float    _frameTimer;
     private int      _frameIndex;
     private float    _speedRef = 1f;
@@ -94,6 +97,53 @@ public class EnemyVisual : MonoBehaviour
         _mpb.SetFloat(AnimPhaseId, Random.Range(0f, Mathf.PI * 2f));
         _mpb.SetFloat(FlashAmountId, 0f);
         _sr.SetPropertyBlock(_mpb);
+
+        // ⚠️ 풀 재사용 대비로 **항상** 다시 넘긴다. 이전 생애가 시트를 쓰던 적이었다면
+        //    _SpriteRect 에 남의 칸이 남아 외곽선이 엉뚱하게 잘린다.
+        _rectSprite = null;
+        ApplySpriteRect(_sr.sprite);
+    }
+
+    /// <summary>
+    /// 지금 그리는 프레임이 <b>텍스처의 어느 사각형인지</b>와 <b>그 텍스처가 몇 픽셀인지</b>를
+    /// 셰이더에 넘긴다 (B1). 둘 다 외곽선이 제자리에 그려지기 위한 값이다.
+    ///
+    /// <para><c>_SpriteRect</c> — 외곽선은 자기 uv 주변을 훑는데, 시트에서는 그 주변이
+    /// <b>옆 걷기 프레임</b>이다. 이 사각형이 없으면 남의 알파를 빨아들인다.</para>
+    ///
+    /// <para><c>_OutlineTexSize</c> — 선 굵기는 <c>_OutlineWidth / 이 값</c> 의 uv 거리다.
+    /// 셰이더 기본값 512 로 두면 1024 시트에서 굵기가 <b>2배</b>가 되고, 프레임이
+    /// 130~230텍셀뿐이라 실루엣이 통째로 덮인다. 실제 텍스처 크기를 넘겨야 뜻이 맞는다.</para>
+    ///
+    /// <para>스프라이트가 바뀔 때만 넘긴다 — <c>SetPropertyBlock</c> 은 매 프레임 부를 만큼
+    /// 싸지 않고, 프레임은 초당 10장 남짓만 바뀐다.</para>
+    /// </summary>
+    private void ApplySpriteRect(Sprite s)
+    {
+        if (s == _rectSprite) return;
+        _rectSprite = s;
+        if (_sr == null) return;
+
+        Vector4 r       = new Vector4(0f, 0f, 1f, 1f);
+        float   texSize = 512f;
+        if (s != null && s.texture != null)
+        {
+            Rect  tr = s.textureRect;
+            float tw = s.texture.width;
+            float th = s.texture.height;
+            if (tw > 0f && th > 0f)
+            {
+                r = new Vector4(tr.xMin / tw, tr.yMin / th, tr.xMax / tw, tr.yMax / th);
+                // uv 거리는 가로세로 같은 값을 쓰므로 기준도 하나여야 한다.
+                // 정사각 텍스처가 규약이라 실제로는 tw == th 다.
+                texSize = Mathf.Max(tw, th);
+            }
+        }
+
+        _sr.GetPropertyBlock(_mpb);
+        _mpb.SetVector(SpriteRectId, r);
+        _mpb.SetFloat(OutlineTexSizeId, texSize);
+        _sr.SetPropertyBlock(_mpb);
     }
 
     /// <summary>피격 시 EnemyBase 가 호출.</summary>
@@ -123,6 +173,7 @@ public class EnemyVisual : MonoBehaviour
             _frameIndex = 0;
             _frameTimer = 0f;
             _sr.sprite  = _idleFrame;
+            ApplySpriteRect(_idleFrame);
             return;
         }
 
@@ -134,6 +185,7 @@ public class EnemyVisual : MonoBehaviour
             _frameIndex = (_frameIndex + 1) % _frames.Length;
         }
         _sr.sprite = _frames[_frameIndex];
+        ApplySpriteRect(_frames[_frameIndex]);
     }
 
     private void UpdateFacing()

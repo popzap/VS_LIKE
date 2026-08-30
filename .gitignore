@@ -68,3 +68,7 @@ sysinfo.txt
 .DS_Store
 Thumbs.db
 desktop.ini
+
+# Python 도구 캐시 (Tools/Audio 가 dsp.py 를 import 하면서 생긴다)
+__pycache__/
+*.pyc
