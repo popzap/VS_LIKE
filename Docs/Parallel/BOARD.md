@@ -28,7 +28,8 @@
 | 세션 | 이슈 | 만지는 경로 | 시작 | 상태 |
 |---|---|---|---|---|
 | CONTENT | `C1` | `_Incoming/Enemies/Walk/*.png` (B2 수정본 4장) | 2026-08-30 | `검증대기` — [`REQ/DEV.md`](REQ/DEV.md) 요청-1 |
-| CONTENT | `C2` | `Assets/Game/Balance/Economy.csv` · `Docs/TUNING.md` (읽기만: `Scripts/Enemy/EnemyBase.cs` · `Editor/BalanceImporter.cs`) | 2026-08-30 | `진행중` |
+| CONTENT | `C2` | `Assets/Game/Balance/Economy.csv` · `Docs/TUNING.md` | 2026-08-30 | `대기(REQ→DEV)` — [`REQ/DEV.md`](REQ/DEV.md) 요청-2 |
+| CONTENT | `C3` | `Docs/TUNING.md` §2-C (스펙만 — 클립 생성은 에디터라 DEV) | 2026-08-30 | `대기(REQ→DEV)` — [`REQ/DEV.md`](REQ/DEV.md) 요청-3 |
 
 > 상태값: `진행중` · `대기(REQ→DEV)` · `검증대기` · `막힘(B1)`
 > 끝나면 **자기 줄을 지운다.**
@@ -62,7 +63,7 @@ CONTENT 는 **읽기만** 한다 — 내 요청이 언제 처리될지 가늠하
 | 세션 | 다음 이슈 번호 |
 |---|---|
 | DEV | `D3` |
-| CONTENT | `C3` |
+| CONTENT | `C4` |
 | 버그(공용) | `B5` |
 
 > 번호를 쓸 때 이 표를 **즉시** 올린다. 선점이 곧 예약이다.
