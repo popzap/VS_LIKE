@@ -15,6 +15,7 @@
 | 2026-08-30 | CONTENT | `닫힘(D4)` | **`TODO.md` §1 갱신** — 스크린샷으로 승급 경로 2건이 확인됐다 — 아래 §요청-4 | [`TODO.md` §1](../../TODO.md) |
 | 2026-08-30 | CONTENT | `닫힘(D7)` | **`Weapons.csv` Import 1회** — 진화 무기 3종의 전용 아이콘이 안 쓰이고 있었다 (C6) — 아래 §요청-5 | [`DESIGN_CLASSES.md` §6](../../DESIGN_CLASSES.md) · [`DONE/D7.md`](../DONE/D7.md) |
 | 2026-08-30 | CONTENT | `열림` | **화살 PNG 임포트(PPU 512) + `Proj_Arrow.prefab` 신설 + `Weapons.csv` Import** (C7) — 아래 §요청-6 | [`DESIGN_CLASSES.md` §6 1단계](../../DESIGN_CLASSES.md) |
+| 2026-08-30 | CONTENT | `열림` | **수리검 + 검 근접화 — 그림은 다 나왔고 코드만 남았다** (C8) — 아래 §요청-7 | [`DESIGN_CLASSES.md` §5-A](../../DESIGN_CLASSES.md) |
 
 > 상태값: `열림` · `진행중` · `닫힘(D3)` · `보류(사유)`
 > 처리했으면 상태만 바꾼다. **줄을 지우지 않는다.**
@@ -419,6 +420,155 @@ Excalibur=Sword+Damage · Windforce=Bow+CritChance · Devastator=Gun+Fireball.
 
 **같이 봐 줄 것** — 크기가 "너무 크다/작다"면 그건 그림이 아니라 **PPU 조절**이다.
 [`TUNING.md`](../../TUNING.md) §3 3단계에 적어 뒀다. 지금 고치지 말고 값만 알려 줄 것.
+
+---
+
+## 요청-7 — 수리검 신규 + 검 근접화 (C8 / `DESIGN_CLASSES.md` §6 2단계)
+
+> 🟡 **지금 당장 하라는 요청이 아니다.** 요청-6(화살) 이 닫힌 뒤에 연다.
+> **그림은 이미 다 나왔다** — 남은 게 코드뿐이라 여기 미리 적어 둔다.
+> 순서를 지키는 이유: 화살은 *기존 무기의 그림만* 바꾼 것이라, 그게 먼저 통과해 있어야
+> 여기서 뭔가 안 될 때 "신규 배선이 문제"라고 가릴 수 있다.
+
+### 넘긴 그림 4장
+
+| 파일 | 크기 | 임포트 설정 | 옮길 곳 |
+|---|---|---|---|
+| `_Incoming/Projectiles/Shuriken.png` | 256×256 | **PPU 512** · Point · 압축 None · Single · Pivot Center | `Assets/Game/Sprites/Projectiles/` |
+| `_Incoming/ICON/Shuriken.png` | 1024×1024 | 기존 `Weapons/*.png` 와 **똑같이** (`Sword.png.meta` 복사가 제일 안전) | `Assets/Game/Sprites/Weapons/` |
+| `_Incoming/Effects/SwingArc.png` | **1536×256** | **PPU 100** · Point · 압축 None · **Multiple** · Grid By Cell Size **256×256** · Pivot Center | `Assets/Game/Sprites/Effects/` |
+| (요청-6 의 `Arrow.png`) | | | |
+
+`SwingArc.png` 는 **가로 6프레임 한 줄**이다 (`Explosion.png` 의 4×4 와 다르다).
+Grid 로 자르면 `SwingArc_0` … `SwingArc_5` 가 **왼쪽→오른쪽** 순으로 나온다. 그 순서가 재생 순서다.
+
+전부 `alpha 0..255` 를 확인했다 — **I-41 가짜 투명이 아니다.**
+여백은 수리검 40px · 호 24px 이상이라 **B1(가장자리 번짐) 여유 30px 규칙 안**이다.
+
+---
+
+### A. 수리검 — 새 무기 (관통)
+
+🔑 **새 `WeaponBase` 파생을 만들지 마라.** 수리검은 `ProjectileWeapon` 그대로 쓴다.
+필요한 건 **관통 하나뿐**이고, 그건 투사체 쪽 문제다.
+
+**제안하는 최소 변경** — `ProjectileBase` 에 필드 하나:
+
+```csharp
+[SerializeField] int pierceCount = 1;   // 1 = 지금 동작(첫 적에 사라진다)
+```
+
+`OnTriggerEnter2D` 에서 적을 때릴 때마다 1 깎고, **0 이 되면** `Despawn()`.
+🔑 **기본값을 `1` 로 두면 기존 프리팹 3종(`Proj_Bullet`·`Proj_Arrow`·`Proj_Aoe`)의 동작이
+한 글자도 안 바뀐다.** CSV 열도, `Initialize()` 시그니처도 안 건드린다.
+
+> ⚠️ **같은 적을 여러 번 때리지 않게 할 것.** 트리거는 한 콜라이더 안에서 여러 프레임
+> 반복해 들어온다. 맞힌 적을 목록에 담아 두거나, 풀에서 꺼낼 때 그 목록을 비울 것.
+> 안 하면 관통 3이 **한 마리를 3번** 때리고 끝난다.
+
+**만들 것**
+
+1. `Assets/Prefabs/Proj_Shuriken.prefab` — `Proj_Bullet` 복제 → 스프라이트만 교체
+   (Layer `8` · Tag `Projectile` · Rigidbody2D Kinematic · CircleCollider2D **IsTrigger·Radius 0.5** · `ProjectileBase`)
+   - `pierceCount` = **3**
+   - 회전: `BombProjectile.spinSpeed`(540) 와 같은 방식으로 **계속 돌린다.**
+     🔑 수리검 그림은 **4회 대칭이라 방향이 없다** — 진행 방향 회전은 필요 없고 자전만 하면 된다
+
+2. 아래 CSV 두 줄은 **프리팹이 생긴 뒤에 CONTENT 가 넣는다.** 여기 미리 적어 두는 건
+   수치를 미리 보고 이상하면 말해 달라는 뜻이다. **DEV 가 CSV 를 고치지는 말 것.**
+
+```
+# Weapons.csv (12필드)
+Shuriken,Shuriken,Assets/Prefabs/Weapon_Sword.prefab,Assets/Game/Sprites/Weapons/Shuriken.png,Assets/Prefabs/Proj_Shuriken.prefab,,16,6|9|13|18|25,0.9|0.8|0.7|0.6|0.5,0.9|0.95|1|1.1|1.2,1|1|2|2|3,12|12|14|14|16
+
+# Items.csv (8필드)
+Shuriken,Shuriken,Fast piercing stars that cut through several foes.,Assets/Game/Sprites/Weapons/Shuriken.png,Weapon,5,Shuriken,9
+
+# SceneWiring.csv — LevelUpManager,allItems 끝에 이어 붙인다
+|Assets/Game/ItemData/Shuriken.asset
+```
+
+> ⚠️ `SceneWiring.csv` 에 안 넣으면 **레벨업 3택에도 상점에도 안 나온다.** 조용히 없는 무기가 된다.
+
+---
+
+### B. 검 — 근접 호로 개조
+
+🔴 **지금 검은 검이 아니다.** `Weapons.csv` 의 `Sword` 행이
+`Weapon_Sword.prefab`(= `ProjectileWeapon`) 으로 `Proj_Bullet` 을 **사거리 10** 에 쏜다.
+화면 절반 밖의 적을 총알로 맞히는 무기다.
+
+**만들 것** — `MeleeWeapon : WeaponBase`. `Fire()` 에서:
+
+1. `FindNearestEnemy()` 로 방향을 구한다 (`WeaponBase` 가 이미 준다)
+2. 그 방향으로 **꽉 찬 부채꼴** 판정 — `OverlapCircleAll(플레이어, Range)` 후
+   **각도 차 ≤ 70°** 인 적만 남긴다 (호 그림이 쓸고 지나가는 각이 142° 다)
+3. `TakeDamage(dmg, from)` 의 `from` 에 **플레이어 위치**를 넘긴다 —
+   그래야 적이 플레이어 반대편으로 밀린다. 호 중심을 넘기면 방향이 이상해진다
+4. 휘두름 이펙트를 하나 띄운다 (아래 C)
+
+**바뀌는 CSV** (역시 CONTENT 가 넣는다 — 여기 미리 보여 주는 것뿐):
+
+```
+Sword,Sword,Assets/Prefabs/Weapon_Melee.prefab,…,Assets/Prefabs/Fx_SwingArc.prefab,,0,<Damage 재조정>,<Cooldown>,…,1|1|2|2|3,2|2|2.2|2.2|2.5
+```
+
+- `WeaponPrefab` → 새 `Weapon_Melee.prefab`
+- `ProjectilePrefab` 열을 **휘두름 이펙트 프리팹**으로 재해석한다 (투사체가 없으니 이 칸이 논다)
+- `ProjectileSpeed` 는 안 쓴다 → `0`
+- `Range` **10|10|12|12|15 → 2|2|2.2|2.2|2.5**
+- `ProjectileCount` 는 **연타 횟수**로 재해석 (Lv5 = 3연타)
+
+> 🔴 **`Damage` 는 반드시 같이 올려야 한다.** 사거리를 10→2 로 자르면 같은 수치가 아니다.
+> 다만 **얼마나** 올릴지는 플레이해야 안다 → [`TUNING.md`](../../TUNING.md) §3 **1단계**.
+> **이 요청에서 감으로 정하지 말 것.**
+
+> ⚠️ **Excalibur 도 같이 봐야 한다.** 진화한 검인데 설명이
+> "A wide arc that cleaves five foes" 다. 지금은 `Weapon_Sword.prefab` 을 쓴다.
+> 검이 근접이 되면 **Excalibur 만 원거리로 남는다.** 다만 이번 요청에 묶지는 말 것 —
+> 기본 검이 먼저 통과해야 진화 쪽 실패를 가릴 수 있다
+
+---
+
+### C. 휘두름 호 이펙트 — 그림이 코드에 거는 조건 3개
+
+`Fx_SwingArc.prefab` (SpriteRenderer + 6프레임 재생 + 자동 반납/파괴).
+🔴 아래 3개는 **취향이 아니라 계약**이다. 어기면 **보이는 것과 맞는 것이 어긋난다.**
+
+| # | 조건 | 어기면 |
+|---|---|---|
+| ① | **회전 중심 = 프레임 중앙 = 플레이어 위치.** 호는 오른쪽 반쪽에만 그려져 있다. 플레이어에 붙이고 적 방향으로 `z` 만 돌린다 | 호가 엉뚱한 데서 돈다 |
+| ② | **바깥 반지름 = scale 1 에서 정확히 1.0 유닛** (셀 256px / 반지름 100px / PPU 100). `localScale = Range` 로 둘 것 — `AoeProjectile.spriteRadiusAtScaleOne = 0.5` 와 **같은 방식**이다 | 그림이 사거리를 속인다 |
+| ③ | **피해 판정은 프레임 2~3 에서 한 번만.** 6프레임 내내 판정하지 말 것 | 연타 설계(`ProjectileCount`)와 겹쳐 **두 배로** 때린다 |
+
+프레임별 각도 (0°=오른쪽, +가 위 · 위→아래로 벤다):
+`70→48` · `72→18` · `68→−22` · **`34→−60`(베는 순간)** · `−4→−70` · `−40→−72`
+
+> ℹ️ 호의 **안쪽은 비어 있다** (가장 두꺼울 때도 반지름 0.36~1.0 만 채운다).
+> 그래도 **판정은 도넛으로 만들지 말 것** — 붙어 있는 적이 안 맞으면 근접 무기가 아니다.
+
+---
+
+### 어떻게 확인하나 (판정 기준)
+
+| # | 기준 |
+|---|---|
+| ① | `SwingArc.png` 가 **6장으로 잘린다** (`SwingArc_0`…`_5`). 프레임 하나의 `bounds.size` 가 **약 `(2.56, 2.56)`** |
+| ② | `Shuriken.png` 스프라이트 `bounds.size` 가 **약 `(0.5, 0.5)`** — 0.25 면 **PPU 가 1024 로 들어간 것** |
+| ③ | **관통 회귀 검사**: 기존 `Bow`/`Gun`/`Fireball` 이 **예전처럼 첫 적에서 사라진다.** `pierceCount` 기본값 1 이 안 먹으면 여기서 걸린다 |
+| ④ | **관통 동작**: 수리검 한 발이 일렬로 선 적 **3마리**를 뚫는다. 🔴 **한 마리를 3번** 때리는 게 아니다 — 적 3마리의 HP 가 각각 줄어야 한다 |
+| ⑤ | 레벨업 3택과 상점에 **Shuriken 이 나온다** (`SceneWiring.csv` 배선 확인) |
+| ⑥ | **실플레이 — 검**: 적이 붙었을 때만 맞는다. **화면 반대편 적이 안 맞는다** (지금은 맞는다) |
+| ⑦ | **실플레이 — 호**: 호가 **플레이어를 중심으로** 적 쪽을 향해 그려지고, 호 바깥 끝이 **실제로 맞는 거리와 같다** |
+| ⑧ | 적이 **플레이어 반대 방향으로** 밀린다 (`from` = 플레이어) |
+| ⑨ | 콘솔 에러 0 |
+
+> ⑦이 이 요청의 본체다. 나는 화면을 못 보므로 **⑦을 봤는지**를 명확히 적어 줄 것.
+> ③은 빠뜨리기 쉬운데, 여기서 깨지면 **무기 4종이 동시에 이상해진다.**
+
+**같이 남겨 줄 것** — 검의 `Damage`/`Cooldown` 과 수리검의 `pierceCount`(3) 는
+전부 **감으로 넣은 값**이다. 플레이하면서 "세다/약하다"만 알려 주면 CONTENT 가
+[`TUNING.md`](../../TUNING.md) §3 에 반영한다. **DEV 가 CSV 를 직접 고치지는 말 것.**
 
 ---
 
