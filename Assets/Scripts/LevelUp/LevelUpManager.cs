@@ -268,6 +268,53 @@ public class LevelUpManager : MonoBehaviour
     public void GrantEvolvedItem(ItemData item) => ApplyItem(item);
 
     /// <summary>
+    /// 시작 무기를 <b>장부에 등록하면서</b> 지급한다 (B6).
+    ///
+    /// <para>🔴 예전에는 <see cref="GameManager"/> 가 <see cref="WeaponManager"/> 를 직접 불렀다.
+    /// 그래서 무기 개수를 세는 장부가 <b>둘</b>이 됐다 — <c>_inventory</c> 는 시작 무기를 모르고
+    /// <c>WeaponManager._weapons</c> 는 안다. 매 판 <c>_weapons.Count == CountOwned(Weapon) + 1</c>
+    /// 이라 <see cref="CanAcquire"/> 가 "자리 있다"고 한 걸 <c>AddOrUpgradeWeapon</c> 이 거절했다.</para>
+    ///
+    /// <para>개수만 어긋난 게 아니다. 장부에 없으니 시작 무기는 레벨업 카드에 <b>미보유 신규</b>로
+    /// 다시 떠서 슬롯을 한 칸 더 먹고, <see cref="HasItem"/>·<see cref="GetItemLevel"/> 이
+    /// 0 을 돌려줘 <b>진화 재료 판정에서도 빠졌다.</b> 넷 다 같은 원인이라 여기서 한 번에 닫는다.</para>
+    ///
+    /// <para>⚠️ <see cref="ResetRunState"/> <b>뒤에</b> 불러야 한다. 먼저 부르면 지워진다
+    /// (<c>GameManager.StartRun</c> 이 그 순서로 부른다).</para>
+    /// </summary>
+    public void GrantStartingWeapon(WeaponData weapon, int level)
+    {
+        if (weapon == null) return;
+
+        var item = FindWeaponItem(weapon);
+        if (item == null)
+        {
+            // 대응 ItemData 가 없으면 장부에 올릴 방법이 없다. 무기는 주되 어긋남이
+            // 되살아난 것이므로 반드시 로그로 드러나야 한다 (B6 재발 감지).
+            Debug.LogWarning($"[LevelUpManager] 시작 무기 '{weapon.WeaponName}' 에 대응하는 ItemData 가 " +
+                             $"allItems 에 없다 — 장부를 우회해 직접 지급한다 (B6 어긋남 재발).");
+            WeaponManager.Instance?.AddOrUpgradeWeapon(weapon, level);
+            return;
+        }
+
+        // ApplyItem 을 태우지 않는다 — 그쪽은 "한 레벨 올린다"라서 StartingWeaponLevel 이
+        // 2 이상이면 맞지 않는다. 여기는 레벨을 그대로 박는다.
+        _inventory[item]  = level;
+        item.CurrentLevel = level;
+        WeaponManager.Instance?.AddOrUpgradeWeapon(weapon, level);
+    }
+
+    /// <summary><paramref name="weapon"/> 을 가리키는 무기 <see cref="ItemData"/> 를 찾는다. 없으면 null.</summary>
+    private ItemData FindWeaponItem(WeaponData weapon)
+    {
+        if (allItems == null) return null;
+        foreach (var item in allItems)
+            if (item != null && item.Category == ItemCategory.Weapon && item.WeaponRef == weapon)
+                return item;
+        return null;
+    }
+
+    /// <summary>
     /// 아이템을 인벤토리에서 완전히 제거하고 각 시스템에서 효과를 해제한다.
     /// 골드 환급은 ShopManager가 담당한다.
     /// </summary>

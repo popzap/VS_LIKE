@@ -225,7 +225,10 @@ public class GameManager : MonoBehaviour
             return;
         }
 
-        WeaponManager.Instance?.AddOrUpgradeWeapon(cls.StartingWeapon, Mathf.Max(1, cls.StartingWeaponLevel));
+        // 🔴 WeaponManager 를 직접 부르지 말 것 (B6). 그러면 시작 무기가 LevelUpManager 의
+        // 장부에 안 잡혀 무기 칸이 매 판 하나씩 모자라고, 카드에 신규로 다시 뜨며,
+        // 진화 재료 판정에서도 빠진다. 반드시 이 경로로 지급한다.
+        LevelUpManager.GrantStartingWeapon(cls.StartingWeapon, Mathf.Max(1, cls.StartingWeaponLevel));
         Debug.Log($"[GameManager] 직업 '{cls.ClassName}' — 시작 무기 {cls.StartingWeapon.WeaponName} Lv{cls.StartingWeaponLevel}");
     }
 
