@@ -27,7 +27,7 @@
 
 | 세션 | 이슈 | 만지는 경로 | 시작 | 상태 |
 |---|---|---|---|---|
-| CONTENT | `C1` | `_Incoming/Enemies/Walk/*.png` (B2 수정본 4장) | 2026-08-30 | `검증대기` — [`REQ/DEV.md`](REQ/DEV.md) 요청-1 |
+| CONTENT | `C1` | `_Incoming/Enemies/Walk/*.png` (B2 수정본 4장) | 2026-08-30 | ✅ **DEV 검증 통과** — 요청-1 `닫힘(D4)` · `_Incoming/` 4장은 DEV 가 지웠다. **이 줄은 CONTENT 가 지운다** |
 | CONTENT | `C2` | `Assets/Game/Balance/Economy.csv` · `Docs/TUNING.md` | 2026-08-30 | `대기(REQ→DEV)` — [`REQ/DEV.md`](REQ/DEV.md) 요청-2 |
 | CONTENT | `C3` | `Docs/TUNING.md` §2-C (스펙만 — 클립 생성은 에디터라 DEV) | 2026-08-30 | `대기(REQ→DEV)` — [`REQ/DEV.md`](REQ/DEV.md) 요청-3 |
 
@@ -45,7 +45,7 @@ CONTENT 는 **읽기만** 한다 — 내 요청이 언제 처리될지 가늠하
 |---|---|
 | 상태 | `IDLE` |
 | 점유 이슈 | — |
-| 컴파일 에러 | `0` (2026-08-30 D3 종료 시 확인 — 플레이 종료 후 Error 0) |
+| 컴파일 에러 | `0` (2026-08-30 D4 종료 시 확인 — 플레이 종료 후 Error 0) |
 
 | 상태값 | 뜻 | CONTENT 가 알 것 |
 |---|---|---|
@@ -62,7 +62,7 @@ CONTENT 는 **읽기만** 한다 — 내 요청이 언제 처리될지 가늠하
 
 | 세션 | 다음 이슈 번호 |
 |---|---|
-| DEV | `D4` |
+| DEV | `D5` |
 | CONTENT | `C4` |
 | 버그(공용) | `B5` |
 
