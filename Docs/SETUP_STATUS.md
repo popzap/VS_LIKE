@@ -6,7 +6,7 @@
 > 기존의 「C# 스크립트는 완성 단계」라는 전제와 「요청 없이 코드 건드리지 말 것」 규칙이 **해제됨**.
 > 이제 게임 완성을 위해 C# 스크립트 신규 작성·수정이 허용된다.
 >
-> **최종 갱신:** 2026-08-30 (35차 — CSV Import 1회로 수리검·검근접·독장판·바닥폭탄 개통, D12 / C12·C15)
+> **최종 갱신:** 2026-08-30 (36차 — 소환수 2종(드래곤·문어)이 따라다니며 스스로 싸운다, D13 / C16)
 >
 > 🔀 **25차부터 이슈 번호가 `세션 접두어 + 번호` 다** — `D`(DEV) · `C`(CONTENT) · `B`(버그 공용).
 > 병렬 2세션 체제로 바뀌었기 때문이다 (D1). 과거 `I-1`~`I-61` 은 그대로 둔다.
@@ -2027,6 +2027,115 @@ Play 모드에서 Warrior 로 런을 시작하고 `Unity_RunCommand` 로 재료�
 
 ---
 
+## 2-40. ✅ 소환수 2종(드래곤·문어) — 판정 기준점이 처음으로 플레이어가 아니다 (D13 / C16, 2026-08-30 36차)
+
+### 왜 했나
+
+지금까지의 무기는 **전부 플레이어를 기준점**으로 적을 찾고 때렸다. 소환수는 처음으로
+**저 혼자 떨어져 서서, 저 자리에서 찾고, 저 자리에서 때리는** 무기다.
+`DESIGN_CLASSES.md` §6 **5단계** — 그림 5장은 CONTENT(C13·C14·C16)가 이미 다 그려 놨고
+**코드·프리팹만 비어 있었다.**
+
+🔴 **CSV 는 이번에 안 넣었다.** 요청-11 이 못 박은 대로 — 프리팹 경로가 없으면 CONTENT 가
+`Weapons.csv` 를 쓸 수 없다. **이 작업의 산출물이 곧 그 경로**이고, CSV 는 CONTENT 가 채운다.
+
+**기존 파일은 한 줄도 안 고쳤다.** 전부 신규다.
+
+### 무엇을 했나
+
+| 순 | 한 일 |
+|---|---|
+| ① | 스프라이트 **5장** 임포트 (`git mv` + 임포터 코드 실행) |
+| ② | `SummonWeapon.cs` · `SummonVisual.cs` **신설** |
+| ③ | 프리팹 **5개** 신설 |
+
+**변경한 파일**
+
+| 파일 | 무엇 |
+|---|---|
+| `Assets/Game/Sprites/Summons/Dragon_Fly.png` 🆕 | PPU **512** · Multiple **4×4** → `Dragon_Fly_0`~`_15` |
+| `Assets/Game/Sprites/Summons/Octopus_Idle.png` 🆕 | PPU **512** · Multiple **4×4** → 16칸 |
+| `Assets/Game/Sprites/Effects/TentacleLash.png` 🆕 | PPU 100 · Multiple **6×1** · pivot Center |
+| `Assets/Game/Sprites/Weapons/{Dragon,Octopus}.png` 🆕 | 아이콘 · PPU **512** · Single |
+| `Assets/Scripts/Weapon/SummonWeapon.cs` 🆕 | `WeaponBase` 상속. 몸통을 낳고·따라다니게 하고·**몸통 자리에서** 싸운다 |
+| `Assets/Scripts/Weapon/SummonVisual.cs` 🆕 | 16프레임 루프 재생기 + `flipX` |
+| `Assets/Prefabs/Summon_{Dragon,Octopus}.prefab` 🆕 | 몸통. `frameRate 12` · **Collider·Rigidbody 없음** |
+| `Assets/Prefabs/Weapon_SummonDragon.prefab` 🆕 | `mode Ranged` · `offsetAngle 90` · `offsetDistance 1.2` · `followLerp 6` |
+| `Assets/Prefabs/Weapon_SummonOctopus.prefab` 🆕 | `mode Ring` · `offsetAngle **210**` · `lashHitDelay 0.1` |
+| `Assets/Prefabs/Fx_TentacleLash.prefab` 🆕 | `SwingArcFx` 재사용 · `frameRate 30` · `spriteRadiusAtScaleOne` **0.9951** |
+
+> ℹ️ 요청서 경로 `Assets/Scripts/Weapons/` · `Assets/Scripts/Visual/` 는 **존재하지 않는다.**
+> 이 저장소는 `Assets/Scripts/Weapon/`(단수)이고 `*Visual.cs` 는 담당 폴더에 흩어져 있다. 둘 다 `Weapon/` 에 넣었다.
+
+### 어떻게 만들었나 — 위험했던 지점 3개
+
+**(가) 🔴 파생 클래스에 `Update()` 를 선언하면 무기가 조용히 죽는다.**
+`WeaponBase` 의 `private void Update()` 가 쿨다운을 돌린다. 같은 이름을 선언하면 그걸 **가려
+모든 소환수가 영영 공격하지 않는다.** 위치 보정은 `LateUpdate()` 에 뒀다 —
+플레이어가 움직인 **뒤에** 따라가야 맞기도 하다.
+
+**(나) 🔑 철거는 `OnDisable()` 하나로 끝난다.**
+`WeaponManager.RemoveWeapon` → `ObjectPool.Return` → `SetActive(false)` 가 곧 `OnDisable` 이다.
+**`WeaponBase` 에 새 훅을 팔 필요가 없었다.** 이게 없었으면 상점에서 환불한 뒤
+**소환수만 필드에 영원히 남는다.** 씬을 내릴 때도 불리므로 `if (Pool != null)` 로 감쌌다.
+
+**(다) 몸통에 Collider2D·Rigidbody2D 를 안 넣었다.**
+적이 아니라 맞지도 막지도 않고, **강체가 없어야 넉백에 휩쓸려 날아가지 않는다.**
+따라오기는 프레임률에 안 흔들리는 감쇠 `k = 1 - exp(-followLerp·dt)` 다 —
+`Lerp(t = lerp·dt)` 로 쓰면 프레임이 튈 때 따라오는 속도가 같이 변한다.
+
+**`SummonVisual` 이 일부러 안 한 것** — 위아래 흔들림(그림에 이미 ±1.6px 그려져 있다 · 코드가 또
+흔들면 두 번 흔들린다) · ping-pong(16프레임이 `sin(2π·i/16)` 이라 15→0 이 이음매 없이 붙는다) ·
+`EnemyVisual` 재사용(그쪽은 `_rb.linearVelocity` 로 프레임을 넘기는데 소환수엔 강체가 없다).
+대신 `OnEnable()` 에서 **시작 프레임을 무작위로 흩뜨린다** — 여러 마리가 같은 박자로
+날갯짓하면 복제처럼 보인다.
+
+### 검증 로그 — 판정 12개 전부 PASS
+
+| # | 기준 | 결과 |
+|---|---|---|
+| ① | 시트 2장 16칸 · 촉수 6칸 | ✅ `16 / 16 / 6` |
+| ② | PPU 512·512·100·512·512 | ✅ |
+| ③ | 🔴 오우거의 **약 65%** | ✅ 드래곤 **64.7%** · 문어 **66.7%** (오우거 204px / 132·136px) |
+| ④ | 따라오고 멈추면 곁에 선다 | ✅ 8초 원운동 중 거리 **0.42~1.99** · 정지 시 정확히 **1.20** · `flipX` 전환 5회 |
+| ⑤ | 🔴 적이 통과한다 | ✅ `col=False` |
+| ⑥ | 🔴 넉백에 안 날아간다 | ✅ `rb=False` |
+| ⑦ | 드래곤이 **자기 위치에서** 쏜다 | ✅ 화염구 생성점 — 몸통 **0.03** / 플레이어 **0.39** |
+| ⑧ | 문어가 **등 뒤 적도** 때린다 | ✅ 후리기 14회 · 피격 44건 · 각도 최대 **171°** (90 초과 9건) |
+| ⑨ | 촉수 바깥 끝 = 판정 반경 | ✅ `scale 2.512 × 0.9951 = 2.50` = 사거리 2.50 |
+| ⑩ | 두 마리가 안 겹친다 | ✅ 간격 **2.08** (계산값 `2 × 1.2 × sin60° = 2.078`) |
+| ⑪ | 🔴 환불하면 몸통도 사라진다 | ✅ 드래곤 몸통 **0** · 문어는 **1** 로 남음 |
+| ⑫ | 재획득이 레벨업이지 두 마리가 아니다 | ✅ 몸통 **1** 유지 · 콘솔 **0건** |
+
+캡처 2장 — 촉수가 반경 2.5 를 한 바퀴 훑으며 **사방에** 피해 팝업(23/24/25)이 뜬 장면,
+그리고 FX 를 끄고 찍은 문어 몸통(`Octopus_Idle_10` · `order=0`).
+
+### 🔴 프로브를 세 번 고쳐야 했다 — 세 번 다 "검증 장치가 틀린 것"
+
+| 증상 | 원인 | 고친 방법 |
+|---|---|---|
+| ④ 가 항상 `dist=1.20` 으로만 찍힘 | **플레이어가 안 움직인다.** 정지한 대상으로는 "따라온다"를 증명할 수 없다 | `rb.MovePosition` 으로 반지름 3 원운동을 직접 먹였다 |
+| ⑧ 이 **첫 후리기 한 번만** 잡힘 | 🔴 **풀에서 나온 오브젝트는 `GetInstanceID()` 가 돌아온다.** "새 것"을 ID 로 가리면 두 번째부터 영영 안 잡힌다 | "지금 후리는 중인가"의 **상승 에지**로 바꿨다 |
+| 시퀀스가 ⑩ 에서 통째로 멈춤 | `Time.timeScale = 0` — 레벨업 패널(교훈 158)과 **ESC 일시정지**가 코루틴을 얼린다 | 프로브가 `HidePanel()` · `PauseMenuUI.Close()` 로 스스로 풀게 했다 |
+
+판정 ③ 은 `sprite.bounds` 로 잴 수 없었다 — 소환수도 오우거도 똑같이 `0.500` 이다.
+**`bounds` 는 셀 사각형 기준**이라 그림이 셀 안 어디에 얼마나 그려졌는지를 모른다(교훈 138 재발).
+알파 bbox 를 PIL 로 직접 재서 비교했다.
+
+피해 팝업을 셀 때 **플레이어가 맞아서 뜬 팝업을 걸러냈다** — D12 에서 이미 당한 함정이다
+(교훈 161). 문어는 플레이어에게서 1.2 유닛이라 **링 안에 플레이어가 들어온다.**
+
+### 정리
+
+임시 프로브 `Assets/Scripts/D13Probe.cs` **삭제** · 씬의 `D13Probe` 오브젝트 **삭제 후 씬 저장** ·
+Refresh 후 콘솔 **0건**. 상세 → [`Parallel/DONE/D13.md`](Parallel/DONE/D13.md)
+
+CONTENT 에게 [`Parallel/REQ/CONTENT.md`](Parallel/REQ/CONTENT.md) **요청-7** 로 넘겼다 —
+`Weapons.csv` 에 쓸 **프리팹 경로 5쌍**(열 추가 없음, 12열 그대로) · 크기 판정 통과 통보 ·
+**소환수 전용 SFX 부재**(지금은 `WeaponCast`/`WeaponFire` 를 빌려 쓴다) · 체감 미판정 4건.
+
+---
+
 ## 2-39. ✅ CSV Import 1회로 수리검·검근접·독장판·바닥폭탄이 게임에 나왔다 (D12 / C12·C15, 2026-08-30 35차)
 
 ### 왜 했나
@@ -3871,6 +3980,7 @@ Play 모드 — 한 세션에서 두 경로 전부:
 | **D10**<br>(C8) | 무기가 전부 *"가까운 적에게 발사체 하나"* 뿐이라 손맛이 같았다. **관통이라는 개념이 게임에 아예 없었고**(적이 뭉칠수록 무기가 약해진다), **검은 이름과 달리 총알을 쏘고 있었다.** `DESIGN_CLASSES.md` §6 **2단계** | ✅ 해결 (2026-08-30 33차 → 2-37) — `ProjectileBase` 에 관통+자전(기존 파일 **유일한 수정**) · `MeleeWeapon`·`SwingArcFx` 신설 · 스프라이트 3장 + 프리팹 3개. 🔴 **자전을 넣으면 나선을 그린다** — 이동이 `Translate(Space.Self)` 라 진행방향=회전이었다. **월드 `_direction`** 으로 분리(기존 발사체엔 수식 동일). 🔴 **관통은 hit-set 이 있어야 관통**(없으면 한 마리를 3번). 🔴 **호의 실제 반지름이 107.4px** 이라 `localScale=Range` 는 사거리를 **7% 부풀린다** → `÷1.074`. ③ 회귀는 `Proj_Bullet` **대조군**이 1번째 적 앞(0.63), 수리검은 **3번째** 적 앞에서 소멸로 증명. ⑦ 은 **6프레임을 겹쳐 세워 게임 카메라로 직접 봤다**. ⏸ **⑤(레벨업 3택)는 CSV 대기** → `REQ/CONTENT.md` 요청-4 |
 | **D11**<br>(C9) | 게임에 **시간축이 없었다.** 모든 폭발이 닿는 즉시 터져 *"저기 폭탄이 떨어졌으니 피하자"* 는 판단이 존재하지 않았고, **지속 피해도 슬로우도 개념 자체가 없어** 적이 몰려오면 도망만 답이었다. `DESIGN_CLASSES.md` §6 **3·4단계** | ✅ 해결 (2026-08-30 34차 → 2-38) — `BombProjectile` 에 신관(`fuseTime`+`fuseFrames`) · `EnemyBase` 에 슬로우(`ApplySlow`/`CurrentSpeed`) · `ToxinField`·`FieldWeapon` 신설 · 스프라이트 3장 + 프리팹 3개. 🔴 **슬로우는 `MoveSpeed` 를 덮어쓰지 않는다** — 읽는 쪽에서 곱하고 `_slowUntil` 로 **저절로 만료**시킨다. Trigger Enter/Exit 이면 적이 장판 안에서 죽거나 풀로 반납될 때 Exit 가 안 와 **영구 슬로우**가 된다. 🔴 **겹침을 곱하면 `0.6×0.6=0.36` 으로 적이 멈춘다** → "가장 센 것 하나만". 🔴 **풀 재사용 리셋은 `Setup()` 이 아니라 `Initialize()`**(요청서가 메서드를 잘못 짚었다). 🔴 **요청서의 Pivot Center / `radius 1.0` 이 그림과 달랐다** — 실측 중심 `(134,132)px` · 반경 `≈97px` → Custom pivot + `0.97`(사용자 승인). 화면 픽셀 검증 **오차 0.7px**(보정 없었으면 ≈6.7px). ②는 `Proj_Bomb` **대조군**이 `fuseTotal=0.00s` 로 즉폭 유지, ⑥은 겹친 장판에서 `0.504`/`0.792` 가 **한 번도 안 나온 것**으로 증명. ⏸ **⑨(레벨업 3택)는 CSV 대기** → `REQ/CONTENT.md` 요청-5 |
 | **D12**<br>(C12·C15) | D10·D11 이 만든 **코드·프리팹·그림이 게임에 안 나오고 있었다.** `Balance/*.csv` 에 줄이 없으면 레벨업 3택에도 상점에도 등장하지 않는다. CONTENT 의 두 요청(C12 수리검·검근접 / C15 독장판·바닥폭탄)이 **같은 CSV 3장**을 건드려 **Import 1회로 둘 다** 반영해야 했다 | ✅ 해결 (2026-08-30 35차 → 2-39) — **C# 수정 0줄.** Import 1회(`Weapons 10 · Items 25 · SceneWiring 11/11`, 에러 0)로 SO **4개 신설**(`Shuriken`·`Toxin` × Weapon/Item) + **3개 수정**(`Sword` 근접화 · `Bomb` 신관 켜짐). 요청-9·요청-10 **판정 16개 전부 PASS**. 🔴 **`SceneWiring` Import 는 씬을 더럽히기만 한다 — `SaveScene` 없으면 배선이 날아간다.** 🔴 **`hitsPerProj` 를 처음엔 5.00 으로 잘못 쟀다** — 프리팹 상한 3을 넘길 수 없으니 계측이 틀린 것이고, 원인은 `PlayerStats.cs:258` 도 **피해 팝업을 띄운다**는 것(접촉 피해가 "적 명중"에 섞였다). 거리로 걸러 **3.10**(= `pierceCount: 3`). 🔴 **가만히 선 프로브에겐 적이 근접 사거리까지 안 온다** — 최근접 4.67유닛이라 검이 6초간 **0회** 휘둘렀다. `EnemyBase.Reposition()` 으로 몰아 세워 `SWORD proj=0 arc=13 kills=14`. ⑤는 **60회 추첨(180장)** 으로 실물 확인. ⑥⑦(폭탄 신관·장판)은 **게임 카메라 캡처 3장**. 🔴 **CSV 는 DEV 가 안 건드렸다**(CONTENT 가 `24b61ce`·`b457dcf` 로 이미 커밋) |
+| **D13**<br>(C16) | 모든 무기가 **플레이어를 기준점**으로 적을 찾고 때렸다. 소환수는 처음으로 **기준점이 플레이어가 아닌 무기** — 저 혼자 떨어져 서서 저 자리에서 싸운다. 그림 5장은 CONTENT 가 이미 다 그려 놨고 **코드·프리팹만 비어 있었다.** `DESIGN_CLASSES.md` §6 **5단계** | ✅ 해결 (2026-08-30 36차 → 2-40) — 스프라이트 5장 임포트 + `SummonWeapon`·`SummonVisual` 신설 + 프리팹 5개. **기존 파일 수정 0줄.** 판정 **12개 전부 PASS**. 🔴 **파생 클래스에 `Update()` 를 선언하면 무기가 조용히 죽는다** — `WeaponBase.Update()` 가 쿨다운을 돌리는데 그걸 가린다. `LateUpdate()` 로. 🔑 **철거는 `OnDisable()` 하나** — `RemoveWeapon`→`Pool.Return`→`SetActive(false)` 가 곧 그것이라 새 훅이 필요 없었다(없었으면 환불 후 **소환수만 영원히 남는다**). 몸통에 **Collider·Rigidbody 없음**(`col=False` `rb=False`) — 넉백에 안 날아간다. 🔴 **`sprite.bounds` 로는 크기를 못 잰다** — 소환수도 오우거도 `0.500`(셀 기준). 알파 bbox 실측 **64.7%/66.7%**. 🔴 **프로브를 세 번 고쳤고 세 번 다 검증 장치가 틀렸다** — 플레이어가 안 움직여 ④ 가 `1.20` 고정 / **풀 객체는 `GetInstanceID()` 가 돌아와** ⑧ 이 첫 후리기만 / ESC 일시정지의 `timeScale=0` 이 코루틴을 얼림. ⑧ 은 각도 최대 **171°** 로 등 뒤 피격 증명. ⏸ **CSV 는 일부러 안 넣었다** → `REQ/CONTENT.md` 요청-7 |
 
 ### 해결 상세
 
@@ -4506,6 +4616,27 @@ private void LateUpdate()
      60fps 폴링에서 "계속 있었음"으로 보이지 않기 때문이다.
 164. ⚠️ **프리팹 이름이 거짓말을 한다.** `Shuriken` 은 `Weapon_Sword.prefab`(=`ProjectileWeapon`)을,
      `Sword` 는 `Weapon_Melee.prefab`(=`MeleeWeapon`)을 쓴다. 이름은 유물이니 **`m_Script` 를 볼 것.**
+165. 🔴 **`WeaponBase` 를 상속하면서 `Update()` 를 선언하면 그 무기는 영영 발사되지 않는다.**
+     쿨다운이 베이스의 `private void Update()` 안에 있어서 파생 선언이 그걸 **가린다.**
+     경고도 예외도 안 난다. 파생 무기의 매 프레임 처리는 **`LateUpdate()`** 에 둘 것 —
+     위치 보정이라면 플레이어가 움직인 뒤에 도는 게 맞기도 하다.
+166. 🔑 **풀에 들어가는 무기의 "부산물" 철거는 `OnDisable()` 하나로 끝난다.**
+     `WeaponManager.RemoveWeapon` → `ObjectPool.Return` → `SetActive(false)` 가 곧 `OnDisable` 이다.
+     베이스 클래스에 새 훅을 팔 필요가 없다. 단 **씬을 내릴 때도 불리므로** `if (Pool != null)` 로 감쌀 것.
+     이게 없으면 상점에서 환불한 뒤 **소환수만 필드에 영원히 남는다.**
+167. 🔴 **풀에서 나온 오브젝트는 `GetInstanceID()` 가 재사용된다 — "새 것"을 ID 로 가리면 안 된다.**
+     `_seen.Add(id)` 로 중복을 막으면 **첫 인스턴스만** 잡히고 두 번째부터 영영 안 잡힌다
+     (문어 후리기 14회 중 1회만 계측됐다). 교훈 163 의 상승엣지는 **ID 가 아니라 상태**에 걸 것 —
+     `bool _lashActive` 처럼 "지금 그것이 살아 있는가"의 `false → true` 전이를 본다.
+168. 🔴 **프로브를 얼리는 `timeScale = 0` 은 두 군데다.** 레벨업 패널(교훈 158)뿐 아니라
+     **ESC 일시정지**(`PauseMenuUI.Open()`)도 얼린다. 긴 시퀀스에는 둘 다 푸는 감시를 넣을 것 —
+     `LevelUpManager.HidePanel()` · `if (state == Paused) PauseMenuUI.Instance.Close()`.
+     증상이 **"로그가 그냥 끊김"** 이라 무기 버그로 오인하기 쉽다.
+     진단은 `isPlaying / paused / timeScale / CurrentState` 를 한 번에 찍어 보는 것.
+169. 🔑 **가만히 선 플레이어로는 "따라온다"를 증명할 수 없다.** 거리가 계속 `1.20` 으로만 찍히는데,
+     그건 잘 따라온다는 뜻이 아니라 **아무 일도 안 일어났다는 뜻**이다. 콘솔이 같은 줄을
+     접기까지 해서 더 헷갈린다. `FixedUpdate` 에서 `rb.MovePosition` 으로 **원운동을 직접 먹이고**
+     거리의 **min/max**(0.42~1.99)와 `flipX` 전환 횟수를 볼 것.
 
 **16~17 과정에서 함께 처리한 것**
 
