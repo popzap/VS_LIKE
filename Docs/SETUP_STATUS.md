@@ -6,7 +6,7 @@
 > 기존의 「C# 스크립트는 완성 단계」라는 전제와 「요청 없이 코드 건드리지 말 것」 규칙이 **해제됨**.
 > 이제 게임 완성을 위해 C# 스크립트 신규 작성·수정이 허용된다.
 >
-> **최종 갱신:** 2026-08-30 (34차 — 바닥 폭탄(신관) + 독 장판(슬로우), D11 / C9)
+> **최종 갱신:** 2026-08-30 (35차 — CSV Import 1회로 수리검·검근접·독장판·바닥폭탄 개통, D12 / C12·C15)
 >
 > 🔀 **25차부터 이슈 번호가 `세션 접두어 + 번호` 다** — `D`(DEV) · `C`(CONTENT) · `B`(버그 공용).
 > 병렬 2세션 체제로 바뀌었기 때문이다 (D1). 과거 `I-1`~`I-61` 은 그대로 둔다.
@@ -2027,6 +2027,89 @@ Play 모드에서 Warrior 로 런을 시작하고 `Unity_RunCommand` 로 재료�
 
 ---
 
+## 2-39. ✅ CSV Import 1회로 수리검·검근접·독장판·바닥폭탄이 게임에 나왔다 (D12 / C12·C15, 2026-08-30 35차)
+
+### 왜 했나
+
+D10(관통·근접)과 D11(신관·장판)은 **코드·프리팹·그림만** 만들어 놓은 상태였다.
+`Assets/Game/Balance/*.csv` 에 줄이 없으면 **게임에 존재하지 않는다** — 레벨업 3택에도 상점에도 안 나온다.
+CONTENT 가 요청-9(C12)·요청-10(C15)으로 그 줄을 채웠는데, **둘 다 같은 CSV 3장**
+(`Weapons` · `Items` · `SceneWiring`)을 건드렸다.
+
+🔴 **그래서 Import 는 1회다.** 따로 처리할 수 없다 — 먼저 도는 Import 가 나중 요청의 줄까지
+이미 반영해 버린다. 판정만 두 벌로 나눠 돌렸다.
+
+**C# 수정은 0줄이다.** 이번 작업은 전부 Import · 배선 · 검증이다.
+
+### 변경한 것
+
+| 경로 | 무엇 |
+|---|---|
+| `Assets/Game/WeaponData/Shuriken.asset` (+meta) | **신규** — 관통 3 |
+| `Assets/Game/ItemData/Shuriken.asset` (+meta) | **신규** |
+| `Assets/Game/WeaponData/Toxin.asset` (+meta) | **신규** — 독 장판 |
+| `Assets/Game/ItemData/Toxin.asset` (+meta) | **신규** |
+| `Assets/Game/WeaponData/Sword.asset` | 수정 — **근접 재해석** (`Weapon_Melee` · speed 0 · `Range[0]`=2) |
+| `Assets/Game/ItemData/Sword.asset` | 수정 — `Description` |
+| `Assets/Game/WeaponData/Bomb.asset` | 수정 — `TravelPrefab` = `Proj_BombGround` (**신관 켜짐**) |
+| `Assets/Scenes/SampleScene.unity` | `SceneWiring` 11/11 배선 저장 |
+
+🔴 **CSV 는 DEV 가 안 건드렸다** (요청서 규칙). CONTENT 가 자기 커밋(`24b61ce` · `b457dcf`)으로
+이미 올려 놨으므로 이 커밋에는 CSV 가 없다 — **산출물(SO)과 씬과 문서뿐**이다.
+
+### 검증 로그
+
+```
+Weapons: 10 · Items: 25 · SceneWiring.csv : 11/11 적용        (에러 0)
+```
+
+**요청-9 (C12) 판정 ①~⑧ 전부 PASS**
+
+| # | 기준 | 결과 |
+|---|---|---|
+| ① | Import 완료 · 에러 0 | ✅ 위 로그 |
+| ② | `WeaponData/Shuriken` · `ItemData/Shuriken` 생성 | ✅ |
+| ③ | Shuriken `ProjectilePrefab` = `Proj_Shuriken` (guid ≠ 0) | ✅ guid `2b839dd3…` |
+| ④ | Sword `WeaponPrefab`=`Weapon_Melee` · `ProjectilePrefab`=`Fx_SwingArc` · speed 0 · `Range[0]`=2 | ✅ 4개 전부 |
+| ⑤ | 레벨업 3택 / 상점에 `Shuriken` | ✅ **60회 추첨(180장)** 에서 4·6·8·11장 (4회 반복, 매번) |
+| ⑥ | 검이 **총알 없이** 호로 벤다 | ✅ `SWORD proj=0 arc=13 hits=19 kills=14 hitsPerSec=1.4 minDist=0.61` |
+| ⑦ | 수리검이 **여러 마리를 같이** 닳게 한다 | ✅ `hitsPerProj` 흩어짐 **0.91** vs 뭉침 **3.10** (프리팹 `pierceCount: 3` 과 일치, 3.4배) |
+| ⑧ | `Weapons.csv` 12열 · `Items.csv` 8열 | ✅ |
+
+**요청-10 (C15) 판정 ①~⑧ 전부 PASS** — ①~⑤⑧ 은 같은 Import 로 닫혔고, ⑥⑦ 은 게임 카메라 캡처다.
+
+| # | 기준 | 결과 |
+|---|---|---|
+| ⑥ | 폭탄이 날아가 떨어지고 **달아오른 뒤** 터진다 | ✅ 캡처 2장 — 비행 중(불붙은 심지) / 착탄 후 **벌겋게** |
+| ⑦ | **초록 웅덩이**가 깔리고 안의 적이 느려진다 | ✅ 캡처 1장 — 장판 **2개 동시** · 안쪽 적에 9/11/9/6 누적 |
+
+장판 2개 동시는 CONTENT 예고 그대로다 — Lv5 쿨 1.8 < 지속 4.0.
+
+### 🔴 `hitsPerProj` 를 처음엔 5.00 으로 잘못 쟀다
+
+프리팹 상한이 관통 3인데 5가 나올 수 없다. **숫자가 아니라 계측이 틀린 것**이었고,
+원인은 `PlayerStats.TakeDamage` 도 **피해 팝업을 띄운다**는 것이었다(`PlayerStats.cs:258`).
+적 18마리가 붙어 있으면 **플레이어가 맞는 팝업**이 "적 명중"으로 섞인다.
+플레이어로부터 2.5유닛 밖의 팝업만 세도록 고쳐 **3.10** 이 나왔다 → 교훈 161.
+
+### 실플레이에서 나온 답 (CONTENT 회신)
+
+- **검은 약하지 않다 — 다만 자주 논다.** Lv5 로 14초에 14킬(수리검 16킬과 동급).
+  그런데 가만히 선 플레이어에겐 가장 가까운 적이 **4.67유닛**에 머물러 **6초 동안 0회** 휘둘렀다.
+  카이팅 플레이에서 **사거리 2.50 이 충분한지**가 진짜 질문 → `TUNING.md`
+- **수리검은 떼거리에서 확실히 세다.** Lv5 상한 ≈ **276 DPS** (4발/s × 관통 3 × 23딜)
+- **Lv5 장판은 화면을 안 덮는다.** 하나가 화면 세로 1/4 — `ProjectileSize` 아직 안 줄여도 된다
+- 🔴 **적을 한 번도 안 만나는 장판이 실제로 있었다.** 캡처의 웅덩이 2개 중 하나는 안이 **0마리**.
+  `FieldWeapon` 은 조준하지 않으므로 **구조적 헛방**이다 → `TUNING.md`
+- **검이 아직 총소리를 쓴다** (`MeleeWeapon.cs:52` `SfxId.WeaponFire`) → [`Parallel/REQ/CONTENT.md`](Parallel/REQ/CONTENT.md) 요청-6
+
+### 정리
+
+임시 프로브 `Assets/Scripts/D12Probe.cs`(3벌) **삭제** · 씬의 `D12Probe` 오브젝트 **삭제 후 씬 저장** ·
+Refresh 후 콘솔 **0건**. 상세 → [`Parallel/DONE/D12.md`](Parallel/DONE/D12.md)
+
+---
+
 ## 2-38. ✅ 바닥 폭탄(신관) + 독 장판(슬로우) (D11 / C9, 2026-08-30 34차)
 
 ### 왜 했나
@@ -3787,6 +3870,7 @@ Play 모드 — 한 세션에서 두 경로 전부:
 | **D9**<br>(C7) | **활이 총알을 쏘고 있었다.** `BowData.ProjectilePrefab` 이 `Proj_Bullet.prefab` 이라 icons8 벡터 아이콘(`ICON/Bullet.png`)이 날아갔다. `DESIGN_CLASSES.md` §6 중 **코드가 0줄인 유일한 항목** | ✅ 해결 (2026-08-30 32차 → 2-36) — `Arrow.png` 임포트(**PPU 512** · Point · Uncompressed) · `Proj_Arrow.prefab` **복제 신설**(다른 줄 = `m_Sprite` **1줄**) · `Weapons.csv` Import(**저장소 전체에서 바뀐 줄 1줄**). 🔴 **④(방향)를 게임 카메라 캡처로 직접 봤다** — 네 방향 모두 촉이 진행 방향. ⑤는 `Proj_Bullet` 을 **대조군으로 같이 쏴** 이동거리 2.37 일치 + 스택 트레이스로 증명. ⚠️ **판정 ①의 기대값은 `bounds`(0.5) 가 아니라 알파 bbox(0.391) 기준이었다** — PPU 는 정확히 512. 덤으로 **B5** 발견(고치지 않음) |
 | **D10**<br>(C8) | 무기가 전부 *"가까운 적에게 발사체 하나"* 뿐이라 손맛이 같았다. **관통이라는 개념이 게임에 아예 없었고**(적이 뭉칠수록 무기가 약해진다), **검은 이름과 달리 총알을 쏘고 있었다.** `DESIGN_CLASSES.md` §6 **2단계** | ✅ 해결 (2026-08-30 33차 → 2-37) — `ProjectileBase` 에 관통+자전(기존 파일 **유일한 수정**) · `MeleeWeapon`·`SwingArcFx` 신설 · 스프라이트 3장 + 프리팹 3개. 🔴 **자전을 넣으면 나선을 그린다** — 이동이 `Translate(Space.Self)` 라 진행방향=회전이었다. **월드 `_direction`** 으로 분리(기존 발사체엔 수식 동일). 🔴 **관통은 hit-set 이 있어야 관통**(없으면 한 마리를 3번). 🔴 **호의 실제 반지름이 107.4px** 이라 `localScale=Range` 는 사거리를 **7% 부풀린다** → `÷1.074`. ③ 회귀는 `Proj_Bullet` **대조군**이 1번째 적 앞(0.63), 수리검은 **3번째** 적 앞에서 소멸로 증명. ⑦ 은 **6프레임을 겹쳐 세워 게임 카메라로 직접 봤다**. ⏸ **⑤(레벨업 3택)는 CSV 대기** → `REQ/CONTENT.md` 요청-4 |
 | **D11**<br>(C9) | 게임에 **시간축이 없었다.** 모든 폭발이 닿는 즉시 터져 *"저기 폭탄이 떨어졌으니 피하자"* 는 판단이 존재하지 않았고, **지속 피해도 슬로우도 개념 자체가 없어** 적이 몰려오면 도망만 답이었다. `DESIGN_CLASSES.md` §6 **3·4단계** | ✅ 해결 (2026-08-30 34차 → 2-38) — `BombProjectile` 에 신관(`fuseTime`+`fuseFrames`) · `EnemyBase` 에 슬로우(`ApplySlow`/`CurrentSpeed`) · `ToxinField`·`FieldWeapon` 신설 · 스프라이트 3장 + 프리팹 3개. 🔴 **슬로우는 `MoveSpeed` 를 덮어쓰지 않는다** — 읽는 쪽에서 곱하고 `_slowUntil` 로 **저절로 만료**시킨다. Trigger Enter/Exit 이면 적이 장판 안에서 죽거나 풀로 반납될 때 Exit 가 안 와 **영구 슬로우**가 된다. 🔴 **겹침을 곱하면 `0.6×0.6=0.36` 으로 적이 멈춘다** → "가장 센 것 하나만". 🔴 **풀 재사용 리셋은 `Setup()` 이 아니라 `Initialize()`**(요청서가 메서드를 잘못 짚었다). 🔴 **요청서의 Pivot Center / `radius 1.0` 이 그림과 달랐다** — 실측 중심 `(134,132)px` · 반경 `≈97px` → Custom pivot + `0.97`(사용자 승인). 화면 픽셀 검증 **오차 0.7px**(보정 없었으면 ≈6.7px). ②는 `Proj_Bomb` **대조군**이 `fuseTotal=0.00s` 로 즉폭 유지, ⑥은 겹친 장판에서 `0.504`/`0.792` 가 **한 번도 안 나온 것**으로 증명. ⏸ **⑨(레벨업 3택)는 CSV 대기** → `REQ/CONTENT.md` 요청-5 |
+| **D12**<br>(C12·C15) | D10·D11 이 만든 **코드·프리팹·그림이 게임에 안 나오고 있었다.** `Balance/*.csv` 에 줄이 없으면 레벨업 3택에도 상점에도 등장하지 않는다. CONTENT 의 두 요청(C12 수리검·검근접 / C15 독장판·바닥폭탄)이 **같은 CSV 3장**을 건드려 **Import 1회로 둘 다** 반영해야 했다 | ✅ 해결 (2026-08-30 35차 → 2-39) — **C# 수정 0줄.** Import 1회(`Weapons 10 · Items 25 · SceneWiring 11/11`, 에러 0)로 SO **4개 신설**(`Shuriken`·`Toxin` × Weapon/Item) + **3개 수정**(`Sword` 근접화 · `Bomb` 신관 켜짐). 요청-9·요청-10 **판정 16개 전부 PASS**. 🔴 **`SceneWiring` Import 는 씬을 더럽히기만 한다 — `SaveScene` 없으면 배선이 날아간다.** 🔴 **`hitsPerProj` 를 처음엔 5.00 으로 잘못 쟀다** — 프리팹 상한 3을 넘길 수 없으니 계측이 틀린 것이고, 원인은 `PlayerStats.cs:258` 도 **피해 팝업을 띄운다**는 것(접촉 피해가 "적 명중"에 섞였다). 거리로 걸러 **3.10**(= `pierceCount: 3`). 🔴 **가만히 선 프로브에겐 적이 근접 사거리까지 안 온다** — 최근접 4.67유닛이라 검이 6초간 **0회** 휘둘렀다. `EnemyBase.Reposition()` 으로 몰아 세워 `SWORD proj=0 arc=13 kills=14`. ⑤는 **60회 추첨(180장)** 으로 실물 확인. ⑥⑦(폭탄 신관·장판)은 **게임 카메라 캡처 3장**. 🔴 **CSV 는 DEV 가 안 건드렸다**(CONTENT 가 `24b61ce`·`b457dcf` 로 이미 커밋) |
 
 ### 해결 상세
 
@@ -4406,6 +4490,22 @@ private void LateUpdate()
      `ToxinField` 는 요청서가 *"Pivot Center · 반경 1.0"* 이라 했지만 실측은
      중심 `(134, 132)px` · 반경 `≈97px` 이었다. Center 를 쓰면 **맞는 원과 보이는 원이 어긋난다.**
      PIL 은 y 를 **위에서** 재고 Unity 는 **아래에서** 잰다 — `y = (256-132)/256` 로 뒤집을 것.
+160. 🔴 **`SceneWiring` Import 는 씬을 더럽히기만 한다 — `SaveScene` 을 안 하면 배선이 날아간다.**
+     `Weapons`/`Items` 는 `.asset` 을 직접 쓰지만 `SceneWiring` 은 **씬의 컴포넌트 참조**를 고친다.
+     Import 로그가 `11/11 적용` 이라고 해도 저장 전이면 아직 디스크에 없다.
+161. 🔴 **피해 팝업은 플레이어가 맞을 때도 뜬다.** `PlayerStats.cs:258` 과 `EnemyBase.cs:392` 가
+     같은 `DamagePopupManager.Instance.Show` 를 부른다. 팝업 수로 **"적 명중"을 세면
+     접촉 피해가 섞여** 값이 부풀려진다 (관통 3짜리 무기에서 `hitsPerProj = 5.00` 이 나왔다).
+     **플레이어로부터의 거리로 걸러야** 실값(3.10)이 나온다.
+162. 🔑 **가만히 선 프로브에게 적은 근접 사거리까지 오지 않는다.** 가장 가까운 적이
+     **4.67유닛**에 머물러 사거리 2.50 인 검이 **6초 동안 0회** 휘둘렀다 —
+     무기가 고장 난 게 아니라 **측정 배치가 틀린 것**이다.
+     근접·관통을 재려면 `EnemyBase.Reposition()`(public)으로 **직접 몰아 세울 것.**
+163. 🔑 **풀링 객체는 "인스턴스 ID 상승엣지"로 셀 수 있다** — 단, 수명이 한 프레임보다 길 때만.
+     발사체 0.75s · 팝업 0.5s · 호 0.2s 는 전부 안전하다. 반납 직후 재획득이
+     60fps 폴링에서 "계속 있었음"으로 보이지 않기 때문이다.
+164. ⚠️ **프리팹 이름이 거짓말을 한다.** `Shuriken` 은 `Weapon_Sword.prefab`(=`ProjectileWeapon`)을,
+     `Sword` 는 `Weapon_Melee.prefab`(=`MeleeWeapon`)을 쓴다. 이름은 유물이니 **`m_Script` 를 볼 것.**
 
 **16~17 과정에서 함께 처리한 것**
 

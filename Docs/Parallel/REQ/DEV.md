@@ -17,8 +17,9 @@
 | 2026-08-30 | CONTENT | `닫힘(D9)` | **화살 PNG 임포트(PPU 512) + `Proj_Arrow.prefab` 신설 + `Weapons.csv` Import** (C7) — 아래 §요청-6 | [`DESIGN_CLASSES.md` §6 1단계](../../DESIGN_CLASSES.md) · [`DONE/D9.md`](../DONE/D9.md) |
 | 2026-08-30 | CONTENT | `닫힘(D10)` | **수리검 + 검 근접화 — 그림은 다 나왔고 코드만 남았다** (C8) — 아래 §요청-7 · ⏸ **⑤는 CSV 대기** → [`REQ/CONTENT.md`](CONTENT.md) 요청-4 | [`DESIGN_CLASSES.md` §5-A](../../DESIGN_CLASSES.md) · [`DONE/D10.md`](../DONE/D10.md) |
 | 2026-08-30 | CONTENT | `닫힘(D11)` | **바닥 폭탄 + 독 장판 — 그림은 다 나왔고 코드만 남았다** (C9) — 아래 §요청-8 | [`DONE/D11.md`](../DONE/D11.md) · [`REQ/CONTENT.md` 요청-5](CONTENT.md) |
-| 2026-08-30 | CONTENT | `열림` | 🔴 **CSV Import 1회 — 수리검 3줄 + 검 근접화를 CSV 에 넣었다.** D10 의 판정 ⑤가 이걸로 닫힌다 (C12) — 아래 §요청-9 | [`DONE/D10.md`](../DONE/D10.md) · [`REQ/CONTENT.md` 요청-4](CONTENT.md) |
-| 2026-08-30 | CONTENT | `열림` | 🔴 **독 장판 CSV + 바닥 폭탄 켜기 — 요청-5(D11) 의 나머지 절반.** ⚠️ **요청-9 와 같은 Import 한 번으로 둘 다 끝난다** (C15) — 아래 §요청-10 | [`DONE/D11.md`](../DONE/D11.md) · [`REQ/CONTENT.md` 요청-5](CONTENT.md) |
+| 2026-08-30 | CONTENT | `닫힘(D12)` | 🔴 **CSV Import 1회 — 수리검 3줄 + 검 근접화를 CSV 에 넣었다.** D10 의 판정 ⑤가 이걸로 닫힌다 (C12) — 아래 §요청-9 | [`DONE/D10.md`](../DONE/D10.md) · [`REQ/CONTENT.md` 요청-4](CONTENT.md) |
+| 2026-08-30 | CONTENT | `닫힘(D12)` | 🔴 **독 장판 CSV + 바닥 폭탄 켜기 — 요청-5(D11) 의 나머지 절반.** ⚠️ **요청-9 와 같은 Import 한 번으로 둘 다 끝난다** (C15) — 아래 §요청-10 | [`DONE/D11.md`](../DONE/D11.md) · [`REQ/CONTENT.md` 요청-5](CONTENT.md) |
+| 2026-08-30 | CONTENT | `열림` | **소환수 2종 (드래곤·문어) — 그림 5장은 다 나왔고 코드·프리팹만 남았다** (C16) · §6 **5단계**. ⚠️ CSV 는 프리팹이 생긴 뒤 CONTENT 가 채운다 — 아래 §요청-11 | [`DESIGN_CLASSES.md` §4 W6·W7 · §5-A](../../DESIGN_CLASSES.md) |
 
 > 상태값: `열림` · `진행중` · `닫힘(D3)` · `보류(사유)`
 > 처리했으면 상태만 바꾼다. **줄을 지우지 않는다.**
@@ -834,6 +835,13 @@ Toxin,Toxin,Drops a toxic pool that slows and burns anything inside.,Assets/Game
 
 ## 요청-9 — CSV Import 1회 (C12) · **요청-4(D10) 의 나머지 절반**
 
+> ✅ **닫힘 (D12, 2026-08-30).** Import 1회로 요청-10 과 같이 반영했다 —
+> `Weapons: 10 · Items: 25 · SceneWiring 11/11`, 에러 0. **판정 ①~⑧ 전부 PASS.**
+> 핵심 증거: 검 `SWORD proj=0 arc=13 hits=19 kills=14` (총알 0, 호로만 벤다) ·
+> 수리검 관통 `hitsPerProj` 흩어짐 **0.91** vs 뭉침 **3.10** (프리팹 `pierceCount: 3` 과 일치) ·
+> 레벨업 60회 추첨(180장)에서 `Shuriken` 4·6·8·11장.
+> "느낌" 질문 3개 답 + 전체 상세 → [`DONE/D12.md`](../DONE/D12.md)
+
 > 🔴 **이건 지금 해 달라는 요청이다** (요청-8 보다 먼저). 5분짜리이고, 이게 되면
 > **§6 2단계가 닫힌다.** D10 이 만든 코드·프리팹·그림이 지금 **게임에 안 나오는 상태**다.
 
@@ -921,6 +929,14 @@ Sword,Sword,Assets/Prefabs/Weapon_Melee.prefab,Assets/Game/Sprites/Weapons/Sword
 ---
 
 ## 요청-10 — 독 장판 CSV + 바닥 폭탄 켜기 (C15) · **요청-5(D11) 의 나머지 절반**
+
+> ✅ **닫힘 (D12, 2026-08-30).** 요청-9 와 **같은 Import 1회**로 반영. `WeaponData/Toxin` ·
+> `ItemData/Toxin` 생성, `Bomb.asset` 의 `TravelPrefab` = `Proj_BombGround`. **판정 ①~⑧ 전부 PASS.**
+> ⑥ 폭탄 — 게임 카메라 캡처 2장으로 확인(비행 중 / 착탄 후 **벌겋게 달아오른** 상태).
+> ⑦ 장판 — 캡처 1장에 초록 웅덩이 **2개 동시**, 안쪽 적에 피해 9/11/9/6 누적.
+> (Lv5 쿨 1.8 < 지속 4.0 이라 겹치는 게 정상 — 예고한 그대로다)
+> 🔴 **Q4 답: 적을 한 번도 안 만나는 장판이 실제로 있었다** — 캡처의 두 웅덩이 중 하나는 안이 비어 있었다.
+> "느낌" 질문 4개 답 + 전체 상세 → [`DONE/D12.md`](../DONE/D12.md)
 
 > 🔴 **요청-9 와 같은 Import 한 번으로 둘 다 끝난다.** 따로 돌리지 말 것.
 > 이게 되면 **D11 판정 ⑨ 가 닫히고 §6 3·4단계가 실제로 굴러간다.**

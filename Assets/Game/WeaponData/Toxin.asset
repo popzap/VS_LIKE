@@ -10,36 +10,36 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 7743b8d275c61e1489bfd9158b4aa25c, type: 3}
-  m_Name: Sword
+  m_Name: Toxin
   m_EditorClassIdentifier: Assembly-CSharp::WeaponData
-  WeaponName: Sword
-  WeaponPrefab: {fileID: 5347770589627661517, guid: 422b92f41dce90946bb59bab87abb9d1, type: 3}
-  Icon: {fileID: 21300000, guid: 009d725fe54e4a1499ff3903c4bf378e, type: 3}
+  WeaponName: Toxin
+  WeaponPrefab: {fileID: 4357119384851574812, guid: 03c7d06ad75297447a17bec3b49ea68a, type: 3}
+  Icon: {fileID: 21300000, guid: 30243199a554a7b4e8ea9aa080747fc4, type: 3}
   Damage:
-  - 10
-  - 15
-  - 22
-  - 30
-  - 40
+  - 3
+  - 4
+  - 6
+  - 8
+  - 11
   Cooldown:
-  - 1.5
-  - 1.3
-  - 1.1
-  - 0.9
-  - 0.7
+  - 3
+  - 2.7
+  - 2.4
+  - 2.1
+  - 1.8
   ProjectileSize:
   - 1
   - 1.1
   - 1.2
-  - 1.3
+  - 1.35
   - 1.5
-  ProjectileCount: 0100000001000000020000000200000003000000
+  ProjectileCount: 0100000001000000010000000100000001000000
   Range:
-  - 2
-  - 2
-  - 2.2
-  - 2.2
-  - 2.5
+  - 4
+  - 5
+  - 5
+  - 6
+  - 6
   ProjectileSpeed: 0
-  ProjectilePrefab: {fileID: 5652770620722402082, guid: a977bc5a61ea8d64caf0e8fc47b9b13d, type: 3}
+  ProjectilePrefab: {fileID: 2716310339183597166, guid: cdd94cfd03c8d06449ccba9113dc0590, type: 3}
   TravelPrefab: {fileID: 0}

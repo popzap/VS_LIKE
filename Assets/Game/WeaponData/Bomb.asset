@@ -40,6 +40,6 @@ MonoBehaviour:
   - 10
   - 10
   - 11
-  ProjectileSpeed: 0
+  ProjectileSpeed: 9
   ProjectilePrefab: {fileID: 3536473091996557698, guid: 0af0a39c93ba02c41a7b601b9f02d161, type: 3}
-  TravelPrefab: {fileID: 0}
+  TravelPrefab: {fileID: 1230039992963785801, guid: 24db723e1834ab04ea77f32ca0ed45d4, type: 3}

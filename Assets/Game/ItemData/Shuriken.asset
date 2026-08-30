@@ -10,14 +10,14 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 7c00dd7d5c5afcf40af02e50e0b97ffc, type: 3}
-  m_Name: Sword
+  m_Name: Shuriken
   m_EditorClassIdentifier: Assembly-CSharp::ItemData
-  ItemName: Sword
-  Description: Cleaves a wide arc right in front of you. Short reach.
-  Icon: {fileID: 21300000, guid: 009d725fe54e4a1499ff3903c4bf378e, type: 3}
+  ItemName: Shuriken
+  Description: Spinning stars that punch through three enemies in a line.
+  Icon: {fileID: 21300000, guid: e9a415f7c16e1654984680166fc9161c, type: 3}
   Category: 0
   MaxLevel: 5
-  WeaponRef: {fileID: 11400000, guid: 1564dd8096332d94fb75c6cfc16461f5, type: 2}
+  WeaponRef: {fileID: 11400000, guid: f926cd7163c630c478efa88829eb84a0, type: 2}
   BuildingRef: {fileID: 0}
   PassiveRef: {fileID: 0}
-  ShopPrice: 8
+  ShopPrice: 9
