@@ -27,9 +27,12 @@
 
 | 세션 | 이슈 | 만지는 경로 | 시작 | 상태 |
 |---|---|---|---|---|
+| DEV | `D19` | `Assets/Scripts/Player/PlayerTrail.cs`(신설) · `Assets/Scripts/Weapon/SummonWeapon.cs` · `Assets/Prefabs/Weapon_Summon*.prefab` | 2026-08-31 | `진행중` — 펫이 **꼬리처럼 따라온다.** 고정 오프셋 공전 → 플레이어 이동 경로를 되짚는 기차 (사용자 지시) |
+| DEV | `D20` | `Assets/Scripts/Pickup/**` · `Assets/Scripts/Player/StatBlock.cs` · `Assets/Scripts/Passive/**` · `Assets/Editor/BalanceImporter.cs` | 2026-08-31 | `대기(REQ→CONTENT)` — 적 처치 시 **픽업 6종 저확률 드랍** + **행운(Luck) 패시브**. 그림·수치는 [`REQ/CONTENT.md`](REQ/CONTENT.md) 요청-12 |
 | CONTENT | `C6` | `Docs/DESIGN_CLASSES.md`(신설) · 이후 `Assets/Game/Balance/*.csv` · `_Incoming/` | 2026-08-30 | `진행중` — 직업 6종 컨셉 재편 + 신규 무기 6종 설계 (사용자 지시) |
 | CONTENT | `C19` | `Assets/Game/Balance/{Weapons,Items,SceneWiring}.csv` · `Tools/Art/gen_octopus.py` · `_Incoming/Effects/` · `Docs/TUNING.md` | 2026-08-30 | `대기(REQ→DEV)` — 소환수 CSV 3파일 + **촉수 그림 재작업** + SFX 볼륨 2값. DEV 요청-7·8 의 답 — [`REQ/DEV.md`](REQ/DEV.md) 요청-13 |
 | CONTENT | `C20` | `Tools/Audio/gen_{tentacle_lash,dragon_spit}.py` · `_Incoming/Audio/` · `Docs/TUNING.md` | 2026-08-30 | `대기(REQ→DEV)` — 소환수 SFX 2종 + ⛔ **요청-13 ③ 검 0.35 철회** — [`REQ/DEV.md`](REQ/DEV.md) 요청-14 |
+| CONTENT | `C22` | `Docs/TUNING.md` · `Docs/Parallel/REQ/*` | 2026-08-31 | `대기(REQ→DEV)` — 촉수가 플레이어를 덮는 문제(요청-10 ③). ⛔ **DEV 가 낸 A·B 를 둘 다 반려** → `Fx_TentacleLash.prefab` `m_SortingOrder` `20`→`-5` 한 줄 + 청취 5건 이관 — [`REQ/DEV.md`](REQ/DEV.md) 요청-16. ⚠️ **`D19` 와 겹친다** (아래) |
 
 > 상태값: `진행중` · `대기(REQ→DEV)` · `검증대기` · `막힘(B1)`
 > 끝나면 **자기 줄을 지운다.**
@@ -82,8 +85,8 @@ CONTENT 는 **읽기만** 한다 — 내 요청이 언제 처리될지 가늠하
 
 | 항목 | 값 |
 |---|---|
-| 상태 | `IDLE` |
-| 점유 이슈 | — |
+| 상태 | `BUSY` |
+| 점유 이슈 | `D19` (코드 신설 + 프리팹 · Refresh · 실플레이 검증) |
 | 컴파일 에러 | `0` (2026-08-31 D18 종료 시 확인 — 플레이 종료 후 콘솔 **6건 전부 `Log`**, Warning/Error 0, 임시 스크립트·오브젝트 없음) |
 
 | 상태값 | 뜻 | CONTENT 가 알 것 |
@@ -101,7 +104,7 @@ CONTENT 는 **읽기만** 한다 — 내 요청이 언제 처리될지 가늠하
 
 | 세션 | 다음 이슈 번호 |
 |---|---|
-| DEV | `D19` |
+| DEV | `D21` |
 | CONTENT | `C23` |
 | 버그(공용) | `B7` |
 
