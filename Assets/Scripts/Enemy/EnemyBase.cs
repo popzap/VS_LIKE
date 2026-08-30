@@ -129,9 +129,16 @@ public class EnemyBase : MonoBehaviour
         if (_mpb == null) _mpb = new MaterialPropertyBlock();
 
         sr.GetPropertyBlock(_mpb);
-        // 폭은 "텍스처 픽셀" 단위라 오브젝트 스케일에 같이 곱해진다.
-        // 보스는 2배, 엘리트는 1.3배로 커지므로 숫자를 그만큼 낮춰야 화면상 두께가 비슷해진다.
-        _mpb.SetFloat(OutlineWidthId, IsBoss ? 12f : IsElite ? 14f : 0f);
+        // 폭은 "텍셀" 단위다 — D15 가 `_OutlineTexSize` 를 고친 뒤로 **진짜 텍셀 수**가 됐다.
+        // 오브젝트 스케일(보스 2배·엘리트 1.3배)과 `Enemies.csv` 의 `SizeScale`(0.85~1.60)이
+        // 여기에 같이 곱해지므로, 화면에 몇 px 로 보이는지는 적마다 다르다.
+        //
+        // ⚠️ 두 자 사이에 낀 값이다 (C21 실측 · ortho 6 / 1080p 기준 1유닛 = 90px):
+        //   하한 = 2 화면 px  — 시트가 Point 필터라 그 밑은 선이 끊겨 점선이 된다
+        //   상한 = 키의 ~9 % — 슬라임 엘리트는 화면에서 23px 뿐이라 더 굵으면 실루엣을 먹는다
+        // 10.5 면 하한 Wolf 2.04px · 상한 Slime 9.2% 로 **양쪽에 딱 걸친다.** 더 못 내리고 못 올린다.
+        // 🔴 종별 보정은 하지 않는다 — 두 자가 정반대를 가리켜(Ogre 6.6 vs 16.1) 보정할수록 나빠진다.
+        _mpb.SetFloat(OutlineWidthId, IsBoss ? 9f : IsElite ? 10.5f : 0f);
         _mpb.SetColor(OutlineColorId, IsBoss ? BossOutline : EliteOutline);
         _mpb.SetFloat(FlashAmountId, 0f);   // 풀 재사용 시 이전 피격 플래시가 남지 않게
         sr.SetPropertyBlock(_mpb);

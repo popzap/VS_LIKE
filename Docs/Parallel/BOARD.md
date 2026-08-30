@@ -30,7 +30,6 @@
 | CONTENT | `C6` | `Docs/DESIGN_CLASSES.md`(신설) · 이후 `Assets/Game/Balance/*.csv` · `_Incoming/` | 2026-08-30 | `진행중` — 직업 6종 컨셉 재편 + 신규 무기 6종 설계 (사용자 지시) |
 | CONTENT | `C19` | `Assets/Game/Balance/{Weapons,Items,SceneWiring}.csv` · `Tools/Art/gen_octopus.py` · `_Incoming/Effects/` · `Docs/TUNING.md` | 2026-08-30 | `대기(REQ→DEV)` — 소환수 CSV 3파일 + **촉수 그림 재작업** + SFX 볼륨 2값. DEV 요청-7·8 의 답 — [`REQ/DEV.md`](REQ/DEV.md) 요청-13 |
 | CONTENT | `C20` | `Tools/Audio/gen_{tentacle_lash,dragon_spit}.py` · `_Incoming/Audio/` · `Docs/TUNING.md` | 2026-08-30 | `대기(REQ→DEV)` — 소환수 SFX 2종 + ⛔ **요청-13 ③ 검 0.35 철회** — [`REQ/DEV.md`](REQ/DEV.md) 요청-14 |
-| CONTENT | `C21` | `Docs/TUNING.md` · `Docs/Parallel/{REQ/DEV.md,DONE/C21.md}` | 2026-08-30 | `대기(REQ→DEV)` — 외곽선 굵기 **`10.5`/`9`** 결정 (요청-9 답). 🔴 DEV 표의 숫자 3개 정정 — [`REQ/DEV.md`](REQ/DEV.md) 요청-15 |
 
 > 상태값: `진행중` · `대기(REQ→DEV)` · `검증대기` · `막힘(B1)`
 > 끝나면 **자기 줄을 지운다.**
@@ -62,6 +61,12 @@
 > ✅ **`D15` 는 DEV 가 끝내고 지웠다** (2026-08-30). **B1 닫힘** — 원인이 둘이었고 주범은
 > `_OutlineTexSize` 512 하드코딩이었다 → [`DONE/D15.md`](DONE/D15.md).
 > 회신([`REQ/CONTENT.md`](REQ/CONTENT.md) **요청-9**)은 **`C21` 에서 닫았다** — 굵기 **`10.5`/`9`**.
+>
+> ✅ **`C21` 도 DEV 가 반영하고 지웠다** (2026-08-31, `D17`). `EnemyBase.cs` 한 줄
+> `14/12` → **`10.5/9`** → [`DONE/D17.md`](DONE/D17.md). CONTENT 예측표가 **소수점까지 맞았고**,
+> 렌더 픽셀 실측으로 엘리트 보라 **261px** · 보스 빨강 **555px** · 일반 **0** 확인.
+> 최악 사례 Wolf(2.04px)에서도 선이 안 끊긴다. 회신은 [`REQ/CONTENT.md`](REQ/CONTENT.md) **요청-11** —
+> 🟡 **난전 0.2초 판별만 남았다**(자동 플레이 68.8초에 엘리트가 안 나와 못 쳤다).
 
 ---
 
@@ -74,7 +79,7 @@ CONTENT 는 **읽기만** 한다 — 내 요청이 언제 처리될지 가늠하
 |---|---|
 | 상태 | `IDLE` |
 | 점유 이슈 | — |
-| 컴파일 에러 | `0` (2026-08-30 D16 종료 시 확인 — 플레이 종료 후 콘솔 **0건**, 임시 프로브 제거 완료) |
+| 컴파일 에러 | `0` (2026-08-31 D17 종료 시 확인 — 플레이 종료 후 콘솔 **10건 전부 `Log`**, Warning/Error 0, 세워 둔 오브젝트 4개 파괴 완료) |
 
 | 상태값 | 뜻 | CONTENT 가 알 것 |
 |---|---|---|
@@ -91,7 +96,7 @@ CONTENT 는 **읽기만** 한다 — 내 요청이 언제 처리될지 가늠하
 
 | 세션 | 다음 이슈 번호 |
 |---|---|
-| DEV | `D17` |
+| DEV | `D18` |
 | CONTENT | `C22` |
 | 버그(공용) | `B7` |
 
