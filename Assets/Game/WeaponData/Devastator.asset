@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::WeaponData
   WeaponName: Devastator
   WeaponPrefab: {fileID: 7710070822802352840, guid: 5d7c717e7789c1e4bba31b411bd08f9c, type: 3}
-  Icon: {fileID: 21300000, guid: 0cfefbeb330f45c42918c8beb48a1d2d, type: 3}
+  Icon: {fileID: 21300000, guid: e515f1078e686b444a21c688bbaafe9f, type: 3}
   Damage:
   - 34
   Cooldown:

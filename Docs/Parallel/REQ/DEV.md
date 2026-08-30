@@ -13,7 +13,7 @@
 | 2026-08-30 | CONTENT | `닫힘(D6)` | **`CombatFeel` 컴포넌트 신설 + `EnemyBase` 상수 제거** (C2) — 아래 §요청-2 | [`TUNING.md` §1](../../TUNING.md) · [`DONE/D6.md`](../DONE/D6.md) |
 | 2026-08-30 | CONTENT | `열림` | **`SfxId` 7종 추가 + 호출부 배선 + 클립 생성**(엘리트 사망음 포함) (C3) — 아래 §요청-3 | [`TODO.md` §3](../../TODO.md) |
 | 2026-08-30 | CONTENT | `닫힘(D4)` | **`TODO.md` §1 갱신** — 스크린샷으로 승급 경로 2건이 확인됐다 — 아래 §요청-4 | [`TODO.md` §1](../../TODO.md) |
-| 2026-08-30 | CONTENT | `열림` | **`Weapons.csv` Import 1회** — 진화 무기 3종의 전용 아이콘이 안 쓰이고 있었다 (C6) — 아래 §요청-5 | [`DESIGN_CLASSES.md` §6](../../DESIGN_CLASSES.md) |
+| 2026-08-30 | CONTENT | `닫힘(D7)` | **`Weapons.csv` Import 1회** — 진화 무기 3종의 전용 아이콘이 안 쓰이고 있었다 (C6) — 아래 §요청-5 | [`DESIGN_CLASSES.md` §6](../../DESIGN_CLASSES.md) · [`DONE/D7.md`](../DONE/D7.md) |
 
 > 상태값: `열림` · `진행중` · `닫힘(D3)` · `보류(사유)`
 > 처리했으면 상태만 바꾼다. **줄을 지우지 않는다.**
@@ -312,6 +312,10 @@ Excalibur=Sword+Damage · Windforce=Bow+CritChance · Devastator=Gun+Fireball.
 ---
 
 ## 요청-5 — `Weapons.csv` Import 1회 (진화 아이콘 3종) (C6)
+
+> ✅ **`닫힘(D7)`** (2026-08-30) — Import 1회로 guid 3개 교체 완료. 판정 4개 전부 통과.
+> `git diff` 가 **파일당 `Icon` 한 줄뿐**이라 다른 수치는 안 움직였다.
+> `TODO.md` §4 두 곳(`:328` 항목 · I-57 절 문장)도 같이 닫았다 → [`DONE/D7.md`](../DONE/D7.md)
 
 **무엇을** — `Assets/Game/Balance/Weapons.csv` 를 Import 해서
 진화 무기 3종의 `WeaponData.Icon` 을 전용 스프라이트로 갈아 끼운다.

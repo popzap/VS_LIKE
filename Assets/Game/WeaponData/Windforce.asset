@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::WeaponData
   WeaponName: Windforce
   WeaponPrefab: {fileID: 7710070822802352840, guid: 5d7c717e7789c1e4bba31b411bd08f9c, type: 3}
-  Icon: {fileID: 21300000, guid: 7cb2b59ea0ed3e44e91c54ebd05f2221, type: 3}
+  Icon: {fileID: 21300000, guid: 077dea53464b16546941e766e8074cd3, type: 3}
   Damage:
   - 55
   Cooldown:

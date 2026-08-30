@@ -1,6 +1,6 @@
 # VS_LIKE — 남은 작업 (Backlog)
 
-> **최종 갱신:** 2026-08-30 (29차 — 적 타격감 상수 12개를 CSV 로, D6)
+> **최종 갱신:** 2026-08-30 (30차 — 진화 무기 아이콘 3종 배선, D7)
 >
 > 💡 **§1 미검증 항목은 이제 `DevPanel` 로 훨씬 빨리 볼 수 있다.** 플레이 중 **백틱(`` ` ``)** 을 누르면
 > 아이템 레벨을 `-`/`+`/`Max`/`X` 로 즉시 조정하고 진화·승급을 그 자리에서 실행할 수 있다 (D3 → `SETUP_STATUS.md` 2-30).
@@ -325,7 +325,7 @@ _currentWaveData = node.StageType switch
 | ~~**투사체가 날아가는 무기**~~ | ✅ **해결 (I-52, 16차).** 곡사포(11차) + **파이어볼**(16차) | `WeaponData.TravelPrefab` 열이 비행 몸체를 지정한다. 비워 두면 즉시 폭발(Bomb 이 그렇다). 다른 AoE 무기를 날게 하려면 `Weapons.csv` 에 프리팹 경로 + `ProjectileSpeed > 0` 만 넣으면 된다 |
 | **상점의 `waveProgressText` 가 죽어 있다** — ✅ **방향 확정** (결정 7) | `ShopUI.cs:39` 에 직렬화돼 있고 씬에서 실제 TMP 오브젝트가 **연결까지 돼 있는데**, 값을 쓰는 코드가 **한 줄도 없다**. 상점을 열면 그 자리가 늘 초기 문자열 그대로다 | **`Layer 3 / 7` 로 현재 층 / 전체 층을 표시**하기로 확정 (2026-08-29). `StageMapManager.CurrentNode.Layer` 와 `Layers.Count` 를 읽어 상점을 열 때 한 줄 찍으면 된다. 상점에서 "얼마나 남았나"를 아는 것이 구매 판단의 근거가 된다 |
 | 🔴 **제단 무기 진화 레시피가 0개다** | `Evolutions.csv` 3종(Excalibur=Sword+Damage · Windforce=Bow+CritChance · Devastator=Gun+Fireball)의 재료가 **전부 무기+패시브**다. `EvolutionData.IsFinalEvolution => AltarBuilding != null`(`:54`)이라 **제단 경로가 데이터상 존재하지 않는다** | 그래서 `[E] EVOLVE` 안내는 영원히 안 뜬다 (§1). **버그가 아니라 콘텐츠 공백이다.** 무기+건물 조합은 19차에 **직업 승급으로 이전**했으므로, 무기 진화에도 제단이 필요한지부터 정할 것 — 필요 없다면 `EvolutionPromptUI` 의 ②·④ 무기 분기를 지우는 게 맞다 |
-| **진화 결과 3종 전용 아이콘 없음** | Excalibur/Windforce/Devastator 가 **원본 무기 아이콘을 그대로 재사용**한다 (Excalibur = Sword 아이콘) | 진화했는데 그림이 안 바뀌면 "뭐가 달라졌지?"가 된다. Unity AI 로 3장 생성하면 되지만 **포인트 잔액 확인 후**(아래 §6). 참고: `Items.csv` 의 `Icon` 열만 바꾸면 된다 |
+| ~~**진화 결과 3종 전용 아이콘 없음**~~ | ✅ **해결 (D7, 30차).** Excalibur/Windforce/Devastator 가 각자 전용 png 를 쓴다 | **그림이 없던 게 아니라 배선이 빠져 있었다.** png 3장은 I-57(20차)에 이미 들어와 있었는데 `Weapons.csv` 의 `Icon` 열이 재료 무기(Sword 등)를 가리키고 있었다. C6 가 CSV 를 고치고(`4f1a92c`) D7 이 Import 1회로 `WeaponData.Icon` guid 3개를 바꿨다 |
 | **설치 대기 건물 표시** | HUD에 **없음** | 지금은 `Z` 를 눌러 봐야 뭐가 세워질지 안다. `BuildingManager.PendingCount` / `NextPending` 은 이미 public |
 | **건물 산출 피드백** | 마을 XP·농장 골드가 **소리 없이** 들어옴 | `DamagePopupManager` 를 재활용해 "+2 XP" / "+1 G" 를 띄우면 건물이 일하고 있다는 게 보인다 |
 | **Village/Farm/Restaurant 수치** | 감으로 넣은 자리표시값 | `Buildings.csv` 의 `AttackCooldown` / `Output`. 특히 식당 회복량(15→85)과 농장 골드(1→6)는 근거 없음 |
@@ -407,7 +407,9 @@ I-29 로 **플레이어도** MPB 를 쓴다(바운스·기울기) — 드로우�
 | `HUDManager` | `levelUpAnimator` / `levelUpEffect` | 레벨업 연출 없음 |
 
 > ~~🔴 승급 직업 그림이 없다 (I-56)~~ → **20차에 해결 (I-57).** 원화 4 + 걷기 시트 4를
-> 생성·배선했고, 진화 무기 아이콘 3종도 재료 무기 재사용에서 전용 아이콘으로 교체했다.
+> 생성·배선했다. 같이 만든 **진화 무기 아이콘 3장은 그때 배선이 빠져 있었다** —
+> png 는 들어왔는데 `Weapons.csv` 의 `Icon` 열이 재료 무기를 가리킨 채였다.
+> **30차(D7)에 CSV Import 로 실제 교체 완료.**
 >
 > ~~🆕 적 걷기 시트 6장이 놀고 있다 (I-58)~~ → **21차에 해결.** `EnemyData.WalkFrames` +
 > `Enemies.csv` 의 `WalkSheet` 열 + `EnemyVisual.StepFrames` 로 배선했다.

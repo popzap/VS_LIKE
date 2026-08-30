@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::WeaponData
   WeaponName: Excalibur
   WeaponPrefab: {fileID: 7710070822802352840, guid: 5d7c717e7789c1e4bba31b411bd08f9c, type: 3}
-  Icon: {fileID: 21300000, guid: 009d725fe54e4a1499ff3903c4bf378e, type: 3}
+  Icon: {fileID: 21300000, guid: c35a002a740ab5c4aa5a673ce063905a, type: 3}
   Damage:
   - 70
   Cooldown:
