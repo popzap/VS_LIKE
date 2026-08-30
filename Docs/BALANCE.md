@@ -1,6 +1,6 @@
 # VS_LIKE — 밸런스 데이터 가이드
 
-> **작성:** 2026-08-26 · **최종 갱신:** 2026-08-29 (24차 — `Classes.csv` 에 `Tier` 열 / I-61)
+> **작성:** 2026-08-26 · **최종 갱신:** 2026-08-30 (C4 — `Economy.csv` 의 `CombatFeel` 12줄 / 오디오 절 주의문 교정)
 > 이 문서는 **수치를 어디서 어떻게 고치는가**를 설명한다.
 > 완료 이력은 [`SETUP_STATUS.md`](SETUP_STATUS.md), 남은 작업은 [`TODO.md`](TODO.md).
 >
@@ -761,6 +761,43 @@ SO가 아니라 **씬 컴포넌트의 직렬화 필드**를 직접 쓴다.
 > ⚠️ **C# 필드를 지우면 `Economy.csv` 의 해당 행도 같이 지울 것.** 임포터가 잡을 대상이 없어진다.
 > 실제로 `LevelUpManager,rerollCostIncrease` 를 이렇게 정리했다 (I-24).
 
+🔴 **여기 쓰려면 그 컴포넌트가 씬에 있어야 한다.**
+임포터는 `Object.FindObjectsByType<MonoBehaviour>` 로 **씬만** 뒤진다 (`BalanceImporter.FindSceneComponent`).
+프리팹에만 붙어 있는 컴포넌트는 **영원히 안 잡힌다** — 로그에 `! 씬에 Xxx 없음` 만 남고 조용히 넘어간다.
+적처럼 프리팹으로 찍어내는 대상의 수치를 CSV 로 빼려면
+**값을 들고 있는 씬 컴포넌트를 따로 만들고 프리팹이 거기서 읽어 가게** 해야 한다 (아래 `CombatFeel` 이 그 예다).
+
+#### `CombatFeel` — 적 타격감 12줄 (C2 / 요청-2)
+
+원래 `EnemyBase.cs` 에 `const` 로 박혀 있던 값이라 **고치려면 C# 을 고치고 컴파일을 기다려야 했다.**
+체감 튜닝은 한 번에 안 맞는 종류라 그 왕복이 그대로 비용이었다. 그래서 CSV 로 뺐다.
+
+| Field | 기본값 | 무엇이 바뀌나 | 원래 있던 곳 |
+|---|---:|---|---|
+| `enemyKnockbackForce` | `6` | 맞은 적이 밀려나는 초기 속도 | `EnemyBase:354` |
+| `enemyKnockbackTime` | `0.1` | 밀리는 동안 추적이 멈추는 시간(초) | `EnemyBase:355` |
+| `eliteKnockbackResist` | `0.4` | 엘리트 넉백 배율. `1`=잡몹만큼 밀림 · `0`=안 밀림 | `EnemyBase:384` |
+| `bossKnockbackResist` | `0` | 보스 넉백 배율 | `EnemyBase:384` |
+| `deathPopTime` | `0.14` | 죽을 때 부풀었다 사라지는 연출 길이(초) | `EnemyBase:435` |
+| `deathPopScale` | `1.25` | 그 연출이 부푸는 최대 배율 | `EnemyBase:450` |
+| `eliteShakeMagnitude` | `0.2` | 엘리트 처치 시 화면 흔들림 강도 | `EnemyBase:469` |
+| `eliteShakeDuration` | `0.25` | 〃 흔들림 길이(초) | `EnemyBase:469` |
+| `eliteHitstop` | `0.05` | 〃 화면이 멎는 시간(초) | `EnemyBase:471` |
+| `bossShakeMagnitude` | `0.45` | 보스 처치 시 화면 흔들림 강도 | `EnemyBase:469` |
+| `bossShakeDuration` | `0.5` | 〃 흔들림 길이(초) | `EnemyBase:469` |
+| `bossHitstop` | `0.09` | 〃 화면이 멎는 시간(초) | `EnemyBase:471` |
+
+**12줄 전부 지금 게임에 들어 있는 값 그대로다.** 즉 배선 직후 첫 Import 는
+**화면이 하나도 안 바뀌는 것이 정상**이다 — 이건 기준선이고, 값을 만지는 건 그다음이다.
+
+> 🔎 "안 바뀌었다"만으로는 **잘 배선돼서 같은 값이 들어간 것**과 **아예 안 읽힌 것**을 구분할 수 없다.
+> `enemyKnockbackForce` 를 `20` 으로 넣고 Import → 적이 눈에 띄게 날아가는지 보고 → `6` 으로 되돌린다.
+
+넉백 저항은 **곱셈 배율**이라 `엘리트 0.4` = 잡몹의 40% 만 밀린다. 값의 방향에 주의:
+**저항 이름이지만 커질수록 더 밀린다.** `0` 이 "안 밀림"이다.
+
+어떤 값이 무엇을 보고 판정되는지는 [`TUNING.md`](TUNING.md) §2-A 에 있다.
+
 ### `SceneWiring.csv` — 애셋 참조 배열 배선
 
 `LevelUpManager.allItems`, `WaveManager.normalWaves/eliteWaves/bossWave`, `GameManager.classes` 를 CSV로 관리한다.
@@ -814,8 +851,23 @@ CSV 임포터가 이 파일을 대상으로 잡지 않으므로 Import 를 돌�
 | `ChestOpen` | 0.80 | 0.03 | 보상 사건 |
 | `LevelUp` · `WaveClear` · `PlayerDie` | 0.85~0.90 | **0** | **런에서 몇 번 안 나는 소리.** 매번 똑같이 들려야 "그 소리"가 된다 |
 
-> ⚠️ **`Id` 열의 enum 은 중간에 끼워 넣지 말 것.** 직렬화는 이름이 아니라 **정수**를 저장하므로
-> 값이 밀리면 아래 매핑이 **통째로** 어긋난다. 새 소리는 `AudioId.cs` 의 **끝에** 추가한다.
+> ⚠️ **기존 항목의 정수값을 바꾸지 말 것.** 직렬화는 이름이 아니라 **정수**를 저장하므로
+> 값이 밀리면 아래 매핑이 **통째로** 어긋난다.
+
+🔧 **다만 "새 소리는 끝에 추가"는 아니다** (C3 에서 확인).
+`SfxId` 는 값을 **명시적으로 적어 두었고**(`WeaponFire = 1`, `EnemyHit = 10`, …),
+`AudioLibrary.BuildMaps()` 는 배열 순서가 아니라 **`Id` 값으로** 매핑한다:
+
+```csharp
+_sfxMap[e.Id] = e;   // AudioLibrary.cs:70 — 인덱스가 아니라 Id
+```
+
+그래서 **분류마다 비워 둔 번호대(4~9 · 14~19 · 24~29 · 32~39 · 41~)에 끼워 넣는 것은 안전하다.**
+오히려 그게 의도된 설계다 — 새 전투음은 `14`, 새 UI 음은 `41` 이 제자리다.
+위험한 건 *삽입*이 아니라 **이미 쓰이는 값의 변경**이다.
+
+> 클립을 아직 안 붙인 `SfxId` 가 있어도 게임은 안 죽는다. `AudioLibrary.DescribeMissing()` 이
+> 비어 있는 키를 나열해 주므로, 새 소리를 넣을 때 **이 목록이 줄어드는지**로 배선을 확인하면 된다.
 
 전역 슬라이더(`AudioManager` 의 `BgmVolume` 0.8 / `SfxVolume` 1.0)는 **계통 전체**를 움직인다.
 개별 소리가 튀면 여기가 아니라 위 표를 고친다.
