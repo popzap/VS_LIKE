@@ -27,12 +27,12 @@
 
 | 세션 | 이슈 | 만지는 경로 | 시작 | 상태 |
 |---|---|---|---|---|
-| DEV | `D19` | `Assets/Scripts/Player/PlayerTrail.cs`(신설) · `Assets/Scripts/Weapon/SummonWeapon.cs` · `Assets/Prefabs/Weapon_Summon*.prefab` | 2026-08-31 | `진행중` — 펫이 **꼬리처럼 따라온다.** 고정 오프셋 공전 → 플레이어 이동 경로를 되짚는 기차 (사용자 지시) |
 | DEV | `D20` | `Assets/Scripts/Pickup/**` · `Assets/Scripts/Player/StatBlock.cs` · `Assets/Scripts/Passive/**` · `Assets/Editor/BalanceImporter.cs` | 2026-08-31 | `대기(REQ→CONTENT)` — 적 처치 시 **픽업 6종 저확률 드랍** + **행운(Luck) 패시브**. 그림·수치는 [`REQ/CONTENT.md`](REQ/CONTENT.md) 요청-12 |
 | CONTENT | `C6` | `Docs/DESIGN_CLASSES.md`(신설) · 이후 `Assets/Game/Balance/*.csv` · `_Incoming/` | 2026-08-30 | `진행중` — 직업 6종 컨셉 재편 + 신규 무기 6종 설계 (사용자 지시) |
 | CONTENT | `C19` | `Assets/Game/Balance/{Weapons,Items,SceneWiring}.csv` · `Tools/Art/gen_octopus.py` · `_Incoming/Effects/` · `Docs/TUNING.md` | 2026-08-30 | `대기(REQ→DEV)` — 소환수 CSV 3파일 + **촉수 그림 재작업** + SFX 볼륨 2값. DEV 요청-7·8 의 답 — [`REQ/DEV.md`](REQ/DEV.md) 요청-13 |
 | CONTENT | `C20` | `Tools/Audio/gen_{tentacle_lash,dragon_spit}.py` · `_Incoming/Audio/` · `Docs/TUNING.md` | 2026-08-30 | `대기(REQ→DEV)` — 소환수 SFX 2종 + ⛔ **요청-13 ③ 검 0.35 철회** — [`REQ/DEV.md`](REQ/DEV.md) 요청-14 |
 | CONTENT | `C22` | `Docs/TUNING.md` · `Docs/Parallel/REQ/*` | 2026-08-31 | `대기(REQ→DEV)` — 촉수가 플레이어를 덮는 문제(요청-10 ③). ⛔ **DEV 가 낸 A·B 를 둘 다 반려** → `Fx_TentacleLash.prefab` `m_SortingOrder` `20`→`-5` 한 줄 + 청취 5건 이관 — [`REQ/DEV.md`](REQ/DEV.md) 요청-16. ⚠️ **`D19` 와 겹친다** (아래) |
+| CONTENT | `C23` | `Tools/Art/` · `Tools/Audio/` · `_Incoming/{Sprites,Audio}/` · `Assets/Game/Balance/{Passives,Items}.csv` · `Docs/TUNING.md` | 2026-08-31 | `진행중` — 픽업 드랍 6종 + 행운 패시브. 그림 5장 · SFX 3종 · `BonusLuck` 5값 · 확률 6값. DEV 요청-12 의 답 — [`REQ/CONTENT.md`](REQ/CONTENT.md) 요청-12. 🔴 **확률 A/B/C 는 사용자 결정 대기** |
 
 > 상태값: `진행중` · `대기(REQ→DEV)` · `검증대기` · `막힘(B1)`
 > 끝나면 **자기 줄을 지운다.**
@@ -75,6 +75,15 @@
 > ✅ **`D18` 도 DEV 가 끝내고 지웠다** (2026-08-31). **B6 닫힘** — 무기 장부가 둘이었고
 > 증상이 **넷**이었다(칸 부족 · 카드 재출현 · 조회 거짓말 · 진화 재료 누락) → [`DONE/D18.md`](DONE/D18.md).
 > 두 장부 차이 **0**(예전 1) · 상한 3/3 · `무기 슬롯 꽉 참` 경고 **0**.
+>
+> ✅ **`D19` 도 DEV 가 끝내고 지웠다** (2026-08-31). 소환수가 **공전을 그만두고 꼬리처럼 따라온다**
+> (`PlayerTrail.cs` 신설 + `SummonWeapon` 기차화) → [`DONE/D19.md`](DONE/D19.md).
+> 칸 간격 항상 **1.20** · 꺾은 뒤 `x` 편차 **0.00** · 앞칸이 먼저 돈다(0.39 vs 1.11) · 옛 방식과 **1.13~3.08** 차이.
+> 🔴 **`TUNING.md` §3 의 "3마리 이상 72° 재배치"는 없는 기능이었다** — `offsetAngle` 사용처는 **1곳**뿐이었고,
+> CONTENT 가 `C22`(요청-16 §3)에서 그걸 근거로 각도 조정을 보류 중이었다 → [`REQ/CONTENT.md`](REQ/CONTENT.md) **요청-13**
+> 으로 정정 + 체감 3값 등재를 요청했다.
+> ⚠️ **`C22` 는 안 닫혔다** — 문어가 2번칸이면 2.40~3.07 로 물러나지만 **단독이면 1번칸 1.20** 이라 그대로다.
+> CONTENT 경고("둘을 같이 바꾸면 어느 쪽이 들었는지 모른다")를 지켜 **`D21` 로 따로 친다.**
 
 ---
 
@@ -85,9 +94,9 @@ CONTENT 는 **읽기만** 한다 — 내 요청이 언제 처리될지 가늠하
 
 | 항목 | 값 |
 |---|---|
-| 상태 | `BUSY` |
-| 점유 이슈 | `D19` (코드 신설 + 프리팹 · Refresh · 실플레이 검증) |
-| 컴파일 에러 | `0` (2026-08-31 D18 종료 시 확인 — 플레이 종료 후 콘솔 **6건 전부 `Log`**, Warning/Error 0, 임시 스크립트·오브젝트 없음) |
+| 상태 | `IDLE` |
+| 점유 이슈 | — |
+| 컴파일 에러 | `0` (2026-08-31 D19 종료 시 확인 — 플레이 종료 후 콘솔 **6건 전부 `Log`**, Warning/Error 0, 임시 스크립트·오브젝트 없음) |
 
 | 상태값 | 뜻 | CONTENT 가 알 것 |
 |---|---|---|
@@ -105,7 +114,7 @@ CONTENT 는 **읽기만** 한다 — 내 요청이 언제 처리될지 가늠하
 | 세션 | 다음 이슈 번호 |
 |---|---|
 | DEV | `D21` |
-| CONTENT | `C23` |
+| CONTENT | `C24` |
 | 버그(공용) | `B7` |
 
 > 번호를 쓸 때 이 표를 **즉시** 올린다. 선점이 곧 예약이다.
