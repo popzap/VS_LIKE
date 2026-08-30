@@ -275,6 +275,9 @@ public class EnemyBase : MonoBehaviour
         float life = Data.PreferredRange * 1.6f / Mathf.Max(0.1f, Data.ProjectileSpeed);
 
         p.Initialize(dir, dmg, Data.ProjectileSpeed, life, SharedPool);
+
+        // 탄이 실제로 나간 뒤에만 운다. 위 두 조기 return 은 "쏘려다 못 쏜" 경우다.
+        AudioManager.Play(SfxId.EnemyShoot);
     }
 
     // ── 돌진 (AI = Charger) ──────────────────────────────────────
@@ -418,7 +421,10 @@ public class EnemyBase : MonoBehaviour
         GameManager.Instance?.WaveManager.OnEnemyKilled(this);
 
         PlayDeathImpact();
-        AudioManager.Play(SfxId.EnemyDie);
+
+        // 등급 경계를 PlayDeathImpact 와 똑같이 맞춘다 — 흔들림·히트스톱이 걸리는 죽음에만
+        // 다른 소리가 나야 연출과 소리가 한 몸으로 움직인다.
+        AudioManager.Play(IsElite || IsBoss ? SfxId.EnemyDieElite : SfxId.EnemyDie);
 
         OnDeath();
 

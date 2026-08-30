@@ -209,6 +209,9 @@ public class WaveManager : MonoBehaviour
             if (!_waveActive) yield break;
             while (_wavePaused) yield return null;
             SpawnEnemy(data.BossOverride, isBoss: true);
+
+            // 등장 직후 1회. 처치음이 아니다 — 보스가 죽을 때는 EnemyDieElite 가 운다.
+            AudioManager.Play(SfxId.BossAppear);
         }
     }
 

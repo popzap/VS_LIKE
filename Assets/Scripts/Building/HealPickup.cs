@@ -33,6 +33,11 @@ public class HealPickup : MonoBehaviour
         _collected = true;
         player.Heal(_amount);
 
+        // 🔴 떨어뜨릴 때가 아니라 주울 때 운다. 식당이 힐템을 뱉는 건 주기적인 건물 산출이라
+        // 소리를 달면 잔소리가 된다 (Farm·Village 에 소리를 안 단 것과 같은 이유).
+        // 여기는 플레이어가 밟아서 일어난 일이라 소리가 정보가 된다.
+        AudioManager.Play(SfxId.Heal);
+
         // 식당에게 "다 먹었다"를 알려야 다음 쿨다운이 돌기 시작한다.
         _onCollected?.Invoke();
         _onCollected = null;

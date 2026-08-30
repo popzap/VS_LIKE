@@ -6,7 +6,7 @@
 > 기존의 「C# 스크립트는 완성 단계」라는 전제와 「요청 없이 코드 건드리지 말 것」 규칙이 **해제됨**.
 > 이제 게임 완성을 위해 C# 스크립트 신규 작성·수정이 허용된다.
 >
-> **최종 갱신:** 2026-08-30 (30차 — 진화 무기 아이콘 3종 배선, D7 / C6)
+> **최종 갱신:** 2026-08-30 (31차 — 소리 없던 트리거 6곳 배선 + 엘리트 사망음, D8 / C3)
 >
 > 🔀 **25차부터 이슈 번호가 `세션 접두어 + 번호` 다** — `D`(DEV) · `C`(CONTENT) · `B`(버그 공용).
 > 병렬 2세션 체제로 바뀌었기 때문이다 (D1). 과거 `I-1`~`I-61` 은 그대로 둔다.
@@ -2027,6 +2027,137 @@ Play 모드에서 Warrior 로 런을 시작하고 `Unity_RunCommand` 로 재료�
 
 ---
 
+## 2-35. ✅ 소리 없던 트리거 6곳 배선 + 엘리트 사망음 (D8 / C3, 2026-08-30 31차)
+
+### 왜 했나
+
+효과음 키가 있는 자리는 I-49 이후 다 울고 있었는데, **아예 키가 없어서 조용한 지점이 6곳** 있었다.
+터렛이 쏴도 · 원거리 적이 쏴도 · 식당이 회복시켜도 · 보스가 나와도 · 리롤을 눌러도 소리가 없다.
+
+CONTENT(C3)가 스펙을 냈지만 **통째로 DEV 요청으로 왔다** — 클립 생성은 Unity AI(에디터)이고
+`AudioLibrary.asset` 등록도 `.asset` 이라 둘 다 DEV 소유다. CONTENT 는 숫자만 낼 수 있었다.
+
+같이 들어온 사용자 결정: **잡몹은 전부 같은 사망음, 엘리트·보스만 다르게.**
+
+### 변경한 파일
+
+| 파일 | 무엇 |
+|---|---|
+| `Assets/Scripts/Audio/AudioId.cs` | `SfxId` **7개 추가** (`EnemyDieElite`=14 · `EnemyShoot`=16 · `Crit`=17 · `Heal`=24 · `BuildingFire`=32 · `BossAppear`=33 · `UiCancel`=41) · **`:8` 주석 수정** |
+| `Assets/Scripts/Enemy/EnemyBase.cs` | 사망 시 `Play(IsElite \|\| IsBoss ? EnemyDieElite : EnemyDie)` · `FireProjectile()` 끝에 `EnemyShoot` |
+| `Assets/Scripts/Building/HealPickup.cs` | 회복 직후 `Heal` — 🔴 **요청서와 다른 위치** (아래) |
+| `Assets/Scripts/Building/TurretBuilding.cs` | 발사 직후 `BuildingFire` |
+| `Assets/Scripts/Building/BombardBuilding.cs` | 발사 직후 `BuildingFire` (중괄호 없던 if/else 에 중괄호 추가) |
+| `Assets/Scripts/Wave/WaveManager.cs` | 보스 소환 직후 `BossAppear` 1회 |
+| `Assets/Scripts/Shop/ShopManager.cs` | `Reroll()` 에 `UiCancel` |
+| `Assets/Scripts/LevelUp/LevelUpManager.cs` | `OnRerollClicked()` 에 `UiCancel` |
+| `Assets/Game/Audio/SFX_*.wav` **6개** | 신규 생성 (`elevenlabs-sound-effects-v2`) + ADPCM·mono 재임포트 |
+| `Assets/Game/Audio/AudioLibrary.asset` | `sfx` 목록 **14 → 20** |
+
+### 🔴 `SfxId` 를 "끝에 추가"하지 않은 이유 — 기존 주석이 틀렸다
+
+`AudioId.cs:8` 에 `"새 항목은 끝에 추가한다"` 라고 적혀 있었는데 **구현과 다르다.**
+`AudioLibrary` 는 배열 인덱스가 아니라 **`Id` 값**으로 매핑한다
+(`AudioLibrary.cs:70` `_sfxMap[e.Id] = e`). 그래서 **분류별 빈 번호 삽입은 안전**하고,
+금지되는 것은 *기존 항목의 **값** 변경*뿐이다.
+이 주석 때문에 CONTENT 도 한 번 잘못 판단했다 → 문장을 고쳤다.
+
+삽입 후 `WeaponFire=1` … `UiSelect=40` 이 **전부 그대로**인 것을 확인했다.
+`15` 는 나중에 보스만 갈라야 할 때를 위해 `EnemyDieBoss` 자리로 **비워 뒀다.**
+
+### 🔴 요청서와 다르게 한 것 — `Heal` 위치 (사용자 승인)
+
+요청서는 `RestaurantBuilding.OnCooldownElapsed()` 를 지목했는데, **그 메서드는 회복을 안 한다.**
+힐 픽업을 **떨어뜨릴** 뿐이고 실제 회복은 `HealPickup.cs:34` `player.Heal(_amount)` 다.
+
+요청서 자신의 규칙(*"주기적인 건물 산출에 소리를 달면 잔소리가 된다 — Farm·Village 에 안 단 것과 같은 이유"*)을
+그대로 적용하면 **떨굴 때가 아니라 주울 때** 울어야 한다. 주울 때는 플레이어가 밟아서 일어난 일이라
+소리가 **정보**가 된다. → 사용자에게 알리고 승인받았다.
+
+### 🔴 터렛이 `WeaponFire` 를 재사용하지 않은 이유
+
+`AudioManager` 의 중복 컷이 **0.04초**다(`AudioManager.cs:44`, `AudioClip` 기준).
+터렛과 플레이어가 같은 키를 쓰면 **터렛 소리가 플레이어 발사음을 잡아먹는다.**
+그래서 `BuildingFire` 라는 별도 키를 뒀다.
+
+### 클립 6개 — 프로젝트 규격에 맞춰 재임포트해야 했다
+
+🔴 **Unity AI 의 `GenerateSound` 기본값은 Vorbis + 스테레오**인데
+기존 SFX 14개는 전부 **ADPCM + `forceToMono`** 다. 그대로 두면 6개만 규격이 다르다.
+`compressionFormat = ADPCM` · `forceToMono = true` 로 바꾸고 `SaveAndReimport()` 했다.
+
+| 파일 | 길이 | Volume | PitchJitter |
+|---|---:|---:|---:|
+| `SFX_BuildingFire.wav` | 0.52s | 0.22 | 0.14 |
+| `SFX_EnemyShoot.wav` | 0.63s | 0.30 | 0.12 |
+| `SFX_UiCancel.wav` | 0.52s | 0.45 | 0.03 |
+| `SFX_Heal.wav` | 0.91s | 0.50 | 0.05 |
+| `SFX_EnemyDieElite.wav` | 1.23s | 0.75 | 0.04 |
+| `SFX_BossAppear.wav` | 2.51s | 0.95 | 0.00 |
+
+### 검증 로그
+
+```
+[D8] EnemyDieElite -> SFX_EnemyDieElite playing=True vol=0.750 pitch=0.998
+[D8] EnemyShoot    -> SFX_EnemyShoot    playing=True vol=0.300 pitch=1.082
+[D8] Heal          -> SFX_Heal          playing=True vol=0.500 pitch=1.041
+[D8] BuildingFire  -> SFX_BuildingFire  playing=True vol=0.220 pitch=0.934
+[D8] BossAppear    -> SFX_BossAppear    playing=True vol=0.950 pitch=1.000
+[D8] UiCancel      -> SFX_UiCancel      playing=True vol=0.450 pitch=0.993
+```
+
+볼륨 6개가 스펙 표와 정확히 일치하고, **`BossAppear` 만 `pitch=1.000`** 인 것이
+`PitchJitter=0` 스펙까지 같이 증명한다 (나머지 5개는 전부 1.000 이 아니다).
+
+**엘리트 분기 — 요청서는 "노말 웨이브에서는 검증할 수 없다"고 했다.**
+D6 우회로를 그대로 썼다. Goblin 2마리 중 한 마리는 그대로, 한 마리는
+`Initialize(data, isElite:true)` 로 재초기화한 뒤 죽였다.
+
+```
+[D8] 재초기화 후 elite=True boss=False
+[D8] voice: SFX_EnemyDie
+[D8] voice: SFX_EnemyDieElite
+```
+
+같은 프레임에 두 클립이 동시에 물렸다. **한쪽만 봤으면 분기가 죽어 있어도 통과했을 것이다.**
+
+`AudioLibrary.DescribeMissing()` 은 정확히 **`Crit` 하나**를 반환한다 — 2단계로 미룬 것이 그대로 드러난다.
+플레이 종료 후 콘솔 Log 8건, **Warning·Error 0**.
+
+### 🔴 이 머신은 게임이 무음이다 — 판정 2개를 못 했다
+
+검증 중에 발견했다. **버그가 아니라 저장된 설정이다.**
+
+```
+[D8] 저장된 설정 bgm_vol=0.00 sfx_vol=0.00
+```
+
+`AudioManager.PlaySfx()`(`:158`)는 `SfxVolume <= 0f` 이면 **보이스에 클립을 물리기도 전에 return** 한다.
+그래서 첫 검증에서 6개가 전부 `(못 찾음)` 으로 나왔고 **배선이 통째로 실패한 것처럼 보였다.**
+
+검증만 통과시키려고 런타임에서 `am.SetSFXVolume(1f)` 를 호출했다 —
+`SetSFXVolume` 은 `PlayerPrefs` 를 건드리지 않으므로(`:96~105`) **사용자 설정을 바꾸지 않는다.**
+
+요청서 판정 ③(터렛·적탄·식당·리롤 청취)와 ⑤(플레이어 발사음이 터렛에 묻히는가)는
+*"소리로 판정한다. 로그로는 안 된다"* 인데 **지금 설정으로는 사용자도 아무것도 들을 수 없다.**
+→ [`TODO.md`](TODO.md) §1 · [`Parallel/REQ/CONTENT.md`](Parallel/REQ/CONTENT.md) 요청-2
+
+### 남긴 것
+
+**`Crit`(값 `17`)은 값만 예약하고 클립·호출을 안 넣었다.** 요청서 지시다 —
+`WeaponBase.CalculateDamage()` 가 치명타를 내부에서 굴리고 **결과를 버려서**
+`ProjectileBase`/`AoeProjectile` 까지 플래그를 배관해야 한다.
+한 커밋에 섞으면 **"소리가 안 나는 게 배선 탓인지 배관 탓인지" 구분이 안 된다.**
+
+### 같이 닫은 문서
+
+- `TODO.md` §3 **"적 6종이 같은 사망음을 쓴다 → `EnemyData` 에 `SfxId` 열"** —
+  사용자 결정으로 **방향 자체가 바뀌었다.** 열을 추가하지 않는다 (근거는 위 요청서 인용)
+- `TODO.md` §3 **"아직 소리가 없는 트리거"** — 6곳이 채워지고 `Crit` 만 남았다
+- `TODO.md` §0 오디오 행 — SFX 14 → **20종**, 호출부 18 → **24곳**
+
+---
+
 ## 2-34. ✅ 진화 무기 3종 아이콘 배선 — 그림은 이미 있었다 (D7 / C6, 2026-08-30 30차)
 
 ### 왜 했나
@@ -3281,6 +3412,7 @@ Play 모드 — 한 세션에서 두 경로 전부:
 | **D5**<br>(B4) | **일시정지·옵션창 글자 6곳이 빈칸으로 나왔다** — 씬에 한글이 남아 있는데 폰트가 I-60 이후 **Static 115자**(ASCII + 기호 20)라 한글 글리프가 없다. `CLAUDE.md` §3 "UI 문자열은 영문" 위반이기도 하다 | ✅ 해결 (2026-08-30 28차 → 2-32) — 폰트를 다시 굽지 않고 **영문화**했다(사용자 결정). 씬 `m_text` 6곳만 교체 = `6 insertions(+) / 6 deletions(-)`. 판정 5개 전부 통과 — `missing=[]` · `characterCount == visible` · 캡처 2장 · **폰트 경고 0건**. 🔴 **`BUGS.md` 의 행 번호는 이미 밀려 있었다** — 하이어라키 경로로 찾을 것 |
 | **D6**<br>(C2) | **적 타격감 12개가 `EnemyBase.cs` 에 `const` 로 박혀 있었다** — 플레이하며 조절해야 하는 값인데 고칠 때마다 재컴파일이 필요했다. `Economy.csv` 로 뺄 수 없었던 이유는 임포터가 **씬만 훑는데** 적은 프리팹을 공유하기 때문 | ✅ 해결 (2026-08-30 29차 → 2-33) — **`CombatFeel` 씬 컴포넌트** 신설로 임포터를 안 고치고 기존 3열 규칙에 태웠다. `Default*` `const` 하나가 **필드 기본값이자 폴백**이라 컴포넌트가 없어도 같은 감각으로 돈다. `Economy.csv` **43/43 적용**(+12) · `!` 경고 0. 🔴 **"안 바뀐다"만으로는 배선을 판정할 수 없어** `6`→`20`→`6` 왕복으로 확인했다(엘리트 8.000 = 20×0.4 로 저항 2줄도 같이 증명) |
 | **D7**<br>(C6) | **진화 무기 3종이 재료 무기 아이콘을 그대로 썼다** (Excalibur = Sword 아이콘). 🔴 **그림이 없던 게 아니라 배선이 빠져 있었다** — 전용 png 3장은 I-57(20차 `a85cc9f`)에 이미 들어와 있었고 `Weapons.csv` 의 `Icon` 열만 재료 무기를 가리킨 채였다 | ✅ 해결 (2026-08-30 30차 → 2-34) — CONTENT 가 `4f1a92c`(C6)로 CSV 를 고쳐 두어 DEV 는 **Import 1회**만 했다. guid 3쌍을 **Import 전에 기록**해 두고 대조. `git diff` 가 **파일당 `Icon` 한 줄뿐**이라 다른 수치가 안 되돌아갔음을 증명(`Damage` 70/55/34 유지) · `Economy.csv 43/43` 도 유지되어 29차 `CombatFeel` 도 무사. 실플레이는 요청-5 가 면제 |
+| **D8**<br>(C3) | **소리가 아예 안 나는 지점이 6곳** 있었다 — 터렛·곡사포 발사, 원거리 적의 발사, 식당 회복, 보스 등장, 상점·레벨업 리롤. 여기에 사용자 지시 **"잡몹은 같은 소리, 엘리트·보스만 다르게"** 가 더해졌다. CONTENT 는 스펙만 낼 수 있었다 — 클립 생성(Unity AI)도 `.asset` 등록도 에디터라 DEV 소유다 | ✅ 해결 (2026-08-30 31차 → 2-35) — `SfxId` **7개 추가**(`Crit` 은 값만 예약) · 호출부 **6곳** · 클립 **6개** 생성 후 프로젝트 규격(ADPCM+mono)으로 재임포트 · `AudioLibrary` **14→20**. 🔴 **`AudioId.cs:8` 의 "끝에 추가한다" 주석이 틀렸다** — `Id` 값 매핑이라 빈 번호 삽입이 안전하다(같이 고침). 엘리트 분기는 요청서가 "노말 웨이브에서 불가"라 했으나 **재초기화 우회로로 `EnemyDie`/`EnemyDieElite` 를 같은 프레임에 동시 증명**. 🔴 **판정 2개는 못 했다 — 이 머신이 `sfx_vol=0.00` 이라 무음**(버그 아닌 저장된 설정) |
 
 ### 해결 상세
 
@@ -3796,6 +3928,30 @@ private void LateUpdate()
      대상 SO 를 통째로 다시 쓰므로 의도한 열 하나만 움직였는지는 `git diff` 로만 안다.
      이번엔 **파일당 `Icon` 한 줄**이라 다른 수치가 안 되돌아갔음이 증명됐다.
      ℹ️ 다른 CSV 도 같이 돌아가므로 **직전 작업의 산출물**(`Economy.csv 43/43`)도 함께 확인할 것
+
+**31차 (D8) — 소리 없던 트리거 배선**
+
+133. 🔴 **"안 들린다"는 배선 실패가 아니라 볼륨 0 일 수 있다.** `AudioManager.PlaySfx()` 는
+     `SfxVolume <= 0f` 이면 **보이스에 클립을 물리기도 전에 return** 한다(`:158`). 이 머신은
+     저장된 `sfx_vol` 이 `0.00` 이라 첫 검증에서 6개가 **전부 `(못 찾음)`** 으로 나왔고
+     배선이 통째로 실패한 것처럼 보였다. **소리를 검증하기 전에 볼륨부터 확인할 것.**
+     `SetSFXVolume` 은 `PlayerPrefs` 를 안 쓰므로 런타임에서 `1f` 로 올려도 설정이 안 바뀐다.
+134. ⚠️ **"끝에 추가한다" 같은 주석은 구현을 읽어 확인할 것.** `AudioId.cs:8` 이 그렇게 적혀
+     있었지만 `AudioLibrary` 는 **배열 인덱스가 아니라 `Id` 값**으로 매핑한다(`:70`).
+     실제 규칙은 *"기존 항목의 **값**을 바꾸지 말 것"* 이고 **빈 번호 삽입은 안전**하다.
+     **틀린 주석은 다음 사람도 똑같이 걸리게 한다 — 발견하면 그 자리에서 고친다.**
+135. 🔴 **분기를 검증할 때는 양쪽을 다 봐야 한다.** 엘리트 사망음은 한 프레임에
+     **잡몹 하나 + 재초기화한 엘리트 하나**를 같이 죽여 `SFX_EnemyDie` 와 `SFX_EnemyDieElite` 가
+     동시에 물리는 것을 봤다. 엘리트만 봤으면 **분기가 죽어 있어도**(항상 Elite) 통과했을 것이다.
+     ℹ️ 요청서는 "Elite/Boss 노드로 가야 한다, 노말 웨이브에서는 검증할 수 없다"고 봤지만
+     **D6 의 `Initialize(data, isElite:true)` 재초기화 우회로**로 노말 웨이브에서 증명된다.
+136. ⚠️ **생성 도구의 기본 임포트 설정은 프로젝트 규격과 다르다.** Unity AI 의 `GenerateSound` 는
+     **Vorbis + 스테레오**로 들어오는데 기존 SFX 14개는 **ADPCM + `forceToMono`** 였다.
+     그대로 뒀으면 6개만 규격이 다른 채 묻혔을 것이다. **기존 애셋의 임포트 설정을 먼저 읽고 맞출 것.**
+137. ℹ️ **요청서가 지목한 위치가 요청서 자신의 의도와 어긋날 수 있다.** `Heal` 은
+     `RestaurantBuilding.OnCooldownElapsed()` 로 왔지만 그 메서드는 **회복을 안 한다** — 픽업을 떨굴 뿐이다.
+     요청서 자신의 규칙("주기적인 건물 산출에 소리를 달면 잔소리")을 적용하면 `HealPickup` 이 맞다.
+     **스펙과 코드가 어긋나면 임의로 맞추지 말고 사용자에게 근거와 함께 물을 것.**
 
 **16~17 과정에서 함께 처리한 것**
 

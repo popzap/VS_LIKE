@@ -26,9 +26,16 @@ public class BombardBuilding : BuildingBase
         var go   = Pool.Get(bombPrefab, transform.position, Quaternion.identity);
         var bomb = go.GetComponent<BombProjectile>();
         if (bomb != null)
+        {
             bomb.Initialize(spot, Data.GetDamage(Level), aoeRadius, bombSpeed, aoeEffectPrefab, Pool);
+
+            // 터렛과 같은 키다. 발사음이지 착탄음이 아니다 — 터지는 소리는 Explosion 이 낸다.
+            AudioManager.Play(SfxId.BuildingFire);
+        }
         else
+        {
             Pool.Return(go);
+        }
     }
 
     /// <summary>폭탄 프리팹이 없을 때의 대비책 — 그 자리에서 바로 터뜨린다.</summary>

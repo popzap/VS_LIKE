@@ -69,6 +69,30 @@ MonoBehaviour:
     Clip: {fileID: 8300000, guid: 7cf7ac0e019007f4f8a689f0d5f28f3a, type: 3}
     Volume: 0.55
     PitchJitter: 0.03
+  - Id: 14
+    Clip: {fileID: 8300000, guid: ef1648ca1fd9a1041a571ca691d2ef61, type: 3}
+    Volume: 0.75
+    PitchJitter: 0.04
+  - Id: 16
+    Clip: {fileID: 8300000, guid: 77aa45c5dbe37644fb78ff8519ff12d5, type: 3}
+    Volume: 0.3
+    PitchJitter: 0.12
+  - Id: 24
+    Clip: {fileID: 8300000, guid: 340c1a62efca6c943a8d99e17c7e7d1e, type: 3}
+    Volume: 0.5
+    PitchJitter: 0.05
+  - Id: 32
+    Clip: {fileID: 8300000, guid: 6b2bc7231ae03194db0b6ce66635bea9, type: 3}
+    Volume: 0.22
+    PitchJitter: 0.14
+  - Id: 33
+    Clip: {fileID: 8300000, guid: 284f0a0ca8aff014d866b55bc5f0d913, type: 3}
+    Volume: 0.95
+    PitchJitter: 0
+  - Id: 41
+    Clip: {fileID: 8300000, guid: 8a15c05118c996c45b4e363f9106df62, type: 3}
+    Volume: 0.45
+    PitchJitter: 0.03
   bgm:
   - Id: 1
     Clip: {fileID: 8300000, guid: 19157b1c841d1cb4fa7b36c2fade82ba, type: 3}

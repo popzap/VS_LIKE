@@ -103,6 +103,10 @@ public class ShopManager : MonoBehaviour
 
         RollShopSlots();
         OnSlotsRerolled.Invoke();
+
+        // 구매(UiSelect)와 갈라 놓는다. 골드를 썼는데 확정이 아니라는 게 소리로 구분돼야 한다.
+        AudioManager.Play(SfxId.UiCancel);
+
         Debug.Log($"[ShopManager] 리롤 (비용 누계: {_currentRerollCost}G)");
     }
 

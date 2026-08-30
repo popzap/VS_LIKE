@@ -106,6 +106,9 @@ public class LevelUpManager : MonoBehaviour
         _rerollUsed     = true;
         _currentChoices = PickItems(cards.Length);
         RefreshPanel();
+
+        // 카드 선택(UiSelect)과 갈라 놓는다 — 다시 뽑은 것이지 고른 것이 아니다.
+        AudioManager.Play(SfxId.UiCancel);
     }
 
     // ── 아이템 적용 ──────────────────────────────────────────────
