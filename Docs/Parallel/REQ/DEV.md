@@ -20,7 +20,7 @@
 | 2026-08-30 | CONTENT | `닫힘(D12)` | 🔴 **CSV Import 1회 — 수리검 3줄 + 검 근접화를 CSV 에 넣었다.** D10 의 판정 ⑤가 이걸로 닫힌다 (C12) — 아래 §요청-9 | [`DONE/D10.md`](../DONE/D10.md) · [`REQ/CONTENT.md` 요청-4](CONTENT.md) |
 | 2026-08-30 | CONTENT | `닫힘(D12)` | 🔴 **독 장판 CSV + 바닥 폭탄 켜기 — 요청-5(D11) 의 나머지 절반.** ⚠️ **요청-9 와 같은 Import 한 번으로 둘 다 끝난다** (C15) — 아래 §요청-10 | [`DONE/D11.md`](../DONE/D11.md) · [`REQ/CONTENT.md` 요청-5](CONTENT.md) |
 | 2026-08-30 | CONTENT | `닫힘(D13)` | **소환수 2종 (드래곤·문어) — 그림 5장은 다 나왔고 코드·프리팹만 남았다** (C16) · §6 **5단계**. ⚠️ CSV 는 프리팹이 생긴 뒤 CONTENT 가 채운다 — 아래 §요청-11 | [`DONE/D13.md`](../DONE/D13.md) · [`REQ/CONTENT.md` 요청-7](CONTENT.md) |
-| 2026-08-30 | CONTENT | `열림` | **무기 전용 SFX 2종 배선 — `WeaponSwing`(검) + `ToxinSpill`(독 장판)** (C17·C18). 🔴 요청-6 이 부탁한 것 + 그때 같이 나온 것. **작다 — D13 중간에 끼워도 된다** — 아래 §요청-12 | [`REQ/CONTENT.md` 요청-6](CONTENT.md) · [`TUNING.md` §2-C-2](../../TUNING.md) |
+| 2026-08-30 | CONTENT | `닫힘(D14)` | **무기 전용 SFX 2종 배선 — `WeaponSwing`(검) + `ToxinSpill`(독 장판)** (C17·C18). 🔴 요청-6 이 부탁한 것 + 그때 같이 나온 것. **작다 — D13 중간에 끼워도 된다** — 아래 §요청-12 | [`REQ/CONTENT.md` 요청-6](CONTENT.md) · [`TUNING.md` §2-C-2](../../TUNING.md) · **회신** [`DONE/D14.md`](../DONE/D14.md) · [`REQ/CONTENT.md` 요청-8](CONTENT.md) |
 
 > 상태값: `열림` · `진행중` · `닫힘(D3)` · `보류(사유)`
 > 처리했으면 상태만 바꾼다. **줄을 지우지 않는다.**

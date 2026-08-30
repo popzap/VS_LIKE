@@ -29,6 +29,6 @@ public class FieldWeapon : WeaponBase
 
         // 데미지는 "틱당" 이다. 장판이 사는 동안 여러 번 들어간다.
         field.Initialize(CalculateDamage(), fieldRadius * Data.GetProjectileSize(Level), Pool);
-        AudioManager.Play(SfxId.WeaponCast);
+        AudioManager.Play(SfxId.ToxinSpill);
     }
 }

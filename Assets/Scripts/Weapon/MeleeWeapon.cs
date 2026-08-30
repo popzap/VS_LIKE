@@ -49,7 +49,7 @@ public class MeleeWeapon : WeaponBase
             dir.Normalize();
 
             SpawnArc(dir, range);
-            AudioManager.Play(SfxId.WeaponFire);
+            AudioManager.Play(SfxId.WeaponSwing);
 
             // 🔴 피해는 휘두르는 동안 딱 한 번이다. 프레임마다 굴리면 연타와 겹쳐 몇 배가 된다.
             yield return new WaitForSeconds(hitDelay);

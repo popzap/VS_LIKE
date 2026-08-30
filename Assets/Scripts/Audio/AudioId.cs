@@ -20,6 +20,8 @@ public enum SfxId
     WeaponFire  = 1,   // 단일 투사체 발사
     WeaponCast  = 2,   // 범위 무기 시전
     Explosion   = 3,   // 범위 폭발이 실제로 터지는 순간
+    WeaponSwing = 4,   // 근접 무기 휘두르기 (MeleeWeapon) — 발사음이 아니다
+    ToxinSpill  = 5,   // 장판 무기 전개 (FieldWeapon) — 액체가 쏟아져 끓는 소리
 
     // 전투
     EnemyHit      = 10,
