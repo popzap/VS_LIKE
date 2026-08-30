@@ -30,7 +30,7 @@
 | CONTENT | `C6` | `Docs/DESIGN_CLASSES.md`(신설) · 이후 `Assets/Game/Balance/*.csv` · `_Incoming/` | 2026-08-30 | `진행중` — 직업 6종 컨셉 재편 + 신규 무기 6종 설계 (사용자 지시) |
 | CONTENT | `C9` | `_Incoming/{Effects,ICON}/` · `Docs/{DESIGN_CLASSES,TUNING}.md` | 2026-08-30 | `대기(REQ→DEV)` — 바닥 폭탄 + 독 장판 그림 (§6 3·4단계 선작업) — [`REQ/DEV.md`](REQ/DEV.md) 요청-8 |
 | CONTENT | `C12` | `Assets/Game/Balance/{Weapons,Items,SceneWiring}.csv` · `Docs/{BALANCE,TUNING,DESIGN_CLASSES}.md` | 2026-08-30 | `대기(REQ→DEV)` — 수리검 CSV 3줄 + 검 근접 재해석 (§6 2단계 마무리) — [`REQ/DEV.md`](REQ/DEV.md) 요청-9 |
-| DEV | `D11` | `Assets/Scripts/{Weapon,Enemy}/` · `Assets/Prefabs/` · `Assets/Game/Sprites/{Effects,Weapons}/` · `_Incoming/`(삭제만) | 2026-08-30 | `진행중` — 바닥 폭탄 + 독 장판 (§6 3·4단계) — [`REQ/DEV.md`](REQ/DEV.md) 요청-8 |
+| CONTENT | `C13`·`C14` | `_Incoming/{Summons,Effects,ICON}/` · `Tools/Art/`(신설) · `Docs/{DESIGN_CLASSES,TUNING}.md` | 2026-08-30 | `진행중` — 소환수 그림 (§6 5단계 선작업). 드래곤 ✅ · 문어 ✅ — **코드 요청은 아직 안 넣었다** |
 
 > 상태값: `진행중` · `대기(REQ→DEV)` · `검증대기` · `막힘(B1)`
 > 끝나면 **자기 줄을 지운다.**
@@ -64,7 +64,7 @@ CONTENT 는 **읽기만** 한다 — 내 요청이 언제 처리될지 가늠하
 | 세션 | 다음 이슈 번호 |
 |---|---|
 | DEV | `D12` |
-| CONTENT | `C13` |
+| CONTENT | `C15` |
 | 버그(공용) | `B6` |
 
 > 번호를 쓸 때 이 표를 **즉시** 올린다. 선점이 곧 예약이다.
