@@ -2,12 +2,14 @@
 # WeaponPrefab 은 WeaponBase 파생 컴포넌트를 가진 프리팹이다.
 #   Weapon_Sword = ProjectileWeapon (투사체를 적 방향으로 발사, ProjectileCount 만큼 15도씩 부채꼴)
 #   Weapon_Aoe   = AoeWeapon        (가장 가까운 적 위치에 폭발 생성. ProjectileCount 무시)
+# ProjectilePrefab 의 그림은 반드시 오른쪽(+X)을 향해야 한다 — ProjectileBase 가 진행 방향으로 회전시킨다.
+#   Bow 는 C7 에서 Proj_Bullet(총알 아이콘) -> Proj_Arrow(화살) 로 갈았다. 수치는 안 건드렸다.
 # TravelPrefab 은 AoE 무기 전용 — 폭발(ProjectilePrefab) 전에 목표까지 날아가는 몸체다.
 #   BombProjectile 컴포넌트가 있어야 하고, ProjectileSpeed(유닛/초) 가 0 보다 커야 날아간다.
 #   비워 두면 예전처럼 목표 지점에서 곧바로 터진다 (Bomb 이 그렇다).
 Id,WeaponName,WeaponPrefab,Icon,ProjectilePrefab,TravelPrefab,ProjectileSpeed,Damage,Cooldown,ProjectileSize,ProjectileCount,Range
 Sword,Sword,Assets/Prefabs/Weapon_Sword.prefab,Assets/Game/Sprites/Weapons/Sword.png,Assets/Prefabs/Proj_Bullet.prefab,,8,10|15|22|30|40,1.5|1.3|1.1|0.9|0.7,1|1.1|1.2|1.3|1.5,1|1|2|2|3,10|10|12|12|15
-Bow,Bow,Assets/Prefabs/Weapon_Sword.prefab,Assets/Game/Sprites/Weapons/Bow.png,Assets/Prefabs/Proj_Bullet.prefab,,14,8|12|17|24|33,1.1|1|0.85|0.7|0.55,0.8|0.85|0.9|1|1.1,1|2|2|3|3,14|14|16|16|18
+Bow,Bow,Assets/Prefabs/Weapon_Sword.prefab,Assets/Game/Sprites/Weapons/Bow.png,Assets/Prefabs/Proj_Arrow.prefab,,14,8|12|17|24|33,1.1|1|0.85|0.7|0.55,0.8|0.85|0.9|1|1.1,1|2|2|3|3,14|14|16|16|18
 Gun,Gun,Assets/Prefabs/Weapon_Sword.prefab,Assets/Game/Sprites/Weapons/Gun.png,Assets/Prefabs/Proj_Bullet.prefab,,18,5|7|10|14|19,0.45|0.4|0.34|0.28|0.22,0.7|0.7|0.8|0.8|0.9,1|1|1|2|2,11|11|13|13|15
 Fireball,Fireball,Assets/Prefabs/Weapon_Aoe.prefab,Assets/Game/Sprites/Weapons/Fireball.png,Assets/Prefabs/Proj_Aoe(Boom).prefab,Assets/Prefabs/Proj_Fireball.prefab,11,18|26|36|50|68,2.2|2|1.75|1.5|1.2,1|1.15|1.3|1.5|1.75,1|1|1|1|1,12|12|13|13|14
 Bomb,Bomb,Assets/Prefabs/Weapon_Aoe.prefab,Assets/Game/Sprites/Weapons/Bomb.png,Assets/Prefabs/Proj_Aoe(Boom).prefab,,0,30|44|62|86|118,3.5|3.2|2.9|2.5|2,1.2|1.35|1.5|1.7|2,1|1|1|1|1,9|9|10|10|11

@@ -14,6 +14,7 @@
 | 2026-08-30 | CONTENT | `열림` | **`SfxId` 7종 추가 + 호출부 배선 + 클립 생성**(엘리트 사망음 포함) (C3) — 아래 §요청-3 | [`TODO.md` §3](../../TODO.md) |
 | 2026-08-30 | CONTENT | `닫힘(D4)` | **`TODO.md` §1 갱신** — 스크린샷으로 승급 경로 2건이 확인됐다 — 아래 §요청-4 | [`TODO.md` §1](../../TODO.md) |
 | 2026-08-30 | CONTENT | `닫힘(D7)` | **`Weapons.csv` Import 1회** — 진화 무기 3종의 전용 아이콘이 안 쓰이고 있었다 (C6) — 아래 §요청-5 | [`DESIGN_CLASSES.md` §6](../../DESIGN_CLASSES.md) · [`DONE/D7.md`](../DONE/D7.md) |
+| 2026-08-30 | CONTENT | `열림` | **화살 PNG 임포트(PPU 512) + `Proj_Arrow.prefab` 신설 + `Weapons.csv` Import** (C7) — 아래 §요청-6 | [`DESIGN_CLASSES.md` §6 1단계](../../DESIGN_CLASSES.md) |
 
 > 상태값: `열림` · `진행중` · `닫힘(D3)` · `보류(사유)`
 > 처리했으면 상태만 바꾼다. **줄을 지우지 않는다.**
@@ -346,6 +347,78 @@ Excalibur=Sword+Damage · Windforce=Bow+CritChance · Devastator=Gun+Fireball.
 > ⚠️ Import 는 **플레이 모드에서 실패한다** (`MarkSceneDirty`). `ManageEditor(Stop)` 먼저.
 > `D6`(요청-2) 가 어차피 Import 를 돌리므로 **같은 판에 묶어도 된다** — 다만 그 경우
 > 위 ③(수치 불변)을 `CombatFeel` 변경과 헷갈리지 않게 볼 것. 둘은 다른 CSV 다.
+
+---
+
+## 요청-6 — 화살 스프라이트 임포트 + `Proj_Arrow.prefab` 신설 (C7)
+
+**무엇을** — 3단계다. **순서가 중요하다.**
+
+| 순 | 할 일 |
+|---|---|
+| ① | `_Incoming/Projectiles/Arrow.png` → `Assets/Game/Sprites/Projectiles/Arrow.png` 로 옮기고 임포트 |
+| ② | `Assets/Prefabs/Proj_Bullet.prefab` 을 **복제**해서 `Assets/Prefabs/Proj_Arrow.prefab` 으로 만들고, `SpriteRenderer.Sprite` 만 위 `Arrow.png` 로 바꾼다 |
+| ③ | `Assets/Game/Balance/Weapons.csv` 를 Import (`Bow` 행의 `ProjectilePrefab` 이 `Proj_Arrow.prefab` 을 가리키도록 이미 고쳐 뒀다) |
+
+🔴 **②를 ③보다 먼저 해야 한다.** 프리팹이 없는 상태로 Import 하면
+`BowData.ProjectilePrefab` 이 **null 로 덮인다** — 활이 아무것도 안 쏘게 된다.
+
+### ① 임포트 설정 (이것만 다르면 안 된다)
+
+| 항목 | 값 | 이유 |
+|---|---|---|
+| **Pixels Per Unit** | **512** | 캔버스 256px ÷ 512 = **0.5 유닛** — 지금 총알(50px @ PPU 100)과 **같은 폭**이다. 기본값 1024 로 들어가면 절반이 된다 (I-58 / B2 와 같은 함정) |
+| Filter Mode | **Point (no filter)** | 픽셀아트다. Bilinear 면 뭉갠다 |
+| Compression | **None** | 얇은 화살대(4px)가 압축에 뭉개진다 |
+| Sprite Mode | Single | 시트가 아니다 |
+| Pivot | Center | `ProjectileBase.cs:25` 가 이 점을 중심으로 회전시킨다. **화살대 중간이 회전축이어야** 한다 |
+| Alpha Is Transparency | ✅ | |
+
+### ② 프리팹 — 복제해서 스프라이트만 바꾼다
+
+**새로 만들지 말고 복제할 것.** `Proj_Bullet` 이 가진 것들을 빠뜨리면 조용히 안 맞는다:
+
+| 요소 | 값 | 빠뜨리면 |
+|---|---|---|
+| Layer | `8` | 충돌 매트릭스에서 빠져 적을 못 맞힌다 |
+| Tag | `Projectile` | |
+| `Rigidbody2D` | Kinematic · GravityScale 0 · Constraints `4`(회전 고정) | 트리거가 안 돈다 |
+| `CircleCollider2D` | **IsTrigger ✅ · Radius 0.5** | `OnTriggerEnter2D` 가 안 불린다 |
+| `ProjectileBase` | guid `4bd4e01df5e3f2d45953279a99475255` | |
+| `SpriteRenderer.DrawMode` | `0` (Simple) | Sliced 면 크기가 이상해진다 |
+
+바꾸는 건 **`m_Sprite` 한 줄뿐**이다 (현재 `1f4e1489…` = `ICON/Bullet.png`).
+
+**왜** — 활이 **총알 아이콘**을 쏘고 있었다. `Proj_Bullet` 이 그리는 건
+`Assets/Game/ICON/Bullet.png` (`icons8-총알-50_0`) — icons8 벡터 아이콘이라
+픽셀아트인 이 게임과 결이 다르고, 무엇보다 **활에서 총알이 나간다.**
+`DESIGN_CLASSES.md` §6 **1단계**이고 **코드가 0줄**인 유일한 항목이라 먼저 잡았다.
+
+그림은 `Bow.png` 에서 팔레트를 직접 뽑아 그렸다 (외곽선 `(3,1,23)` · 나무 4단 · 강철 4단 · 깃 3단).
+**오른쪽(+X)을 향한다** — `ProjectileBase.cs:25-26` 이 `Mathf.Atan2(dir.y, dir.x)` 로 회전시키고
+`Vector2.right` 로 전진시키기 때문이다. 방향이 모호하면 **기능 실패**라
+깃을 줄이고 촉을 길게 빼서 앞뒤가 헷갈리지 않게 두 번 다시 그렸다.
+
+### 어떻게 확인하나 (판정 기준)
+
+| # | 기준 |
+|---|---|
+| ① | `Arrow.png` 임포트 후 스프라이트 `bounds.size` 가 **약 `(0.391, 0.141)`** — 세로가 0.07 근처면 **PPU 가 1024 로 들어간 것**이다 |
+| ② | `Assets/Game/WeaponData/Bow.asset` 의 `ProjectilePrefab` guid 가 **`Proj_Arrow.prefab` 의 guid** 다. **`0` 이면 ②를 ③보다 늦게 한 것** |
+| ③ | `Bow` 의 나머지 수치가 안 바뀐다 — `ProjectileSpeed 14` · `Damage 8|12|17|24|33` |
+| ④ | **실플레이**: 활을 들고 적을 향해 쏘면 **화살이 날아가는 방향으로 촉이 향한다.** 위·아래·왼쪽으로 쏴도 뒤집히지 않는다 |
+| ⑤ | 화살이 적에 닿으면 사라지고 피해가 들어간다 (콜라이더가 살아 있다) |
+| ⑥ | 콘솔에 `[BalanceImporter] Import 완료` · 에러 0 |
+
+> ④가 **이 요청의 본체**다. ①②③은 ④가 실패했을 때 어디서 틀렸는지 가르는 용도다.
+> 나는 화면을 못 보므로 **④를 봤는지 아닌지**를 명확히 적어 줄 것.
+
+> ⚠️ Import 는 **플레이 모드에서 실패한다** (`MarkSceneDirty`). `ManageEditor(Stop)` 먼저.
+> ⚠️ 옮긴 뒤 **`_Incoming/Projectiles/Arrow.png` 는 지운다** (규칙대로).
+> ℹ️ **B1(가장자리 번짐)** 때문에 좌우 여백을 28px 두었다. 화살 앞뒤가 번지면 B1 이지 그림이 아니다.
+
+**같이 봐 줄 것** — 크기가 "너무 크다/작다"면 그건 그림이 아니라 **PPU 조절**이다.
+[`TUNING.md`](../../TUNING.md) §3 3단계에 적어 뒀다. 지금 고치지 말고 값만 알려 줄 것.
 
 ---
 
