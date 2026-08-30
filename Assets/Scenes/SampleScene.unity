@@ -3275,7 +3275,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: "\uC635\uC158"
+  m_text: Options
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 3e4b8fa352321244a90cba3ae22db7a5, type: 2}
   m_sharedMaterial: {fileID: -3490538281225853295, guid: 3e4b8fa352321244a90cba3ae22db7a5, type: 2}
@@ -4320,7 +4320,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: "\uC635\uC158"
+  m_text: OPTIONS
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 3e4b8fa352321244a90cba3ae22db7a5, type: 2}
   m_sharedMaterial: {fileID: -3490538281225853295, guid: 3e4b8fa352321244a90cba3ae22db7a5, type: 2}
@@ -4578,7 +4578,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: "\uB2EB\uAE30"
+  m_text: CLOSE
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 3e4b8fa352321244a90cba3ae22db7a5, type: 2}
   m_sharedMaterial: {fileID: -3490538281225853295, guid: 3e4b8fa352321244a90cba3ae22db7a5, type: 2}
@@ -5498,7 +5498,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: "\uC885\uB8CC"
+  m_text: Quit
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 3e4b8fa352321244a90cba3ae22db7a5, type: 2}
   m_sharedMaterial: {fileID: -3490538281225853295, guid: 3e4b8fa352321244a90cba3ae22db7a5, type: 2}
@@ -12696,7 +12696,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: "\uC77C\uC2DC\uC815\uC9C0"
+  m_text: PAUSED
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 3e4b8fa352321244a90cba3ae22db7a5, type: 2}
   m_sharedMaterial: {fileID: -3490538281225853295, guid: 3e4b8fa352321244a90cba3ae22db7a5, type: 2}
@@ -13430,7 +13430,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: "\uACC4\uC18D\uD558\uAE30"
+  m_text: Continue
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 3e4b8fa352321244a90cba3ae22db7a5, type: 2}
   m_sharedMaterial: {fileID: -3490538281225853295, guid: 3e4b8fa352321244a90cba3ae22db7a5, type: 2}

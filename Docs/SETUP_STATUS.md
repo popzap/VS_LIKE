@@ -6,7 +6,7 @@
 > 기존의 「C# 스크립트는 완성 단계」라는 전제와 「요청 없이 코드 건드리지 말 것」 규칙이 **해제됨**.
 > 이제 게임 완성을 위해 C# 스크립트 신규 작성·수정이 허용된다.
 >
-> **최종 갱신:** 2026-08-30 (27차 — 걷기 시트 4종 교체, D4 / B2)
+> **최종 갱신:** 2026-08-30 (28차 — 일시정지·옵션창 영문화, D5 / B4)
 >
 > 🔀 **25차부터 이슈 번호가 `세션 접두어 + 번호` 다** — `D`(DEV) · `C`(CONTENT) · `B`(버그 공용).
 > 병렬 2세션 체제로 바뀌었기 때문이다 (D1). 과거 `I-1`~`I-61` 은 그대로 둔다.
@@ -17,7 +17,7 @@
 > **현재 상태: 메인메뉴 → 스테이지맵 → 웨이브 → 클리어 → 게임오버 전체 루프 런타임 검증 완료 (18/18 PASS), 콘솔 에러 0 / 경고 0.**
 > [`ROADMAP.md`](ROADMAP.md) §8 의 **1·2·3단계 완료** (I-43~I-49) — HUD 정보 · 타격 반응 · 오디오 ·
 > 병렬 소환 · 적 행동 분화 · 보물상자/자석. **"조용한 프로토타입" 단계는 끝났다.**
-> 원격 동기화: `popzap/VS_LIKE` `main` @ **`2dbbbc7`** (2026-08-29, 21차 I-58 까지 푸시됨)
+> 원격 동기화: `popzap/VS_LIKE` `main` @ **`8194581`** (2026-08-30, 27차 D4 까지 푸시됨)
 >
 > 🎯 **16차는 처음으로 "직접 플레이해서 나온" 버그 보고에서 출발했다** (I-50).
 > 로그로만 검증하던 단계에서는 절대 발견할 수 없는 종류였다 — 자세한 건 2-20.
@@ -2027,6 +2027,116 @@ Play 모드에서 Warrior 로 런을 시작하고 `Unity_RunCommand` 로 재료�
 
 ---
 
+## 2-32. ✅ 일시정지·옵션창 한글 6곳 영문화 — 빈칸이 사라졌다 (D5 / B4, 2026-08-30 28차)
+
+### 왜 했나
+
+B4. 일시정지·옵션 패널의 글자 **6곳이 빈칸**으로 나왔다. 버튼은 눌렸다 — **글자만** 안 그려졌다.
+
+원인은 23차(I-60)가 남긴 알려진 제약이다. 폰트 `Pretendard SDF` 는 그때부터
+**Static · 115자**(ASCII 32~126 + 기호 20)라 **한글 글리프가 없다.**
+그런데 씬 6곳에 한글이 남아 있었다 — `CLAUDE.md` §3 *"UI에 표시되는 문자열은 영문"* 위반이기도 하다.
+
+**폰트를 다시 굽지 않고 영문화한다**(사용자 결정). 6개 단어를 위해 한글을 넣으면
+I-60 이 55MB → 4.8MB 로 줄인 아틀라스가 도로 커진다.
+
+### 고치기 전에 확인한 3가지
+
+| # | 확인 | 결과 |
+|---|---|---|
+| ① | `BUGS.md` 의 하이어라키 경로 6개가 실제로 있나 | 6/6 존재 · 중복 없음 |
+| ② | **코드가 한글을 `.text` 에 넣는 곳은 없나** | `Assets/Scripts/**` 전수 — **0건** |
+| ③ | 넣을 6단어가 폰트 문자표에 있나 | `HasCharacters` → 전부 `missing=[]` |
+
+②가 핵심이다. 코드가 한글을 만들고 있었다면 씬만 고쳐도 다시 빈칸이 됐다.
+
+> 🔴 **`BUGS.md` 표의 행 번호는 이미 밀려 있었다.**
+> 문서 12562·13296·3141·5364·4186·4444 → 실제 **3278·4323·4581·5501·12699·13433.**
+> 그 표에 붙어 있던 "행 번호로 찾지 말 것" 경고가 그대로 맞았다.
+
+### 변경한 파일
+
+| 파일 | 무엇 |
+|---|---|
+| `Assets/Scenes/SampleScene.unity` | TMP `m_text` **6곳**만 한글 → 영문 (`6 insertions(+) / 6 deletions(-)`) |
+
+| 하이어라키 경로 | 전 | 후 |
+|---|---|---|
+| `UI Canvas/PausePanel/Card/TitleText` | 일시정지 | `PAUSED` |
+| `UI Canvas/PausePanel/Card/ResumeButton/Label` | 계속하기 | `Continue` |
+| `UI Canvas/PausePanel/Card/OptionButton/Label` | 옵션 | `Options` |
+| `UI Canvas/PausePanel/Card/QuitButton/Label` | 종료 | `Quit` |
+| `UI Canvas/OptionSubPanel/Card/TitleText` | 옵션 | `OPTIONS` |
+| `UI Canvas/OptionSubPanel/Card/CloseButton/Label` | 닫기 | `CLOSE` |
+
+> 제목 2개만 대문자다. 씬의 다른 패널 제목(`SELECT CLASS` · `LEVEL UP` · `MERCHANT` · `SHOP`)과 맞췄다.
+> 버튼 라벨은 기존 버튼(`Retry` · `Start` · `Back` · `Reroll`)과 같은 규칙으로 첫 글자만 대문자.
+
+### 🔴 걸려 넘어진 것 — 플레이 모드에서는 씬을 저장할 수 없다
+
+치환은 `changed = 6 / 6` 으로 성공했는데 저장에서 터졌다.
+
+```
+System.InvalidOperationException: This cannot be used during play mode
+  at UnityEditor.SceneManagement.EditorSceneManager.MarkSceneDirty
+```
+
+**D4 끝에 내가 껐던 플레이 모드를 그 사이에 사용자가 다시 켜 놓았다.**
+플레이 모드에서 한 씬 변경은 플레이를 끄면 **전부 되돌아간다** — 디스크에는 안 남는다
+(`git status --short Assets/Scenes/` 가 빈 출력인 것으로 확인). 임의로 끄지 않고 물어서
+승인을 받은 뒤 `Stop` → 재실행했고, 그 뒤로 스크립트 맨 앞에 가드를 넣었다:
+
+```csharp
+if (EditorApplication.isPlaying) { result.LogError("[D5] 아직 플레이 모드다. 중단한다."); return; }
+```
+
+### 검증 로그 — 판정 기준 5개
+
+| # | 기준 | 결과 |
+|---|---|---|
+| ① | 6곳이 영문 | 전부 `ascii=True` ✅ |
+| ② | 폰트 문자표에 전부 있음 | `HasCharacters=True · missing=[]` ✅ |
+| ③ | 실제로 글리프가 그려짐 | `ForceMeshUpdate` 후 `characterCount == visible` ✅ |
+| ④ | 🔴 실플레이 육안 | 캡처 2장 ✅ |
+| ⑤ | 🔴 폰트 경고 0건 | 플레이 전체 로그 **7건 전부 `Log`** · Warning 0 · Error 0 ✅ |
+
+```
+[D5] [PAUSED]   font=Pretendard SDF  hasAll=True  missing=[]  chars=6 visible=6
+[D5] [Continue] font=Pretendard SDF  hasAll=True  missing=[]  chars=8 visible=8
+[D5] [Options]  font=Pretendard SDF  hasAll=True  missing=[]  chars=7 visible=7
+[D5] [Quit]     font=Pretendard SDF  hasAll=True  missing=[]  chars=4 visible=4
+[D5] [OPTIONS]  font=Pretendard SDF  hasAll=True  missing=[]  chars=7 visible=7
+[D5] [CLOSE]    font=Pretendard SDF  hasAll=True  missing=[]  chars=5 visible=5
+```
+
+③이 ②보다 강하다. 문자표에 있어도 렌더링에서 빠질 수 있는데, 6곳 모두
+`characterCount` 와 `isVisible` 개수가 같았다 = **빈칸이 하나도 없다.**
+
+#### ④ — 오버레이 캔버스는 카메라 캡처에 안 잡힌다
+
+`UI Canvas` 는 `ScreenSpaceOverlay` 다. `Unity_Camera_Capture` 는 카메라를 렌더 타깃에
+그리는 방식이라 **오버레이 UI 가 한 픽셀도 안 나온다** — 첫 캡처는 타일과 적만 찍혔다.
+플레이 모드 한정으로 `renderMode` 를 `ScreenSpaceCamera` + `worldCamera = Camera.main` 로
+바꿔 찍었다. 플레이를 끄면 되돌아가므로 디스크에는 안 남는다 —
+끝난 뒤 `git diff --stat` 이 여전히 `6 insertions(+), 6 deletions(-)` 인 것으로 확인했다.
+
+두 장 다 또렷하게 읽혔다 — 일시정지 `PAUSED / Continue / Options / Quit`,
+옵션 `OPTIONS / BGM / SFX / CLOSE`.
+
+웨이브까지는 D4 와 같은 경로로 들어갔다 — `PauseMenuUI.Open()` 은
+`CanPause(s) => s == GameState.Wave` 라 메인 메뉴에서는 그냥 return 한다.
+`StartRun()` → `StageMapManager.SelectNode(Layers[0][0])`.
+
+### 남은 것
+
+폰트는 여전히 Static 115자다. **새 UI 문자열에 한글을 넣으면 같은 버그가 재발한다.**
+`CLAUDE.md` §3 이 그 방어선이다.
+
+> ℹ️ 같이 훑다 확인 — `UI Canvas/StageMapPanel/HeaderText` 의
+> `Choose your path — Layer 1/10` 에 있는 `—`(U+2014)는 **문자표에 있다.** 7번째 사례가 아니다.
+
+---
+
 ## 2-31. ✅ 걷기 시트 4종 교체 — 축소판 격자가 사라졌다 (D4 / B2, 2026-08-30 27차)
 
 ### 왜 했나
@@ -3059,6 +3169,7 @@ Play 모드 — 한 세션에서 두 경로 전부:
 | **B4** | 일시정지·옵션창 글자 6곳이 **빈칸**으로 나온다 — 씬에 한글이 남아 있는데 폰트는 Static 115자(I-60)라 한글 글리프가 없다 | 🔴 **미해결** — CONTENT 가 보고, 담당 DEV |
 | **D3** | **진화·승급을 시험할 방법이 없었다** — Lv5 무기 + Lv3 건물을 정상 플레이로 모으려면 매번 몇 분씩 걸려서 `TODO.md` §1 의 미검증 항목이 쌓이기만 했다 | ✅ 해결 (2026-08-30 26차 → 2-30) — `DevPanel` 신설. 백틱으로 여는 IMGUI 치트 패널(아이템 `-`/`+`/`Max`/`X` · 진화·승급 즉시 실행). 파일 전체가 `#if UNITY_EDITOR \|\| DEVELOPMENT_BUILD`, 씬에는 흔적 0(런타임 자동 생성). **슬롯 상한과 공개 API 를 우회하지 않는다** — 우회하면 거기서 나온 상태를 신뢰할 수 없다 |
 | **D4**<br>(B2) | **걷는 적이 축소판 격자로 보였다** — 코드가 아니라 애셋이 깨져 있었다. Goblin·Slime 은 16칸 중 12칸이 프레임이 아니라 "작은 캐릭터 9~16마리 뭉치"였고, `StepFrames` 가 16칸을 순서대로 도니 12/16 확률로 그게 떴다 | ✅ 해결 (2026-08-30 27차 → 2-31) — 수정본 제작은 CONTENT(C1), **임포트·실플레이 판정은 DEV(D4).** 🔴 **png 만 덮어썼다 — `.meta` 를 지우면 PPU 가 1024 로 돌아가고(I-58 재발) 스프라이트 GUID 가 바뀌어 `WalkFrames` 16칸이 통째로 끊긴다.** 판정 5개 전부 통과, 실플레이에서 f8~f15 를 포함한 12칸이 동시에 떴는데 전부 단일 256×256 |
+| **D5**<br>(B4) | **일시정지·옵션창 글자 6곳이 빈칸으로 나왔다** — 씬에 한글이 남아 있는데 폰트가 I-60 이후 **Static 115자**(ASCII + 기호 20)라 한글 글리프가 없다. `CLAUDE.md` §3 "UI 문자열은 영문" 위반이기도 하다 | ✅ 해결 (2026-08-30 28차 → 2-32) — 폰트를 다시 굽지 않고 **영문화**했다(사용자 결정). 씬 `m_text` 6곳만 교체 = `6 insertions(+) / 6 deletions(-)`. 판정 5개 전부 통과 — `missing=[]` · `characterCount == visible` · 캡처 2장 · **폰트 경고 0건**. 🔴 **`BUGS.md` 의 행 번호는 이미 밀려 있었다** — 하이어라키 경로로 찾을 것 |
 
 ### 해결 상세
 
@@ -3515,6 +3626,32 @@ private void LateUpdate()
      전부 `null` 을 돌려준다 — "배선이 끊겼다"로 오해하기 딱 좋다. 같은 맥락으로 `EnemyBase.Data` 는
      public 이 아니고(`CS0122`), 스프라이트 서브애셋 이름은 `<Name>_Walk_frame_0` 이 아니라 그냥
      **`frame_0`~`frame_15`** 다. **이름은 추측하지 말고 한 번 찍어 볼 것**
+
+**28차 (D5) — 일시정지·옵션창 영문화**
+
+118. 🔴 **플레이 모드에서는 씬을 저장할 수 없다.** `EditorSceneManager.MarkSceneDirty` / `SaveScene`
+     이 `InvalidOperationException: This cannot be used during play mode` 를 던진다. 더 무서운 건
+     **플레이 모드에서 한 씬 변경은 플레이를 끄면 전부 되돌아간다**는 것이다 — 치환은 `6/6` 성공했는데
+     디스크에는 아무것도 안 남았다. 씬을 고치는 `RunCommand` 는 맨 앞에
+     `if (EditorApplication.isPlaying) return;` 가드를 넣을 것
+119. 🔴 **에디터 상태는 매번 다시 확인한다.** D4 끝에 내가 껐던 플레이 모드를 그 사이에 사용자가
+     다시 켜 놓았다. `BOARD.md` §2 는 **내 기록일 뿐 실제 상태가 아니다** — `ManageEditor(GetState)`
+     로 물어야 한다. (그리고 임의로 끄지 말고 **물어보고** 끈다)
+120. 🔴 **`ScreenSpaceOverlay` 캔버스는 `Unity_Camera_Capture` 에 한 픽셀도 안 잡힌다.** 카메라를
+     렌더 타깃에 그리는 방식이라 오버레이가 합성되지 않는다. **플레이 모드 한정으로** `renderMode` 를
+     `ScreenSpaceCamera` + `worldCamera = Camera.main` 로 바꿔 찍으면 된다 —
+     플레이를 끄면 되돌아가므로 디스크에는 안 남는다(`git diff --stat` 으로 확인할 것)
+121. ✅ **TMP 글자가 실제로 그려지는지는 `HasCharacters` 보다 `ForceMeshUpdate` 가 강하다.**
+     문자표에 있어도 렌더링 단계에서 빠질 수 있다. `ForceMeshUpdate` 뒤
+     `textInfo.characterCount` 와 `characterInfo[i].isVisible` 개수가 같으면 **빈칸이 하나도 없다**는 뜻이다
+122. ⚠️ **MCP 호출 사이에는 프레임이 간다.** `PauseMenuUI.Open()` 을 부르고 다음 호출에서 봤더니
+     이미 `LevelUp` 으로 넘어가 패널이 닫혀 있었다. 상태를 고정하려면 `ManageEditor(Pause)` 로
+     에디터를 멈출 것 — 멈춰도 `Camera_Capture` 는 찍힌다
+123. ⚠️ **`foreach (Transform child in parent)` 안에서 `SetAsLastSibling()` 을 부르지 말 것.**
+     순회 중 순서가 바뀌어 일부가 건너뛰어진다 — 끄려던 패널이 안 꺼졌다. 순회와 재정렬을 분리한다
+124. ⚠️ **씬 YAML 을 bash `grep 'm_text:.*\\u'` 로 세지 말 것.** 이스케이프 해석 때문에 오탐한다
+     (고친 뒤인데 8을 반환했다). `grep -n 'm_text:' … | grep 'u[0-9A-F]\{4\}'` 처럼 리터럴로 다시
+     거르거나, Unity 쪽에서 문자 코드로 직접 검사할 것
 
 **16~17 과정에서 함께 처리한 것**
 
