@@ -4,11 +4,12 @@
 # 값에 쉼표를 쓰려면 큰따옴표로 감싼다. Description 은 UI 에 그대로 나오므로 영문 유지.
 # ShopPrice 는 상점 구매가. 제거 환급은 ShopManager.refundRate(0.5) 배.
 Id,ItemName,Description,Icon,Category,MaxLevel,RefId,ShopPrice
-Sword,Sword,Swings a blade at the nearest enemy.,Assets/Game/Sprites/Weapons/Sword.png,Weapon,5,Sword,8
+Sword,Sword,Cleaves a wide arc right in front of you. Short reach.,Assets/Game/Sprites/Weapons/Sword.png,Weapon,5,Sword,8
 Bow,Bow,Long range shots that fan out as it levels.,Assets/Game/Sprites/Weapons/Bow.png,Weapon,5,Bow,8
 Gun,Gun,Rapid low damage fire.,Assets/Game/Sprites/Weapons/Gun.png,Weapon,5,Gun,9
 Fireball,Fireball,Explodes on the nearest enemy.,Assets/Game/Sprites/Weapons/Fireball.png,Weapon,5,Fireball,10
 Bomb,Bomb,Slow but heavy area damage.,Assets/Game/Sprites/Weapons/Bomb.png,Weapon,5,Bomb,11
+Shuriken,Shuriken,Spinning stars that punch through three enemies in a line.,Assets/Game/Sprites/Weapons/Shuriken.png,Weapon,5,Shuriken,9
 Turret,Turret,Deploys a turret that shoots the nearest enemy.,Assets/Game/Sprites/Buildings/Turret.png,Building,5,Turret,10
 Bombard,Bombard,Deploys a cannon that damages every enemy around it.,Assets/Game/Sprites/Buildings/Bombard.png,Building,5,Bombard,12
 Village,Village,Deploys a village that generates experience over time.,Assets/Game/Sprites/Buildings/House.png,Building,5,Village,10

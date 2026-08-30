@@ -33,18 +33,38 @@
 > 🔑 **새 동작이 필요하면 새 C# 클래스가 필수다.** `WeaponBase.Fire()` 가 `abstract` 라
 > 데이터만으로는 새 행동이 안 나온다 (`WeaponBase.cs:30`).
 
-### 🔴 검이 지금 검이 아니다
+### ✅ 검이 지금 검이 아니다 — **해결됨 (D10 코드 · C12 CSV)**
 
-`Weapons.csv` 의 Sword 행:
+이 문서를 쓸 당시의 Sword 행은 이랬다:
 
 ```
 Sword,Sword,Assets/Prefabs/Weapon_Sword.prefab,...,Proj_Bullet.prefab,,8,...,Range 10
 ```
 
-**`Proj_Bullet` 을 속도 8 로 사거리 10 까지 쏜다.** 총이다.
-아이콘만 검이고 동작은 Gun 과 같은 계열이다 — 속도와 수치만 다르다.
+**`Proj_Bullet` 을 속도 8 로 사거리 10 까지 쏘고 있었다.** 총이다.
+아이콘만 검이고 동작은 Gun 과 같은 계열이었다 — 속도와 수치만 달랐다.
 사용자가 "검도 휘두르는 이펙트가 필요하다"고 한 건 이펙트 요청이 아니라
-**동작이 아직 없다**는 지적이 맞다.
+**동작이 아직 없다**는 지적이 맞았다.
+
+지금은 `Weapon_Melee`(`MeleeWeapon`) + `Fx_SwingArc`, `Range 2` 다. 앞쪽 140° 를 벤다.
+
+> ### 🔴 남은 숙제 — **Excalibur 는 아직 총을 쏜다**
+>
+> 진화 무기 3종(`Excalibur` · `Windforce` · `Devastator`)은 `WeaponPrefab` 과
+> `ProjectilePrefab` 을 **자기 행에 따로 들고 있다.** 그래서 `Sword` 행을 근접으로 바꿔도
+> **영향을 안 받는다 — 깨지지 않는다.** 다만 **Excalibur 는 검의 진화인데 원거리**로 남았다.
+>
+> 설명문마저 `A wide arc that cleaves five foes at once.` 다 — **부채꼴을 벤다고 쓰여 있는데
+> 실제로는 총알 5발을 부채꼴로 쏜다.** 이제야 `MeleeWeapon` 이 생겨서 글이 진짜가 될 수 있다.
+>
+> ⚠️ **지금 같이 바꾸지 않는다.** 2단계는 "신규 무기 배선이 되는가"를 처음 보는 자리라
+> 한 번에 하나만 움직여야 한다. Excalibur 를 근접으로 돌리면 `Range 16` 도 같이 내려야 하고,
+> 그건 **진화 무기가 원본보다 강한가**(→ `TUNING.md` §3 2단계 ④)와 얽힌다.
+> **검의 `Damage` 판정이 끝난 뒤**에 손대는 게 순서다 — 근접의 대가를 모르는 채로
+> 진화 무기를 근접화하면 두 개를 동시에 흔드는 것이 된다.
+>
+> Windforce(활 진화)는 `Proj_Bullet` 을 쏜다 — **화살로 바꿔야 한다** (C7 이 `Bow` 만 갈았다).
+> 이건 그림 교체뿐이라 싸다. Devastator(총+불) 는 총알이 맞으니 그대로 둔다.
 
 ### 🔴 구조적 공백 6개 — 지시 7건이 정확히 여기에 대응한다
 
@@ -319,7 +339,7 @@ Sword,Sword,Assets/Prefabs/Weapon_Sword.prefab,...,Proj_Bullet.prefab,,8,...,Ran
 |---|---|---|---|
 | **0** | ✅ 진화 아이콘 3줄 배선 (`Weapons.csv`) | CONTENT → DEV Import | **이미 있는 그림이 안 쓰이고 있다.** 5분짜리이고 나머지와 안 엮인다 → **닫힘(D7)** |
 | **1** | ✅ W3 화살 그림 | CONTENT | **코드가 0줄이다.** 그림 교체만으로 닫힌다 — 가장 싸다 → **C7, [요청-6](Parallel/REQ/DEV.md) 대기** |
-| **2** | W1 검 근접화 · W4 수리검 | DEV + CONTENT | 구조 ①③ 은 **작고 독립적**이다. 여기서 "신규 무기 배선"이 되는지부터 확인한다 → **그림은 C8 에서 다 끝냈다. 남은 건 코드뿐** ([요청-7](Parallel/REQ/DEV.md)) |
+| **2** | ✅ W1 검 근접화 · W4 수리검 | DEV + CONTENT | 구조 ①③ 은 **작고 독립적**이다. 여기서 "신규 무기 배선"이 되는지부터 확인한다 → 그림 C8 · 코드/프리팹 **D10** · CSV **C12**. 남은 건 Import 1회 ([요청-9](Parallel/REQ/DEV.md)) |
 | **3** | W2 폭탄 설치형 | DEV + CONTENT | 구조 ②. 기존 폭발을 재사용하므로 위험이 낮다 → **그림은 C9 에서 끝냈다. 남은 건 코드뿐** ([요청-8](Parallel/REQ/DEV.md)) |
 | **4** | 🔴 W5 독 장판 | DEV + CONTENT | 구조 ④⑤ — **`EnemyBase` 를 건드린다.** 적 전체가 공유하므로 앞 단계가 안정된 뒤에 → **그림은 C9 에서 끝냈다** ([요청-8](Parallel/REQ/DEV.md)) |
 | **5** | W6·W7 소환수 | DEV + CONTENT | 구조 ⑥ — 새 카테고리다. 가장 크고 가장 마지막 |

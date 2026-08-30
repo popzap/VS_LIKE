@@ -269,11 +269,51 @@ Assets/Game/Balance/*.csv
 
 | Id | 구현 | 프리팹 | 성격 |
 |---|---|---|---|
-| Sword | `ProjectileWeapon` | `Weapon_Sword` + `Proj_Bullet` | 기준점. 중간 사거리/피해 |
-| Bow | `ProjectileWeapon` | `Weapon_Sword` + `Proj_Bullet` | 사거리 길고 투사체 수가 빨리 늘어남 |
+| Sword | **`MeleeWeapon`** | **`Weapon_Melee` + `Fx_SwingArc`** | **근접.** 앞쪽 140° 부채꼴을 벤다 (D10/C12) |
+| Bow | `ProjectileWeapon` | `Weapon_Sword` + **`Proj_Arrow`** | 사거리 길고 투사체 수가 빨리 늘어남 — **폭** |
 | Gun | `ProjectileWeapon` | `Weapon_Sword` + `Proj_Bullet` | 쿨 0.45→0.22. 저피해 연사 |
+| **Shuriken** | `ProjectileWeapon` | `Weapon_Sword` + **`Proj_Shuriken`** | **관통 3.** 일렬로 선 적을 뚫는다 — **깊이** (D10/C12) |
 | Fireball | `AoeWeapon` | `Weapon_Aoe` + **`Proj_Fireball`** → `Proj_Aoe(Boom)` | 불덩이가 **직선으로 날아가** 착탄 지점에서 폭발 |
 | Bomb | `AoeWeapon` | `Weapon_Aoe` + `Proj_Aoe(Boom)` | 쿨 길고 피해 큼. **즉시 폭발** |
+
+> #### 🔴 `MeleeWeapon` — 열 4개의 **뜻이 바뀐다** (20차 / D10·C12)
+>
+> 새 열을 만들지 않고 **기존 열을 재해석**한다. `WeaponPrefab` 이 `Weapon_Melee.prefab` 이면:
+>
+> | 열 | 원거리에서 | 근접에서 |
+> |---|---|---|
+> | `Range` | 발사체 비행 거리 | 🔴 **호의 바깥 반지름** |
+> | `ProjectileCount` | 동시 발사 수 | **한 쿨다운에 몇 번 베는지(연타)** |
+> | `ProjectilePrefab` | 날아가는 발사체 | **휘두름 이펙트** (`Fx_SwingArc`) |
+> | `ProjectileSpeed` | 속도 | 안 쓴다 (`0`) |
+>
+> 🔴 **`Range` 를 안 내리면 사고가 난다.** `Sword` 는 10→**2** 로 내렸다.
+> 10 을 그대로 뒀으면 **화면 전체를 한 번에 베는 무기**가 된다.
+> 근접 무기를 새로 만들 때 가장 먼저 확인할 열이다.
+>
+> **`Damage`·`Cooldown`·`ProjectileSize`·`ProjectileCount` 는 일부러 예전 값 그대로 두었다.**
+> 사거리가 5분의 1이 됐으니 피해를 올려야 하는 건 맞지만, **같이 올리면 "약해진 게
+> 사거리 탓인지 피해 탓인지" 를 영원히 못 가린다.** I-55 에서 소지 상한과 직업 보너스를
+> 같이 흔들 뻔한 것과 같은 실수다. 한 번에 하나만 움직인다 → [`TUNING.md`](TUNING.md) §3 3단계.
+>
+> ℹ️ 진화 무기 **Excalibur 는 여전히 원거리**다 (`Weapon_Sword` + `Proj_Bullet` 을 자기 열에
+> 따로 들고 있어서 `Sword` 줄과 무관하다). 깨지진 않지만 *"검의 상위 무기가 왜 총알을 쏘지"* 라는
+> 위화감은 남는다 → [`DESIGN_CLASSES.md`](DESIGN_CLASSES.md) 에 숙제로 적어 두었다.
+
+> #### `pierceCount` — 관통 (20차 / D10)
+>
+> **CSV 열이 아니라 발사체 프리팹의 필드다.** `Proj_Shuriken.prefab` 만 `3`,
+> 나머지 발사체는 전부 기본값 `1`(= 첫 적에서 사라지는 예전 동작).
+>
+> 그래서 **레벨이 올라도 관통 수는 안 늘어난다.** 늘리려면 열을 새로 만들어야 한다.
+>
+> 🔴 **수리검의 `ProjectileCount` 를 일부러 낮게(1→2) 잡았다.** Bow(1→3)보다 적다.
+> 관통 3 위에 부채꼴 3 을 얹으면 **한 발이 최대 9번** 맞아 다른 무기가 전부 무의미해진다.
+> **폭은 Bow, 깊이는 Shuriken** 으로 갈라야 둘이 같은 무기가 안 된다.
+>
+> Lv5 기준 대략치 — Bow `60×3 = 180` · Gun `86×2 = 172` · Sword `57×3 = 171` ·
+> Shuriken `46×2 = 92` 인데 **관통이 붙어 일렬 상황에서 최대 276**. 평균적으로는 비슷하고
+> **적이 뭉칠수록 유리해지는** 무기다 (지금까지 이 게임에 없던 성질이다).
 
 > `AoeWeapon` 은 `ProjectileCount` 를 **쓰지 않는다.**
 > 폭발 반경은 `Weapon_Aoe.prefab` 의 `explosionRadius`(**2**) × `ProjectileSize` 다.
@@ -305,8 +345,10 @@ Assets/Game/Balance/*.csv
 > 곡사포와 같은 **2 로 낮췄다** (11차). 면적이 56% 줄었으므로 Fireball/Bomb 의
 > 실효 DPS 는 아래 표보다 낮다 — 다수 적 상황에서 재측정 필요.
 
-Lv1 **단일 대상** DPS 대략치 — Sword 6.7 / Bow 7.3 / Gun 11.1 / Fireball 8.2 / Bomb 8.6.
+Lv1 **단일 대상** DPS 대략치 — Sword 6.7 / Bow 7.3 / Gun 11.1 / **Shuriken 6.7** / Fireball 8.2 / Bomb 8.6.
 Gun 이 단일 대상 DPS는 높지만 사거리·투사체 크기가 작고, AoE 둘은 다수 적에서 실효 DPS가 뒤집힌다.
+Shuriken 은 Sword 와 같은 6.7 로 맞췄다 — **관통은 단일 대상에서 아무 값도 없기 때문**이다.
+값은 적이 뭉칠 때만 나온다.
 
 ### `Passives.csv` — 패시브
 

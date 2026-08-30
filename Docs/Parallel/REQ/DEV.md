@@ -17,6 +17,7 @@
 | 2026-08-30 | CONTENT | `닫힘(D9)` | **화살 PNG 임포트(PPU 512) + `Proj_Arrow.prefab` 신설 + `Weapons.csv` Import** (C7) — 아래 §요청-6 | [`DESIGN_CLASSES.md` §6 1단계](../../DESIGN_CLASSES.md) · [`DONE/D9.md`](../DONE/D9.md) |
 | 2026-08-30 | CONTENT | `닫힘(D10)` | **수리검 + 검 근접화 — 그림은 다 나왔고 코드만 남았다** (C8) — 아래 §요청-7 · ⏸ **⑤는 CSV 대기** → [`REQ/CONTENT.md`](CONTENT.md) 요청-4 | [`DESIGN_CLASSES.md` §5-A](../../DESIGN_CLASSES.md) · [`DONE/D10.md`](../DONE/D10.md) |
 | 2026-08-30 | CONTENT | `열림` | **바닥 폭탄 + 독 장판 — 그림은 다 나왔고 코드만 남았다** (C9) — 아래 §요청-8 | [`DESIGN_CLASSES.md` §5-A](../../DESIGN_CLASSES.md) |
+| 2026-08-30 | CONTENT | `열림` | 🔴 **CSV Import 1회 — 수리검 3줄 + 검 근접화를 CSV 에 넣었다.** D10 의 판정 ⑤가 이걸로 닫힌다 (C12) — 아래 §요청-9 | [`DONE/D10.md`](../DONE/D10.md) · [`REQ/CONTENT.md` 요청-4](CONTENT.md) |
 
 > 상태값: `열림` · `진행중` · `닫힘(D3)` · `보류(사유)`
 > 처리했으면 상태만 바꾼다. **줄을 지우지 않는다.**
@@ -815,6 +816,94 @@ Toxin,Toxin,Drops a toxic pool that slows and burns anything inside.,Assets/Game
 **같이 남겨 줄 것** — `fuseTime`(1.1) · `fieldDuration`(4.0) · `tickInterval`(0.5) ·
 `slowMult`(0.6) 은 전부 감으로 넣은 값이다. "길다/짧다"만 알려 주면 CONTENT 가
 [`TUNING.md`](../../TUNING.md) §3 에 반영한다. **DEV 가 CSV 를 직접 고치지는 말 것.**
+
+---
+
+## 요청-9 — CSV Import 1회 (C12) · **요청-4(D10) 의 나머지 절반**
+
+> 🔴 **이건 지금 해 달라는 요청이다** (요청-8 보다 먼저). 5분짜리이고, 이게 되면
+> **§6 2단계가 닫힌다.** D10 이 만든 코드·프리팹·그림이 지금 **게임에 안 나오는 상태**다.
+
+**무엇을** — `Game/Balance/Import CSV -> ScriptableObjects` **1회**.
+CSV 3파일은 저장해 뒀다. 새 파일도, 새 열도 없다.
+
+| 파일 | 무엇을 했나 |
+|---|---|
+| `Weapons.csv` | `Shuriken` 줄 **추가** · `Sword` 줄 **4개 열 교체** |
+| `Items.csv` | `Shuriken` 줄 **추가** · `Sword` 의 `Description` 교체 |
+| `SceneWiring.csv` | `LevelUpManager,allItems` 끝에 `Shuriken.asset` **1개 추가** |
+
+⚠️ **플레이 모드에서는 Import 가 실패한다** (`MarkSceneDirty`). `ManageEditor(Stop)` 먼저.
+
+---
+
+### 내가 정한 값과 그 근거 — **동의 안 되면 고치지 말고 알려 줄 것**
+
+**A. 수리검 (신규)**
+
+```
+Shuriken,Shuriken,Assets/Prefabs/Weapon_Sword.prefab,Assets/Game/Sprites/Weapons/Shuriken.png,Assets/Prefabs/Proj_Shuriken.prefab,,16,6|9|13|17|23,0.9|0.8|0.7|0.6|0.5,0.9|0.95|1|1.1|1.2,1|1|1|2|2,12|12|14|14|16
+```
+
+🔑 **`ProjectileCount` 를 일부러 낮게(1→2) 잡았다.** 요청-7 초안엔 `1|1|2|2|3` 이라고 썼는데
+**내가 틀렸다.** 관통 3 위에 부채꼴 3 을 얹으면 **한 발이 최대 9번** 맞는다.
+Bow Lv5(`60×3 = 180`) 대비 이론상 450 이 나와 다른 무기가 전부 무의미해진다.
+
+| Lv5 | 단일 DPS | ×동시발사 | 관통 최대 |
+|---|---:|---:|---:|
+| Sword | 57 | 171 | — |
+| Bow | 60 | **180** | — |
+| Gun | 86 | 172 | — |
+| **Shuriken** | 46 | 92 | **276** |
+
+Lv1 DPS 는 **6.7 로 Sword 와 똑같이** 맞췄다 — 관통은 단일 대상에서 값이 0 이라
+기준선을 남들과 같이 두고 **적이 뭉칠 때만** 이득이 나게 했다.
+**폭은 Bow, 깊이는 Shuriken.** 이렇게 갈라야 둘이 같은 무기가 안 된다.
+
+**B. 검 — `Range` 만 바꾸고 `Damage` 는 안 건드렸다**
+
+```
+Sword,Sword,Assets/Prefabs/Weapon_Melee.prefab,Assets/Game/Sprites/Weapons/Sword.png,Assets/Prefabs/Fx_SwingArc.prefab,,0,10|15|22|30|40,1.5|1.3|1.1|0.9|0.7,1|1.1|1.2|1.3|1.5,1|1|2|2|3,2|2|2.2|2.2|2.5
+```
+
+바뀐 열은 요청서가 지정한 **4개뿐**이다: `WeaponPrefab` · `ProjectilePrefab` ·
+`ProjectileSpeed`(8→0) · `Range`(10→2).
+
+🔴 **`Damage`·`Cooldown`·`Size`·`Count` 는 한 자리도 안 올렸다. 일부러다.**
+요청서 §4-B 가 *"감으로 확정해서 박아 넣지 말 것"* 이라고 했고, 그보다 더 큰 이유가 있다 —
+**지금 검은 대조 실험이다.** 사거리 하나만 움직였으므로, 약해졌다면 그건 **순수하게
+근접이 된 대가**다. 피해를 같이 올렸으면 그 값을 영원히 못 잰다 (I-55 와 같은 함정).
+
+⚠️ 그래서 **플레이하면 검이 약할 가능성이 높다. 그게 버그가 아니라 측정값이다.**
+얼마나 약한지를 알려 주면 `TUNING.md` §3 에 반영한다.
+
+**C. `Sword` 의 설명문도 갈았다** — `Swings a blade at the nearest enemy.` →
+`Cleaves a wide arc right in front of you. Short reach.`
+사거리가 5분의 1이 됐는데 카드에 그 말이 없으면 **플레이어가 모르고 집는다.**
+
+---
+
+### 어떻게 확인하나 (판정 기준)
+
+| # | 기준 |
+|---|---|
+| ① | `[BalanceImporter] Import 완료` · **에러 0** |
+| ② | `Assets/Game/WeaponData/Shuriken.asset` · `Assets/Game/ItemData/Shuriken.asset` **생성됨** |
+| ③ | `Shuriken.asset` 의 `ProjectilePrefab` guid 가 **`0` 이 아니다** (`Proj_Shuriken` 을 가리킨다) |
+| ④ | `Sword.asset` 의 `WeaponPrefab` = `Weapon_Melee` · `ProjectilePrefab` = `Fx_SwingArc` · `Range[0]` = **2** |
+| ⑤ | 🔴 **D10 판정 ⑤ — 레벨업 3택 / 상점에 `Shuriken` 이 뜬다.** 이게 되면 §6 2단계가 닫힌다 |
+| ⑥ | **실플레이 — 검**: 총알이 안 나가고 **호가 그려진다** |
+| ⑦ | **실플레이 — 수리검**: 뭉친 적을 향해 쏠 때 **여러 마리가 같이 닳는다** |
+| ⑧ | `Weapons.csv` 열 **12개** · `Items.csv` 열 **8개** 그대로 (열 추가 없음 — 내가 이미 확인했다) |
+
+**같이 남겨 줄 것 — 이번엔 "느낌"이 산출물이다.**
+
+1. **검이 얼마나 약한가** (위 B). "못 쓰겠다"인지 "좀 아쉽다"인지만 알려 주면 된다
+2. **수리검이 떼거리에서 과한가** — 판정은 한 마리 잡을 때가 아니라 **몰려올 때** 본다
+3. ⚠️ **검이 총소리를 낸다** (`SfxId.WeaponFire` 재사용, D10). 베는 맛의 절반은 소리라
+   1번을 판정할 때 이걸 감안할 것. 새 SFX 가 필요하면 그때 요청한다
+
+**DEV 가 CSV 를 직접 고치지는 말 것.** 숫자는 CONTENT 가 `TUNING.md` 근거와 같이 바꾼다.
 
 ---
 
