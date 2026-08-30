@@ -13,6 +13,7 @@
 | 2026-08-30 | CONTENT | `열림` | **`CombatFeel` 컴포넌트 신설 + `EnemyBase` 상수 제거** (C2) — 아래 §요청-2 | [`TUNING.md` §1](../../TUNING.md) |
 | 2026-08-30 | CONTENT | `열림` | **`SfxId` 7종 추가 + 호출부 배선 + 클립 생성**(엘리트 사망음 포함) (C3) — 아래 §요청-3 | [`TODO.md` §3](../../TODO.md) |
 | 2026-08-30 | CONTENT | `닫힘(D4)` | **`TODO.md` §1 갱신** — 스크린샷으로 승급 경로 2건이 확인됐다 — 아래 §요청-4 | [`TODO.md` §1](../../TODO.md) |
+| 2026-08-30 | CONTENT | `열림` | **`Weapons.csv` Import 1회** — 진화 무기 3종의 전용 아이콘이 안 쓰이고 있었다 (C6) — 아래 §요청-5 | [`DESIGN_CLASSES.md` §6](../../DESIGN_CLASSES.md) |
 
 > 상태값: `열림` · `진행중` · `닫힘(D3)` · `보류(사유)`
 > 처리했으면 상태만 바꾼다. **줄을 지우지 않는다.**
@@ -307,6 +308,40 @@ Excalibur=Sword+Damage · Windforce=Bow+CritChance · Devastator=Gun+Fireball.
   영문화가 끝나면 이 경고가 **0건**이 되는 것으로 판정하면 된다
 - 스크린샷 1의 화면 오른쪽에 **작은 점들이 격자로 뭉친 것**이 보인다 — **B2 그대로다.**
   요청-1(시트 덮어쓰기)이 들어가면 사라져야 한다. **임포트 후 같은 자리를 다시 볼 것**
+
+---
+
+## 요청-5 — `Weapons.csv` Import 1회 (진화 아이콘 3종) (C6)
+
+**무엇을** — `Assets/Game/Balance/Weapons.csv` 를 Import 해서
+진화 무기 3종의 `WeaponData.Icon` 을 전용 스프라이트로 갈아 끼운다.
+
+**왜** — 전용 아이콘이 **이미 있는데 안 쓰이고 있었다.**
+`Assets/Game/Sprites/Weapons/{Excalibur,Windforce,Devastator}.png` 가 **I-57(`a85cc9f`)에**
+들어왔는데 `Weapons.csv` 의 `Icon` 열은 계속 재료 무기(Sword/Bow/Gun)를 가리키고 있었다.
+확인 근거 — `Assets/Game/WeaponData/Excalibur.asset:17` 의 `Icon` guid 가
+`009d725f…` = **`Sword.png` 의 guid** 다 (`Excalibur.png` 는 `c35a002a…`).
+
+**수치는 한 글자도 안 건드렸다.** 바뀐 건 `Icon` 열 3칸과 주석 한 줄뿐이다.
+
+### 어떻게 확인하나 (판정 기준)
+
+| # | 기준 |
+|---|---|
+| ① | Import 후 `Assets/Game/WeaponData/Excalibur.asset` 의 `Icon` guid 가 **`c35a002a740ab5c4aa5a673ce063905a`** 로 바뀐다 |
+| ② | Windforce·Devastator 도 각각 `Windforce.png` · `Devastator.png` 의 guid 를 가리킨다 |
+| ③ | `Damage`/`Cooldown` 등 나머지 필드가 **안 바뀐다** (Excalibur `70` / `0.55` 그대로) |
+| ④ | 콘솔에 `[BalanceImporter] Import 완료` · 에러 0 |
+
+> ℹ️ **실플레이 검증은 필요 없다.** 진화 아이템은 보물상자에서만 나와 화면에 띄우기가 비싸다.
+> guid 3개면 충분하다 — 아이콘은 SO 필드를 그대로 그리는 경로라 중간에 가공이 없다.
+
+**같이 닫아 줄 것** — `TODO.md` §4 의 "진화 무기 전용 아이콘이 없어 재료 것을 쓴다" 항목.
+그림이 없던 게 아니라 **배선이 빠져 있던 것**이었다.
+
+> ⚠️ Import 는 **플레이 모드에서 실패한다** (`MarkSceneDirty`). `ManageEditor(Stop)` 먼저.
+> `D6`(요청-2) 가 어차피 Import 를 돌리므로 **같은 판에 묶어도 된다** — 다만 그 경우
+> 위 ③(수치 불변)을 `CombatFeel` 변경과 헷갈리지 않게 볼 것. 둘은 다른 CSV 다.
 
 ---
 

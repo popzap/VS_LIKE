@@ -14,7 +14,8 @@ Bomb,Bomb,Assets/Prefabs/Weapon_Aoe.prefab,Assets/Game/Sprites/Weapons/Bomb.png,
 # ── 진화 무기 (Evolutions.csv 의 결과물) ────────────────────────────────────
 # 레벨이 없다. 배열은 값 1개 = Lv1 뿐이고 Items.csv 의 MaxLevel 도 1 이다.
 # 수치는 재료 무기의 Lv5 대비 약 1.7배를 기준으로 잡은 자리표시 값이다 (근거는 BALANCE.md).
-# 아이콘은 아직 전용 스프라이트가 없어 재료 무기 것을 그대로 쓴다 (TODO.md §4).
-Excalibur,Excalibur,Assets/Prefabs/Weapon_Sword.prefab,Assets/Game/Sprites/Weapons/Sword.png,Assets/Prefabs/Proj_Bullet.prefab,,10,70,0.55,2,5,16
-Windforce,Windforce,Assets/Prefabs/Weapon_Sword.prefab,Assets/Game/Sprites/Weapons/Bow.png,Assets/Prefabs/Proj_Bullet.prefab,,16,55,0.4,1.4,6,20
-Devastator,Devastator,Assets/Prefabs/Weapon_Sword.prefab,Assets/Game/Sprites/Weapons/Gun.png,Assets/Prefabs/Proj_Bullet.prefab,,20,34,0.15,1.2,4,17
+# 전용 아이콘은 I-57 에 이미 들어와 있었는데 이 열이 재료 무기 것을 계속 가리키고 있었다.
+# C6 에서 배선했다 — 그림이 있는데 안 쓰이고 있던 것뿐이라 수치는 건드리지 않았다.
+Excalibur,Excalibur,Assets/Prefabs/Weapon_Sword.prefab,Assets/Game/Sprites/Weapons/Excalibur.png,Assets/Prefabs/Proj_Bullet.prefab,,10,70,0.55,2,5,16
+Windforce,Windforce,Assets/Prefabs/Weapon_Sword.prefab,Assets/Game/Sprites/Weapons/Windforce.png,Assets/Prefabs/Proj_Bullet.prefab,,16,55,0.4,1.4,6,20
+Devastator,Devastator,Assets/Prefabs/Weapon_Sword.prefab,Assets/Game/Sprites/Weapons/Devastator.png,Assets/Prefabs/Proj_Bullet.prefab,,20,34,0.15,1.2,4,17
