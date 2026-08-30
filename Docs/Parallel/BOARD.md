@@ -27,27 +27,28 @@
 
 | 세션 | 이슈 | 만지는 경로 | 시작 | 상태 |
 |---|---|---|---|---|
+| DEV | `D15` | `Assets/Game/Shaders/SpriteOutline.shader`(소유 예외) · `Assets/Scripts/Enemy/EnemyVisual.cs` | 2026-08-30 | `진행중` — **B1** 엘리트 외곽선이 옆 프레임 알파를 빨아들이는 문제. A안(`_SpriteRect` + MPB) |
 | CONTENT | `C6` | `Docs/DESIGN_CLASSES.md`(신설) · 이후 `Assets/Game/Balance/*.csv` · `_Incoming/` | 2026-08-30 | `진행중` — 직업 6종 컨셉 재편 + 신규 무기 6종 설계 (사용자 지시) |
 | CONTENT | `C9` | `_Incoming/{Effects,ICON}/` · `Docs/{DESIGN_CLASSES,TUNING}.md` | 2026-08-30 | `대기(REQ→DEV)` — 바닥 폭탄 + 독 장판 그림 (§6 3·4단계 선작업) — [`REQ/DEV.md`](REQ/DEV.md) 요청-8 |
-| CONTENT | `C13`·`C14`·`C16` | `_Incoming/{Summons,Effects,ICON}/` · `Tools/Art/` · `Docs/{DESIGN_CLASSES,TUNING}.md` | 2026-08-30 | `대기(REQ→DEV)` — 소환수 (§6 5단계). 그림 ✅ 드래곤·문어 → 코드/프리팹 요청 완료 — [`REQ/DEV.md`](REQ/DEV.md) 요청-11 (**DEV 가 D13 으로 착수함**). **CSV 는 프리팹이 생긴 뒤 내가 채운다** |
-| CONTENT | `C17`·`C18` | `Tools/Audio/`(신설) · `_Incoming/Audio/` · `Docs/TUNING.md` | 2026-08-30 | `대기(REQ→DEV)` — D12 실플레이 결과 반영 + **무기 전용 SFX 2종**(검·독 장판) — [`REQ/DEV.md`](REQ/DEV.md) 요청-12 (**DEV 가 D14 로 착수함**) |
+| CONTENT | `C19` | `Assets/Game/Balance/{Weapons,Items,SceneWiring}.csv` · `Tools/Art/gen_octopus.py` · `_Incoming/Effects/` · `Docs/TUNING.md` | 2026-08-30 | `대기(REQ→DEV)` — 소환수 CSV 3파일 + **촉수 그림 재작업** + SFX 볼륨 2값. DEV 요청-7·8 의 답 — [`REQ/DEV.md`](REQ/DEV.md) 요청-13 |
 
 > 상태값: `진행중` · `대기(REQ→DEV)` · `검증대기` · `막힘(B1)`
 > 끝나면 **자기 줄을 지운다.**
 >
 > ✅ **`C12`·`C15` 는 CONTENT 가 확인하고 지웠다** (2026-08-30). DEV 가 D12 에서 Import 1회로
 > 처리를 마쳤고 판정 전부 PASS → [`DONE/D12.md`](DONE/D12.md).
-> 회신(느낌 질문 5개 답 + 검 SFX 부탁, [`REQ/CONTENT.md`](REQ/CONTENT.md) **요청-6**)은 **`C17` 에서 처리 중**이다.
+> 회신([`REQ/CONTENT.md`](REQ/CONTENT.md) **요청-6**)은 **`C17` 에서 닫았다.**
 >
-> 📨 **`C16`(요청-11) 은 DEV 가 `D13` 으로 닫았다** (2026-08-30) — 프리팹 5개 생성 · 판정 12개 PASS
-> → [`DONE/D13.md`](DONE/D13.md). **이제 CONTENT 가 `Weapons.csv` 를 쓸 수 있다**
-> → [`REQ/CONTENT.md`](REQ/CONTENT.md) **요청-7**. `C13`·`C14`·`C16` 줄은 CONTENT 가 확인하고 지울 것.
+> ✅ **`C13`·`C14`·`C16` 은 CONTENT 가 확인하고 지웠다** (2026-08-30). D13 이 프리팹 5개를 만들고
+> 판정 12개 PASS → [`DONE/D13.md`](DONE/D13.md). 회신([`REQ/CONTENT.md`](REQ/CONTENT.md) **요청-7**)은
+> **`C19` 에서 닫았다** — CSV 3파일을 채우고 촉수 그림을 다시 구웠다.
 >
-> 📨 **`C17`·`C18`(요청-12) 은 DEV 가 `D14` 로 닫았다** (2026-08-30) — 클립 2장 임포트 · `SfxId` 4·5 ·
-> 호출부 2줄. 판정 **6/10 ✅ · 4건은 청취 대기** → [`DONE/D14.md`](DONE/D14.md).
-> 🔴 **회신에 CONTENT 가 답해야 할 게 있다** — 실측값 등재 + **검 `DUR` 상한 0.247s** +
-> 소환수 SFX 요청 → [`REQ/CONTENT.md`](REQ/CONTENT.md) **요청-8**.
-> `C17`·`C18` 줄은 CONTENT 가 확인하고 지울 것.
+> ✅ **`C17`·`C18` 도 CONTENT 가 확인하고 지웠다** (2026-08-30). D14 가 클립 2장을 배선하고
+> 옛 소리가 안 나는 것까지 대조군으로 확인했다 → [`DONE/D14.md`](DONE/D14.md).
+> 회신([`REQ/CONTENT.md`](REQ/CONTENT.md) **요청-8**)도 **`C19` 에서 닫았다** — 실측 등재 + 볼륨 2값 결정.
+>
+> ⏸ **아직 안 한 것: 소환수 SFX 2종.** `SummonWeapon.cs:159·174` 가 `WeaponCast`·`WeaponFire` 를
+> 빌려 쓴다. 만드는 조건은 [`TUNING.md` §2-C-2](../TUNING.md) 에 적어 뒀다. `SfxId` **6·7** 예약.
 
 ---
 
@@ -58,8 +59,8 @@ CONTENT 는 **읽기만** 한다 — 내 요청이 언제 처리될지 가늠하
 
 | 항목 | 값 |
 |---|---|
-| 상태 | `IDLE` |
-| 점유 이슈 | — |
+| 상태 | `BUSY` |
+| 점유 이슈 | `D15` (B1 셰이더 수정 · Refresh/플레이 검증) |
 | 컴파일 에러 | `0` (2026-08-30 D14 종료 시 확인 — 프로브 철거 후 Refresh, 콘솔 **0건**) |
 
 | 상태값 | 뜻 | CONTENT 가 알 것 |
@@ -77,8 +78,8 @@ CONTENT 는 **읽기만** 한다 — 내 요청이 언제 처리될지 가늠하
 
 | 세션 | 다음 이슈 번호 |
 |---|---|
-| DEV | `D15` |
-| CONTENT | `C19` |
+| DEV | `D16` |
+| CONTENT | `C20` |
 | 버그(공용) | `B6` |
 
 > 번호를 쓸 때 이 표를 **즉시** 올린다. 선점이 곧 예약이다.

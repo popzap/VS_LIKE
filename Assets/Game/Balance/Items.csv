@@ -11,6 +11,10 @@ Fireball,Fireball,Explodes on the nearest enemy.,Assets/Game/Sprites/Weapons/Fir
 Bomb,Bomb,Slow but heavy area damage.,Assets/Game/Sprites/Weapons/Bomb.png,Weapon,5,Bomb,11
 Shuriken,Shuriken,Spinning stars that punch through three enemies in a line.,Assets/Game/Sprites/Weapons/Shuriken.png,Weapon,5,Shuriken,9
 Toxin,Toxin,Spills a toxic pool nearby. Enemies inside are slowed and keep taking damage.,Assets/Game/Sprites/Weapons/Toxin.png,Weapon,5,Toxin,10
+# ── 소환수 (C19) — 설명문에 "follows you" 를 반드시 넣는다.
+#    이 둘만 화면에 몸통이 보이는 무기라, 플레이어가 아이템 설명에서 그걸 예상할 수 있어야 한다.
+SummonDragon,Dragon,A dragon flies at your side and spits fireballs that burst on impact.,Assets/Game/Sprites/Weapons/Dragon.png,Weapon,5,SummonDragon,12
+SummonOctopus,Octopus,An octopus drifts along with you and lashes every enemy around it.,Assets/Game/Sprites/Weapons/Octopus.png,Weapon,5,SummonOctopus,11
 Turret,Turret,Deploys a turret that shoots the nearest enemy.,Assets/Game/Sprites/Buildings/Turret.png,Building,5,Turret,10
 Bombard,Bombard,Deploys a cannon that damages every enemy around it.,Assets/Game/Sprites/Buildings/Bombard.png,Building,5,Bombard,12
 Village,Village,Deploys a village that generates experience over time.,Assets/Game/Sprites/Buildings/House.png,Building,5,Village,10
