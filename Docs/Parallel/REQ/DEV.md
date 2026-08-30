@@ -18,6 +18,7 @@
 | 2026-08-30 | CONTENT | `닫힘(D10)` | **수리검 + 검 근접화 — 그림은 다 나왔고 코드만 남았다** (C8) — 아래 §요청-7 · ⏸ **⑤는 CSV 대기** → [`REQ/CONTENT.md`](CONTENT.md) 요청-4 | [`DESIGN_CLASSES.md` §5-A](../../DESIGN_CLASSES.md) · [`DONE/D10.md`](../DONE/D10.md) |
 | 2026-08-30 | CONTENT | `닫힘(D11)` | **바닥 폭탄 + 독 장판 — 그림은 다 나왔고 코드만 남았다** (C9) — 아래 §요청-8 | [`DONE/D11.md`](../DONE/D11.md) · [`REQ/CONTENT.md` 요청-5](CONTENT.md) |
 | 2026-08-30 | CONTENT | `열림` | 🔴 **CSV Import 1회 — 수리검 3줄 + 검 근접화를 CSV 에 넣었다.** D10 의 판정 ⑤가 이걸로 닫힌다 (C12) — 아래 §요청-9 | [`DONE/D10.md`](../DONE/D10.md) · [`REQ/CONTENT.md` 요청-4](CONTENT.md) |
+| 2026-08-30 | CONTENT | `열림` | 🔴 **독 장판 CSV + 바닥 폭탄 켜기 — 요청-5(D11) 의 나머지 절반.** ⚠️ **요청-9 와 같은 Import 한 번으로 둘 다 끝난다** (C15) — 아래 §요청-10 | [`DONE/D11.md`](../DONE/D11.md) · [`REQ/CONTENT.md` 요청-5](CONTENT.md) |
 
 > 상태값: `열림` · `진행중` · `닫힘(D3)` · `보류(사유)`
 > 처리했으면 상태만 바꾼다. **줄을 지우지 않는다.**
@@ -916,6 +917,104 @@ Sword,Sword,Assets/Prefabs/Weapon_Melee.prefab,Assets/Game/Sprites/Weapons/Sword
    1번을 판정할 때 이걸 감안할 것. 새 SFX 가 필요하면 그때 요청한다
 
 **DEV 가 CSV 를 직접 고치지는 말 것.** 숫자는 CONTENT 가 `TUNING.md` 근거와 같이 바꾼다.
+
+---
+
+## 요청-10 — 독 장판 CSV + 바닥 폭탄 켜기 (C15) · **요청-5(D11) 의 나머지 절반**
+
+> 🔴 **요청-9 와 같은 Import 한 번으로 둘 다 끝난다.** 따로 돌리지 말 것.
+> 이게 되면 **D11 판정 ⑨ 가 닫히고 §6 3·4단계가 실제로 굴러간다.**
+>
+> ⚠️ **D12(요청-9)를 이미 돌리고 있다면 — 이 요청도 같이 들어갔다.**
+> 요청-9 와 **같은 3개 파일**을 고쳤고, 이 글을 쓰는 시점에 이미 저장돼 있다.
+> 따로 Import 를 또 돌릴 필요는 없고, **아래 판정 ②~⑦ 만 추가로 확인**하면 된다.
+> (`Toxin.asset` 이 생겼는지 · `Bomb.asset` 의 속도가 9 인지)
+
+**무엇을** — `Game/Balance/Import CSV -> ScriptableObjects` **1회** (요청-9 와 공유).
+CSV 3파일은 저장해 뒀다. **새 파일도, 새 열도 없다.**
+
+| 파일 | 무엇을 했나 |
+|---|---|
+| `Weapons.csv` | `Toxin` 줄 **추가** · `Bomb` 줄의 **`TravelPrefab`+`ProjectileSpeed` 2열만** 교체 |
+| `Items.csv` | `Toxin` 줄 **추가** |
+| `SceneWiring.csv` | `LevelUpManager,allItems` 끝에 `Toxin.asset` **1개 추가** |
+
+⚠️ **플레이 모드에서는 Import 가 실패한다** (`MarkSceneDirty`). `ManageEditor(Stop)` 먼저.
+
+---
+
+### 내가 정한 값과 그 근거 — **동의 안 되면 고치지 말고 알려 줄 것**
+
+**A. 독 장판 (신규)**
+
+```
+Toxin,Toxin,Assets/Prefabs/Weapon_Field.prefab,Assets/Game/Sprites/Weapons/Toxin.png,Assets/Prefabs/Proj_ToxinField.prefab,,0,3|4|6|8|11,3|2.7|2.4|2.1|1.8,1|1.1|1.2|1.35|1.5,1|1|1|1|1,4|5|5|6|6
+```
+
+🔴 **`Damage` 를 요청서 초안(`4|6|8|11|15`)보다 내렸다.** 요청서 스스로가 짚은
+*"`Damage` 는 틱당이다"* 를 초안 숫자가 반영하지 않고 있었다. 8을 곱해 보면:
+
+| | Lv1 | Lv2 | Lv3 | Lv4 | Lv5 |
+|---|---:|---:|---:|---:|---:|
+| 초안 `4\|6\|8\|11\|15` → 8틱 | 32 | 48 | 64 | 88 | **120** |
+| **내가 넣은 값** → 8틱 | **24** | 32 | 48 | 64 | **88** |
+| Bomb 의 한 방 | 30 | 44 | 62 | 86 | 118 |
+
+초안대로면 **완전 흡수 총량이 Bomb 의 한 방과 같아진다.** 거기에 **슬로우까지** 붙으면
+Bomb 을 집을 이유가 사라진다. **75% 로 낮추고 나머지 25% 를 감속 값으로 지불**했다.
+
+**B. `Range` 를 `5|5|6|6|7` → `4|5|5|6|6` 으로 좁혔다**
+
+Lv1 은 **쿨 3초 > 지속 4초** 라 장판이 한 번에 **하나뿐**이다. 하나뿐인 장판이
+5유닛 밖에 떨어지면 그 판은 무기가 **아무 일도 안 한다.** 좁게 시작해서,
+장판이 겹치기 시작하는 Lv4~5 에서만 넓힌다.
+
+**C. `ProjectileSize` 증가폭도 완만하게** (`1→1.5`, 초안 `1→1.7`)
+
+Lv5 는 **쿨 1.8 < 지속 4.0** 이라 **2~3장이 동시에 산다.** 크기와 개수가 같이 붙으면
+화면을 덮는다. 성장은 **개수(지대)** 로 보여 주고 크기는 덜 움직인다.
+
+**D. 폭탄 — 2열만 갈고 `Damage` 는 안 건드렸다**
+
+```
+Bomb,...,Assets/Prefabs/Proj_Aoe(Boom).prefab,Assets/Prefabs/Proj_BombGround.prefab,9,30|44|62|86|118,...
+```
+
+요청서가 지정한 `TravelPrefab` + `ProjectileSpeed`(0→**9**) **2열뿐**이다.
+🔴 **피해는 한 자리도 안 올렸다** — 검(C12)과 같은 대조 실험이다. 비행 + 신관 1.1초만큼
+늦어졌으니 올려야 하는 건 맞지만, 같이 올리면 **늦어진 대가를 영원히 못 잰다** (I-55).
+⚠️ **그래서 폭탄이 약하게 느껴질 가능성이 높다. 그건 버그가 아니라 측정값이다.**
+
+**E. 설명문** — `Spills a toxic pool nearby. Enemies inside are slowed and keep taking damage.`
+이 게임 **최초의 감속 수단**이라 카드에 "slowed" 가 반드시 보여야 한다.
+`ShopPrice` 는 **10** (Fireball 10 · Bomb 11 · Shuriken 9 사이).
+
+---
+
+### 어떻게 확인하나 (판정 기준)
+
+| # | 기준 |
+|---|---|
+| ① | `[BalanceImporter] Import 완료` · **에러 0** |
+| ② | `Assets/Game/WeaponData/Toxin.asset` · `Assets/Game/ItemData/Toxin.asset` **생성됨** |
+| ③ | `Toxin.asset` 의 `WeaponPrefab` = `Weapon_Field` · `ProjectilePrefab` = `Proj_ToxinField` — **guid 가 `0` 이 아니다** |
+| ④ | `Bomb.asset` 의 `TravelPrefab` = `Proj_BombGround` · `ProjectileSpeed` = **9** |
+| ⑤ | 🔴 **D11 판정 ⑨ — 레벨업 3택 / 상점에 `Toxin` 이 뜬다.** 이게 되면 §6 4단계가 닫힌다 |
+| ⑥ | **실플레이 — 폭탄**: 목표까지 **날아가 바닥에 떨어지고**, 벌겋게 달아오른 뒤 터진다 |
+| ⑦ | **실플레이 — 장판**: 초록 웅덩이가 플레이어 **주변 아무 데나** 깔리고, 안에 든 적이 **눈에 띄게 느려진다** |
+| ⑧ | `Weapons.csv` 열 **12개** · `Items.csv` 열 **8개** 그대로 (열 추가 없음 — 내가 이미 확인했다) |
+
+**같이 남겨 줄 것 — 이번에도 "느낌"이 산출물이다.**
+
+1. **폭탄이 얼마나 답답한가** — `fuseTime 1.1` + 비행이 **피할 시간을 주는 재미**인지
+   **그냥 느린 무기**인지. 이 하나가 3단계의 성패다
+2. **감속이 느껴지는가** — `slowMult 0.6` 이 눈에 보이나. 안 보이면 장판은 그냥 약한 도트다
+3. **Lv5 에서 장판이 화면을 덮는가** — 덮으면 `ProjectileSize` 를 먼저 내린다
+4. 🔴 **장판이 적을 한 번도 안 만나는 판이 있는가** — 있으면 `Range` 를 더 좁힌다.
+   조준하지 않는 무기라 **"빗나갔다"가 구조적으로 가능**하다
+
+**DEV 가 CSV 를 직접 고치지는 말 것.** 숫자는 CONTENT 가 `TUNING.md` 근거와 같이 바꾼다.
+🔴 `spriteRadiusAtScaleOne 0.97` · Custom pivot 은 **실측값이라 손대지 않았고, 앞으로도 안 댄다.**
 
 ---
 

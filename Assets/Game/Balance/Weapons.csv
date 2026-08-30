@@ -3,6 +3,7 @@
 #   Weapon_Sword = ProjectileWeapon (투사체를 적 방향으로 발사, ProjectileCount 만큼 15도씩 부채꼴)
 #   Weapon_Aoe   = AoeWeapon        (가장 가까운 적 위치에 폭발 생성. ProjectileCount 무시)
 #   Weapon_Melee = MeleeWeapon      (발사체 없이 앞쪽 부채꼴을 직접 벤다. D10 신설)
+#   Weapon_Field = FieldWeapon      (조준하지 않고 주변 무작위 좌표에 장판을 깐다. D11 신설)
 # 🔴 Weapon_Melee 는 아래 4개 열의 뜻을 바꾼다 (열을 새로 만들지 않고 재해석한다):
 #   Range            = 날아가는 거리가 아니라 "호의 바깥 반지름". Sword 가 10 -> 2 로 내려간 이유다.
 #                      10 을 그대로 두면 화면 전체를 한 번에 베는 무기가 된다.
@@ -17,16 +18,24 @@
 #   Shuriken 은 관통 3 (Proj_Shuriken.prefab 의 pierceCount). 그래서 ProjectileCount 를
 #     일부러 낮게(1->2) 잡았다 - 관통 위에 부채꼴을 얹으면 한 발이 9번 맞는다.
 #     폭은 Bow, 깊이는 Shuriken 이다.
+# 🔴 Weapon_Field 는 아래 2개 열의 뜻을 바꾼다 (C15):
+#   Range           = 사거리가 아니라 "장판이 떨어질 수 있는 반경"(플레이어 주변 무작위)
+#   Damage          = 1히트 피해가 아니라 "틱당 피해". 장판 4초 x 0.5초 틱 = 한 번 깔면 최대 8틱.
+#                     다른 무기의 Damage 와 나란히 읽으면 8배로 착각한다. 반드시 x8 해서 볼 것.
+#   ProjectileSpeed = 안 쓴다 (0). TravelPrefab 도 비운다 — 장판은 날아가지 않는다.
 # TravelPrefab 은 AoE 무기 전용 — 폭발(ProjectilePrefab) 전에 목표까지 날아가는 몸체다.
 #   BombProjectile 컴포넌트가 있어야 하고, ProjectileSpeed(유닛/초) 가 0 보다 커야 날아간다.
-#   비워 두면 예전처럼 목표 지점에서 곧바로 터진다 (Bomb 이 그렇다).
+#   비워 두면 목표 지점에서 곧바로 터진다.
+#   Bomb 은 C15 에서 Proj_BombGround + 속도 9 로 갈았다 - 날아가 바닥에 떨어져 1.1초 뒤 터진다.
+#   🔴 Damage 는 일부러 안 올렸다. 검(C12)과 같은 대조 실험이다 - 느려진 값만 재려면 하나만 움직인다.
 Id,WeaponName,WeaponPrefab,Icon,ProjectilePrefab,TravelPrefab,ProjectileSpeed,Damage,Cooldown,ProjectileSize,ProjectileCount,Range
 Sword,Sword,Assets/Prefabs/Weapon_Melee.prefab,Assets/Game/Sprites/Weapons/Sword.png,Assets/Prefabs/Fx_SwingArc.prefab,,0,10|15|22|30|40,1.5|1.3|1.1|0.9|0.7,1|1.1|1.2|1.3|1.5,1|1|2|2|3,2|2|2.2|2.2|2.5
 Bow,Bow,Assets/Prefabs/Weapon_Sword.prefab,Assets/Game/Sprites/Weapons/Bow.png,Assets/Prefabs/Proj_Arrow.prefab,,14,8|12|17|24|33,1.1|1|0.85|0.7|0.55,0.8|0.85|0.9|1|1.1,1|2|2|3|3,14|14|16|16|18
 Gun,Gun,Assets/Prefabs/Weapon_Sword.prefab,Assets/Game/Sprites/Weapons/Gun.png,Assets/Prefabs/Proj_Bullet.prefab,,18,5|7|10|14|19,0.45|0.4|0.34|0.28|0.22,0.7|0.7|0.8|0.8|0.9,1|1|1|2|2,11|11|13|13|15
 Fireball,Fireball,Assets/Prefabs/Weapon_Aoe.prefab,Assets/Game/Sprites/Weapons/Fireball.png,Assets/Prefabs/Proj_Aoe(Boom).prefab,Assets/Prefabs/Proj_Fireball.prefab,11,18|26|36|50|68,2.2|2|1.75|1.5|1.2,1|1.15|1.3|1.5|1.75,1|1|1|1|1,12|12|13|13|14
-Bomb,Bomb,Assets/Prefabs/Weapon_Aoe.prefab,Assets/Game/Sprites/Weapons/Bomb.png,Assets/Prefabs/Proj_Aoe(Boom).prefab,,0,30|44|62|86|118,3.5|3.2|2.9|2.5|2,1.2|1.35|1.5|1.7|2,1|1|1|1|1,9|9|10|10|11
+Bomb,Bomb,Assets/Prefabs/Weapon_Aoe.prefab,Assets/Game/Sprites/Weapons/Bomb.png,Assets/Prefabs/Proj_Aoe(Boom).prefab,Assets/Prefabs/Proj_BombGround.prefab,9,30|44|62|86|118,3.5|3.2|2.9|2.5|2,1.2|1.35|1.5|1.7|2,1|1|1|1|1,9|9|10|10|11
 Shuriken,Shuriken,Assets/Prefabs/Weapon_Sword.prefab,Assets/Game/Sprites/Weapons/Shuriken.png,Assets/Prefabs/Proj_Shuriken.prefab,,16,6|9|13|17|23,0.9|0.8|0.7|0.6|0.5,0.9|0.95|1|1.1|1.2,1|1|1|2|2,12|12|14|14|16
+Toxin,Toxin,Assets/Prefabs/Weapon_Field.prefab,Assets/Game/Sprites/Weapons/Toxin.png,Assets/Prefabs/Proj_ToxinField.prefab,,0,3|4|6|8|11,3|2.7|2.4|2.1|1.8,1|1.1|1.2|1.35|1.5,1|1|1|1|1,4|5|5|6|6
 # ── 진화 무기 (Evolutions.csv 의 결과물) ────────────────────────────────────
 # 레벨이 없다. 배열은 값 1개 = Lv1 뿐이고 Items.csv 의 MaxLevel 도 1 이다.
 # 수치는 재료 무기의 Lv5 대비 약 1.7배를 기준으로 잡은 자리표시 값이다 (근거는 BALANCE.md).

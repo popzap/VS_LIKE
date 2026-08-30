@@ -31,6 +31,8 @@
 | CONTENT | `C9` | `_Incoming/{Effects,ICON}/` · `Docs/{DESIGN_CLASSES,TUNING}.md` | 2026-08-30 | `대기(REQ→DEV)` — 바닥 폭탄 + 독 장판 그림 (§6 3·4단계 선작업) — [`REQ/DEV.md`](REQ/DEV.md) 요청-8 |
 | CONTENT | `C12` | `Assets/Game/Balance/{Weapons,Items,SceneWiring}.csv` · `Docs/{BALANCE,TUNING,DESIGN_CLASSES}.md` | 2026-08-30 | `대기(REQ→DEV)` — 수리검 CSV 3줄 + 검 근접 재해석 (§6 2단계 마무리) — [`REQ/DEV.md`](REQ/DEV.md) 요청-9 |
 | CONTENT | `C13`·`C14` | `_Incoming/{Summons,Effects,ICON}/` · `Tools/Art/`(신설) · `Docs/{DESIGN_CLASSES,TUNING}.md` | 2026-08-30 | `진행중` — 소환수 그림 (§6 5단계 선작업). 드래곤 ✅ · 문어 ✅ — **코드 요청은 아직 안 넣었다** |
+| CONTENT | `C15` | `Assets/Game/Balance/{Weapons,Items,SceneWiring}.csv` · `Docs/{BALANCE,TUNING}.md` | 2026-08-30 | `대기(REQ→DEV)` — 독 장판 CSV + 바닥 폭탄 켜기 (§6 3·4단계 마무리) — [`REQ/DEV.md`](REQ/DEV.md) 요청-10 |
+| DEV | `D12` | 에디터 조작만 (`Assets/Game/{WeaponData,ItemData}/` SO 재생성) | 2026-08-30 | `진행중` — CSV Import 1회 (수리검 + 검 근접화) — [`REQ/DEV.md`](REQ/DEV.md) 요청-9 🔴 **같은 CSV 에 요청-10(C15·독장판/폭탄)도 이미 들어가 있다 — Import 1회로 둘 다 반영된다** |
 
 > 상태값: `진행중` · `대기(REQ→DEV)` · `검증대기` · `막힘(B1)`
 > 끝나면 **자기 줄을 지운다.**
@@ -44,8 +46,8 @@ CONTENT 는 **읽기만** 한다 — 내 요청이 언제 처리될지 가늠하
 
 | 항목 | 값 |
 |---|---|
-| 상태 | `IDLE` |
-| 점유 이슈 | — |
+| 상태 | `BUSY` |
+| 점유 이슈 | `D12` |
 | 컴파일 에러 | `0` (2026-08-30 D11 종료 시 확인 — 프로브 철거 후 Refresh, 콘솔 **0건**) |
 
 | 상태값 | 뜻 | CONTENT 가 알 것 |
@@ -63,8 +65,8 @@ CONTENT 는 **읽기만** 한다 — 내 요청이 언제 처리될지 가늠하
 
 | 세션 | 다음 이슈 번호 |
 |---|---|
-| DEV | `D12` |
-| CONTENT | `C15` |
+| DEV | `D13` |
+| CONTENT | `C16` |
 | 버그(공용) | `B6` |
 
 > 번호를 쓸 때 이 표를 **즉시** 올린다. 선점이 곧 예약이다.
