@@ -6,7 +6,7 @@
 > 기존의 「C# 스크립트는 완성 단계」라는 전제와 「요청 없이 코드 건드리지 말 것」 규칙이 **해제됨**.
 > 이제 게임 완성을 위해 C# 스크립트 신규 작성·수정이 허용된다.
 >
-> **최종 갱신:** 2026-08-30 (31차 — 소리 없던 트리거 6곳 배선 + 엘리트 사망음, D8 / C3)
+> **최종 갱신:** 2026-08-30 (32차 — 활이 총알 대신 화살을 쏜다, D9 / C7)
 >
 > 🔀 **25차부터 이슈 번호가 `세션 접두어 + 번호` 다** — `D`(DEV) · `C`(CONTENT) · `B`(버그 공용).
 > 병렬 2세션 체제로 바뀌었기 때문이다 (D1). 과거 `I-1`~`I-61` 은 그대로 둔다.
@@ -2027,6 +2027,128 @@ Play 모드에서 Warrior 로 런을 시작하고 `Unity_RunCommand` 로 재료�
 
 ---
 
+## 2-36. ✅ 활이 총알 대신 화살을 쏜다 (D9 / C7, 2026-08-30 32차)
+
+### 왜 했나
+
+`BowData.ProjectilePrefab` 이 `Proj_Bullet.prefab` 이었다. 그게 그리는 그림은
+`Assets/Game/ICON/Bullet.png` — **icons8 벡터 아이콘**이다. 픽셀아트인 이 게임과 결이
+다른 것도 문제지만, 무엇보다 **활에서 총알이 나갔다.**
+
+`DESIGN_CLASSES.md` §6 항목 중 **코드가 0줄**인 유일한 건이라 먼저 잡았다.
+그림은 CONTENT(C7)가 `Bow.png` 팔레트를 직접 뽑아 그려 `_Incoming/` 에 넣어 두었다.
+
+### 무엇을 했나 — 3단계, 순서가 중요하다
+
+| 순 | 한 일 | 산출 |
+|---|---|---|
+| ① | `_Incoming/Projectiles/Arrow.png` → `Assets/Game/Sprites/Projectiles/Arrow.png` (폴더 신설) | guid `fa36863d…` · 스프라이트 fileID `21300000` |
+| ② | `Proj_Bullet.prefab` 을 **복제**해 `Proj_Arrow.prefab` 신설, `m_Sprite` 만 교체 | guid `d8a10298…` |
+| ③ | `Game/Balance/Import CSV -> ScriptableObjects` 1회 | `BowData.ProjectilePrefab` 이 화살을 가리킴 |
+
+🔴 **②를 ③보다 먼저 해야 한다.** 프리팹이 없는 상태로 Import 하면
+`ProjectilePrefab` 이 `0` 으로 덮이고 **활이 아무것도 안 쏘게 된다.**
+
+### 임포트 설정 — Unity 기본값은 전부 틀렸다
+
+넣기만 하면 `ppu=100 · Bilinear · Compressed · Multiple` 로 들어온다. 명시적으로 덮어썼다:
+
+| 항목 | 값 | 안 맞추면 |
+|---|---|---|
+| **PPU** | **512** | 1024 면 화면상 절반 크기 (I-58 과 같은 함정) |
+| Filter | **Point** | Bilinear 은 픽셀아트를 뭉갠다 |
+| Compression | **Uncompressed** | 화살대가 4px 이라 압축에 뭉개진다 |
+| Sprite Mode | **Single** · Pivot **Center** | 회전축이 화살대 중간이어야 한다 |
+| Alpha Is Transparency | ✅ | |
+
+알파는 `min=0 max=255` 로 **I-41 가짜 투명이 아니었다.** bbox `200×72px`, 좌우 여백 28px.
+
+### 프리팹 — 다른 줄이 정확히 하나다
+
+```diff
+-  m_Sprite: {fileID: 430330343462687638, guid: 1f4e1489ffaa4e94690bcd7ca34c7b1f, type: 3}
++  m_Sprite: {fileID: 21300000, guid: fa36863d29706ab498581ebf57104088, type: 3}
+```
+
+Layer `8` · Tag `Projectile` · `Rigidbody2D`(Kinematic · gravity 0 · Constraints 4) ·
+`CircleCollider2D`(isTrigger · radius 0.5) · `ProjectileBase` · `DrawMode 0` 을 전부 승계.
+
+> ℹ️ 루트 GameObject 의 fileID 가 `691123369852945806` 으로 원본과 **같다.**
+> `AssetDatabase.CopyAsset` 은 로컬 fileID 를 보존한다 — 정상이다. 가르는 건 **guid** 다.
+
+### 변경한 파일
+
+| 파일 | 변경 |
+|---|---|
+| `Assets/Game/Sprites/Projectiles/Arrow.png` (+`.meta`) | 신설 (CONTENT 산출물 이관) |
+| `Assets/Prefabs/Proj_Arrow.prefab` (+`.meta`) | 신설 (`Proj_Bullet` 복제 + 스프라이트 1줄) |
+| `Assets/Game/WeaponData/Bow.asset` | `ProjectilePrefab` guid `b302c4b4…` → `d8a10298…` **(1줄)** |
+| `_Incoming/Projectiles/Arrow.png` | 삭제 (규칙대로) |
+
+**C# 은 한 줄도 안 고쳤다.**
+
+### 검증 로그
+
+| # | 기준 | 결과 |
+|---|---|---|
+| ① | `bounds.size` | ⚠️ `(0.500, 0.500)` — 기대값 `(0.391, 0.141)` 과 다르지만 **둘 다 맞다**(아래) |
+| ② | `Bow.asset` guid | ✅ `d8a10298…`, `0` 아님 |
+| ③ | 나머지 수치 불변 | ✅ `ProjectileSpeed 14` · `Damage 8\|12\|17\|24\|33` · `Cooldown` 그대로 |
+| ④ | 🔴 **실플레이 방향** | ✅ **눈으로 봤다** — 아래 |
+| ⑤ | 명중 시 소멸 + 피해 | ✅ 대조군 비교 + 스택 트레이스 |
+| ⑥ | Import 로그 | ✅ Weapons **8** · Economy **43/43** · SceneWiring **11/11** · 에러 0 |
+
+**① 이 왜 달랐나 — 서로 다른 것을 재고 있었다**
+
+| 무엇 | 계산 | 값 |
+|---|---|---|
+| `sprite.bounds.size` (Single) | **텍스처 전체 rect** 256 ÷ 512 | `(0.500, 0.500)` |
+| 그림의 실제 크기 | **알파 bbox** 200 ÷ 512 · 72 ÷ 512 | `(0.391, 0.141)` |
+
+Single 스프라이트는 알파를 잘라내지 않는다. **PPU 는 정확히 512** 이므로 ①이 잡으려던
+"PPU 1024 로 들어감"(그랬다면 `0.25`)은 아니다. 실제 폭 0.391 유닛은 기존 총알 0.41 과 같다.
+
+**④ — 화살 4개를 세우고 게임 카메라로 찍었다**
+
+```
+[D9] +X(오른쪽) → z회전 = 0.0    sprite = Arrow  flipX = False
+[D9] +Y(위)     → z회전 = 90.0   sprite = Arrow  flipX = False
+[D9] -X(왼쪽)   → z회전 = 180.0  sprite = Arrow  flipX = False
+[D9] -Y(아래)   → z회전 = 270.0  sprite = Arrow  flipX = False
+```
+
+`Unity_Camera_Capture(Camera.main)` 결과 **네 방향 모두 촉이 진행 방향을 향한다.** 뒤집힘 0.
+`ProjectileBase` 에 `flipX` 는 없다 — 방향은 `Mathf.Atan2(dir.y, dir.x)` 회전과
+`Translate(Vector2.right …)` 로만 만들어지므로 **그림이 +X 를 향해야만 맞다.** 실제로 그렇다.
+
+**⑤ — 대조군을 같이 쐈다**
+
+| 발사체 | 소멸 지점 | 이동 거리 | 표적과의 거리 |
+|---|---|---:|---:|
+| `Proj_Bullet` (대조군) | `(7.07, 1.08)` | **2.37** | 0.63 |
+| `Proj_Arrow` | `(7.70, 0.45)` | **2.37** | 0.63 |
+
+숫자가 완전히 같다. 스택 트레이스가 경로 전체를 보여 준다 —
+`ProjectileBase.OnTriggerEnter2D` → `EnemyBase.TakeDamage` → `EnemyBase.Die`.
+
+> ℹ️ 첫 시도는 화살이 표적을 지나쳐 사거리 끝까지 날아갔다. 표적을 **스폰한 그 프레임에**
+> 8유닛/초로 쐈던 케이스다 — 에디터가 포커스를 잃으면 프레임 간격이 커져 한 프레임
+> 이동량이 콜라이더 반지름을 넘는다. **화살이 아니라 테스트 조건 문제**였고,
+> 그걸 가른 게 대조군이다.
+
+### 같이 나온 것
+
+[`Parallel/BUGS.md` B5](Parallel/BUGS.md) 신설 — **고치지 않았다.**
+웨이브 밖에서 적이 죽으면 `WaveManager.OnEnemyKilled` 가 NRE 를 던진다(`_currentWaveData` null).
+`Die()` 중간에서 터져 **사망 연출·사망음이 통째로 건너뛰어지고 시체가 남는다.**
+지금 게임 경로로는 안 나므로 우선순위 낮음.
+
+임시 오브젝트 `D9_*` **7개 전부 삭제** 확인(`남은 D9_* = 0`), 플레이 종료 후 **컴파일 에러 0**.
+
+상세: [`Parallel/DONE/D9.md`](Parallel/DONE/D9.md)
+
+---
+
 ## 2-35. ✅ 소리 없던 트리거 6곳 배선 + 엘리트 사망음 (D8 / C3, 2026-08-30 31차)
 
 ### 왜 했나
@@ -3413,6 +3535,7 @@ Play 모드 — 한 세션에서 두 경로 전부:
 | **D6**<br>(C2) | **적 타격감 12개가 `EnemyBase.cs` 에 `const` 로 박혀 있었다** — 플레이하며 조절해야 하는 값인데 고칠 때마다 재컴파일이 필요했다. `Economy.csv` 로 뺄 수 없었던 이유는 임포터가 **씬만 훑는데** 적은 프리팹을 공유하기 때문 | ✅ 해결 (2026-08-30 29차 → 2-33) — **`CombatFeel` 씬 컴포넌트** 신설로 임포터를 안 고치고 기존 3열 규칙에 태웠다. `Default*` `const` 하나가 **필드 기본값이자 폴백**이라 컴포넌트가 없어도 같은 감각으로 돈다. `Economy.csv` **43/43 적용**(+12) · `!` 경고 0. 🔴 **"안 바뀐다"만으로는 배선을 판정할 수 없어** `6`→`20`→`6` 왕복으로 확인했다(엘리트 8.000 = 20×0.4 로 저항 2줄도 같이 증명) |
 | **D7**<br>(C6) | **진화 무기 3종이 재료 무기 아이콘을 그대로 썼다** (Excalibur = Sword 아이콘). 🔴 **그림이 없던 게 아니라 배선이 빠져 있었다** — 전용 png 3장은 I-57(20차 `a85cc9f`)에 이미 들어와 있었고 `Weapons.csv` 의 `Icon` 열만 재료 무기를 가리킨 채였다 | ✅ 해결 (2026-08-30 30차 → 2-34) — CONTENT 가 `4f1a92c`(C6)로 CSV 를 고쳐 두어 DEV 는 **Import 1회**만 했다. guid 3쌍을 **Import 전에 기록**해 두고 대조. `git diff` 가 **파일당 `Icon` 한 줄뿐**이라 다른 수치가 안 되돌아갔음을 증명(`Damage` 70/55/34 유지) · `Economy.csv 43/43` 도 유지되어 29차 `CombatFeel` 도 무사. 실플레이는 요청-5 가 면제 |
 | **D8**<br>(C3) | **소리가 아예 안 나는 지점이 6곳** 있었다 — 터렛·곡사포 발사, 원거리 적의 발사, 식당 회복, 보스 등장, 상점·레벨업 리롤. 여기에 사용자 지시 **"잡몹은 같은 소리, 엘리트·보스만 다르게"** 가 더해졌다. CONTENT 는 스펙만 낼 수 있었다 — 클립 생성(Unity AI)도 `.asset` 등록도 에디터라 DEV 소유다 | ✅ 해결 (2026-08-30 31차 → 2-35) — `SfxId` **7개 추가**(`Crit` 은 값만 예약) · 호출부 **6곳** · 클립 **6개** 생성 후 프로젝트 규격(ADPCM+mono)으로 재임포트 · `AudioLibrary` **14→20**. 🔴 **`AudioId.cs:8` 의 "끝에 추가한다" 주석이 틀렸다** — `Id` 값 매핑이라 빈 번호 삽입이 안전하다(같이 고침). 엘리트 분기는 요청서가 "노말 웨이브에서 불가"라 했으나 **재초기화 우회로로 `EnemyDie`/`EnemyDieElite` 를 같은 프레임에 동시 증명**. 🔴 **판정 2개는 못 했다 — 이 머신이 `sfx_vol=0.00` 이라 무음**(버그 아닌 저장된 설정) |
+| **D9**<br>(C7) | **활이 총알을 쏘고 있었다.** `BowData.ProjectilePrefab` 이 `Proj_Bullet.prefab` 이라 icons8 벡터 아이콘(`ICON/Bullet.png`)이 날아갔다. `DESIGN_CLASSES.md` §6 중 **코드가 0줄인 유일한 항목** | ✅ 해결 (2026-08-30 32차 → 2-36) — `Arrow.png` 임포트(**PPU 512** · Point · Uncompressed) · `Proj_Arrow.prefab` **복제 신설**(다른 줄 = `m_Sprite` **1줄**) · `Weapons.csv` Import(**저장소 전체에서 바뀐 줄 1줄**). 🔴 **④(방향)를 게임 카메라 캡처로 직접 봤다** — 네 방향 모두 촉이 진행 방향. ⑤는 `Proj_Bullet` 을 **대조군으로 같이 쏴** 이동거리 2.37 일치 + 스택 트레이스로 증명. ⚠️ **판정 ①의 기대값은 `bounds`(0.5) 가 아니라 알파 bbox(0.391) 기준이었다** — PPU 는 정확히 512. 덤으로 **B5** 발견(고치지 않음) |
 
 ### 해결 상세
 
@@ -3952,6 +4075,28 @@ private void LateUpdate()
      `RestaurantBuilding.OnCooldownElapsed()` 로 왔지만 그 메서드는 **회복을 안 한다** — 픽업을 떨굴 뿐이다.
      요청서 자신의 규칙("주기적인 건물 산출에 소리를 달면 잔소리")을 적용하면 `HealPickup` 이 맞다.
      **스펙과 코드가 어긋나면 임의로 맞추지 말고 사용자에게 근거와 함께 물을 것.**
+
+**32차 (D9) — 활이 화살을 쏜다**
+
+138. 🔴 **Single 스프라이트의 `bounds.size` 는 알파 크기가 아니라 텍스처 전체 rect 다.**
+     256×256 캔버스에 200×72 짜리 화살을 그리고 PPU 512 로 넣으면 `bounds` 는
+     `(0.391, 0.141)` 이 아니라 **`(0.500, 0.500)`** 이다. 둘 다 맞는 숫자다 —
+     **판정 기준에 크기를 적을 때 `bounds` 기준인지 알파 bbox 기준인지 같이 적을 것.**
+     (Multiple 모드는 슬라이스 rect 를 쓰므로 또 다르다.)
+139. 🔴 **"안 맞았다"를 애셋 탓으로 돌리기 전에 대조군을 같이 쏠 것.** 화살이 적을 통과해
+     사거리 끝까지 날아갔는데, 같은 조건으로 **기존 `Proj_Bullet` 을 같이 쏘니 이동 거리가
+     2.37 로 완전히 같았다** — 새 프리팹이 아니라 **테스트 조건**(스폰 직후 발사 + 낮은 프레임률)이
+     문제였다. 원인이 새것에 있는지 판을 가르는 가장 싼 방법은 **옛것을 나란히 돌리는 것**이다.
+140. ⚠️ **에디터가 포커스를 잃으면 프레임 간격이 커져 트리거가 뚫린다.** `transform.Translate`
+     로 움직이는 발사체는 한 프레임 이동량이 콜라이더 반지름을 넘으면 그냥 통과한다.
+     원격(MCP) 검증에서 속도가 빠른 것을 볼 때는 **속도를 낮추거나 표적을 크게** 할 것.
+     (게임 자체의 터널링이 아니라 **검증 환경**의 함정이다.)
+141. ⚠️ **`AssetDatabase.CopyAsset` 은 로컬 fileID 를 보존한다.** 복제한 프리팹의 루트
+     GameObject fileID 가 원본과 똑같이 나와도 **버그가 아니다.** 둘을 가르는 건 **guid** 다.
+     "fileID 가 같은데 괜찮나"로 시간을 쓰지 말 것.
+142. 🔴 **새 png 를 `Assets/` 에 넣기만 하면 임포트 설정이 프로젝트 규격과 다르다.**
+     Unity 기본값은 `ppu=100 · Bilinear · Compressed · Multiple` 이다.
+     `TextureImporter` 로 명시적으로 덮고 **`SaveAndReimport()` 까지** 부를 것 (교훈 136 의 그림판).
 
 **16~17 과정에서 함께 처리한 것**
 

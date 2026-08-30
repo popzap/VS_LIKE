@@ -30,7 +30,6 @@
 | CONTENT | `C6` | `Docs/DESIGN_CLASSES.md`(신설) · 이후 `Assets/Game/Balance/*.csv` · `_Incoming/` | 2026-08-30 | `진행중` — 직업 6종 컨셉 재편 + 신규 무기 6종 설계 (사용자 지시) |
 | CONTENT | `C8` | `_Incoming/{Projectiles,Effects,ICON}/` | 2026-08-30 | `대기(REQ→DEV)` — 수리검 + 휘두름 호 그림 (§6 2단계 선작업) — [`REQ/DEV.md`](REQ/DEV.md) 요청-7 |
 | CONTENT | `C9` | `_Incoming/{Effects,ICON}/` · `Docs/{DESIGN_CLASSES,TUNING}.md` | 2026-08-30 | `대기(REQ→DEV)` — 바닥 폭탄 + 독 장판 그림 (§6 3·4단계 선작업) — [`REQ/DEV.md`](REQ/DEV.md) 요청-8 |
-| DEV | `D9` | `Assets/Game/Sprites/Projectiles/`(신설) · `Assets/Prefabs/Proj_Arrow.prefab`(신설) · `Assets/Game/WeaponData/` · `_Incoming/Projectiles/Arrow.png`(삭제) | 2026-08-30 | `진행중` — 요청-6(C7) 화살 임포트 + 프리팹 복제 + `Weapons.csv` Import |
 
 > 상태값: `진행중` · `대기(REQ→DEV)` · `검증대기` · `막힘(B1)`
 > 끝나면 **자기 줄을 지운다.**
@@ -44,9 +43,9 @@ CONTENT 는 **읽기만** 한다 — 내 요청이 언제 처리될지 가늠하
 
 | 항목 | 값 |
 |---|---|
-| 상태 | `BUSY` |
-| 점유 이슈 | `D9` (요청-6 — 화살 png 임포트 · 프리팹 복제 · `Weapons.csv` Import) |
-| 컴파일 에러 | `0` (2026-08-30 D8 종료 시 확인 — 플레이 종료 후 콘솔 Log 8건, Warning·Error 0) |
+| 상태 | `IDLE` |
+| 점유 이슈 | — |
+| 컴파일 에러 | `0` (2026-08-30 D9 종료 시 확인 — 플레이 종료 후 콘솔 클리어, Warning·Error 0) |
 
 | 상태값 | 뜻 | CONTENT 가 알 것 |
 |---|---|---|
@@ -65,7 +64,7 @@ CONTENT 는 **읽기만** 한다 — 내 요청이 언제 처리될지 가늠하
 |---|---|
 | DEV | `D10` |
 | CONTENT | `C12` |
-| 버그(공용) | `B5` |
+| 버그(공용) | `B6` |
 
 > 번호를 쓸 때 이 표를 **즉시** 올린다. 선점이 곧 예약이다.
 > ℹ️ 과거 이력의 `I-1`~`I-61` 은 그대로 둔다. 새 번호만 접두어 방식이다.

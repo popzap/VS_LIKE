@@ -17,6 +17,7 @@
 | **B2** | 2026-08-30 | 사용자(실플레이) | **CONTENT** | **원인 확정** — Goblin·Slime 걷기 시트가 깨졌다. 16칸 중 12칸이 프레임이 아니라 **작은 캐릭터 9~16마리 뭉치** | `수정됨(C1/D4)` |
 | **B3** | 2026-08-30 | 사용자(실플레이) | **DEV** | Turret·Restaurant 가 설치된 상태에서 Village 를 얻고 `Z` 를 누르면 **Village 가 아니라 Turret·Restaurant 가 한 번 더 설치된다** | `보류(B안 적용 D2 — 표시만 넣었고 큐 순서는 그대로)` |
 | **B4** | 2026-08-30 | CONTENT | **DEV** | 일시정지·옵션창 글자 6곳이 **빈칸으로 나온다.** 씬에 한글이 남아 있는데 폰트가 Static 115자라 한글이 없다 | `수정됨(D5)` |
+| **B5** | 2026-08-30 | DEV(D9 검증 중) | **DEV** | **웨이브 밖에서 적이 죽으면 `WaveManager.OnEnemyKilled` 가 NRE 를 던진다** (`_currentWaveData` 가 null). 지금 게임 경로로는 안 난다 | `열림(우선순위 낮음)` |
 
 > 상태값: `열림` · `확인중` · `수정됨(D3)` · `재현안됨` · `보류(사유)`
 > **줄을 지우지 않는다.** 닫혀도 그대로 둔다 — 재발했을 때 근거가 된다.
@@ -339,3 +340,44 @@ font asset or any potential fallbacks. It was replaced by Unicode character \u25
 
 > ⚠️ **씬에 한글이 또 들어오면 같은 버그가 재발한다.** 폰트는 여전히 Static 115자다.
 > 새 UI 문자열을 넣을 때 `CLAUDE.md` §3 "UI 문자열은 영문" 을 지키면 된다.
+
+---
+
+## B5 — 웨이브 밖에서 적이 죽으면 NRE
+
+**증상:**
+
+```
+NullReferenceException
+  WaveManager.OnEnemyKilled (EnemyBase enemy)   (WaveManager.cs:139)
+  EnemyBase.Die ()                               (EnemyBase.cs:421)
+  EnemyBase.TakeDamage (single, nullable)        (EnemyBase.cs:374)
+  ProjectileBase.OnTriggerEnter2D (Collider2D)   (ProjectileBase.cs:40)
+```
+
+**원인:** `WaveManager.cs:139`
+
+```csharp
+if (_currentWaveData.UseKillClear && _killCount >= _currentWaveData.KillTarget)
+```
+
+`_currentWaveData` 는 웨이브가 시작될 때 채워진다. 웨이브가 도는 중이 아닌데
+적이 죽으면 **null 참조**다. `EnemyBase.Die()` 는 `GameManager.Instance?.WaveManager.OnEnemyKilled(this)`
+로 부르는데 `?.` 는 `GameManager.Instance` 만 막아 준다.
+
+**🔴 예외가 `Die()` 중간에서 터지므로 뒤가 통째로 안 돈다** — `PlayDeathImpact` · 사망음 ·
+`DeathPopRoutine` 이 전부 건너뛰어져 **시체가 살아 있는 채로 화면에 남는다.**
+(D9 검증 때 실제로 표적이 `active=True` 로 남았다.)
+
+**재현 절차 (지금은 이 길뿐이다):**
+1. 플레이 모드 진입 → `MainMenu` 상태 그대로 둔다 (웨이브 시작 안 함)
+2. 풀에 있는 적을 하나 켜서 `Initialize(EnemyData)` 로 세운다
+3. 그 적을 죽인다 → 위 예외
+
+**⚠️ 지금 게임 경로로는 안 난다.** 적은 `WaveManager` 가 소환하고, 그때는 항상
+`_currentWaveData` 가 있다. **그래서 우선순위가 낮다.** 다만 앞으로
+"웨이브 사이에도 남아 있는 적" · "튜토리얼용 더미" · "웨이브 클리어 직후 잔존 적" 같은 게
+생기면 **바로 터진다** — 사망 처리는 게임 내내 도는 경로라 여기서 멈추면 눈에 띈다.
+
+**고치는 법 (한 줄):** `if (_currentWaveData != null && _currentWaveData.UseKillClear && …)`
+🔴 **고치지 않았다.** D9 는 화살 임포트 작업이고 이건 그 범위 밖이다 (`SESSION_PROMPT.md` §5).
