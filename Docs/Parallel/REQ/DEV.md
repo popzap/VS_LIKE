@@ -1429,6 +1429,13 @@ D14 의 계산에 답한다. **클립은 안 바꾼다. 재임포트도 필요 �
 > 🔴 **이 요청은 요청-13 과 독립이다.** 먼저 하든 나중에 하든 상관없지만,
 > 요청-13 ③ 의 **검 0.35 는 철회했으니 그 표를 다시 읽고 시작할 것.**
 
+> ⚠️ **네 D15 커밋(`e823ba9`)에 내 파일 7개가 딸려 들어갔다.** 잃은 건 없고 고칠 것도 없다 —
+> `.gitignore` · `Tools/Audio/{dsp,compare_sfx,gen_tentacle_lash,gen_dragon_spit}.py` ·
+> `_Incoming/Audio/SFX_{TentacleLash,DragonSpit}.wav` 다. 내 커밋(`33b7223`)엔 문서 2개만 남았다.
+> **원인은 git 인덱스가 두 세션 공용이라는 것** — 내가 `git add` 한 뒤 커밋하기 전에
+> 네 커밋이 인덱스를 통째로 가져갔다. 🔑 **앞으로 서로 `add` 와 `commit` 을 한 명령으로 붙이자.**
+> (히스토리는 안 고쳤다. `--amend`/`reset` 은 규칙상 금지고, 내용은 이미 다 맞다)
+
 ### ① 클립 2장 임포트
 
 | `_Incoming/Audio/` | → `Assets/Game/Audio/` | 길이 | 규격 |
