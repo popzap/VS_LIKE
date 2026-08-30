@@ -12,6 +12,7 @@
 | 2026-08-30 | DEV | `닫힘(C10)` | **신규 SFX 6종의 볼륨·피치를 `TUNING.md` 에 등재** (D8 산출) — 아래 §요청-2 | [`DONE/D8.md`](../DONE/D8.md) |
 | 2026-08-30 | DEV | `닫힘(C11)` | **화살 크기(PPU 512) 체감 항목을 `TUNING.md` §3 에 실측값으로 확정** (D9 산출) — 아래 §요청-3 | [`DONE/D9.md`](../DONE/D9.md) |
 | 2026-08-30 | DEV | `닫힘(C12)` | 🔴 **수리검 CSV 3줄 추가 + 검을 근접으로 재해석** — 프리팹은 D10 이 다 만들어 놨다. **CSV 가 들어와야 게임에 나온다** — 아래 §요청-4 | [`DONE/D10.md`](../DONE/D10.md) |
+| 2026-08-30 | DEV | `열림` | 🔴 **독 장판 CSV 4곳 + 바닥 폭탄 켜기** — 프리팹·코드·그림은 D11 이 다 만들어 놨다. **CSV 가 들어와야 게임에 나온다** — 아래 §요청-5 | [`DONE/D11.md`](../DONE/D11.md) |
 
 > 상태값: `열림` · `진행중` · `닫힘(C2)` · `보류(사유)`
 > 처리했으면 상태만 바꾼다. **줄을 지우지 않는다.**
@@ -378,6 +379,157 @@ Lv5 실효 DPS 로 환산하면 다른 무기의 2.5배가 되어 **다른 무�
 🔴 **Import 는 에디터라 DEV 몫이다.** CSV 를 저장한 뒤 [`DEV.md`](DEV.md) 에
 `Game/Balance/Import CSV -> ScriptableObjects` 실행을 요청할 것.
 **플레이 모드에서는 Import 가 실패한다** — BOARD §2 가 `PLAYING` 이면 밀린다.
+
+---
+
+## 요청-5 — 독 장판 CSV + 바닥 폭탄 켜기 (D11)
+
+**왜** — D11 이 `DESIGN_CLASSES.md` §6 **3·4단계**의 코드·프리팹·그림을 전부 만들어 놨다.
+지금 게임을 켜면 **아직 아무것도 안 보인다** — CSV 에 줄이 없어서다.
+`Toxin` 은 레벨업 3택에 안 뜨고, `Bomb` 은 여전히 목표 지점에서 곧바로 터진다.
+**이 요청이 처리되어야 3·4단계가 실제로 굴러간다.**
+
+DEV 가 만들어 둔 것 (전부 검증 끝, `Assets/` 안에 이미 있다 — 판정 근거는 [`DONE/D11.md`](../DONE/D11.md)):
+
+| 프리팹 / 그림 | 무엇 |
+|---|---|
+| `Assets/Prefabs/Proj_ToxinField.prefab` | 독 장판 본체. 4초 지속 · 0.5초마다 피해+슬로우 |
+| `Assets/Prefabs/Weapon_Field.prefab` | **장판 무기 본체** (`FieldWeapon`) |
+| `Assets/Prefabs/Proj_BombGround.prefab` | 바닥에 떨어져 **1.1초 뒤** 터지는 폭탄. 신관이 벌겋게 달아오른다 |
+| `Assets/Game/Sprites/Effects/ToxinField.png` | 장판 6프레임 (PPU 100) |
+| `Assets/Game/Sprites/Effects/BombGround.png` | 신관 4프레임 (PPU 256) |
+| `Assets/Game/Sprites/Weapons/Toxin.png` | 아이콘 (1024², **PPU 512** — `Bomb`/`Bow`/`Shuriken` 과 같은 규격) |
+
+---
+
+### 5-A. `Weapons.csv` — `Toxin` 줄 **추가**
+
+헤더는 그대로 12열이다. 열을 새로 만들지 않는다.
+
+```
+Toxin,Toxin,Assets/Prefabs/Weapon_Field.prefab,Assets/Game/Sprites/Weapons/Toxin.png,Assets/Prefabs/Proj_ToxinField.prefab,,0,<damage>,<cooldown>,<size>,<count>,<range>
+```
+
+- `TravelPrefab` 은 **빈칸**, `ProjectileSpeed` 는 **0**. 장판은 날아가지 않는다
+- 🔴 **`Range` 의 뜻이 또 다르다.** `FieldWeapon` 에서 `Range` 는 사거리가 아니라
+  **장판이 떨어질 수 있는 반경**(플레이어 주변 무작위)이다. 크게 잡을수록 넓게 흩뿌린다.
+  `MeleeWeapon` 이 `Range` 를 "호의 반지름"으로 재해석한 것과 같은 방식이다
+- 🔴 **`Damage` 는 "틱당" 이다.** 장판이 4초 사는 동안 0.5초마다 들어가므로
+  **한 번 깔면 최대 8번**이 실제 피해다. 다른 무기의 1히트 피해와 나란히 놓으면 **8배로 과하다.**
+  숫자를 정할 때 반드시 이걸 나눠서 볼 것
+- `ProjectileSize` 는 장판 반경에 곱해진다 (`fieldRadius 1.2` × 이 값)
+- `ProjectileCount` 는 **안 쓴다** (`1|1|1|1|1`). 한 발사에 장판 1개다
+- 🔴 `<>` 안의 값은 **CONTENT 가 정한다.** 정한 근거는 `BALANCE.md` 에 남길 것
+
+DEV 가 요청서 초안에 적어 둔 값은 아래와 같으나 **참고일 뿐, 그대로 쓰지 말고 위 3가지
+(틱당 피해 · Range 의 뜻 · Size 곱)를 반영해 다시 볼 것.**
+
+```
+Toxin,Toxin,Assets/Prefabs/Weapon_Field.prefab,Assets/Game/Sprites/Weapons/Toxin.png,Assets/Prefabs/Proj_ToxinField.prefab,,0,4|6|8|11|15,3|2.7|2.4|2.1|1.8,1|1.15|1.3|1.5|1.7,1|1|1|1|1,5|5|6|6|7
+```
+
+### 5-B. `Weapons.csv` — `Bomb` 줄에 **바닥 폭탄 켜기** (2열만)
+
+지금 줄:
+
+```
+Bomb,Bomb,Assets/Prefabs/Weapon_Aoe.prefab,Assets/Game/Sprites/Weapons/Bomb.png,Assets/Prefabs/Proj_Aoe(Boom).prefab,,0,30|44|62|86|118,3.5|3.2|2.9|2.5|2,1.2|1.35|1.5|1.7|2,1|1|1|1|1,9|9|10|10|11
+```
+
+바꿀 열은 **2개**다. 나머지는 건드리지 않는다.
+
+| 열 | 지금 | 바꿀 값 | 왜 |
+|---|---|---|---|
+| `TravelPrefab` | (빈칸) | **`Assets/Prefabs/Proj_BombGround.prefab`** | 목표까지 날아가 **바닥에 떨어져 기다리는** 몸체 |
+| `ProjectileSpeed` | `0` | **`9` 안팎** | 🔴 **0 이면 안 날아간다** — 아래 |
+
+🔴 **`ProjectileSpeed` 가 0 이면 `TravelPrefab` 을 넣어도 소용없다.**
+`AoeWeapon` 은 속도가 0 보다 커야 몸체를 쏜다. 지금 `Bomb` 이 즉폭인 이유가 이 0 이다.
+(`Fireball` 이 `11` 로 날아가고 있으니 그것보다 조금 느린 값이 폭탄답다.)
+
+🔴 **`ProjectilePrefab`(`Proj_Aoe(Boom)`)은 그대로 둔다.** 이 열은 **폭발**이고
+`TravelPrefab` 이 **날아가는 몸체**다. 둘은 다른 것이다.
+
+⚠️ **이건 `Bomb` 의 체감을 크게 바꾼다.** 지금까지 즉시 들어가던 피해가
+**비행 + 1.1초 신관** 만큼 늦어진다. 피해량은 **이번에 올리지 말 것** —
+D10 의 검과 같은 이유다(I-55, 한 번에 두 변수를 움직이지 않는다).
+느려진 만큼 약해졌는지는 **플레이해서 재는 값**이고, `TUNING.md` 항목이다.
+
+### 5-C. `Items.csv` — `Toxin` 줄 **추가**
+
+헤더: `Id,ItemName,Description,Icon,Category,MaxLevel,RefId,ShopPrice`
+
+```
+Toxin,Toxin,<영문 설명>,Assets/Game/Sprites/Weapons/Toxin.png,Weapon,5,Toxin,<price>
+```
+
+- `RefId` 는 `Weapons.csv` 의 `Id` 와 정확히 같아야 물린다 → `Toxin`
+- 🔴 **`Description` 은 화면에 뜬다 → 영문으로 쓸 것** (`CLAUDE.md` §3).
+  이 무기의 정체성은 **"느리게 만든다"** 다. 이 게임 최초의 슬로우 수단이므로
+  설명에 반드시 드러나야 한다. 초안: `Drops a toxic pool that slows and burns anything inside.`
+- `MaxLevel` 은 `Weapons.csv` 의 배열 길이(5)와 맞춘다
+
+### 5-D. `SceneWiring.csv` — 레벨업 후보에 등록
+
+7번째 줄 `LevelUpManager,allItems,…` 의 경로 목록 **끝**에 붙인다:
+
+```
+|Assets/Game/ItemData/Toxin.asset
+```
+
+🔴 **이 줄을 빼먹으면 `Items.csv` 를 넣어도 레벨업 3택·상점에 안 나온다.**
+D11 판정 ⑨ 가 바로 이것이라 **아직 미검증 상태로 남아 있다.**
+
+### 5-E. `TUNING.md` 에 올릴 체감 항목
+
+D11 이 정한 값 중 **로그로는 판정할 수 없는 것**들이다.
+전부 "돌아가긴 하는데 느낌이 맞는지는 모르는" 상태다.
+
+| 값 | 지금 | 어디 | 무엇을 보나 · 이상하면 |
+|---|---:|---|---|
+| `fuseTime` | `1.1` | `Proj_BombGround.prefab` | 🔴 **이번 작업의 핵심 체감값.** 피할 시간을 주는가, 답답한가. 길면 0.8 / 짧으면 1.5 |
+| `fieldDuration` | `4.0` | `Proj_ToxinField.prefab` | 장판이 **화면을 뒤덮는가.** 겹쳐 쌓이면 내린다 |
+| `tickInterval` | `0.5` | `Proj_ToxinField.prefab` | 피해 숫자가 **너무 자주 뜨는가.** 🔴 이걸 내리면 총 피해가 그만큼 곱으로 늘어난다 |
+| `slowMult` | `0.6` | `Proj_ToxinField.prefab` | 40% 감속. **체감이 안 되면** 0.5, 적이 멈춰 보이면 0.7 |
+| `fieldRadius` | `1.2` | `Weapon_Field.prefab` | 장판 하나의 크기. `Weapons.csv` 의 `ProjectileSize` 가 곱해진다 |
+| `frameRate` (장판) | `12` | `Proj_ToxinField.prefab` | 6프레임 루프. 끊겨 보이면 올린다 |
+| `spriteRadiusAtScaleOne` | `0.97` | `Proj_ToxinField.prefab` | 🔴 **실측값이다. 손대지 말 것** — 아래 |
+
+🔴 **`spriteRadiusAtScaleOne = 0.97` 과 `ToxinField.png` 의 Custom pivot 은 체감값이 아니다.**
+
+DEV 가 요청-8 초안에 적어 둔 **"Pivot Center"** 와 **"`1.0` 고치지 말 것"** 은 **둘 다 틀렸다.**
+셀의 알파를 실제로 재 보니 그려진 원의 중심이 셀 중앙(128,128)이 아니라 **(134, 132)** 이고
+반지름이 128px 이 아니라 **≈97px** 이다. 그래서:
+
+- pivot = `(0.5234375, 0.484375)` — Center 를 쓰면 **맞는 원과 보이는 원이 어긋난다**
+- `spriteRadiusAtScaleOne = 0.97` — `1.0` 을 쓰면 그림이 3% 작게 나온다
+
+**사용자 승인을 받아 실측값으로 보정했다.** 화면 픽셀로 검증한 중심 오차가 **0.7px** 다
+(보정이 없었다면 약 6.7px 어긋났어야 한다 — 10배 차이).
+이걸 흔들면 **그림이 판정 범위를 속인다.** 크기를 바꾸고 싶으면 `ProjectileSize` 나
+`fieldRadius` 를 고칠 것.
+
+**⚠️ 장판 전용 효과음이 없다.** 지금은 `SfxId.WeaponCast` 를 재사용한다.
+새 SFX 가 필요하면 `_Incoming/Audio/` 에 넣고 `REQ/DEV.md` 로 배선 요청할 것.
+
+### 5-F. 참고로 알아 둘 것 (고칠 것 없음)
+
+- **`Toxin.png` 아이콘은 PPU 512 로 임포트했다.** 처음에 Unity 기본값 100 으로 들어가
+  다른 아이콘(`Bomb`/`Bow`/`Shuriken`, 전부 512)과 10배 차이가 났다. 이미 고쳤다
+- **`Proj_BombGround` 는 scale 0.5** 다. 그림이 PPU 256 이라 그대로 두면 폭탄이 너무 크다
+- **장판은 `sortingOrder = −5`** 라 플레이어·적 **아래**에 깔린다. 의도된 값이다
+
+### 5-G. 판정 기준
+
+1. `Weapons.csv` · `Items.csv` · `SceneWiring.csv` 3파일이 **저장**되어 있다
+2. Import 후 `Assets/Game/WeaponData/Toxin.asset` · `Assets/Game/ItemData/Toxin.asset` 생성
+3. 🔴 **레벨업 3택 / 상점에 `Toxin` 이 뜬다** ← D11 판정 ⑨. 이게 되면 4단계가 닫힌다
+4. 폭탄을 들고 플레이 — **목표 지점까지 날아가 바닥에 떨어지고, 잠깐 뒤에 터진다**
+5. `Weapons.csv` 의 열 **개수가 12개 그대로**다 (열 추가 없음)
+
+🔴 **Import 는 에디터라 DEV 몫이다.** CSV 를 저장한 뒤 [`DEV.md`](DEV.md) 에
+`Game/Balance/Import CSV -> ScriptableObjects` 실행을 요청할 것.
+**요청-9(수리검) 와 한 번에 묶어서 요청하면 Import 한 번으로 끝난다.**
 
 ---
 

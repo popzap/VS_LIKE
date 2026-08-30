@@ -16,7 +16,7 @@
 | 2026-08-30 | CONTENT | `닫힘(D7)` | **`Weapons.csv` Import 1회** — 진화 무기 3종의 전용 아이콘이 안 쓰이고 있었다 (C6) — 아래 §요청-5 | [`DESIGN_CLASSES.md` §6](../../DESIGN_CLASSES.md) · [`DONE/D7.md`](../DONE/D7.md) |
 | 2026-08-30 | CONTENT | `닫힘(D9)` | **화살 PNG 임포트(PPU 512) + `Proj_Arrow.prefab` 신설 + `Weapons.csv` Import** (C7) — 아래 §요청-6 | [`DESIGN_CLASSES.md` §6 1단계](../../DESIGN_CLASSES.md) · [`DONE/D9.md`](../DONE/D9.md) |
 | 2026-08-30 | CONTENT | `닫힘(D10)` | **수리검 + 검 근접화 — 그림은 다 나왔고 코드만 남았다** (C8) — 아래 §요청-7 · ⏸ **⑤는 CSV 대기** → [`REQ/CONTENT.md`](CONTENT.md) 요청-4 | [`DESIGN_CLASSES.md` §5-A](../../DESIGN_CLASSES.md) · [`DONE/D10.md`](../DONE/D10.md) |
-| 2026-08-30 | CONTENT | `열림` | **바닥 폭탄 + 독 장판 — 그림은 다 나왔고 코드만 남았다** (C9) — 아래 §요청-8 | [`DESIGN_CLASSES.md` §5-A](../../DESIGN_CLASSES.md) |
+| 2026-08-30 | CONTENT | `닫힘(D11)` | **바닥 폭탄 + 독 장판 — 그림은 다 나왔고 코드만 남았다** (C9) — 아래 §요청-8 | [`DONE/D11.md`](../DONE/D11.md) · [`REQ/CONTENT.md` 요청-5](CONTENT.md) |
 | 2026-08-30 | CONTENT | `열림` | 🔴 **CSV Import 1회 — 수리검 3줄 + 검 근접화를 CSV 에 넣었다.** D10 의 판정 ⑤가 이걸로 닫힌다 (C12) — 아래 §요청-9 | [`DONE/D10.md`](../DONE/D10.md) · [`REQ/CONTENT.md` 요청-4](CONTENT.md) |
 
 > 상태값: `열림` · `진행중` · `닫힘(D3)` · `보류(사유)`
@@ -621,6 +621,18 @@ Sword,Sword,Assets/Prefabs/Weapon_Melee.prefab,…,Assets/Prefabs/Fx_SwingArc.pr
 ---
 
 ## 요청-8 — 바닥 폭탄 + 독 장판 (C9) · §6 3·4단계
+
+> ✅ **처리 완료 — D11 (2026-08-30, DEV).** 판정 ①~⑧·⑩ 전부 통과.
+> 상세는 [`DONE/D11.md`](../DONE/D11.md).
+>
+> **요청서와 다르게 한 것 2가지 (사용자 승인)** — `ToxinField.png` 의
+> **Pivot Center** 와 **`spriteRadiusAtScaleOne = 1.0`** 은 그림과 맞지 않았다.
+> 실측 중심이 셀 중앙이 아닌 `(134, 132)px`, 반지름이 128px 이 아닌 `≈97px` 이라
+> **Custom pivot `(0.5234, 0.4844)` + `0.97`** 로 보정했다. 화면 픽셀 검증 오차 **0.7px**.
+>
+> **판정 ⑨(레벨업 3택·상점)만 남았다** — CSV 는 CONTENT 몫이라
+> [`REQ/CONTENT.md` 요청-5](CONTENT.md) 로 넘겼다. 🔴 **그게 들어와야 게임에 나온다.**
+> 체감값 7개(`fuseTime` · `fieldDuration` · `tickInterval` · `slowMult` 등)도 거기 있다.
 
 > 🟡 **지금 당장 하라는 요청이 아니다.** 요청-7 이 닫힌 **뒤에** 연다.
 > 미리 적어 두는 이유는 **그림이 코드보다 먼저 끝났기 때문**이다 —

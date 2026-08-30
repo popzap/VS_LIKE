@@ -24,6 +24,25 @@ public class EnemyBase : MonoBehaviour
     protected Transform   PlayerTransform;
     protected EnemyVisual Visual;
 
+    // ── 슬로우 ───────────────────────────────────────────────────
+    // 독 장판처럼 "매 틱 다시 걸어 주는" 방식이다. 안 걸어 주면 _slowUntil 이 지나
+    // 저절로 풀리므로, 적이 장판을 벗어났는지를 아무도 추적하지 않아도 된다.
+    private float _slowMult = 1f;   // 1 = 슬로우 없음. 작을수록 느리다
+    private float _slowUntil;       // 이 시각을 넘기면 저절로 풀린다
+
+    /// <summary>이동 속도에 슬로우를 반영한 값. 원본 <see cref="MoveSpeed"/> 는 건드리지 않는다.</summary>
+    protected float CurrentSpeed => MoveSpeed * (Time.time <= _slowUntil ? _slowMult : 1f);
+
+    /// <param name="mult">속도 배율(0~1).</param>
+    /// <param name="duration">이번에 걸어 줄 지속 시간(초).</param>
+    public void ApplySlow(float mult, float duration)
+    {
+        // "가장 센 것 하나만" 적용한다. 곱해 버리면 장판 2개가 겹칠 때
+        // 0.6 * 0.6 = 0.36 이 되어 적이 사실상 멈춘다.
+        if (Time.time > _slowUntil || mult < _slowMult) _slowMult = mult;
+        _slowUntil = Mathf.Max(_slowUntil, Time.time + duration);
+    }
+
     // ── 초기화 ───────────────────────────────────────────────────
 
     public virtual void Initialize(EnemyData data, bool isElite = false, bool isBoss = false)
@@ -54,6 +73,8 @@ public class EnemyBase : MonoBehaviour
         // 이전 생애의 넉백/사망 연출 잔재를 지운다. 안 지우면 갓 스폰된 적이
         // 잠깐 못 움직이거나(넉백 타이머) 충돌이 꺼진 채로 살아난다(사망 연출).
         _knockbackTimer = 0f;
+        _slowMult       = 1f;   // 안 지우면 다음 웨이브의 멀쩡한 적이 느린 채로 태어난다
+        _slowUntil      = 0f;
         if (_deathPopRoutine != null) { StopCoroutine(_deathPopRoutine); _deathPopRoutine = null; }
         SetCollidersEnabled(true);
 
@@ -161,7 +182,7 @@ public class EnemyBase : MonoBehaviour
 
     protected virtual void MoveTowardsPlayer()
     {
-        Rb.linearVelocity = Steer(ToPlayer().normalized) * MoveSpeed;
+        Rb.linearVelocity = Steer(ToPlayer().normalized) * CurrentSpeed;
     }
 
     protected Vector2 ToPlayer() => (Vector2)PlayerTransform.position - (Vector2)transform.position;
@@ -251,7 +272,7 @@ public class EnemyBase : MonoBehaviour
         else                          desired = Vector2.Perpendicular(toPlayer).normalized  // 옆걸음
                                               * _strafeDir;
 
-        Rb.linearVelocity = Steer(desired) * MoveSpeed;
+        Rb.linearVelocity = Steer(desired) * CurrentSpeed;
 
         _attackTimer -= Time.fixedDeltaTime;
         if (_attackTimer > 0f || dist > want * 1.2f) return;
@@ -330,7 +351,7 @@ public class EnemyBase : MonoBehaviour
 
             case ChargeState.Dash:
                 // 돌진 중에는 조향하지 않는다. 유도되는 돌진은 피할 수 없다.
-                Rb.linearVelocity = _chargeDir * (MoveSpeed * Data.ChargeSpeedMult);
+                Rb.linearVelocity = _chargeDir * (CurrentSpeed * Data.ChargeSpeedMult);
                 _chargeTimer -= dt;
                 if (_chargeTimer <= 0f)
                 {
