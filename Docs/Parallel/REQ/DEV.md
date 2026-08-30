@@ -19,8 +19,8 @@
 | 2026-08-30 | CONTENT | `닫힘(D11)` | **바닥 폭탄 + 독 장판 — 그림은 다 나왔고 코드만 남았다** (C9) — 아래 §요청-8 | [`DONE/D11.md`](../DONE/D11.md) · [`REQ/CONTENT.md` 요청-5](CONTENT.md) |
 | 2026-08-30 | CONTENT | `닫힘(D12)` | 🔴 **CSV Import 1회 — 수리검 3줄 + 검 근접화를 CSV 에 넣었다.** D10 의 판정 ⑤가 이걸로 닫힌다 (C12) — 아래 §요청-9 | [`DONE/D10.md`](../DONE/D10.md) · [`REQ/CONTENT.md` 요청-4](CONTENT.md) |
 | 2026-08-30 | CONTENT | `닫힘(D12)` | 🔴 **독 장판 CSV + 바닥 폭탄 켜기 — 요청-5(D11) 의 나머지 절반.** ⚠️ **요청-9 와 같은 Import 한 번으로 둘 다 끝난다** (C15) — 아래 §요청-10 | [`DONE/D11.md`](../DONE/D11.md) · [`REQ/CONTENT.md` 요청-5](CONTENT.md) |
-| 2026-08-30 | CONTENT | `열림` | **소환수 2종 (드래곤·문어) — 그림 5장은 다 나왔고 코드·프리팹만 남았다** (C16) · §6 **5단계**. ⚠️ CSV 는 프리팹이 생긴 뒤 CONTENT 가 채운다 — 아래 §요청-11 | [`DESIGN_CLASSES.md` §4 W6·W7 · §5-A](../../DESIGN_CLASSES.md) |
-| 2026-08-30 | CONTENT | `열림` | **검 휘두름 SFX — `SfxId.WeaponSwing` 추가 + `MeleeWeapon.cs:52` 교체** (C17). 🔴 요청-6 이 부탁한 것이다. **작다 — D13 중간에 끼워도 된다** — 아래 §요청-12 | [`REQ/CONTENT.md` 요청-6](CONTENT.md) · [`TUNING.md` §2-C-2](../../TUNING.md) |
+| 2026-08-30 | CONTENT | `닫힘(D13)` | **소환수 2종 (드래곤·문어) — 그림 5장은 다 나왔고 코드·프리팹만 남았다** (C16) · §6 **5단계**. ⚠️ CSV 는 프리팹이 생긴 뒤 CONTENT 가 채운다 — 아래 §요청-11 | [`DONE/D13.md`](../DONE/D13.md) · [`REQ/CONTENT.md` 요청-7](CONTENT.md) |
+| 2026-08-30 | CONTENT | `열림` | **무기 전용 SFX 2종 배선 — `WeaponSwing`(검) + `ToxinSpill`(독 장판)** (C17·C18). 🔴 요청-6 이 부탁한 것 + 그때 같이 나온 것. **작다 — D13 중간에 끼워도 된다** — 아래 §요청-12 | [`REQ/CONTENT.md` 요청-6](CONTENT.md) · [`TUNING.md` §2-C-2](../../TUNING.md) |
 
 > 상태값: `열림` · `진행중` · `닫힘(D3)` · `보류(사유)`
 > 처리했으면 상태만 바꾼다. **줄을 지우지 않는다.**
@@ -1037,6 +1037,12 @@ Bomb,...,Assets/Prefabs/Proj_Aoe(Boom).prefab,Assets/Prefabs/Proj_BombGround.pre
 
 ## 요청-11 — 소환수 2종 (드래곤·문어) (C16) · §6 **5단계**
 
+> ✅ **닫힘 (D13, 2026-08-30).** 판정 ①~⑫ **전부 PASS** · 콘솔 0건 → [`DONE/D13.md`](../DONE/D13.md).
+> 프리팹 5개가 생겼다 — **CSV 를 쓸 수 있다.** 경로와 체감 미판정 항목은
+> [`REQ/CONTENT.md` 요청-7](CONTENT.md) 로 넘겼다.
+> ℹ️ 11-B 의 경로 `Assets/Scripts/Weapons/` · `Assets/Scripts/Visual/` 는 **없는 폴더**라
+> 둘 다 `Assets/Scripts/Weapon/` 에 넣었다.
+
 > **그림은 5장 다 나왔다. 남은 건 코드·프리팹뿐이다.**
 > 설계 전문은 [`DESIGN_CLASSES.md`](../../DESIGN_CLASSES.md) §4 W6·W7 · §5-A ("드래곤의 계약 4줄" · "문어의 계약 4줄").
 > ⚠️ **CSV 는 이번에 넣지 않는다.** 프리팹 경로가 아직 없어서다. 프리팹이 생기면 **CONTENT 가 채운다.**
@@ -1167,67 +1173,96 @@ OnDisable()      →  몸통을 Pool 에 돌려준다
 
 ---
 
-## 요청-12 — 검 휘두름 SFX 배선 (C17) · **요청-6 이 부탁한 것**
+## 요청-12 — 무기 전용 SFX 2종 배선 (C17·C18) · **요청-6 이 부탁한 것 + 하나 더**
 
-> [`REQ/CONTENT.md`](CONTENT.md) **요청-6 ②** 의 답이다. 클립은 만들어서 `_Incoming/Audio/` 에 뒀다.
+> [`REQ/CONTENT.md`](CONTENT.md) **요청-6 ②** 의 답이다. 클립 2개를 만들어 `_Incoming/Audio/` 에 뒀다.
+> 요청-6 은 검만 부탁했지만 **장판도 같은 병**이라 같이 만들었다 — 배선 구조가 완전히 같아서
+> 따로 하면 **같은 작업을 두 번** 하게 된다.
 > **작업량이 작다** — D13(소환수) 중간에 끼워 넣어도 되고, 소환수 프리팹 만들 때 같이 해도 된다.
 
-### 무엇을
+### 무엇을 — 2세트, 구조가 똑같다
 
 | # | 파일 | 할 일 |
 |---|---|---|
-| ① | `_Incoming/Audio/SFX_WeaponSwing.wav` → `Assets/Game/Audio/SFX_WeaponSwing.wav` | 옮기고 임포트 (44100Hz · 16bit · 스테레오 · 0.28초 — 기존 `SFX_*.wav` 와 같은 규격이다) |
-| ② | `Assets/Scripts/Audio/AudioId.cs` | `enum SfxId` 의 **무기** 블록에 `WeaponSwing = 4` 추가. 🔴 **4번이 비어 있는 걸 확인했다** (1·2·3 다음이 10 이다) |
-| ③ | `Assets/Game/Audio/AudioLibrary.asset` | 새 항목: 클립 = 위 wav · **`Volume 0.30`** · **`PitchJitter 0.12`** |
-| ④ | `Assets/Scripts/Weapon/MeleeWeapon.cs:52` | `AudioManager.Play(SfxId.WeaponFire);` → `AudioManager.Play(SfxId.WeaponSwing);` **한 줄** |
+| ① | `_Incoming/Audio/SFX_WeaponSwing.wav` → `Assets/Game/Audio/` | 옮기고 임포트 (44100Hz · 16bit · 스테레오 · **0.28초**) |
+| ② | `_Incoming/Audio/SFX_ToxinSpill.wav` → `Assets/Game/Audio/` | 〃 (**0.70초**). 둘 다 기존 `SFX_*.wav` 와 같은 규격이다 |
+| ③ | `Assets/Scripts/Audio/AudioId.cs` | `enum SfxId` 의 **무기** 블록에 `WeaponSwing = 4` · `ToxinSpill = 5` 추가. 🔴 **4·5 가 비어 있는 걸 확인했다** (1·2·3 다음이 10 이다) |
+| ④ | `Assets/Game/Audio/AudioLibrary.asset` | 항목 2개 — `WeaponSwing` **0.30 / 0.12** · `ToxinSpill` **0.38 / 0.10** (`Volume` / `PitchJitter`) |
+| ⑤ | `Assets/Scripts/Weapon/MeleeWeapon.cs:52` | `SfxId.WeaponFire` → `SfxId.WeaponSwing` **한 줄** |
+| ⑥ | `Assets/Scripts/Weapon/FieldWeapon.cs:32` | `SfxId.WeaponCast` → `SfxId.ToxinSpill` **한 줄** |
 
 - 옮긴 뒤 `_Incoming/Audio/` 원본은 지운다.
-- ④ 외에 `WeaponFire` 를 쓰는 다른 곳은 **건드리지 않는다.** 원거리 무기는 그대로 총소리가 맞다.
+- 🔴 **⑤⑥ 외의 호출부는 건드리지 않는다.** 확인해 뒀다 —
+  `ProjectileWeapon.cs:26` 의 `WeaponFire` 는 맞고(원거리는 그대로 총소리),
+  `AoeWeapon.cs:28` 의 `WeaponCast` 도 맞다(폭탄 시전).
+  ⚠️ **`SummonWeapon.cs` 도 이번엔 그대로 둔다** — D13 이 지금 그 파일을 쓰고 있다 (아래 5번).
 
 ### 왜
 
-`MeleeWeapon` 은 D10 에서 근접으로 재해석됐는데 **소리만 원거리 시절 그대로**다 —
-**칼을 휘두르는데 총소리가 난다.** D12 가 요청-6 에서 직접 부탁한 항목이고,
-`TUNING.md` §3 의 근접 7값(`halfAngle`·`comboInterval` 등)은 **이 소리가 배선된 뒤에 판정하는 게 맞다.**
-안 그러면 소리 탓을 수치 탓으로 오해한다.
+둘 다 **남의 소리를 빌려 쓰고 있다.**
+
+| 무기 | 지금 나는 소리 | 실제로 하는 일 |
+|---|---|---|
+| 검 (D10 에서 근접으로 재해석) | `WeaponFire` = **총소리** | 칼을 휘두른다 |
+| 독 장판 (D11 신설) | `WeaponCast` = **마법 시전음** | 독을 바닥에 쏟는다 |
+
+🔴 **`TUNING.md` §3 의 근접 7값과 장판 값들은 이게 배선된 뒤에 판정하는 게 맞다.**
+안 그러면 **소리 탓을 수치 탓으로 오해한다** — "안 시원하다"의 원인이 `halfAngle` 이 아니라
+총소리일 수 있는데, 그 상태로 숫자를 흔들면 엉뚱한 값이 굳는다.
 
 ### 숫자의 근거 — **CONTENT 가 미리 재 놨다**
 
-클립은 `Tools/Art/` 와 같은 방식으로 **절차 생성**했다(`Tools/Audio/gen_sword_swish.py`).
-파라미터를 고쳐 다시 구울 수 있다. 만들면서 확인한 것:
+클립은 `Tools/Art/` 의 그림과 같은 방식으로 **절차 생성**했다
+(`Tools/Audio/gen_sword_swish.py` · `gen_toxin_splash.py`). 파라미터를 고쳐 다시 구울 수 있다.
 
-| 잰 것 | 값 | 뜻 |
+| 잰 것 | 검 `WeaponSwing` | 독 장판 `ToxinSpill` |
 |---|---|---|
-| 3연타 합성 피크 | **0.400** = 1타와 **동일** | 겹쳐도 안 뭉친다. 간격 0.247s(`hitDelay 0.067`+`comboInterval 0.18`)가 클립 0.28s 보다 넓어 겹침이 **0.033s** 뿐이고 그 구간은 이미 페이드아웃이다 |
-| 0~200Hz 에너지 | **0.0%** | 총소리 특유의 저역 "쿵"이 없다. 에너지의 98%가 1.5kHz 위 |
-| 첫 10ms 피크 | **0.006** (전체의 1/67) | 시작 클릭 없음 — **트랜지언트가 곧 총소리**라 일부러 없앴다 |
-| 피크 / RMS | 0.400 / 0.053 | `SFX_WeaponFire`(0.476 / 0.091)보다 **의도적으로 작다** |
-| 모노 합산 피크 | 0.344 | 좌우가 상쇄되지 않는다 |
+| **겹침** | **3연타 합성 피크 0.400 = 1타와 동일.** 간격 0.247s(`hitDelay 0.067`+`comboInterval 0.18`)가 클립 0.28s 보다 넓어 겹침이 **0.033s** 뿐이고 그 구간은 이미 페이드아웃 | **겹치지 않는다.** Lv5 쿨 **1.8s** > 클립 0.70s. 4장 연속 재생 피크도 0.420 그대로 |
+| 0~200Hz | **0.0%** — 총소리 저역 "쿵"이 없다 | 1% |
+| 200~800Hz | **1%** | **11%** ← 🔑 **두 소리를 가르는 대역**(11배) |
+| 시작부 | 첫 10ms 피크 **0.006**(전체의 1/67) — 클릭 없음. **트랜지언트가 곧 총소리**라 일부러 없앴다 | 앞 50ms 가 **전체 피크** — 철퍽이 가장 큰 순간이다 |
+| 피크 / RMS | 0.400 / 0.053 | 0.420 / 0.054 |
+| 모노 합산 피크 | 0.344 | 0.383 — 좌우 상쇄 없음 |
 
-`Volume 0.30` · `PitchJitter 0.12` 는 기존 사다리에 끼워 넣은 값이다 —
-`BuildingFire` 0.22/0.14 · **`WeaponSwing` 0.30/0.12** · `WeaponFire` 0.35/0.10.
-검은 Lv5 에서 3연타라 `WeaponFire` 보다 **조금 작고 조금 더 흔들리는** 자리다.
+**둘이 서로 안 헷갈리게 만든 게 설계 목표다.** 고역(3~9kHz)은 둘 다 노이즈 기반이라
+비슷할 수밖에 없어서, **길이(0.28 ↔ 0.70)** · **스윕 방향(700→5200 올라감 ↔ 900→260 내려감)** ·
+**200~800Hz(1% ↔ 11%)** 세 축으로 갈라 뒀다.
+
+`Volume`/`PitchJitter` 는 **기존 사다리에 끼워 넣은 값**이다 (`AudioLibrary.asset` 실측 확인):
+
+`BuildingFire` 0.22/0.14 · `EnemyHit` 0.28/0.12 · **`WeaponSwing` 0.30/0.12** ·
+`WeaponFire` 0.35/0.10 · **`ToxinSpill` 0.38/0.10** · `WeaponCast` 0.45/0.08
+
+- 검이 `WeaponFire` 아래인 건 Lv5 **3연타**라 실제로 3배 자주 울리기 때문이다
+- 장판이 `WeaponCast`(빌려 쓰던 자리) 아래인 건 쿨 3.0→1.8초로 **한 판 내내 깔리기** 때문이다
 
 ### 판정 기준
 
 | # | 확인할 것 |
 |---|---|
-| ① | 클립이 `Assets/Game/Audio/` 에 있고 `AudioLibrary.asset` 에 물렸다 · `Volume 0.30` · `PitchJitter 0.12` |
-| ② | `SfxId.WeaponSwing = 4` · **기존 번호를 하나도 안 바꿨다** (🔴 바꾸면 `AudioLibrary` 배열이 통째로 어긋난다) |
-| ③ | `MeleeWeapon.cs` 에 `SfxId.WeaponFire` 가 **더 이상 없다** |
-| ④ | 컴파일 에러 **0** |
-| ⑤ | 🔴 **실플레이 — 검을 휘두르면 총소리가 아닌 "쉭" 소리가 난다** |
-| ⑥ | 🔴 **Lv5 Sword 3연타에서 뭉개지거나 시끄럽지 않다.** Lv1 은 1연타라 판정이 안 된다 |
-| ⑦ | 원거리 무기(파이어볼·화살)는 **소리가 그대로다** |
+| ① | 클립 **2개**가 `Assets/Game/Audio/` 에 있고 `AudioLibrary.asset` 에 물렸다 |
+| ② | `WeaponSwing` **0.30 / 0.12** · `ToxinSpill` **0.38 / 0.10** |
+| ③ | `SfxId.WeaponSwing = 4` · `ToxinSpill = 5` · 🔴 **기존 번호를 하나도 안 바꿨다** (바꾸면 `AudioLibrary` 배열이 통째로 어긋난다) |
+| ④ | `MeleeWeapon.cs` 에 `WeaponFire` 가, `FieldWeapon.cs` 에 `WeaponCast` 가 **더 이상 없다** |
+| ⑤ | 컴파일 에러 **0** |
+| ⑥ | 🔴 **실플레이 — 검을 휘두르면 총소리가 아닌 "쉭"** |
+| ⑦ | 🔴 **실플레이 — 장판이 깔릴 때 마법음이 아닌 "철퍽 + 치익"** |
+| ⑧ | 🔴 **Lv5 Sword 3연타가 뭉개지거나 시끄럽지 않다.** Lv1 은 1연타라 판정이 안 된다 |
+| ⑨ | 🔴 **둘을 같이 들었을 때 구분된다** (검사 + 독 조합으로 한 판) |
+| ⑩ | 원거리 무기(파이어볼·화살)와 폭탄은 **소리가 그대로다** |
 
-**같이 남겨 줄 것** — `TUNING.md` §2 **C-2** 의 체크박스 4개에 답을 준다.
+**같이 남겨 줄 것** — `TUNING.md` §2 **C-2** 의 체크박스에 답을 준다.
 
-1. **총소리로 안 들리는가** (1번 판정 기준이다)
-2. **`EnemyHit`(0.28) 에 묻히지 않는가** — 묻히면 `Volume` 을 0.35 로
-3. **0.28초가 짧은가** — "탁"으로 들리면 내가 `DUR` 을 0.34 로 올려 다시 굽는다.
-   ⚠️ **0.247s 를 넘기면 3연타가 겹치기 시작한다** — 위 계산이 무너지므로 그 이상은 안 된다
-4. ⚠️ **장판 SFX 는 아직 없다.** 독을 뿌리는데 `SfxId.WeaponCast`(마법 시전음)가 난다.
-   이번 요청에는 안 넣었다 — 검이 급했다. 다음에 같은 방식으로 만든다
+1. **각각 남의 소리로 안 들리는가** (검=총소리 / 장판=마법음). 1번 판정 기준이다
+2. 🔴 **장판이 한 판 내내 거슬리지 않는가** — **30번쯤 들은 뒤에 판정할 것.**
+   한 번 듣고 괜찮은 건 판정이 아니다. 거슬리면 `Volume` 을 0.30 으로 먼저 내린다
+3. **`EnemyHit`(0.28) 에 묻히지 않는가** — 묻히면 검을 0.35 로
+4. **길이가 맞는가** — 검이 "탁"으로 들리면 `DUR` 0.28 → 0.34,
+   장판 꼬리가 늘어지면 0.70 → 0.55 로 **내가 다시 굽는다.**
+   ⚠️ 검은 **0.247s 를 넘길 수 없고**(3연타가 겹친다), 장판은 **0.30s 아래로 못 내린다**(거품이 안 들어간다)
+5. ⚠️ **소환수 2종(D13)도 전용 소리가 없다.** `SummonWeapon` 이 화염구에 `WeaponCast`,
+   촉수에 `WeaponFire` 를 빌려 쓰는 걸 봤다. **이번엔 일부러 안 건드렸다** — D13 이 그 파일을
+   쓰고 있어 충돌한다. **D13 이 끝나면 같은 방식으로 만든다** (요청-11 "같이 남겨 줄 것" 5번)
 
 ---
 

@@ -30,7 +30,7 @@
 | CONTENT | `C6` | `Docs/DESIGN_CLASSES.md`(신설) · 이후 `Assets/Game/Balance/*.csv` · `_Incoming/` | 2026-08-30 | `진행중` — 직업 6종 컨셉 재편 + 신규 무기 6종 설계 (사용자 지시) |
 | CONTENT | `C9` | `_Incoming/{Effects,ICON}/` · `Docs/{DESIGN_CLASSES,TUNING}.md` | 2026-08-30 | `대기(REQ→DEV)` — 바닥 폭탄 + 독 장판 그림 (§6 3·4단계 선작업) — [`REQ/DEV.md`](REQ/DEV.md) 요청-8 |
 | CONTENT | `C13`·`C14`·`C16` | `_Incoming/{Summons,Effects,ICON}/` · `Tools/Art/` · `Docs/{DESIGN_CLASSES,TUNING}.md` | 2026-08-30 | `대기(REQ→DEV)` — 소환수 (§6 5단계). 그림 ✅ 드래곤·문어 → 코드/프리팹 요청 완료 — [`REQ/DEV.md`](REQ/DEV.md) 요청-11 (**DEV 가 D13 으로 착수함**). **CSV 는 프리팹이 생긴 뒤 내가 채운다** |
-| CONTENT | `C17` | `Tools/Audio/`(신설) · `_Incoming/Audio/` · `Docs/TUNING.md` | 2026-08-30 | `대기(REQ→DEV)` — D12 실플레이 결과 반영 + 검 전용 SFX — [`REQ/DEV.md`](REQ/DEV.md) 요청-12 |
+| CONTENT | `C17`·`C18` | `Tools/Audio/`(신설) · `_Incoming/Audio/` · `Docs/TUNING.md` | 2026-08-30 | `대기(REQ→DEV)` — D12 실플레이 결과 반영 + **무기 전용 SFX 2종**(검·독 장판) — [`REQ/DEV.md`](REQ/DEV.md) 요청-12 |
 | DEV | `D13` | `Assets/Scripts/Weapon/` · `Assets/Game/Sprites/{Summons,Effects,Weapons}/` · `Assets/Prefabs/` · `_Incoming/{Summons,Effects,ICON}/` | 2026-08-30 | `진행중` — 소환수 2종 (드래곤·문어) 임포트 + 스크립트 + 프리팹 (§6 5단계) — [`REQ/DEV.md`](REQ/DEV.md) 요청-11 |
 
 > 상태값: `진행중` · `대기(REQ→DEV)` · `검증대기` · `막힘(B1)`
@@ -69,7 +69,7 @@ CONTENT 는 **읽기만** 한다 — 내 요청이 언제 처리될지 가늠하
 | 세션 | 다음 이슈 번호 |
 |---|---|
 | DEV | `D14` |
-| CONTENT | `C18` |
+| CONTENT | `C19` |
 | 버그(공용) | `B6` |
 
 > 번호를 쓸 때 이 표를 **즉시** 올린다. 선점이 곧 예약이다.
