@@ -10,6 +10,7 @@
 | 요청일시 | 요청자 | 상태 | 요청 내용 | 참조 |
 |---|---|---|---|---|
 | 2026-08-30 | CONTENT | `열림` | **걷기 시트 4종 덮어쓰기 + 재임포트** (B2 수정본) — 아래 §요청-1 | [`BUGS.md` B2](../BUGS.md) |
+| 2026-08-30 | CONTENT | `열림` | **`CombatFeel` 컴포넌트 신설 + `EnemyBase` 상수 제거** (C2) — 아래 §요청-2 | [`TUNING.md` §1](../../TUNING.md) |
 
 > 상태값: `열림` · `진행중` · `닫힘(D3)` · `보류(사유)`
 > 처리했으면 상태만 바꾼다. **줄을 지우지 않는다.**
@@ -71,6 +72,85 @@ B1 의 외곽선 번짐은 그대로다. **줄이지 않았다:** 줄이면 적�
 그건 버그 수정이 아니라 **연출 변경**이라 내 임의로 할 일이 아니다.
 Goblin·Slime 은 `149×132` / `175×114` 로 **200 이하** — 기준을 만족한다
 (참고로 정답 예시인 Ogre 는 202, Zombie 는 198 이다).
+
+---
+
+## 요청-2 — `CombatFeel` 씬 컴포넌트 신설 + `EnemyBase` 상수 제거 (C2)
+
+**무엇을** — 적 타격감 수치 12개를 `EnemyBase.cs` 의 `const` 에서 빼내
+`Economy.csv` 로 옮긴다. **CSV 12줄은 이미 넣었다.** 코드와 씬 배선이 남았다.
+
+### 왜 이 구조인가 (다른 두 길은 막혀 있다)
+
+| 시도 | 왜 안 되나 |
+|---|---|
+| `Economy.csv` 에 `EnemyBase,knockbackForce,6` | `BalanceImporter.FindSceneComponent`(893행)가 `FindObjectsByType` 로 **씬만 훑는다.** 적은 **프리팹 1개를 공유**하므로 씬에 없다 → `! 씬에 EnemyBase 없음` |
+| `Enemies.csv` 에 열 추가 | 흔들림·히트스톱은 **엘리트/보스 여부**로 갈리는데 등급은 `EnemyData` 가 아니라 **소환 시점 인자**다(`Initialize(data, isElite, isBoss)`). 같은 숫자를 6줄에 복붙하게 된다 |
+
+→ **씬 컴포넌트 하나**에 모으면 임포터를 **고치지 않아도 된다.** 기존 3열 규칙에 그대로 걸린다.
+
+### 1) `CombatFeel.cs` 신설 — 필드 이름이 CSV 와 **글자까지 같아야 한다**
+
+`Field` 열은 `SerializedProperty` 경로다. 이름이 한 글자라도 다르면
+Import 로그에 `! CombatFeel.xxx 필드 없음` 이 찍히고 **조용히 건너뛴다.**
+
+| 필드 | 기본값 | 원래 위치 |
+|---|---:|---|
+| `enemyKnockbackForce` | `6` | `EnemyBase.cs:354` |
+| `enemyKnockbackTime` | `0.1` | `EnemyBase.cs:355` |
+| `eliteKnockbackResist` | `0.4` | `EnemyBase.cs:384` |
+| `bossKnockbackResist` | `0` | `EnemyBase.cs:384` |
+| `deathPopTime` | `0.14` | `EnemyBase.cs:435` |
+| `deathPopScale` | `1.25` | `EnemyBase.cs:450` |
+| `eliteShakeMagnitude` | `0.2` | `EnemyBase.cs:469` |
+| `eliteShakeDuration` | `0.25` | `EnemyBase.cs:469` |
+| `eliteHitstop` | `0.05` | `EnemyBase.cs:471` |
+| `bossShakeMagnitude` | `0.45` | `EnemyBase.cs:469` |
+| `bossShakeDuration` | `0.5` | `EnemyBase.cs:469` |
+| `bossHitstop` | `0.09` | `EnemyBase.cs:471` |
+
+🔴 **기본값을 반드시 위 표대로 넣을 것.** 12줄 전부 **지금 동작하는 값 그대로**라
+**이번 작업의 판정 기준이 "화면이 하나도 안 바뀐다"** 이기 때문이다.
+기본값이 다르면 컴포넌트를 못 찾았을 때 조용히 다른 감각으로 굴러간다.
+
+> ℹ️ 넉백 저항 2줄(`eliteKnockbackResist`·`bossKnockbackResist`)은 원래 표에 없던 것을
+> 새로 뺐다. `EnemyBase.cs:384` 의 `IsBoss ? 0f : IsElite ? 0.4f : 1f` 도 감각으로 정한
+> 숫자인데 상수로 박혀 있었다. **잡몹의 `1f` 는 빼지 않았다** — 그건 "저항 없음"이라는
+> 기준값이지 튜닝 대상이 아니다.
+
+### 2) `EnemyBase` 가 **쓰는 시점에** 읽게 할 것
+
+🔴 **`Awake()` 에서 캐시하지 말 것 (`CLAUDE.md` §3, I-8/I-38).**
+`CombatFeel` 이 씬 오브젝트라 참조 시점이 어긋나면 **예외 없이 기능만 조용히 죽는다.**
+`TakeDamage` / `Die` 안에서 그때그때 읽거나, 지연 조회 프로퍼티로 감쌀 것.
+
+**씬에 `CombatFeel` 이 없어도 적이 예외를 던지면 안 된다.** 없으면 위 표의 기본값으로
+굴러가야 한다 — 적은 게임 내내 도는 코드라 여기서 터지면 전투가 통째로 멈춘다.
+
+### 3) 씬 배선
+
+`GameManager` 오브젝트에 붙인다. **씬에 딱 하나만 있어야 한다** —
+`FindSceneComponent` 는 **처음 찾은 하나만** 집으므로 둘이면 어느 쪽이 먹었는지 알 수 없다.
+
+### 어떻게 확인하나 (판정 기준)
+
+1. 컴파일 에러 **0**
+2. `Game/Balance/Import CSV -> ScriptableObjects` 실행 →
+   로그에 `Economy.csv` **적용 수가 12 늘어난다.**
+   🔴 `! 씬에 CombatFeel 없음` 이나 `! CombatFeel.xxx 필드 없음` 이 **한 줄도 없어야 한다**
+   (⚠️ Import 는 **플레이 모드에서 못 돈다.** 일시정지도 플레이 모드다)
+3. 인스펙터에서 `CombatFeel` 12개 값이 위 표와 **일치**
+4. 🔴 **실플레이 — 아무것도 안 바뀌어야 한다.** 적을 때렸을 때 밀리는 정도,
+   죽을 때 부풀었다 사라지는 속도가 **전과 같으면 성공**이다
+5. **바뀌는 것을 한 번은 확인할 것** — `enemyKnockbackForce` 를 `6` → `20` 으로
+   고치고 Import 후 플레이. 적이 눈에 띄게 멀리 날아가면 배선이 산 것이다.
+   **확인 뒤 반드시 `6` 으로 되돌리고 Import 를 다시 돌린다**
+   (⚠️ 4번만으로는 "안 바뀐 것"과 "안 읽힌 것"을 구분할 수 없다)
+6. 엘리트/보스 흔들림·히트스톱은 **노말 웨이브에서 검증되지 않는다** — Elite/Boss 노드로 갈 것.
+   못 가면 그 항목만 `미검증`으로 남기고 알려 줄 것
+
+**나(CONTENT)가 한 것:** `Economy.csv` §적 타격감 12줄 · `TUNING.md` §1 갱신.
+값의 근거와 "무엇을 보고 얼마나 고치나"는 [`TUNING.md`](../../TUNING.md) §1·§2-A 에 있다.
 
 ---
 

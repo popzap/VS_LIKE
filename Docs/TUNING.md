@@ -1,6 +1,6 @@
 # VS_LIKE — 수치 · 체감 테스트 (Tuning)
 
-> **최종 갱신:** 2026-08-29 (22차 신설 — I-59)
+> **최종 갱신:** 2026-08-30 (C2 — 적 타격감 12줄을 `Economy.csv` 로 뺐다)
 > 완료 이력은 [`SETUP_STATUS.md`](SETUP_STATUS.md), 남은 작업은 [`TODO.md`](TODO.md),
 > 수치를 **어떻게** 고치는지는 [`BALANCE.md`](BALANCE.md).
 
@@ -39,31 +39,50 @@
 | 드랍 확률 · 애셋 배열 | `SceneWiring.csv` | 〃 | 즉시 |
 | 오디오 클립별 볼륨 · 피치 | `Assets/Game/Audio/AudioLibrary.asset` (인스펙터) | 저장만 | 즉시 |
 | BGM/SFX 마스터 볼륨 | 씬의 `AudioManager` 인스펙터 | 저장만 | 즉시 |
-| 🔴 **적 넉백 · 사망 팝 · 히트스톱 · 처치 흔들림** | **`EnemyBase.cs` 의 `const`** (`:354` `:355` `:435` `:469` `:471`) | **코드 수정 → 재컴파일** | **느리다** |
+| 🟡 **적 넉백 · 사망 팝 · 히트스톱 · 처치 흔들림** | `Economy.csv` 의 `CombatFeel` 12줄 **(표는 넣었고 컴포넌트는 DEV 대기 — C2)** | 〃 | 즉시 **(배선 후)** |
 
 > ⚠️ **Import 는 플레이 모드에서 못 돈다** (`MarkSceneDirty` 제약). 일시정지도 플레이 모드다.
 > 플레이를 멈추고 → Import → 다시 플레이가 한 사이클이다.
 
-### 🔴 적 타격 반응이 CSV 에 없다 (I-59 에서 발견)
+### 🟡 적 타격 반응을 CSV 로 뺀다 — `CombatFeel` (I-59 에서 발견 → C2 에서 처리 중)
 
-I-44 로 넣은 **적** 쪽 타격 반응 4종이 `EnemyBase.cs` 에 `const` 로 박혀 있다.
+I-44 로 넣은 **적** 쪽 타격 반응이 `EnemyBase.cs` 에 `const` 로 박혀 있었다.
 **플레이어** 쪽(`knockbackForce` 9 · `shakeMagnitude` 0.18 등)은 `Economy.csv` 에 있는데
-적 쪽만 빠졌다.
+적 쪽만 빠졌다. **하필 이 값들이 §2-A 에서 가장 많이 만지게 될 것들이다** —
+한 번 고칠 때마다 도메인 리로드를 기다려야 해서 튜닝 루프가 몹시 느려진다.
 
-| 값 | 현재 | 위치 |
+#### 왜 `EnemyBase,knockbackForce` 로 못 넣나
+
+두 번 막혔다. 둘 다 확인하고 기각했다.
+
+| 시도 | 왜 안 되나 |
+|---|---|
+| `Economy.csv` 에 `EnemyBase,...` 로 추가 | 임포터(`BalanceImporter.FindSceneComponent`)가 **씬만 훑는다**(`FindObjectsByType`). 적은 **프리팹 1개를 공유**하므로 씬 컴포넌트가 아니다 → `! 씬에 EnemyBase 없음` |
+| `Enemies.csv` 에 열로 추가 | 흔들림·히트스톱은 **엘리트/보스 여부**로 갈리는데, 등급은 `EnemyData` 가 아니라 **소환 시점 인자**다(`Initialize(data, isElite, isBoss)`). 게다가 같은 숫자를 **6줄에 복붙**하게 된다 |
+
+#### 확정 — `CombatFeel` 씬 컴포넌트 (사용자 결정, 2026-08-30)
+
+GameManager 오브젝트에 `CombatFeel` 을 하나 붙이고, 적이 **쓰는 시점에** 읽어 간다.
+임포터는 **고칠 게 없다** — 씬 컴포넌트라 기존 3열 규칙에 그대로 걸린다.
+
+| 항목 | 값 |
+|---|---|
+| CSV | `Economy.csv` §적 타격감 — **12줄. 이미 넣었다 (C2)** |
+| 코드 | `CombatFeel.cs` 신설 + `EnemyBase` 가 `const` 대신 읽기 — **DEV 대기** |
+| 기준선 | 12줄 전부 **지금 `const` 값 그대로**다. 첫 Import 는 **화면이 안 바뀌는 게 정상** |
+
+| 값 | 현재 | 원래 위치 |
 |---|---:|---|
-| `KnockbackForce` | 6.0 | `EnemyBase.cs:354` |
-| `KnockbackTime` | 0.10 | `EnemyBase.cs:355` |
-| `DeathPopTime` | 0.14 | `EnemyBase.cs:435` |
-| 처치 흔들림 | 일반 `0.20 / 0.25s` · 보스 `0.45 / 0.5s` | `EnemyBase.cs:469` |
-| 처치 히트스톱 | 일반 `0.05s` · 보스 `0.09s` | `EnemyBase.cs:471` |
+| `enemyKnockbackForce` | 6.0 | `EnemyBase.cs:354` |
+| `enemyKnockbackTime` | 0.10 | `EnemyBase.cs:355` |
+| `eliteKnockbackResist` · `bossKnockbackResist` | 0.4 · 0 | `EnemyBase.cs:384` |
+| `deathPopTime` · `deathPopScale` | 0.14 · 1.25 | `EnemyBase.cs:435` `:450` |
+| 엘리트 흔들림 · 히트스톱 | `0.20 / 0.25s` · `0.05s` | `EnemyBase.cs:469` `:471` |
+| 보스 흔들림 · 히트스톱 | `0.45 / 0.5s` · `0.09s` | 〃 |
 
-**하필 이 5개가 §2-A 에서 가장 많이 만지게 될 값들이다.** 한 번 고칠 때마다
-도메인 리로드를 기다려야 하므로 튜닝이 몹시 느려진다.
-→ **본격적인 체감 튜닝에 들어가기 직전에 `Economy.csv` 로 뺄 것.**
-(`[SerializeField]` 로 바꾸고 `Economy.csv` 에 `EnemyBase,knockbackForce,6` 식으로 5줄 추가.
-⚠️ 적은 프리팹 1개를 공유하므로 씬 컴포넌트가 아니다 — 임포터가 **프리팹 경로**를
-다룰 수 있는지 먼저 확인해야 한다. 안 되면 `Enemies.csv` 열로 빼는 쪽이 맞다)
+> ℹ️ **넉백 저항 2줄은 원래 표에 없던 것을 새로 뺀 것이다.** `EnemyBase.cs:384` 의
+> `IsBoss ? 0f : IsElite ? 0.4f : 1f` 도 똑같이 감각으로 정한 숫자인데 상수로 박혀 있었다.
+> **"보스는 아예 안 밀린다"가 옳은지**는 플레이해 봐야 아는 값이다.
 
 ---
 
@@ -84,11 +103,15 @@ I-44 로 넣은 **적** 쪽 타격 반응 4종이 `EnemyBase.cs` 에 `const` 로
 - [ ] **`MoveSpeed` 4 가 답답하지 않은가** — 가장 빠른 적 **Wolf(4.2)보다 느리다.**
       늑대에게서 도망칠 수 없다는 뜻이다. 의도라면 두고, 아니면 5 로
 - [ ] **적 넉백 6.0** 이 대열을 너무 흩뜨리지 않는가 — 뱀서라이크는 적이 **뭉쳐 있어야**
-      쓸어 담는 맛이 난다. 흩어지면 3~4 로 (⚠️ §1 코드 상수)
-- [ ] **사망 팝 0.14초** 가 시체를 쌓아 보이게 하지 않는가 (⚠️ §1 코드 상수)
+      쓸어 담는 맛이 난다. 흩어지면 3~4 로 (`CombatFeel,enemyKnockbackForce`)
+- [ ] **사망 팝 0.14초** 가 시체를 쌓아 보이게 하지 않는가 (`CombatFeel,deathPopTime`)
 - [ ] 🔴 **엘리트/보스 처치 히트스톱이 렉처럼 느껴지지 않는가** — 일반 0.05s · 보스 0.09s.
       **노말 웨이브에서는 검증할 수 없다**(엘리트가 안 나옴). Elite/Boss 노드로 가야 한다
-      (⚠️ §1 코드 상수)
+      (`CombatFeel,eliteHitstop` · `bossHitstop`)
+- [ ] **보스가 안 밀리는 게 위압감으로 읽히는가 아니면 그냥 안 맞는 것처럼 보이는가** —
+      지금 보스는 넉백 저항 **0**(전혀 안 밀림), 엘리트는 0.4 다.
+      때리는 반응이 아예 없어 보이면 보스를 0.1~0.15 로 (`CombatFeel,bossKnockbackResist`).
+      ⚠️ 올리면 **벽 없는 아레나에서 보스가 밀려 도망갈 수 있다** — 그게 원래 0 인 이유다
 - [ ] **플레이어 1.0 유닛 / 일반 적 0.5 유닛** 비율이 실전투에서 맞는가 —
       주인공이 일반 몹의 2배다. 엘리트(×1.3 → 0.65)·보스(×2 → 1.0)와 나란히 놓였을 때
       **위압감이 사는지**

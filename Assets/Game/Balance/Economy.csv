@@ -50,3 +50,24 @@ PlayerController,knockbackTime,0.15,넉백 동안 이동 입력이 막히는 시
 PlayerController,hitFlashTime,0.12,맞은 직후 붉게 물드는 시간(초)
 PlayerController,blinkInterval,0.07,무적 중 깜빡임 주기(초)
 PlayerController,shakeMagnitude,0.18,피격 시 카메라 흔들림 강도
+# ── 적 타격감 (CombatFeel) ───────────────────────────────────────
+# 여기 값은 전부 EnemyBase.cs 에 const 로 박혀 있던 것을 그대로 옮긴 것이다.
+# 즉 첫 Import 는 "화면이 하나도 안 바뀌는 것"이 정상이다 — 배선 확인용 기준선이다.
+#
+# CombatFeel 은 씬 컴포넌트다(GameManager 오브젝트에 붙는다). 임포터는 씬만 훑기 때문에
+# 프리팹인 적에게 직접 값을 못 넣는다. 그래서 적이 이 컴포넌트를 읽어 가는 구조다.
+#
+# ※ 흔들림/힛스톱은 엘리트·보스에만 걸린다. 잡몹은 초당 수십 마리가 죽어서
+#    매번 흔들면 타격감이 아니라 멀미가 된다 (EnemyBase.PlayDeathImpact).
+CombatFeel,enemyKnockbackForce,6,적이 맞고 밀려나는 초기 속도
+CombatFeel,enemyKnockbackTime,0.1,적이 밀리는 동안 추적이 멈추는 시간(초)
+CombatFeel,eliteKnockbackResist,0.4,엘리트 넉백 배율. 1=잡몹만큼 밀림 0=안 밀림
+CombatFeel,bossKnockbackResist,0,보스 넉백 배율. 0 이면 아예 안 밀린다
+CombatFeel,deathPopTime,0.14,사망 시 부풀었다 사라지는 연출 길이(초)
+CombatFeel,deathPopScale,1.25,사망 연출이 부푸는 최대 배율
+CombatFeel,eliteShakeMagnitude,0.2,엘리트 처치 시 화면 흔들림 강도
+CombatFeel,eliteShakeDuration,0.25,엘리트 처치 시 흔들림 길이(초)
+CombatFeel,eliteHitstop,0.05,엘리트 처치 시 화면이 멎는 시간(초)
+CombatFeel,bossShakeMagnitude,0.45,보스 처치 시 화면 흔들림 강도
+CombatFeel,bossShakeDuration,0.5,보스 처치 시 흔들림 길이(초)
+CombatFeel,bossHitstop,0.09,보스 처치 시 화면이 멎는 시간(초)
