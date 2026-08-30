@@ -1034,6 +1034,138 @@ Bomb,...,Assets/Prefabs/Proj_Aoe(Boom).prefab,Assets/Prefabs/Proj_BombGround.pre
 
 ---
 
+## 요청-11 — 소환수 2종 (드래곤·문어) (C16) · §6 **5단계**
+
+> **그림은 5장 다 나왔다. 남은 건 코드·프리팹뿐이다.**
+> 설계 전문은 [`DESIGN_CLASSES.md`](../../DESIGN_CLASSES.md) §4 W6·W7 · §5-A ("드래곤의 계약 4줄" · "문어의 계약 4줄").
+> ⚠️ **CSV 는 이번에 넣지 않는다.** 프리팹 경로가 아직 없어서다. 프리팹이 생기면 **CONTENT 가 채운다.**
+> 이번 요청은 **임포트 + 스크립트 + 프리팹**까지다.
+
+### 11-A. 애셋 임포트 5장
+
+| `_Incoming/` 원본 | 옮길 곳 | 임포트 설정 |
+|---|---|---|
+| `Summons/Dragon_Fly.png` | `Assets/Game/Sprites/Summons/Dragon_Fly.png` | 🔴 **PPU 512** · Point(no filter) · Uncompressed · **Multiple** · Grid By Cell Size **256×256** → `_0`~`_15` |
+| `Summons/Octopus_Idle.png` | `Assets/Game/Sprites/Summons/Octopus_Idle.png` | 🔴 **PPU 512** · 위와 동일 · `_0`~`_15` |
+| `Effects/TentacleLash.png` | `Assets/Game/Sprites/Effects/TentacleLash.png` | **PPU 100** · Point · Uncompressed · Multiple · Grid **256×256** → 6칸 `_0`~`_5` · **pivot Center** |
+| `ICON/Dragon.png` | `Assets/Game/Sprites/Weapons/Dragon.png` | **PPU 512** · Point · Uncompressed · **Single** |
+| `ICON/Octopus.png` | `Assets/Game/Sprites/Weapons/Octopus.png` | 위와 동일 |
+
+- 🔴 **PPU 512 를 빼먹으면 I-58 / B2 가 그대로 재현된다.** 4×4 시트는 Unity 가 1024 로 짐작해서
+  **소환수가 절반 크기로 나온다.** 걷기 시트 4종에서 이미 한 번 당했다.
+- `Assets/Game/Sprites/Summons/` 는 **새 폴더**다.
+- `TentacleLash` 는 **pivot 을 Center 그대로 둔다.** 독 장판(`ToxinField`)과 달리
+  내가 캔버스 정중앙 기준으로 그려서 **실측 보정이 필요 없다** (아래 11-D 참고).
+- 옮긴 뒤 `_Incoming/` 원본은 지운다(`git mv` 로 옮기면 한 번에 끝난다).
+
+### 11-B. 새 스크립트 2개
+
+**① `Assets/Scripts/Weapons/SummonWeapon.cs` — `WeaponBase` 상속**
+
+```
+OnInitialized()  →  bodyPrefab 을 Pool 에서 꺼내 씬에 낳는다 (🔴 부모를 붙이지 않는다)
+Update/Fire()    →  판정 기준점이 플레이어가 아니라 "소환수 몸통의 위치"
+OnDisable()      →  몸통을 Pool 에 돌려준다
+```
+
+- 🔑 **`OnDisable()` 이면 기존 파일을 한 줄도 안 고쳐도 된다.**
+  `ObjectPool.Return` 이 `obj.SetActive(false)` 를 부르므로, `WeaponManager.RemoveWeapon` →
+  `weaponPool.Return(w.gameObject)` 가 곧 `OnDisable` 이다.
+  `WeaponBase` 에 `OnRemoved()` 같은 훅을 새로 팔 필요가 없다.
+- **이게 없으면 상점에서 무기를 환불했을 때 소환수만 필드에 영원히 남는다.**
+- 🔴 **`FindNearestEnemy()` 를 반드시 `override` 한다.** `WeaponBase` 의 기본 구현은
+  `transform.position`(= 플레이어) 에서 찾는다. 소환수는 **몸통 위치**에서 찾아야 한다.
+
+**몸통이 지켜야 할 것**
+
+| 규칙 | 이유 |
+|---|---|
+| HP · Collider · `EnemyBase` **없음** | 적이 아니다. 맞지도 막지도 않는다 |
+| 🔴 `Rigidbody2D` **없음** | 넉백에 휩쓸려 날아간다 |
+| `Lerp` 로 `player.position + offset` 을 따라간다 | "따라다닌다"는 느낌이 여기서 나온다 |
+| **소환수별 offset 각도**를 프리팹 필드로 | 소환사는 무기 슬롯이 5칸이라 **겹침이 반드시 생긴다** |
+| 이동 방향에 따라 `flipX` | 이 프로젝트의 스프라이트는 **오른쪽을 본다** |
+
+**② `Assets/Scripts/Visual/SummonVisual.cs` — 16프레임 루프 재생기**
+
+- ❌ **`EnemyVisual` 을 재사용하지 말 것.** `Rigidbody2D` + `EnemyBase` 에 묶여 있다.
+- ❌ **위아래 흔들림(bob)을 코드로 넣지 말 것.** 드래곤 ±1.6px · 문어 ±1.5px 로
+  **그림에 이미 그려져 있다.** 코드가 또 흔들면 두 번 흔들린다.
+- ping-pong 불필요 — 16프레임이 `sin(2π·i/16)` 이라 **이음매 없이 순환**한다.
+
+### 11-C. 프리팹 4개 (+1)
+
+| 프리팹 | 무엇 |
+|---|---|
+| `Assets/Prefabs/Summon_Dragon.prefab` | 몸통. `SpriteRenderer` + `SummonVisual` (Collider·RB 없음) |
+| `Assets/Prefabs/Summon_Octopus.prefab` | 몸통. 동일 |
+| `Assets/Prefabs/Weapon_SummonDragon.prefab` | **안 보이는** 로직 오브젝트. `SummonWeapon` + `bodyPrefab` |
+| `Assets/Prefabs/Weapon_SummonOctopus.prefab` | 동일 |
+| `Assets/Prefabs/Fx_TentacleLash.prefab` | 촉수 이펙트. `SwingArcFx` 재사용 (아래) |
+
+- 🔴 **몸통을 무기 오브젝트의 자식으로 두지 말 것.** `WeaponManager` 가 무기를 플레이어 밑에
+  `SetParent` 하므로, 자식이면 소환수가 **플레이어에 뻣뻣하게 붙어 다닌다.** 따라오는 느낌이 죽는다.
+- `sortingOrder` 는 플레이어·적과 같은 대역. 장판의 `-5` 가 아니다 — **소환수는 바닥이 아니다.**
+
+### 11-D. 재사용 — 새로 만들 게 생각보다 적다
+
+| 필요한 것 | 이미 있는 것 |
+|---|---|
+| 촉수 이펙트 | **`SwingArcFx` 를 그대로.** `spriteRadiusAtScaleOne = 0.9951` 만 넣으면 된다 |
+| 드래곤 화염구 비행 | `Proj_Fireball` |
+| 드래곤 착탄 폭발 | `Proj_Aoe(Boom)` |
+| 발사 → 비행 → 폭발 흐름 | `AoeWeapon.LaunchTravel` 의 모양 |
+| 문어 360° 링 판정 | `MeleeWeapon.Strike` 에서 `Vector2.Angle(dir, to) > halfAngle` **한 줄만 빼면** 링이 된다 |
+
+- 🔑 **`spriteRadiusAtScaleOne = 0.9951`** — `SwingArcFx` 의 `1.074` 는 그림이 판정보다 커서
+  나눗셈을 강요당한 값이었다. 촉수는 내가 **처음부터 규격에 맞춰 그렸다.**
+  그래서 `localScale = Range` 가 그대로 맞는다.
+- 🔴 **촉수는 코드로 z 회전시키지 말 것.** 6프레임에 **9°/frame 회전이 이미 구워져 있다.**
+- 피해는 **frame 3 (최대 도달 프레임) 에 한 번만.** 휘두름 호와 같은 이유다.
+
+### 11-E. CSV 열 배치 (참고용 — 이번에 넣지 않는다)
+
+프리팹이 생기면 CONTENT 가 채운다. **DEV 는 이 표를 "열이 모자라지 않는다"는 확인용으로만 본다.**
+
+| 열 | 드래곤 | 문어 |
+|---|---|---|
+| `ProjectilePrefab` | `Proj_Aoe(Boom)` (착탄 폭발) | `Fx_TentacleLash` (촉수) |
+| `TravelPrefab` | `Proj_Fireball` (비행) | 비움 |
+| `ProjectileSpeed` | > 0 | `0` |
+| `Range` | 화염구 **탐색** 반경 | 촉수 **링** 반경 |
+
+- 🔴 `bodyPrefab` · offset 각도 · 폭발 반경은 **CSV 가 아니라 프리팹 필드**다.
+  `Weapons.csv` 는 **12열 그대로** 유지된다. 열 추가 없음.
+- 방향만 미리 말해 두면 — 드래곤은 파이어볼(8.2 DPS) 근처, 문어는 검(6.7) 근처지만 **360°** 다.
+
+### 판정 기준
+
+| # | 확인할 것 |
+|---|---|
+| ① | 5장 임포트 완료 · 시트 2장이 **16칸**, 촉수가 **6칸**으로 갈라짐 |
+| ② | 🔴 시트 2장 PPU **512** · 촉수 **100** · 아이콘 **512** |
+| ③ | 🔴 **크기**: 소환수가 오우거의 **약 65%**. 절반이면 PPU 를 놓친 것이다 (I-58/B2) |
+| ④ | 소환수가 플레이어를 **따라오고**, 멈추면 **곁에 선다** |
+| ⑤ | 🔴 적이 소환수를 **통과한다** (막히지 않는다) |
+| ⑥ | 🔴 넉백에 소환수가 **날아가지 않는다** |
+| ⑦ | 드래곤이 **자기 위치에서** 화염구를 쏜다 (플레이어 위치가 아니다) |
+| ⑧ | 문어가 **자기 뒤쪽 적도** 때린다 (360°) |
+| ⑨ | 촉수 이펙트의 **바깥 끝 = 실제 판정 반경** (그림만 크지 않다) |
+| ⑩ | 소환수 2마리를 같이 들었을 때 **서로 겹쳐 있지 않다** |
+| ⑪ | 🔴 상점에서 **환불하면 몸통도 사라진다** |
+| ⑫ | 같은 무기를 다시 고르면 **레벨업**이지 두 마리가 되지 않는다 · 콘솔 에러 **0** |
+
+**같이 남겨 줄 것**
+
+1. 🔴 **프리팹 경로 4개** — 이게 있어야 내가 CSV 를 쓴다. **제일 급하다**
+2. **따라오는 느낌** — `Lerp` 계수가 굼뜬가 / 찰싹 붙는가
+3. `SummonVisual` 의 `frameRate` 실제 값 (숨쉬기가 빠른가 느린가)
+4. **크기 판정** — 크거나 작으면 `Tools/Art/gen_*.py` 의 `TARGET_H` 를 고쳐 **다시 그린다.**
+   🔴 `localScale` 로 늘리지 말 것. 픽셀이 뭉개진다
+5. **소환수 SFX 가 없다** — 화염구 발사음 · 촉수 휘두름음 둘 다 없다. 나중에 채운다
+
+---
+
 ## 요청에 반드시 적을 것
 
 - **무엇을** — 파일 경로 · 오브젝트 · 필드 이름까지
