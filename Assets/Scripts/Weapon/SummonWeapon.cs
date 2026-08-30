@@ -156,7 +156,7 @@ public class SummonWeapon : WeaponBase
         if (bomb == null) { Pool.Return(go); return; }
 
         bomb.Initialize(spot, damage, radius, Data.ProjectileSpeed, Data.ProjectilePrefab, Pool);
-        AudioManager.Play(SfxId.WeaponCast);
+        AudioManager.Play(SfxId.DragonSpit);
     }
 
     /// <summary>문어 — 사거리 안에 아무도 없으면 허공을 후리지 않는다.</summary>
@@ -171,7 +171,9 @@ public class SummonWeapon : WeaponBase
         float range = Data.GetRange(Level);
 
         SpawnLash(range);
-        AudioManager.Play(SfxId.WeaponFire);
+        // ⚠️ 클립은 "0.1초에 때리는 휘두르기"로 구워져 있다. lashHitDelay 를 바꾸면
+        //    Tools/Audio/gen_tentacle_lash.py 의 HIT_AT 도 같이 바꿔 다시 구워야 한다.
+        AudioManager.Play(SfxId.TentacleLash);
 
         // 🔴 피해는 후리는 동안 딱 한 번이다. 프레임마다 굴리면 몇 배가 된다 (MeleeWeapon 과 같다).
         yield return new WaitForSeconds(lashHitDelay);

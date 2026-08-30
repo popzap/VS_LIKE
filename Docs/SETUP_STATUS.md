@@ -6,7 +6,7 @@
 > 기존의 「C# 스크립트는 완성 단계」라는 전제와 「요청 없이 코드 건드리지 말 것」 규칙이 **해제됨**.
 > 이제 게임 완성을 위해 C# 스크립트 신규 작성·수정이 허용된다.
 >
-> **최종 갱신:** 2026-08-30 (38차 — 엘리트 외곽선이 실루엣으로 돌아왔다, D15 / B1)
+> **최종 갱신:** 2026-08-30 (39차 — 소환수 2종이 게임에 등장하고 제 소리로 운다, D16 / C19·C20)
 >
 > 🔀 **25차부터 이슈 번호가 `세션 접두어 + 번호` 다** — `D`(DEV) · `C`(CONTENT) · `B`(버그 공용).
 > 병렬 2세션 체제로 바뀌었기 때문이다 (D1). 과거 `I-1`~`I-61` 은 그대로 둔다.
@@ -2024,6 +2024,73 @@ Play 모드에서 Warrior 로 런을 시작하고 `Unity_RunCommand` 로 재료�
 > ⚠️ **건물 앞 `E` 실조작은 아직 미검증이다.** 위는 `EvolveClass` 를 직접 부른 것이고,
 > `FindAltarClassEvolution` 은 이미 검증된 `FindAltarEvolution` 과 같은 로직이지만
 > **실제로 터렛을 세우고 다가가서 눌러 본 적은 없다** → [`TODO.md`](TODO.md) §1
+
+---
+
+## 2-43. ✅ 소환수 2종이 게임에 등장하고, 제 소리로 운다 (D16 / C19·C20, 2026-08-30 39차)
+
+### 왜 했나
+
+요청-13(C19)과 요청-14(C20)가 **같은 무기 2종을 각각 반쪽씩** 다루고 있어 하나로 묶었다.
+
+| | 요청-13 | 요청-14 |
+|---|---|---|
+| 무엇 | 소환수 2종을 CSV 로 올린다 + 촉수 그림 교체 | 소환수 2종에 제 효과음을 준다 |
+| 없으면 | 프리팹·코드는 다 있는데 **레벨업 카드에 안 뜬다** | 화염구=`WeaponCast`(마법음) · 촉수=`WeaponFire`(**총소리**) |
+
+D14 에서 검·독장판이 남의 소리를 쓰던 걸 고쳤는데 **소환수 2종만 남아 있었다.**
+촉수 그림은 원판이 **가운데가 꽉 찬 원반**이라 소환수 몸통을 가렸다 —
+"문어가 후린다"가 아니라 "문어가 사라졌다"로 보였다.
+
+### 변경한 파일
+
+| 경로 | 무엇 |
+|---|---|
+| `Assets/Game/WeaponData/Summon{Dragon,Octopus}.asset`(+`.meta`) | 신규 — CSV Import 산출물 |
+| `Assets/Game/ItemData/Summon{Dragon,Octopus}.asset`(+`.meta`) | 신규 — 〃 |
+| `Assets/Scenes/SampleScene.unity` | `LevelUpManager.allItems` 22 → **24** |
+| `Assets/Game/Sprites/Effects/TentacleLash.png` | 덮어쓰기 (**`.meta` 보존**) |
+| `Assets/Game/Audio/SFX_{TentacleLash,DragonSpit}.wav`(+`.meta`) | 신규 — `_Incoming/` 에서 이동 |
+| `Assets/Game/Audio/AudioLibrary.asset` | `sfx` 22 → **24** + 기존 2개 볼륨 조정 |
+| `Assets/Scripts/Audio/AudioId.cs` | `SfxId.TentacleLash=6` · `DragonSpit=7` |
+| `Assets/Scripts/Weapon/SummonWeapon.cs` | 호출부 **2줄** + 경고 주석 |
+| `Docs/Parallel/DONE/D16.md` | 신규 |
+| `Docs/Parallel/REQ/CONTENT.md` | 요청-10 신설 (청취 판정 넘김) |
+| `Docs/Parallel/REQ/DEV.md` | 요청-13·14 → `닫힘(D16)` |
+
+### 검증 로그
+
+임시 프로브를 `AudioManager.PlaySfx(SfxId)` 에 넣고 Warrior 로 한 판 돌렸다.
+D14 와 같은 이유로 **옛 소리를 대조군으로 같이 셌다.**
+
+```
+[SFXPROBE] 집계 46건 — DragonSpit=17  TentacleLash=15  WeaponSwing=14
+                        대조 WeaponFire=0  WeaponCast=0
+드래곤 간격 = 1.4s 정확 (Lv1 쿨다운, 한 번도 안 거름)
+촉수 간격 = 1.2s, 중간 2.4s 공백 = FireRing 이 적 없어 조용히 리턴
+```
+
+촉수 그림 6프레임 실측 (`timeScale=0` 으로 세워 놓고 캡처):
+
+```
+        바깥지름   중앙 구멍   잉크
+f0      45.49px    12.65px    2.3%
+f3      99.85px    15.52px    4.6%   <- 최대
+f5      80.65px    16.97px    2.3%
+중심 r<=12px 불투명 픽셀 = 0  (6프레임 전부)
+계약 spriteRadiusAtScaleOne 0.9951 = 99.51px  →  실측 99.85px, 차 0.34px (코드 무수정)
+```
+
+| 판정 | 결과 |
+|---|---|
+| `WeaponData`·`ItemData` 4개 생성, `m_Script` 유효 | ✅ |
+| `allItems` 22 → 24, null 0 · 레벨업 카드 출현 (4장×20회에서 Dragon 6 / Octopus 5) | ✅ |
+| 🔴 촉수 링이 몸통을 가리지 않는다 | ✅ 6프레임 전부 중앙 불투명 0 |
+| 🔴 옛 소리가 같이 나지 않는다 | ✅ `WeaponFire=0` / `WeaponCast=0` |
+| 컴파일 에러 0 · 콘솔 0 · 프로브 잔재 0 | ✅ |
+| 청취 4건(촉수/드래곤 음색 · 타격 싱크 · 마법사 `WeaponCast`) | 🟡 → `REQ/CONTENT.md` 요청-10 |
+
+전체 기록: [`Parallel/DONE/D16.md`](Parallel/DONE/D16.md)
 
 ---
 
@@ -4267,6 +4334,7 @@ Play 모드 — 한 세션에서 두 경로 전부:
 | **D13**<br>(C16) | 모든 무기가 **플레이어를 기준점**으로 적을 찾고 때렸다. 소환수는 처음으로 **기준점이 플레이어가 아닌 무기** — 저 혼자 떨어져 서서 저 자리에서 싸운다. 그림 5장은 CONTENT 가 이미 다 그려 놨고 **코드·프리팹만 비어 있었다.** `DESIGN_CLASSES.md` §6 **5단계** | ✅ 해결 (2026-08-30 36차 → 2-40) — 스프라이트 5장 임포트 + `SummonWeapon`·`SummonVisual` 신설 + 프리팹 5개. **기존 파일 수정 0줄.** 판정 **12개 전부 PASS**. 🔴 **파생 클래스에 `Update()` 를 선언하면 무기가 조용히 죽는다** — `WeaponBase.Update()` 가 쿨다운을 돌리는데 그걸 가린다. `LateUpdate()` 로. 🔑 **철거는 `OnDisable()` 하나** — `RemoveWeapon`→`Pool.Return`→`SetActive(false)` 가 곧 그것이라 새 훅이 필요 없었다(없었으면 환불 후 **소환수만 영원히 남는다**). 몸통에 **Collider·Rigidbody 없음**(`col=False` `rb=False`) — 넉백에 안 날아간다. 🔴 **`sprite.bounds` 로는 크기를 못 잰다** — 소환수도 오우거도 `0.500`(셀 기준). 알파 bbox 실측 **64.7%/66.7%**. 🔴 **프로브를 세 번 고쳤고 세 번 다 검증 장치가 틀렸다** — 플레이어가 안 움직여 ④ 가 `1.20` 고정 / **풀 객체는 `GetInstanceID()` 가 돌아와** ⑧ 이 첫 후리기만 / ESC 일시정지의 `timeScale=0` 이 코루틴을 얼림. ⑧ 은 각도 최대 **171°** 로 등 뒤 피격 증명. ⏸ **CSV 는 일부러 안 넣었다** → `REQ/CONTENT.md` 요청-7 |
 | **D14**<br>(C17·C18) | 무기 두 개가 **자기 소리가 없어 남의 것을 빌려 쓰고 있었다** — 검(D10 근접 재해석)이 `WeaponFire`=**총소리**, 독 장판(D11)이 `WeaponCast`=**마법 시전음**. 🔴 소리 문제가 아니라 **판정 문제**다: `TUNING.md` §3 의 "안 시원하다"가 `halfAngle` 탓인지 총소리 탓인지 구분이 안 되므로 **수치 판정보다 먼저** 해야 했다 | ✅ 해결 (2026-08-30 37차 → 2-41) — wav 2장 임포트 + `SfxId` **4·5** + `AudioLibrary` 2항목 + 호출부 **딱 2줄**. 🔴 **Unity 기본 임포트가 프로젝트 규격이 아니다** — Vorbis·스테레오로 들어와서 `AudioImporter` 를 직접 ADPCM·`forceToMono`로 맞추고 `SaveAndReimport()`(D8 과 같은 함정). 🔑 **`SfxId` 는 정수 직렬화라 분류 안 빈 번호에 끼워 넣는 건 안전**(`_sfxMap[e.Id]=e`) — 기존 값 0개 변경. `.asset` YAML 을 손으로 안 쓰고 **`SerializedObject`** 로 넣었다(메모리 사본이 이겨 덮어써진다). 🔴 **프로브가 옛 소리를 대조군으로 같이 셌다** — "새 소리가 난다"만으로는 옛 소리가 같이 나는지 모른다 → **Fire=0 / Cast=0**. 보이스 재사용 때문에 상승 엣지는 `isPlaying` + `clip` 둘 다 봐야 한다. 볼륨 실측이 계산과 일치(0.094 / 0.119). 🔴 **검 클립 0.280s 가 연타 간격 0.247s 를 이미 넘었다**(실측 0.249·0.254, 겹침 31ms — 페이드아웃 구간이라 무해). **늘리는 선택지는 봉쇄** → `comboInterval` 을 같이 손대야 함. 🟡 **청취 4건**(⑥⑦⑧⑨)은 기계가 판정 못 함 → `REQ/CONTENT.md` 요청-8 |
 | **D15**<br>(B1) | 엘리트 외곽선이 실루엣과 어긋났다. 🔴 **`BUGS.md` 에 적힌 원인 진단이 절반만 맞았다** — 문서를 믿고 바로 고쳤으면 주범을 놓친 채 곁가지만 고치고 닫았을 것이다 | ✅ 해결 (2026-08-30 38차 → 2-42) — 셰이더 `_SpriteRect` 신설 + `EnemyVisual.ApplySpriteRect` 로 프레임마다 **사각형과 실제 텍스처 크기**를 MPB 로 전달. 🔴 **주범은 `_OutlineTexSize` 512 하드코딩**(I-58 이 1024 시트로 바꾸며 두께가 2배로) — 이걸 `BUGS.md` 는 *"TUNING 감"* 이라며 미뤄 뒀다. 🔴 **`Sprite.textureRect` 는 격자 칸이 아니라 타이트 bbox**(`274.08, 580.08, 223.90, 117.85` — 소수점)라 96프레임 전수 조사 결과 번짐은 **Demon f14 만** 2616px, 나머지는 0. 🔴 **A/B 렌더가 처음에 `diff=0` 을 냈다** — "값이 안 도달함"과 구분이 안 되므로 `_SpriteRect` 를 작은 상자로 강제한 **대조군**(32821→4710)으로 MPB 가 `UnityPerMaterial` 을 덮어씀을 먼저 증명했다. 실플레이 **적 14마리 불일치 0** · 서로 다른 프레임 3종 확인. 검증 장치는 `HideAndDontSave` + 레이어 31 카메라라 **씬을 안 더럽히고 지울 임시 파일도 0.** 🟡 **최종 굵기(14/12 → 7/6?)는 사람이 봐야 함** → `REQ/CONTENT.md` 요청-9. 덤으로 **B6** 발견(고치지 않음) |
+| **D16**<br>(C19·C20) | 소환수 2종(드래곤·문어)이 **프리팹도 코드도 다 있는데 게임에 없었다** — CSV 에만 있고 SO 가 없어 레벨업 카드에 안 떴다. 게다가 촉수 그림은 **가운데가 꽉 찬 원반**이라 후릴 때마다 소환수 몸통을 덮었고, 소리는 D14 에서 안 고친 채 남아 화염구=`WeaponCast`(마법음) · 촉수=`WeaponFire`(**총소리**)를 빌려 쓰고 있었다 | ✅ 해결 (2026-08-30 39차 → 2-43) — CSV Import 로 `WeaponData`·`ItemData` **4개 생성**, `allItems` 22→**24**. 🔴 **`SceneWiring` Import 는 씬을 더럽히기만 한다** — `ManageScene Save` 를 빼면 그대로 22 로 돌아간다(D12 함정 재발 방지). 🔴 **png 를 덮어쓸 때 `.meta` 를 지우면 안 된다** — 6분할·PPU 100·스프라이트 GUID 가 전부 날아간다. 촉수 6프레임 실측 **중심 r≤12px 불투명 0** (몸통이 링 너머로 보인다) · 바깥 99.85px vs 계약 99.51px(**0.34px 차** → 코드 무수정). 소리는 `SfxId` **6·7** + 호출부 **2줄**, 프로브 46건에 **대조 `WeaponFire=0` / `WeaponCast=0`**. 드래곤 간격 1.4s 정확, 촉수 2.4s 공백 = 적 없을 때 조용히 리턴(허공 안 후림). 🔴 **`AudioImporter.preloadAudioData` 가 Unity 6.3 에서 obsolete**(`CS0619` = 컴파일 에러) — `defaultSampleSettings` 로 옮겨졌다. 🔴 **촉수 클립은 `lashHitDelay` 0.1s 에 묶여 있다** — 바꾸면 `gen_tentacle_lash.py` 의 `HIT_AT` 도 다시 구워야 한다(주석 2곳에 박음). 덤으로 **링 반경 1.8 > 오프셋 1.2 라 플레이어가 링 안에 들어오는 것**을 눈으로 확인 → `REQ/CONTENT.md` 요청-10. 🟡 청취 4건 |
 
 ### 해결 상세
 

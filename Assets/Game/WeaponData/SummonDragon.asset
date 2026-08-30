@@ -1,0 +1,45 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7743b8d275c61e1489bfd9158b4aa25c, type: 3}
+  m_Name: SummonDragon
+  m_EditorClassIdentifier: Assembly-CSharp::WeaponData
+  WeaponName: Dragon
+  WeaponPrefab: {fileID: 9013747810835282581, guid: b15733bfc7c5b074889b28b70a94463c, type: 3}
+  Icon: {fileID: 21300000, guid: 7cd2e42fb97eed644801c6fc3364f5bd, type: 3}
+  Damage:
+  - 9
+  - 13
+  - 18
+  - 25
+  - 34
+  Cooldown:
+  - 1.4
+  - 1.25
+  - 1.1
+  - 0.95
+  - 0.8
+  ProjectileSize:
+  - 0.7
+  - 0.75
+  - 0.8
+  - 0.9
+  - 1
+  ProjectileCount: 0100000001000000010000000100000001000000
+  Range:
+  - 7
+  - 7
+  - 8
+  - 8
+  - 9
+  ProjectileSpeed: 11
+  ProjectilePrefab: {fileID: 3536473091996557698, guid: 0af0a39c93ba02c41a7b601b9f02d161, type: 3}
+  TravelPrefab: {fileID: 2958302661482032020, guid: 90e90f21c6161a04e8b094a244f2298c, type: 3}

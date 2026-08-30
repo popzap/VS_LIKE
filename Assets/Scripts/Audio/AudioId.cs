@@ -22,6 +22,10 @@ public enum SfxId
     Explosion   = 3,   // 범위 폭발이 실제로 터지는 순간
     WeaponSwing = 4,   // 근접 무기 휘두르기 (MeleeWeapon) — 발사음이 아니다
     ToxinSpill  = 5,   // 장판 무기 전개 (FieldWeapon) — 액체가 쏟아져 끓는 소리
+    // ⚠️ 촉수 클립은 "때리는 소리"가 아니라 "휘두르다 0.1초에 때리는 소리"다.
+    //    SummonWeapon.lashHitDelay 를 바꾸면 클립도 다시 구워야 한다 (Tools/Audio/gen_tentacle_lash.py HIT_AT).
+    TentacleLash = 6,  // 소환수 문어의 촉수 후리기 (SummonWeapon)
+    DragonSpit   = 7,  // 소환수 드래곤의 화염구 뱉기 (SummonWeapon) — 착탄 폭발음(Explosion)이 아니다
 
     // 전투
     EnemyHit      = 10,

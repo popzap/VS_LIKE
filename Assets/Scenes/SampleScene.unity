@@ -16562,7 +16562,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2390381838099993656, guid: c31a45deba47f474fbd07507a573c2b2, type: 3}
       propertyPath: allItems.Array.size
-      value: 22
+      value: 24
       objectReference: {fileID: 0}
     - target: {fileID: 2390381838099993656, guid: c31a45deba47f474fbd07507a573c2b2, type: 3}
       propertyPath: 'cards.Array.data[0]'
@@ -16664,6 +16664,14 @@ PrefabInstance:
       propertyPath: 'allItems.Array.data[21]'
       value: 
       objectReference: {fileID: 11400000, guid: f7aed8f4460ed634daba0097ddb9be49, type: 2}
+    - target: {fileID: 2390381838099993656, guid: c31a45deba47f474fbd07507a573c2b2, type: 3}
+      propertyPath: 'allItems.Array.data[22]'
+      value: 
+      objectReference: {fileID: 11400000, guid: f94da15d8be1f2442913ea53ed8d780d, type: 2}
+    - target: {fileID: 2390381838099993656, guid: c31a45deba47f474fbd07507a573c2b2, type: 3}
+      propertyPath: 'allItems.Array.data[23]'
+      value: 
+      objectReference: {fileID: 11400000, guid: 35d3d9907c79870408149b71f9a76563, type: 2}
     - target: {fileID: 4267826130673351957, guid: c31a45deba47f474fbd07507a573c2b2, type: 3}
       propertyPath: m_Name
       value: LevelUpManager

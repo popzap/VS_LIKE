@@ -21,8 +21,8 @@
 | 2026-08-30 | CONTENT | `닫힘(D12)` | 🔴 **독 장판 CSV + 바닥 폭탄 켜기 — 요청-5(D11) 의 나머지 절반.** ⚠️ **요청-9 와 같은 Import 한 번으로 둘 다 끝난다** (C15) — 아래 §요청-10 | [`DONE/D11.md`](../DONE/D11.md) · [`REQ/CONTENT.md` 요청-5](CONTENT.md) |
 | 2026-08-30 | CONTENT | `닫힘(D13)` | **소환수 2종 (드래곤·문어) — 그림 5장은 다 나왔고 코드·프리팹만 남았다** (C16) · §6 **5단계**. ⚠️ CSV 는 프리팹이 생긴 뒤 CONTENT 가 채운다 — 아래 §요청-11 | [`DONE/D13.md`](../DONE/D13.md) · [`REQ/CONTENT.md` 요청-7](CONTENT.md) |
 | 2026-08-30 | CONTENT | `닫힘(D14)` | **무기 전용 SFX 2종 배선 — `WeaponSwing`(검) + `ToxinSpill`(독 장판)** (C17·C18). 🔴 요청-6 이 부탁한 것 + 그때 같이 나온 것. **작다 — D13 중간에 끼워도 된다** — 아래 §요청-12 | [`REQ/CONTENT.md` 요청-6](CONTENT.md) · [`TUNING.md` §2-C-2](../../TUNING.md) · **회신** [`DONE/D14.md`](../DONE/D14.md) · [`REQ/CONTENT.md` 요청-8](CONTENT.md) |
-| 2026-08-30 | CONTENT | `열림` | 🔴 **소환수 CSV 3파일 Import + 촉수 그림 교체 + SFX 볼륨 2값** (C19) · §6 **5단계 마감**. 요청-7·8 의 답이다. ⚠️ 반경은 **안 줄였다** — 문제는 크기가 아니라 그림의 가운데였다 — 아래 §요청-13. ⛔ **③ 의 검 0.35 는 C20 에서 철회했다 — 고치지 말 것** | [`REQ/CONTENT.md` 요청-7·8](CONTENT.md) · [`TUNING.md` §3](../../TUNING.md) |
-| 2026-08-30 | CONTENT | `열림` | **소환수 SFX 2종 배선** — `TentacleLash`(6) · `DragonSpit`(7). 클립 2장 + `SfxId` 2개 + 호출부 2줄 (C20). 요청-8 ③ 의 조건 4개를 자로 재서 맞췄다 — 아래 §요청-14 | [`TUNING.md` §2-C-2](../../TUNING.md) · `Tools/Audio/compare_sfx.py` |
+| 2026-08-30 | CONTENT | `닫힘(D16)` | 🔴 **소환수 CSV 3파일 Import + 촉수 그림 교체 + SFX 볼륨 2값** (C19) · §6 **5단계 마감**. 요청-7·8 의 답이다. ⚠️ 반경은 **안 줄였다** — 문제는 크기가 아니라 그림의 가운데였다 — 아래 §요청-13. ⛔ **③ 의 검 0.35 는 C20 에서 철회했다 — 고치지 말 것** | [`REQ/CONTENT.md` 요청-7·8](CONTENT.md) · [`TUNING.md` §3](../../TUNING.md) |
+| 2026-08-30 | CONTENT | `닫힘(D16)` | **소환수 SFX 2종 배선** — `TentacleLash`(6) · `DragonSpit`(7). 클립 2장 + `SfxId` 2개 + 호출부 2줄 (C20). 요청-8 ③ 의 조건 4개를 자로 재서 맞췄다 — 아래 §요청-14 | [`TUNING.md` §2-C-2](../../TUNING.md) · `Tools/Audio/compare_sfx.py` |
 | 2026-08-30 | CONTENT | `열림` | **외곽선 굵기 2값 — `EnemyBase.cs:134` 한 줄** (C21). `14/12` → **`10.5/9`**. 🔴 **네 표의 숫자 3개를 정정했다** (Wolf 키 · "낱장 2.7%" · `SizeScale` 누락) — 아래 §요청-15 | [`REQ/CONTENT.md` 요청-9](CONTENT.md) · [`TUNING.md` §2-B](../../TUNING.md) |
 
 > 상태값: `열림` · `진행중` · `닫힘(D3)` · `보류(사유)`

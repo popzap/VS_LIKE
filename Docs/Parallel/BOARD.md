@@ -27,7 +27,6 @@
 
 | 세션 | 이슈 | 만지는 경로 | 시작 | 상태 |
 |---|---|---|---|---|
-| DEV | `D16` | `Assets/Game/{Audio,Sprites/Effects}/` · `Assets/Scripts/{Audio/AudioId.cs,Weapon/SummonWeapon.cs}` · CSV **Import**(쓰기 아님) | 2026-08-30 | `진행중` — 요청-13·14 를 **한 번에**. 소환수 CSV Import + 촉수 그림 교체 + SFX 2종 배선 + 볼륨 3값 |
 | CONTENT | `C6` | `Docs/DESIGN_CLASSES.md`(신설) · 이후 `Assets/Game/Balance/*.csv` · `_Incoming/` | 2026-08-30 | `진행중` — 직업 6종 컨셉 재편 + 신규 무기 6종 설계 (사용자 지시) |
 | CONTENT | `C19` | `Assets/Game/Balance/{Weapons,Items,SceneWiring}.csv` · `Tools/Art/gen_octopus.py` · `_Incoming/Effects/` · `Docs/TUNING.md` | 2026-08-30 | `대기(REQ→DEV)` — 소환수 CSV 3파일 + **촉수 그림 재작업** + SFX 볼륨 2값. DEV 요청-7·8 의 답 — [`REQ/DEV.md`](REQ/DEV.md) 요청-13 |
 | CONTENT | `C20` | `Tools/Audio/gen_{tentacle_lash,dragon_spit}.py` · `_Incoming/Audio/` · `Docs/TUNING.md` | 2026-08-30 | `대기(REQ→DEV)` — 소환수 SFX 2종 + ⛔ **요청-13 ③ 검 0.35 철회** — [`REQ/DEV.md`](REQ/DEV.md) 요청-14 |
@@ -54,6 +53,12 @@
 > ✅ **소환수 SFX 2종도 끝났다** (`C20`). `SfxId` **6·7** 로 만들어 요청-14 에 넘겼다 —
 > 배선 전까지는 `SummonWeapon.cs:159·174` 가 아직 `WeaponCast`·`WeaponFire` 를 빌려 쓴다.
 >
+> ✅ **`C19`·`C20` 도 CONTENT 가 넘긴 대로 DEV 가 처리하고 지웠다** (2026-08-30, `D16`).
+> 소환수 CSV Import + 촉수 그림 교체 + SFX 2종 배선을 **한 번에** 했다 → [`DONE/D16.md`](DONE/D16.md).
+> 판정: `allItems` 22→**24** · 촉수 중심 불투명 **0** · 대조 `WeaponFire=0`/`WeaponCast=0`.
+> 회신은 [`REQ/CONTENT.md`](REQ/CONTENT.md) **요청-10** — 🔴 **링 반경 1.8 > 오프셋 1.2 라
+> 플레이어가 링 안에 들어온다**(눈으로 확인) + 청취 5건.
+>
 > ✅ **`D15` 는 DEV 가 끝내고 지웠다** (2026-08-30). **B1 닫힘** — 원인이 둘이었고 주범은
 > `_OutlineTexSize` 512 하드코딩이었다 → [`DONE/D15.md`](DONE/D15.md).
 > 회신([`REQ/CONTENT.md`](REQ/CONTENT.md) **요청-9**)은 **`C21` 에서 닫았다** — 굵기 **`10.5`/`9`**.
@@ -67,9 +72,9 @@ CONTENT 는 **읽기만** 한다 — 내 요청이 언제 처리될지 가늠하
 
 | 항목 | 값 |
 |---|---|
-| 상태 | `BUSY` |
-| 점유 이슈 | `D16` (애셋 이동 · Refresh · CSV Import · 플레이 검증) |
-| 컴파일 에러 | `0` (2026-08-30 D15 종료 시 확인 — 플레이 종료 후 콘솔 8건 **전부 `Log`**, Warning·Error 0) |
+| 상태 | `IDLE` |
+| 점유 이슈 | — |
+| 컴파일 에러 | `0` (2026-08-30 D16 종료 시 확인 — 플레이 종료 후 콘솔 **0건**, 임시 프로브 제거 완료) |
 
 | 상태값 | 뜻 | CONTENT 가 알 것 |
 |---|---|---|

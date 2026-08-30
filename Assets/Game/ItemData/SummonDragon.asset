@@ -1,0 +1,23 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7c00dd7d5c5afcf40af02e50e0b97ffc, type: 3}
+  m_Name: SummonDragon
+  m_EditorClassIdentifier: Assembly-CSharp::ItemData
+  ItemName: Dragon
+  Description: A dragon flies at your side and spits fireballs that burst on impact.
+  Icon: {fileID: 21300000, guid: 7cd2e42fb97eed644801c6fc3364f5bd, type: 3}
+  Category: 0
+  MaxLevel: 5
+  WeaponRef: {fileID: 11400000, guid: c9d8965d8ee809143b97e80b5c9f410b, type: 2}
+  BuildingRef: {fileID: 0}
+  PassiveRef: {fileID: 0}
+  ShopPrice: 12
