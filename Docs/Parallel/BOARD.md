@@ -29,16 +29,16 @@
 |---|---|---|---|---|
 | CONTENT | `C6` | `Docs/DESIGN_CLASSES.md`(신설) · 이후 `Assets/Game/Balance/*.csv` · `_Incoming/` | 2026-08-30 | `진행중` — 직업 6종 컨셉 재편 + 신규 무기 6종 설계 (사용자 지시) |
 | CONTENT | `C9` | `_Incoming/{Effects,ICON}/` · `Docs/{DESIGN_CLASSES,TUNING}.md` | 2026-08-30 | `대기(REQ→DEV)` — 바닥 폭탄 + 독 장판 그림 (§6 3·4단계 선작업) — [`REQ/DEV.md`](REQ/DEV.md) 요청-8 |
-| CONTENT | `C12` | `Assets/Game/Balance/{Weapons,Items,SceneWiring}.csv` · `Docs/{BALANCE,TUNING,DESIGN_CLASSES}.md` | 2026-08-30 | `대기(REQ→DEV)` — 수리검 CSV 3줄 + 검 근접 재해석 (§6 2단계 마무리) — [`REQ/DEV.md`](REQ/DEV.md) 요청-9 |
-| CONTENT | `C13`·`C14`·`C16` | `_Incoming/{Summons,Effects,ICON}/` · `Tools/Art/` · `Docs/{DESIGN_CLASSES,TUNING}.md` | 2026-08-30 | `대기(REQ→DEV)` — 소환수 (§6 5단계). 그림 ✅ 드래곤·문어 → 코드/프리팹 요청 완료 — [`REQ/DEV.md`](REQ/DEV.md) 요청-11. **CSV 는 프리팹이 생긴 뒤 내가 채운다** |
-| CONTENT | `C15` | `Assets/Game/Balance/{Weapons,Items,SceneWiring}.csv` · `Docs/{BALANCE,TUNING}.md` | 2026-08-30 | `대기(REQ→DEV)` — 독 장판 CSV + 바닥 폭탄 켜기 (§6 3·4단계 마무리) — [`REQ/DEV.md`](REQ/DEV.md) 요청-10 |
+| CONTENT | `C13`·`C14`·`C16` | `_Incoming/{Summons,Effects,ICON}/` · `Tools/Art/` · `Docs/{DESIGN_CLASSES,TUNING}.md` | 2026-08-30 | `대기(REQ→DEV)` — 소환수 (§6 5단계). 그림 ✅ 드래곤·문어 → 코드/프리팹 요청 완료 — [`REQ/DEV.md`](REQ/DEV.md) 요청-11 (**DEV 가 D13 으로 착수함**). **CSV 는 프리팹이 생긴 뒤 내가 채운다** |
+| CONTENT | `C17` | `Tools/Audio/`(신설) · `_Incoming/Audio/` · `Docs/TUNING.md` | 2026-08-30 | `대기(REQ→DEV)` — D12 실플레이 결과 반영 + 검 전용 SFX — [`REQ/DEV.md`](REQ/DEV.md) 요청-12 |
+| DEV | `D13` | `Assets/Scripts/Weapon/` · `Assets/Game/Sprites/{Summons,Effects,Weapons}/` · `Assets/Prefabs/` · `_Incoming/{Summons,Effects,ICON}/` | 2026-08-30 | `진행중` — 소환수 2종 (드래곤·문어) 임포트 + 스크립트 + 프리팹 (§6 5단계) — [`REQ/DEV.md`](REQ/DEV.md) 요청-11 |
 
 > 상태값: `진행중` · `대기(REQ→DEV)` · `검증대기` · `막힘(B1)`
 > 끝나면 **자기 줄을 지운다.**
 >
-> ℹ️ **CONTENT 에게:** `C12`·`C15` 는 **DEV 가 D12 에서 처리를 마쳤다** (Import 1회, 판정 전부 PASS
-> → [`DONE/D12.md`](DONE/D12.md)). 위 두 줄은 **CONTENT 소유라 DEV 가 지우지 않았다** — 확인하고 지울 것.
-> 회신(느낌 질문 5개 답 + 검 SFX 부탁)은 [`REQ/CONTENT.md`](REQ/CONTENT.md) **요청-6**.
+> ✅ **`C12`·`C15` 는 CONTENT 가 확인하고 지웠다** (2026-08-30). DEV 가 D12 에서 Import 1회로
+> 처리를 마쳤고 판정 전부 PASS → [`DONE/D12.md`](DONE/D12.md).
+> 회신(느낌 질문 5개 답 + 검 SFX 부탁, [`REQ/CONTENT.md`](REQ/CONTENT.md) **요청-6**)은 **`C17` 에서 처리 중**이다.
 
 ---
 
@@ -49,8 +49,8 @@ CONTENT 는 **읽기만** 한다 — 내 요청이 언제 처리될지 가늠하
 
 | 항목 | 값 |
 |---|---|
-| 상태 | `IDLE` |
-| 점유 이슈 | — |
+| 상태 | `BUSY` |
+| 점유 이슈 | `D13` |
 | 컴파일 에러 | `0` (2026-08-30 D12 종료 시 확인 — 프로브 철거 후 Refresh, 콘솔 **0건**) |
 
 | 상태값 | 뜻 | CONTENT 가 알 것 |
@@ -68,8 +68,8 @@ CONTENT 는 **읽기만** 한다 — 내 요청이 언제 처리될지 가늠하
 
 | 세션 | 다음 이슈 번호 |
 |---|---|
-| DEV | `D13` |
-| CONTENT | `C17` |
+| DEV | `D14` |
+| CONTENT | `C18` |
 | 버그(공용) | `B6` |
 
 > 번호를 쓸 때 이 표를 **즉시** 올린다. 선점이 곧 예약이다.
