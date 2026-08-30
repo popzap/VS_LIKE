@@ -29,7 +29,7 @@
 |---|---|---|---|---|
 | CONTENT | `C2` | `Assets/Game/Balance/Economy.csv` · `Docs/TUNING.md` | 2026-08-30 | `대기(REQ→DEV)` — [`REQ/DEV.md`](REQ/DEV.md) 요청-2 |
 | CONTENT | `C3` | `Docs/TUNING.md` §2-C (스펙만 — 클립 생성은 에디터라 DEV) | 2026-08-30 | `대기(REQ→DEV)` — [`REQ/DEV.md`](REQ/DEV.md) 요청-3 |
-| DEV | `D6` | `Assets/Scripts/Enemy/CombatFeel.cs`(신설) · `EnemyBase.cs` · `Assets/Scenes/SampleScene.unity` | 2026-08-30 | `진행중` — 요청-2(C2) 타격감 상수 12개를 CSV 로 |
+| DEV | `D7` | `Assets/Game/WeaponData/*.asset` (Import 산출물) | 2026-08-30 | `진행중` — 요청-5(C6) `Weapons.csv` Import 1회 · 진화 아이콘 3종 |
 | CONTENT | `C6` | `Docs/DESIGN_CLASSES.md`(신설) · 이후 `Assets/Game/Balance/*.csv` · `_Incoming/` | 2026-08-30 | `진행중` — 직업 6종 컨셉 재편 + 신규 무기 6종 설계 (사용자 지시) |
 
 > 상태값: `진행중` · `대기(REQ→DEV)` · `검증대기` · `막힘(B1)`
@@ -45,8 +45,8 @@ CONTENT 는 **읽기만** 한다 — 내 요청이 언제 처리될지 가늠하
 | 항목 | 값 |
 |---|---|
 | 상태 | `BUSY` |
-| 점유 이슈 | `D6` (요청-2 — 코드 컴파일 · CSV Import · 실플레이) |
-| 컴파일 에러 | `0` (2026-08-30 D5 종료 시 확인 — 플레이 종료 후 로그 7건 전부 `Log`, Warning·Error 0) |
+| 점유 이슈 | `D7` (요청-5 — `Weapons.csv` Import 1회) |
+| 컴파일 에러 | `0` (2026-08-30 D6 종료 시 확인 — 플레이 종료 후 로그 7건 전부 `Log`, Warning·Error 0) |
 
 | 상태값 | 뜻 | CONTENT 가 알 것 |
 |---|---|---|
@@ -63,7 +63,7 @@ CONTENT 는 **읽기만** 한다 — 내 요청이 언제 처리될지 가늠하
 
 | 세션 | 다음 이슈 번호 |
 |---|---|
-| DEV | `D7` |
+| DEV | `D8` |
 | CONTENT | `C7` |
 | 버그(공용) | `B5` |
 

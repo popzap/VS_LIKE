@@ -351,8 +351,8 @@ public class EnemyBase : MonoBehaviour
     // ── 전투 ────────────────────────────────────────────────────
 
     // ── 넉백 ────────────────────────────────────────────────────
-    private const float KnockbackForce = 6f;
-    private const float KnockbackTime  = 0.10f;
+    // 수치는 씬의 CombatFeel 컴포넌트가 들고 있다 (원본은 Economy.csv).
+    // 🔴 Awake 에서 캐시하지 말 것 — 쓰는 순간 읽는다 (I-8 / I-38).
     private float _knockbackTimer;
 
     /// <param name="from">피해가 날아온 위치. 넉백 방향을 정한다. 생략하면 넉백 없음.</param>
@@ -381,15 +381,18 @@ public class EnemyBase : MonoBehaviour
 
         // 등급이 높을수록 덜 밀린다. 보스는 아예 안 밀린다 —
         // 밀리는 보스는 위압감이 없고, 벽 없는 아레나에서 무한히 밀려나 도망가 버린다.
-        float resist = IsBoss ? 0f : IsElite ? 0.4f : 1f;
+        // 잡몹의 1f 는 기준값이라 CSV 로 빼지 않는다 — 다른 저항이 이 값의 비율이다.
+        float resist = IsBoss  ? CombatFeel.BossKnockbackResist
+                     : IsElite ? CombatFeel.EliteKnockbackResist
+                               : 1f;
         if (resist <= 0f) return;
 
         Vector2 dir = (Vector2)transform.position - from.Value;
         if (dir.sqrMagnitude < 0.0001f) dir = Random.insideUnitCircle;   // 정확히 겹친 경우
         dir.Normalize();
 
-        Rb.linearVelocity = dir * (KnockbackForce * resist);
-        _knockbackTimer   = KnockbackTime;
+        Rb.linearVelocity = dir * (CombatFeel.EnemyKnockbackForce * resist);
+        _knockbackTimer   = CombatFeel.EnemyKnockbackTime;
     }
 
     protected virtual void Die()
@@ -432,7 +435,6 @@ public class EnemyBase : MonoBehaviour
     // EnemyVisual 은 셰이더로 흔들 뿐 localScale 을 건드리지 않으므로 충돌하지 않고,
     // OnInitialized() 가 재사용 때마다 localScale 을 다시 세팅하므로 잔재도 남지 않는다.
 
-    private const float DeathPopTime = 0.14f;
     private Coroutine _deathPopRoutine;
 
     private IEnumerator DeathPopRoutine()
@@ -442,13 +444,17 @@ public class EnemyBase : MonoBehaviour
         Vector3 baseScale = transform.localScale;
         float   t         = 0f;
 
-        while (t < DeathPopTime)
+        // 연출 도중에 수치가 바뀌면 보간이 튀므로 시작할 때 한 번만 읽는다.
+        float popTime  = CombatFeel.DeathPopTime;
+        float popScale = CombatFeel.DeathPopScale;
+
+        while (t < popTime)
         {
             t += Time.deltaTime;
-            float p = Mathf.Clamp01(t / DeathPopTime);
-            // 앞 30% 는 1.25배까지 부풀고, 나머지 70% 는 0 으로 수축
-            float s = p < 0.3f ? Mathf.Lerp(1f, 1.25f, p / 0.3f)
-                               : Mathf.Lerp(1.25f, 0f, (p - 0.3f) / 0.7f);
+            float p = Mathf.Clamp01(t / popTime);
+            // 앞 30% 는 popScale 까지 부풀고, 나머지 70% 는 0 으로 수축
+            float s = p < 0.3f ? Mathf.Lerp(1f, popScale, p / 0.3f)
+                               : Mathf.Lerp(popScale, 0f, (p - 0.3f) / 0.7f);
             transform.localScale = baseScale * s;
             yield return null;
         }
@@ -466,9 +472,11 @@ public class EnemyBase : MonoBehaviour
         if (!IsElite && !IsBoss) return;
 
         var cam = Camera.main != null ? Camera.main.GetComponent<CameraController>() : null;
-        if (cam != null) cam.Shake(IsBoss ? 0.45f : 0.20f, IsBoss ? 0.5f : 0.25f);
+        if (cam != null)
+            cam.Shake(IsBoss ? CombatFeel.BossShakeMagnitude : CombatFeel.EliteShakeMagnitude,
+                      IsBoss ? CombatFeel.BossShakeDuration  : CombatFeel.EliteShakeDuration);
 
-        GameManager.Instance?.DoHitstop(IsBoss ? 0.09f : 0.05f);
+        GameManager.Instance?.DoHitstop(IsBoss ? CombatFeel.BossHitstop : CombatFeel.EliteHitstop);
     }
 
     private void SetCollidersEnabled(bool on)

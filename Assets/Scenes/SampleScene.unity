@@ -10024,6 +10024,35 @@ RectTransform:
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
+--- !u!1 &1501063830 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 8731808528067922064, guid: 0166ba7240f95f54fac60510dc1d195e, type: 3}
+  m_PrefabInstance: {fileID: 2642013787378713662}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &1501063833
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1501063830}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 668df654697cb9f4eb9d2bfdb763d96c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::CombatFeel
+  enemyKnockbackForce: 6
+  enemyKnockbackTime: 0.1
+  eliteKnockbackResist: 0.4
+  bossKnockbackResist: 0
+  deathPopTime: 0.14
+  deathPopScale: 1.25
+  eliteShakeMagnitude: 0.2
+  eliteShakeDuration: 0.25
+  eliteHitstop: 0.05
+  bossShakeMagnitude: 0.45
+  bossShakeDuration: 0.5
+  bossHitstop: 0.09
 --- !u!1 &1509273043
 GameObject:
   m_ObjectHideFlags: 0
@@ -16011,7 +16040,10 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 8731808528067922064, guid: 0166ba7240f95f54fac60510dc1d195e, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1501063833}
   m_SourcePrefab: {fileID: 100100000, guid: 0166ba7240f95f54fac60510dc1d195e, type: 3}
 --- !u!1001 &4505039495625385279
 PrefabInstance:

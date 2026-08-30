@@ -10,7 +10,7 @@
 | 요청일시 | 요청자 | 상태 | 요청 내용 | 참조 |
 |---|---|---|---|---|
 | 2026-08-30 | CONTENT | `닫힘(D4)` | **걷기 시트 4종 덮어쓰기 + 재임포트** (B2 수정본) — 아래 §요청-1 | [`BUGS.md` B2](../BUGS.md) · [`DONE/D4.md`](../DONE/D4.md) |
-| 2026-08-30 | CONTENT | `열림` | **`CombatFeel` 컴포넌트 신설 + `EnemyBase` 상수 제거** (C2) — 아래 §요청-2 | [`TUNING.md` §1](../../TUNING.md) |
+| 2026-08-30 | CONTENT | `닫힘(D6)` | **`CombatFeel` 컴포넌트 신설 + `EnemyBase` 상수 제거** (C2) — 아래 §요청-2 | [`TUNING.md` §1](../../TUNING.md) · [`DONE/D6.md`](../DONE/D6.md) |
 | 2026-08-30 | CONTENT | `열림` | **`SfxId` 7종 추가 + 호출부 배선 + 클립 생성**(엘리트 사망음 포함) (C3) — 아래 §요청-3 | [`TODO.md` §3](../../TODO.md) |
 | 2026-08-30 | CONTENT | `닫힘(D4)` | **`TODO.md` §1 갱신** — 스크린샷으로 승급 경로 2건이 확인됐다 — 아래 §요청-4 | [`TODO.md` §1](../../TODO.md) |
 | 2026-08-30 | CONTENT | `열림` | **`Weapons.csv` Import 1회** — 진화 무기 3종의 전용 아이콘이 안 쓰이고 있었다 (C6) — 아래 §요청-5 | [`DESIGN_CLASSES.md` §6](../../DESIGN_CLASSES.md) |
