@@ -14,8 +14,9 @@
 | 2026-08-30 | CONTENT | `닫힘(D8)` | **`SfxId` 7종 추가 + 호출부 배선 + 클립 생성**(엘리트 사망음 포함) (C3) — 아래 §요청-3 | [`TODO.md` §3](../../TODO.md) · [`DONE/D8.md`](../DONE/D8.md) |
 | 2026-08-30 | CONTENT | `닫힘(D4)` | **`TODO.md` §1 갱신** — 스크린샷으로 승급 경로 2건이 확인됐다 — 아래 §요청-4 | [`TODO.md` §1](../../TODO.md) |
 | 2026-08-30 | CONTENT | `닫힘(D7)` | **`Weapons.csv` Import 1회** — 진화 무기 3종의 전용 아이콘이 안 쓰이고 있었다 (C6) — 아래 §요청-5 | [`DESIGN_CLASSES.md` §6](../../DESIGN_CLASSES.md) · [`DONE/D7.md`](../DONE/D7.md) |
-| 2026-08-30 | CONTENT | `열림` | **화살 PNG 임포트(PPU 512) + `Proj_Arrow.prefab` 신설 + `Weapons.csv` Import** (C7) — 아래 §요청-6 | [`DESIGN_CLASSES.md` §6 1단계](../../DESIGN_CLASSES.md) |
+| 2026-08-30 | CONTENT | `닫힘(D9)` | **화살 PNG 임포트(PPU 512) + `Proj_Arrow.prefab` 신설 + `Weapons.csv` Import** (C7) — 아래 §요청-6 | [`DESIGN_CLASSES.md` §6 1단계](../../DESIGN_CLASSES.md) · [`DONE/D9.md`](../DONE/D9.md) |
 | 2026-08-30 | CONTENT | `열림` | **수리검 + 검 근접화 — 그림은 다 나왔고 코드만 남았다** (C8) — 아래 §요청-7 | [`DESIGN_CLASSES.md` §5-A](../../DESIGN_CLASSES.md) |
+| 2026-08-30 | CONTENT | `열림` | **바닥 폭탄 + 독 장판 — 그림은 다 나왔고 코드만 남았다** (C9) — 아래 §요청-8 | [`DESIGN_CLASSES.md` §5-A](../../DESIGN_CLASSES.md) |
 
 > 상태값: `열림` · `진행중` · `닫힘(D3)` · `보류(사유)`
 > 처리했으면 상태만 바꾼다. **줄을 지우지 않는다.**
@@ -361,6 +362,23 @@ Excalibur=Sword+Damage · Windforce=Bow+CritChance · Devastator=Gun+Fireball.
 
 ## 요청-6 — 화살 스프라이트 임포트 + `Proj_Arrow.prefab` 신설 (C7)
 
+> ✅ **D9 로 닫혔다 (2026-08-30, DEV).** 상세: [`DONE/D9.md`](../DONE/D9.md)
+>
+> - ①②③ 순서 지켰다. 프리팹을 먼저 만들고 Import 했으므로 `ProjectilePrefab` 이 `0` 이 된 적은 없다
+> - 🔴 **④를 눈으로 봤다.** 플레이 모드에서 화살 4개를 +X/+Y/−X/−Y 로 세우고
+>   게임 카메라(`Camera.main`)로 캡처했다. **네 방향 모두 촉이 진행 방향을 향한다.** 뒤집힘 없음
+> - ⑤도 봤다. `Proj_Bullet` 을 대조군으로 같이 쏴서 **이동 거리가 2.37 로 완전히 같았다**
+>   (둘 다 표적에서 0.63 떨어진 지점에서 소멸). 스택 트레이스로
+>   `OnTriggerEnter2D → TakeDamage → Die` 까지 확인
+> - ⚠️ **판정 ① 의 기대값 `(0.391, 0.141)` 은 실제로 `(0.500, 0.500)` 이 나온다 — 정상이다.**
+>   Single 스프라이트의 `bounds.size` 는 **텍스처 전체 rect** 기준이라 256/512 = 0.5 다.
+>   요청서 숫자는 **알파 bbox**(200×72px) 기준이라 `200/512=0.391` · `72/512=0.141` 이다.
+>   둘 다 맞는 숫자이고 **PPU 는 정확히 512** 다 — ①이 잡으려던 "PPU 1024" 는 아니다
+>   (1024 였다면 0.25 가 나왔다). 그림의 실제 폭 0.391 은 기존 총알 0.41 과 사실상 같다
+> - `_Incoming/Projectiles/Arrow.png` 삭제 완료. `Shuriken.png` 는 요청-7 용이라 남겼다
+> - PPU 체감 조절은 [`REQ/CONTENT.md`](CONTENT.md) 요청-3 으로 넘겼다 (`TUNING.md` 는 CONTENT 소유)
+> - 덤으로 버그 하나를 적었다 — [`BUGS.md` B5](../BUGS.md). 게임 경로에선 안 나므로 **고치지 않았다**
+
 **무엇을** — 3단계다. **순서가 중요하다.**
 
 | 순 | 할 일 |
@@ -576,6 +594,205 @@ Sword,Sword,Assets/Prefabs/Weapon_Melee.prefab,…,Assets/Prefabs/Fx_SwingArc.pr
 
 **같이 남겨 줄 것** — 검의 `Damage`/`Cooldown` 과 수리검의 `pierceCount`(3) 는
 전부 **감으로 넣은 값**이다. 플레이하면서 "세다/약하다"만 알려 주면 CONTENT 가
+[`TUNING.md`](../../TUNING.md) §3 에 반영한다. **DEV 가 CSV 를 직접 고치지는 말 것.**
+
+---
+
+## 요청-8 — 바닥 폭탄 + 독 장판 (C9) · §6 3·4단계
+
+> 🟡 **지금 당장 하라는 요청이 아니다.** 요청-7 이 닫힌 **뒤에** 연다.
+> 미리 적어 두는 이유는 **그림이 코드보다 먼저 끝났기 때문**이다 —
+> 규격을 잊기 전에 못 박아 둔다. 계약 전문은
+> [`DESIGN_CLASSES.md` §5-A](../../DESIGN_CLASSES.md).
+
+**넘기는 그림 3장**
+
+| `_Incoming/` | → `Assets/` | 임포트 |
+|---|---|---|
+| `Effects/BombGround.png` (1024×256) | `Game/Sprites/Effects/BombGround.png` | **PPU 256** · Multiple · Grid By Cell Size **256×256** · Point · Compression None |
+| `Effects/ToxinField.png` (1536×256) | `Game/Sprites/Effects/ToxinField.png` | **PPU 100** · Multiple · Grid By Cell Size **256×256** · Point · Compression None |
+| `ICON/Toxin.png` (1024×1024) | `Game/Sprites/Weapons/Toxin.png` | 기존 `Weapons/` 아이콘과 동일 (Single) |
+
+셋 다 Alpha Is Transparency 켬. 🔴 **`ToxinField` 의 PPU 는 100 이다** — 256 으로 들어가면
+장판이 **2.56배 작아지고**, 아래 B-3 반지름 계약이 통째로 깨진다.
+
+---
+
+### A. 바닥 폭탄 (W2) — 🔑 **새 클래스가 필요 없다**
+
+코드를 읽고 확인했다. `Bomb` 은 이미 `Weapon_Aoe`(`AoeWeapon`) 를 쓰고,
+`AoeWeapon.LaunchTravel()` 은 `TravelPrefab` + `ProjectileSpeed > 0` 이면
+**`BombProjectile` 을 목표 좌표로 던진 뒤 터뜨린다.** 곡사포가 이미 그렇게 동작한다.
+
+즉 **"던져서 바닥에 놓는다"는 이미 있다.** 없는 건 **도착 후 기다리는 것** 하나뿐이다.
+
+**제안하는 최소 변경 — `BombProjectile` 에 필드 2개**
+
+```cs
+[Tooltip("도착한 뒤 터지기까지 기다리는 시간(초). 0 이면 즉시 터진다(곡사포).")]
+[SerializeField] private float fuseTime = 0f;
+[Tooltip("신관 동안 남은 시간에 비례해 넘길 그림. 비워 두면 안 바뀐다.")]
+[SerializeField] private Sprite[] fuseFrames;
+```
+
+🔑 **기본값 0 이 곡사포를 그대로 지킨다.** `pierceCount = 1`(요청-7) 과 같은 방식이다 —
+기존 프리팹(`Proj_Bomb`)은 손대지 않아도 예전과 똑같이 동작한다.
+
+`Update()` 에서 `_progress >= 1f` 일 때 바로 `Explode()` 하는 대신:
+
+1. 위치를 `_target` 에 고정하고 **회전을 멈춘다** (`transform.rotation = Quaternion.identity`).
+   🔴 `spinSpeed` 가 계속 돌면 **바닥에 놓인 폭탄이 팽이처럼 돈다**
+2. `fuseTime` 만큼 센 뒤 `Explode()`
+3. 그동안 `fuseFrames[floor(경과/fuseTime * 4)]` 로 그림을 갈아 준다 (4장, 마지막 인덱스 clamp)
+
+> ⚠️ **프레임은 시간이 아니라 게이지다.** 0=차가움 → 3=벌겋게 달아오름 순으로 그렸다.
+> 일정 간격 루프로 돌리면 **언제 터지는지를 그림이 알려 주지 못한다.**
+
+**새 프리팹** — `Assets/Prefabs/Proj_BombGround.prefab`
+: `Proj_Bomb.prefab` 을 **복제**해서 만드는 게 가장 안전하다 (요청-6 과 같은 이유 —
+  Layer·Rigidbody2D·풀 반환까지 딸려 온다). 바꿀 것:
+
+| 항목 | 값 |
+|---|---|
+| `SpriteRenderer.sprite` | `BombGround_0` (첫 프레임) |
+| `BombProjectile.fuseTime` | **1.1** (감으로 넣은 값 — `TUNING.md` §3 3단계에 등재해 뒀다) |
+| `BombProjectile.fuseFrames` | `BombGround_0` … `_3` 4장 |
+| `BombProjectile.spinSpeed` | **0 으로 만들지 말고 그대로 둔다** — 날아가는 동안엔 돌아야 한다. 멈추는 건 위 ①이 한다 |
+
+⚠️ **접촉 기폭은 넣지 않는다.** 적이 밟고 지나가도 안 터진다 (§4 W2). 시간만으로 터진다.
+
+**CSV** — `Bomb` 행의 `TravelPrefab` 을 채우고 `ProjectileSpeed` 를 0 → 9 로 올린다.
+🔴 **CSV 는 CONTENT 가 쓴다.** 프리팹이 생긴 뒤에 알려 주면 그때 넣는다
+(없는 경로로 Import 하면 `BombData.TravelPrefab` 이 null 로 덮인다 — 요청-6 과 같은 함정).
+
+---
+
+### B. 독 장판 (W5) — 🔴 **`EnemyBase` 를 건드리는 유일한 요청**
+
+**B-1. `EnemyBase` 의 슬로우 — 상태 2개**
+
+```cs
+private float _slowMult = 1f;   // 1 = 슬로우 없음. 작을수록 느리다
+private float _slowUntil;       // 이 시각을 넘기면 저절로 풀린다
+
+public void ApplySlow(float mult, float duration)
+{
+    // "가장 센 것 하나만" — 겹친 장판 2개가 0.6*0.6=0.36 이 되면 적이 멈춘다
+    if (Time.time > _slowUntil || mult < _slowMult) _slowMult = mult;
+    _slowUntil = Mathf.Max(_slowUntil, Time.time + duration);
+}
+```
+
+🔑 **장판이 틱마다 다시 걸고, 시간이 지나면 저절로 풀리게 한다.**
+이러면 "적이 장판에서 나갔다"를 **아무도 추적하지 않아도 된다** —
+안 걸어 주면 알아서 풀린다. Enter/Exit 짝을 맞추는 코드는 반드시 어딘가에서 어긋난다.
+
+적용은 **속도를 덮어쓰지 말고 곱한다.** `MoveSpeed` 를 직접 깎으면 복구할 원본이 사라진다:
+
+| 파일 · 줄 | 지금 | 바꿀 것 |
+|---|---|---|
+| `EnemyBase.cs:164` | `Steer(...) * MoveSpeed` | `* CurrentSpeed` |
+| `EnemyBase.cs:254` | `Steer(desired) * MoveSpeed` | `* CurrentSpeed` |
+| `EnemyBase.cs:333` | `MoveSpeed * Data.ChargeSpeedMult` | `CurrentSpeed * Data.ChargeSpeedMult` |
+
+`protected float CurrentSpeed => MoveSpeed * (Time.time <= _slowUntil ? _slowMult : 1f);`
+
+> 🔴 **`Setup()` 에서 `_slowMult = 1f; _slowUntil = 0f;` 로 반드시 초기화할 것.**
+> 적은 풀에서 재사용된다. 안 지우면 **다음 웨이브의 멀쩡한 적이 느린 채로 태어난다** —
+> 그리고 이건 로그에 아무것도 안 남아서 "적이 왜 이렇게 느리지"로만 보인다
+
+**B-2. 새 무기 — `FieldWeapon : WeaponBase` + `ToxinField`**
+
+`AoeWeapon` 을 고치지 말고 **새로 만든다.** 노리는 곳이 다르다 —
+`AoeWeapon` 은 *가장 가까운 적*, 이건 *플레이어 주변 무작위 좌표*다 (지시: "랜덤 바닥에").
+
+```cs
+// FieldWeapon.Fire()
+Vector2 spot = (Vector2)transform.position + Random.insideUnitCircle * Data.GetRange(Level);
+// → Pool.Get(Data.ProjectilePrefab, spot, ...) → ToxinField.Initialize(...)
+```
+
+`ToxinField` 가 할 일:
+
+1. `localScale = Vector3.one * radius` — **`radius` 가 곧 그림 반지름이다** (아래 B-3)
+2. `tickInterval` 마다 `Physics2D.OverlapCircleAll(spot, radius, Enemy)` →
+   - `TakeDamage(damage)` — 🔴 **`from` 을 넘기지 말 것.** 넘기면 초당 여러 번 밀려서
+     적이 장판 밖으로 튕겨 나간다. 기본값이 `null` 이라 **그냥 생략하면 된다**
+   - `ApplySlow(slowMult, tickInterval * 1.6f)` — 틱보다 조금 길게 걸어야 틱 사이에 안 풀린다
+3. `fieldDuration` 이 지나면 `Pool.Return`
+4. 6프레임을 **그냥 루프**로 돌린다 (이음매 없이 순환하게 그렸다. 핑퐁 아님)
+
+**프리팹 2개**
+
+| 프리팹 | 내용 |
+|---|---|
+| `Assets/Prefabs/Weapon_Field.prefab` | `FieldWeapon` 하나만. `Weapon_Aoe.prefab` 복제가 편하다 |
+| `Assets/Prefabs/Proj_ToxinField.prefab` | `SpriteRenderer`(`ToxinField_0`, **`sortingOrder` 를 적보다 아래로**) + `ToxinField`. **콜라이더 없음** — 판정은 `OverlapCircleAll` 로 한다 |
+
+`ToxinField` 의 자리표시 값 (전부 감이다. `TUNING.md` §3 3단계에 등재해 뒀다):
+
+| 필드 | 값 | 왜 |
+|---|---|---|
+| `fieldDuration` | 4.0s | 다음 장판이 깔릴 때까지 겹치는 구간이 생겨야 "지대"로 느껴진다 |
+| `tickInterval` | 0.5s | 초당 2번. 더 잦으면 데미지 팝업이 화면을 덮는다 |
+| `slowMult` | 0.6 | 40% 감속. 0.5 아래로 내리면 적이 사실상 멈춘다 |
+| `spriteRadiusAtScaleOne` | **1.0** | 🔴 **그림이 정한 값이다. 고치지 말 것** (아래) |
+
+**B-3. 반지름 계약** — `AoeProjectile.spriteRadiusAtScaleOne = 0.5` 와 **같은 방식**이다.
+
+`ToxinField.png` 는 셀 256px 중 반지름 100px, PPU 100 → **scale 1 에서 정확히 1.0 유닛**.
+따라서 `localScale = radius` 로 두면 **그린 원이 곧 맞는 원**이다.
+🔑 이걸 안 하면 그림이 거짓말을 하고, 플레이어는 "밖에 있었는데 맞았다"고 느낀다.
+
+⚠️ 몸통 알파가 **205**(불투명 아님)다. 장판 위에 선 적이 비쳐 보여야 해서 그렇게 그렸다.
+진하게/옅게는 `color` 의 **알파가 아니라 색**으로 조정할 것 — 알파를 더 낮추면 초록이 탁해진다.
+
+---
+
+### C. CSV — **CONTENT 가 쓴다. 아래는 초안이니 그대로 붙여 넣지 말 것**
+
+프리팹이 생긴 뒤 알려 주면 CONTENT 가 넣고, 그다음 DEV 가 Import 한다.
+
+```
+# Weapons.csv (12필드) — Damage 는 "틱당" 이다
+Toxin,Toxin,Assets/Prefabs/Weapon_Field.prefab,Assets/Game/Sprites/Weapons/Toxin.png,Assets/Prefabs/Proj_ToxinField.prefab,,0,4|6|8|11|15,3|2.7|2.4|2.1|1.8,1|1.15|1.3|1.5|1.7,1|1|1|1|1,5|5|6|6|7
+
+# Weapons.csv — Bomb 행 교체 (TravelPrefab 채움 + ProjectileSpeed 0 -> 9)
+Bomb,Bomb,Assets/Prefabs/Weapon_Aoe.prefab,Assets/Game/Sprites/Weapons/Bomb.png,Assets/Prefabs/Proj_Aoe(Boom).prefab,Assets/Prefabs/Proj_BombGround.prefab,9,30|44|62|86|118,3.5|3.2|2.9|2.5|2,1.2|1.35|1.5|1.7|2,1|1|1|1|1,9|9|10|10|11
+
+# Items.csv (8필드)
+Toxin,Toxin,Drops a toxic pool that slows and burns anything inside.,Assets/Game/Sprites/Weapons/Toxin.png,Weapon,5,Toxin,9
+
+# SceneWiring.csv — LevelUpManager,allItems 끝에 이어 붙인다
+|Assets/Game/ItemData/Toxin.asset
+```
+
+`Toxin` 의 `Range`(5~7)는 사거리가 아니라 **장판이 떨어질 수 있는 반경**이다.
+크게 잡으면 적이 없는 빈 땅에 깔린다.
+
+---
+
+### 어떻게 확인하나 (판정 기준)
+
+| # | 기준 |
+|---|---|
+| ① | `BombGround.png` 4장 · `ToxinField.png` 6장으로 잘린다. **`ToxinField` 한 장의 `bounds.size` 가 약 `(2.56, 2.56)`** — `(1.0, 1.0)` 이면 PPU 가 256 으로 들어간 것 |
+| ② | 🔴 **곡사포 회귀 검사**: `Bombard` 건물의 폭탄이 **예전과 똑같이** 날아가 즉시 터진다. `fuseTime` 기본값 0 이 안 먹으면 여기서 걸린다 |
+| ③ | 🔴 **적 속도 회귀 검사**: 장판을 한 번도 안 밟은 적이 **평소 속도로 걷는다.** 특히 **여러 웨이브를 넘긴 뒤**에도 (풀 재사용 초기화 확인) |
+| ④ | **실플레이 — 폭탄**: 던져진 폭탄이 바닥에 **멈춰 서고**(돌지 않고) 점점 **벌겋게 달아오르다** 터진다. 언제 터질지 눈으로 안다 |
+| ⑤ | **실플레이 — 장판**: 안에 들어간 적이 **눈에 띄게 느려지고**, 나오면 **돌아온다** |
+| ⑥ | 🔴 **장판 2개를 겹쳐도 적이 멈추지 않는다** (가장 센 것 하나만 적용) |
+| ⑦ | **도트 피해로 적이 밀리지 않는다** — 장판 안의 적이 제자리에서 닳는다. 튕겨 나가면 `from` 을 넘긴 것이다 |
+| ⑧ | **그림 반지름 = 맞는 반지름** — 초록 원 밖의 적은 안 닳는다 |
+| ⑨ | 레벨업 3택과 상점에 **Toxin 이 나온다** |
+| ⑩ | 콘솔 에러 0 |
+
+> ②③이 이 요청에서 가장 위험한 부분이다. 둘 다 **새 기능이 아니라 기존 것을 깨는 쪽**이고,
+> 특히 ③은 깨져도 예외가 안 나서 **"적이 좀 느린데?" 로만 보인다.**
+> ⑤⑥⑦은 나(CONTENT)는 화면을 못 보므로 **봤는지를 명확히 적어 줄 것.**
+
+**같이 남겨 줄 것** — `fuseTime`(1.1) · `fieldDuration`(4.0) · `tickInterval`(0.5) ·
+`slowMult`(0.6) 은 전부 감으로 넣은 값이다. "길다/짧다"만 알려 주면 CONTENT 가
 [`TUNING.md`](../../TUNING.md) §3 에 반영한다. **DEV 가 CSV 를 직접 고치지는 말 것.**
 
 ---
