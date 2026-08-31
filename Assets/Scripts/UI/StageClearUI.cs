@@ -90,7 +90,7 @@ public class StageClearUI : MonoBehaviour
         var stats = FindFirstObjectByType<PlayerStats>();
         _statsBeforeWave = stats != null ? CopyStats(stats.Final) : new StatBlock();
         _xpBefore        = ExperienceManager.Instance?.CurrentXp ?? 0;
-        _currencyBefore  = GameManager.Instance?.MetaProgression.Currency ?? 0;
+        _currencyBefore  = GameManager.Instance?.RunGold ?? 0;
         _killCount = 0;
         _elapsed   = 0f;
     }
@@ -103,7 +103,8 @@ public class StageClearUI : MonoBehaviour
     public void Show(StageNode clearedNode)
     {
         _xpGained       = (ExperienceManager.Instance?.CurrentXp ?? 0) - _xpBefore;
-        _currencyGained = (GameManager.Instance?.MetaProgression.Currency ?? 0) - _currencyBefore;
+        // 웨이브 중 번 **런 골드**만 센다. 클리어 보상은 메타 골드라 여기 안 잡힌다 (TODO §2-B).
+        _currencyGained = (GameManager.Instance?.RunGold ?? 0) - _currencyBefore;
 
         panel.SetActive(true);
         _targetAlpha     = 1f;

@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using UnityEngine;
 using UnityEngine.Events;
@@ -41,7 +42,8 @@ public class GameManager : MonoBehaviour
     [Tooltip("선택 화면에서 아무것도 고르지 않았을 때 쓰이는 인덱스 (초기 하이라이트 위치이기도 하다).")]
     [SerializeField] private int defaultClassIndex;
 
-    [Header("스테이지 클리어 골드 보상")]
+    // 🔴 이 셋만 메타 골드다 (영구 강화용). 처치·픽업 골드는 런 골드로 간다.
+    [Header("스테이지 클리어 보상 (메타 골드)")]
     [SerializeField] private int normalClearReward = 8;
     [SerializeField] private int eliteClearReward  = 20;
     [SerializeField] private int bossClearReward   = 60;
@@ -178,6 +180,13 @@ public class GameManager : MonoBehaviour
         LevelUpManager.ResetRunState();
         if (BuildingMgr != null)  BuildingMgr.ResetRunState();
         if (EvolutionMgr != null) EvolutionMgr.ResetRunState();
+
+        // 런 골드는 런과 함께 태어나고 죽는다. Retry 는 씬을 다시 로드하지만
+        // 메인 메뉴에서 곧바로 다시 시작하는 경로는 리로드가 없어 여기서 직접 지운다.
+        RunGold          = 0;
+        _pendingMetaGold = 0;
+        OnRunGoldChanged?.Invoke(RunGold);
+
         ApplySelectedClass();
         StageMap.GenerateMap();
         ChangeState(GameState.StageMap);
@@ -275,11 +284,12 @@ public class GameManager : MonoBehaviour
             StageType.Elite => eliteClearReward,
             _               => normalClearReward
         };
-        GrantGold(reward);
+        GrantMetaGold(reward);
 
         if (clearedNode.StageType == StageType.Boss)
         {
             MetaProgression.RegisterRunResult(WaveManager.TotalKillCount);
+            SettleRun();
             MetaProgression.Save();
             ChangeState(GameState.Victory);
             return;
@@ -296,21 +306,91 @@ public class GameManager : MonoBehaviour
     public void OnPlayerDied()
     {
         MetaProgression.RegisterRunResult(WaveManager.TotalKillCount);
+        SettleRun();
         MetaProgression.Save();
         ChangeState(GameState.GameOver);
     }
 
+    // ── 재화 ─────────────────────────────────────────────────────
+    //
+    // 🔴 지갑이 둘이다 (TODO §2-B, 결정 3). 섞지 말 것.
+    //
+    //   런 골드 (RunGold)          — 처치·픽업·농장·이벤트로 번다. 상점과 리롤이 쓴다.
+    //                                런이 끝나면 **소멸**한다. 저장되지 않는다.
+    //   메타 골드 (MetaProgression) — 스테이지 클리어 보상으로만 번다. 영구 강화·해금이 쓴다.
+    //
+    // 예전에는 둘이 MetaProgression.Currency 하나였다. 10층 런의 처치 보상만 1,000G 를
+    // 넘는데 상점 아이템이 5~12G 라, 상점도 메타도 값을 잡을 수가 없었다.
+    //
+    // ⚠️ 클리어 보상은 곧바로 MetaProgression 에 들어가지 않고 _pendingMetaGold 에 쌓였다가
+    //    런이 끝날 때(SettleRun) 한 번에 넘어간다. 런 도중에 저장 없이 나가면 남지 않는다 —
+    //    "런을 끝내야 메타 골드를 번다"가 규칙이다.
+
+    /// <summary>이번 런에서 쓸 수 있는 골드. 상점 전용이며 런이 끝나면 사라진다.</summary>
+    public int RunGold { get; private set; }
+
+    /// <summary>런 골드가 바뀔 때마다 호출된다 (상점 UI 가 구독한다).</summary>
+    public Action<int> OnRunGoldChanged;
+
+    private int _pendingMetaGold;
+
+    /// <summary>이번 런에서 정산될 메타 골드 (아직 MetaProgression 에 들어가지 않았다).</summary>
+    public int PendingMetaGold => _pendingMetaGold;
+
+    /// <summary>직전 런이 정산한 메타 골드. 런 종료 화면이 표시한다.</summary>
+    public int LastSettledMetaGold { get; private set; }
+
     /// <summary>
-    /// 게임플레이로 획득하는 골드는 전부 이 함수를 거친다.
+    /// 게임플레이로 획득하는 <b>런 골드</b>는 전부 이 함수를 거친다.
     /// 플레이어의 GoldGain 배율(패시브/메타 강화)이 여기서 적용된다.
     /// </summary>
     public void GrantGold(int baseAmount)
     {
         if (baseAmount <= 0) return;
 
-        float mult  = PlayerStats.Current != null ? PlayerStats.Current.Final.GoldGain : 1f;
-        int   final = Mathf.Max(1, Mathf.RoundToInt(baseAmount * mult));
-        MetaProgression.AddCurrency(final);
+        float mult = PlayerStats.Current != null ? PlayerStats.Current.Final.GoldGain : 1f;
+        AddRunGold(Mathf.Max(1, Mathf.RoundToInt(baseAmount * mult)));
+    }
+
+    /// <summary>배율 없이 런 골드를 더한다 (환급처럼 이미 계산이 끝난 금액용).</summary>
+    public void AddRunGold(int amount)
+    {
+        if (amount <= 0) return;
+        RunGold += amount;
+        OnRunGoldChanged?.Invoke(RunGold);
+    }
+
+    /// <summary>런 골드를 쓴다. 모자라면 아무것도 하지 않고 false.</summary>
+    public bool SpendRunGold(int amount)
+    {
+        if (amount <= 0 || RunGold < amount) return false;
+        RunGold -= amount;
+        OnRunGoldChanged?.Invoke(RunGold);
+        return true;
+    }
+
+    /// <summary>
+    /// 스테이지 클리어 보상 — <b>메타 골드</b>로 적립한다. 런이 끝날 때 정산된다.
+    /// GoldGain 배율은 런 골드와 똑같이 적용된다.
+    /// </summary>
+    public void GrantMetaGold(int baseAmount)
+    {
+        if (baseAmount <= 0) return;
+
+        float mult = PlayerStats.Current != null ? PlayerStats.Current.Final.GoldGain : 1f;
+        _pendingMetaGold += Mathf.Max(1, Mathf.RoundToInt(baseAmount * mult));
+    }
+
+    /// <summary>런 종료(사망/승리) 정산. 적립된 메타 골드를 넘기고 런 골드를 버린다.</summary>
+    private void SettleRun()
+    {
+        LastSettledMetaGold = _pendingMetaGold;
+        if (_pendingMetaGold > 0) MetaProgression.AddCurrency(_pendingMetaGold);
+        Debug.Log($"[GameManager] 런 정산 — 메타 골드 +{_pendingMetaGold} · 남은 런 골드 {RunGold} 소멸");
+
+        _pendingMetaGold = 0;
+        RunGold          = 0;
+        OnRunGoldChanged?.Invoke(RunGold);
     }
 
     // ── 히트스톱 ─────────────────────────────────────────────────

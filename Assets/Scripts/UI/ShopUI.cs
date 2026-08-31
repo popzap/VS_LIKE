@@ -80,8 +80,9 @@ public class ShopUI : MonoBehaviour
         ShopManager.Instance.OnItemRemoved.AddListener(OnItemRemoved);
         ShopManager.Instance.OnSlotsRerolled.AddListener(RefreshShopSlots);
 
-        // MetaProgression 골드 변경 구독 (Action<int> 이므로 += 사용)
-        GameManager.Instance.MetaProgression.OnCurrencyChanged += OnCurrencyChanged;
+        // 런 골드 변경 구독 (Action<int> 이므로 += 사용).
+        // 🔴 상점은 런 골드만 쓴다 — 메타 골드(MetaProgression.Currency)가 아니다 (TODO §2-B).
+        GameManager.Instance.OnRunGoldChanged += OnCurrencyChanged;
 
         // 버튼 연결
         rerollButton.onClick.AddListener(ShopManager.Instance.Reroll);
@@ -96,8 +97,8 @@ public class ShopUI : MonoBehaviour
 
     private void OnDestroy()
     {
-        if (GameManager.Instance?.MetaProgression != null)
-            GameManager.Instance.MetaProgression.OnCurrencyChanged -= OnCurrencyChanged;
+        if (GameManager.Instance != null)
+            GameManager.Instance.OnRunGoldChanged -= OnCurrencyChanged;
     }
 
     private void Update()
@@ -174,7 +175,7 @@ public class ShopUI : MonoBehaviour
 
     private void RefreshCurrency()
     {
-        int cur = GameManager.Instance.MetaProgression.Currency;
+        int cur = GameManager.Instance.RunGold;
         if (currencyText) currencyText.text = $"{cur} G";
     }
 
@@ -188,7 +189,7 @@ public class ShopUI : MonoBehaviour
         foreach (var c in _cardInstances) Destroy(c.gameObject);
         _cardInstances.Clear();
 
-        int currency = GameManager.Instance.MetaProgression.Currency;
+        int currency = GameManager.Instance.RunGold;
 
         foreach (var slot in ShopManager.Instance.CurrentSlots)
         {
@@ -202,7 +203,7 @@ public class ShopUI : MonoBehaviour
 
     private void RefreshCardAffordability()
     {
-        int currency = GameManager.Instance.MetaProgression.Currency;
+        int currency = GameManager.Instance.RunGold;
         foreach (var card in _cardInstances)
             card.RefreshAffordability(currency);
     }

@@ -81,7 +81,7 @@ public class StageMapUI : GameStatePanel
                                             : "Stage Map";
 
         if (currencyText != null)
-            currencyText.text = $"{GameManager.Instance?.MetaProgression?.Currency ?? 0} G";
+            currencyText.text = $"{GameManager.Instance?.RunGold ?? 0} G";   // 런 골드 (상점에서 쓸 돈)
 
         ScrollTo(focus, contentWidth);
     }

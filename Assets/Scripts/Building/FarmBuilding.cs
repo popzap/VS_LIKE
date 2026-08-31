@@ -5,11 +5,10 @@ public class FarmBuilding : BuildingBase
 {
     protected override void OnCooldownElapsed()
     {
-        float mult = PlayerStats.Current != null ? PlayerStats.Current.Final.GoldGain : 1f;
-        int gold = Mathf.RoundToInt(Data.GetOutput(Level) * mult);
-        if (gold <= 0) return;
+        // GrantGold 가 GoldGain 배율을 적용하고 런 골드로 넣는다 (TODO §2-B).
+        int output = Mathf.RoundToInt(Data.GetOutput(Level));
+        if (output <= 0) return;
 
-        var meta = GameManager.Instance != null ? GameManager.Instance.MetaProgression : null;
-        if (meta != null) meta.AddCurrency(gold);
+        if (GameManager.Instance != null) GameManager.Instance.GrantGold(output);
     }
 }

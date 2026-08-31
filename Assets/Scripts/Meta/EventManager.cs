@@ -36,7 +36,7 @@ public class EventManager : MonoBehaviour
             ExperienceManager.Instance?.CollectXp(e.XpBonus);
 
         if (e.CurrencyBonus > 0)
-            GameManager.Instance.MetaProgression.AddCurrency(e.CurrencyBonus);
+            GameManager.Instance.GrantGold(e.CurrencyBonus);   // 런 중 보상 → 런 골드
 
         if (e.TriggerRandomWave)
         {

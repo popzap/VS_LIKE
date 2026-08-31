@@ -130,9 +130,11 @@ public class DevPanel : MonoBehaviour
         if (player != null && player.ClassChain.Count > 0)
             cls = player.ClassChain[player.ClassChain.Count - 1].ClassName;
 
+        // 지갑이 둘이라 둘 다 보여 준다 — Run 은 상점이 쓰는 돈, Meta 는 영구 강화용 (TODO §2-B).
         GUILayout.Label($"State {gm.CurrentState}   Class {cls}"
                       + (exp  != null ? $"   Lv {exp.CurrentLevel} ({exp.CurrentXp}/{exp.XpToNext})" : "")
-                      + (meta != null ? $"   {meta.Currency} G" : ""));
+                      + $"   Run {gm.RunGold} G"
+                      + (meta != null ? $"   Meta {meta.Currency} G (+{gm.PendingMetaGold})" : ""));
 
         GUILayout.BeginHorizontal();
 
@@ -140,7 +142,10 @@ public class DevPanel : MonoBehaviour
         if (exp != null && GUILayout.Button("Level +1"))
             exp.CollectXp(exp.XpToNext);
 
-        if (meta != null && GUILayout.Button($"Gold +{GoldStep}"))
+        if (GUILayout.Button($"Run Gold +{GoldStep}"))
+            gm.AddRunGold(GoldStep);
+
+        if (meta != null && GUILayout.Button($"Meta Gold +{GoldStep}"))
             meta.AddCurrency(GoldStep);
 
         if (player != null && GUILayout.Button("Full Heal"))

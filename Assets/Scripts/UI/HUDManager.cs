@@ -163,8 +163,8 @@ public class HUDManager : MonoBehaviour
         // 골드
         if (currencyText != null)
         {
-            var meta = gm.MetaProgression;
-            int gold = meta != null ? meta.Currency : 0;
+            // HUD 는 **런 골드**를 보여 준다 — 지금 상점에서 쓸 수 있는 돈이 이쪽이다 (TODO §2-B).
+            int gold = gm.RunGold;
             if (gold != _lastCurrency)
             {
                 _lastCurrency     = gold;

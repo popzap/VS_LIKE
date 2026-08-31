@@ -91,13 +91,13 @@ public class ShopManager : MonoBehaviour
     // ─────────────────────────────────────────────────────────────
 
     public bool CanReroll()
-        => GameManager.Instance.MetaProgression.Currency >= _currentRerollCost;
+        => GameManager.Instance.RunGold >= _currentRerollCost;
 
     public void Reroll()
     {
         if (!CanReroll()) return;
 
-        GameManager.Instance.MetaProgression.SpendCurrency(_currentRerollCost);
+        GameManager.Instance.SpendRunGold(_currentRerollCost);
         _rerollCount++;
         _currentRerollCost = baseRerollCost + _rerollCount * rerollCostIncrease;
 
@@ -114,14 +114,15 @@ public class ShopManager : MonoBehaviour
     //  구매
     // ─────────────────────────────────────────────────────────────
 
+    // 상점은 런 골드만 쓴다 (TODO §2-B). 메타 골드는 메인 메뉴의 영구 강화 몫이다.
     public bool CanPurchase(ShopSlot slot)
-        => !slot.IsSold && GameManager.Instance.MetaProgression.Currency >= slot.Price;
+        => !slot.IsSold && GameManager.Instance.RunGold >= slot.Price;
 
     public void Purchase(ShopSlot slot)
     {
         if (!CanPurchase(slot)) return;
 
-        GameManager.Instance.MetaProgression.SpendCurrency(slot.Price);
+        GameManager.Instance.SpendRunGold(slot.Price);
         slot.IsSold = true;
 
         GameManager.Instance.LevelUpManager.ApplyItemFromShop(slot.Item);
@@ -149,7 +150,7 @@ public class ShopManager : MonoBehaviour
 
         int refund = GetRefundAmount(item);
         GameManager.Instance.LevelUpManager.RemoveItemFull(item);
-        GameManager.Instance.MetaProgression.AddCurrency(refund);
+        GameManager.Instance.AddRunGold(refund);
 
         OnItemRemoved.Invoke(item);
         Debug.Log($"[ShopManager] 제거: {item.ItemName} (+{refund}G 환급)");

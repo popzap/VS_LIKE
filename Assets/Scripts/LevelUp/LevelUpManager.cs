@@ -99,10 +99,9 @@ public class LevelUpManager : MonoBehaviour
     {
         if (_rerollUsed) return;
 
-        var meta = GameManager.Instance.MetaProgression;
-        if (meta.Currency < rerollCost) return;
+        // 리롤 비용은 런 골드다 (TODO §2-B).
+        if (!GameManager.Instance.SpendRunGold(rerollCost)) return;
 
-        meta.SpendCurrency(rerollCost);
         _rerollUsed     = true;
         _currentChoices = PickItems(cards.Length);
         RefreshPanel();
@@ -219,7 +218,7 @@ public class LevelUpManager : MonoBehaviour
         else
         {
             rerollCostText.text       = $"Reroll ({rerollCost}G)  x1";
-            rerollButton.interactable = GameManager.Instance.MetaProgression.Currency >= rerollCost;
+            rerollButton.interactable = GameManager.Instance.RunGold >= rerollCost;
         }
     }
 

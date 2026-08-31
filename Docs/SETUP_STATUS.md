@@ -6,7 +6,7 @@
 > 기존의 「C# 스크립트는 완성 단계」라는 전제와 「요청 없이 코드 건드리지 말 것」 규칙이 **해제됨**.
 > 이제 게임 완성을 위해 C# 스크립트 신규 작성·수정이 허용된다.
 >
-> **최종 갱신:** 2026-08-31 (47차 — 픽업 드랍표 CSV Import · 행운이 카드에 안 뜨던 것 발견, D24 / C25)
+> **최종 갱신:** 2026-08-31 (48차 — 재화 분리: 런 골드 ↔ 메타 골드, D25)
 >
 > 🔀 **25차부터 이슈 번호가 `세션 접두어 + 번호` 다** — `D`(DEV) · `C`(CONTENT) · `B`(버그 공용).
 > 병렬 2세션 체제로 바뀌었기 때문이다 (D1). 과거 `I-1`~`I-61` 은 그대로 둔다.
@@ -17,8 +17,8 @@
 > **현재 상태: 메인메뉴 → 스테이지맵 → 웨이브 → 클리어 → 게임오버 전체 루프 런타임 검증 완료 (18/18 PASS), 콘솔 에러 0 / 경고 0.**
 > [`ROADMAP.md`](ROADMAP.md) §8 의 **1·2·3단계 완료** (I-43~I-49) — HUD 정보 · 타격 반응 · 오디오 ·
 > 병렬 소환 · 적 행동 분화 · 보물상자/자석. **"조용한 프로토타입" 단계는 끝났다.**
-> 원격 동기화: `popzap/VS_LIKE` `main` @ **`39aeb1a`** (2026-08-31 — 46차 `D20` 까지 푸시됨).
-> 🔴 **로컬이 앞서 있다** — `556b769`(C25 드랍표 CSV) · 47차(D24) 는 **커밋만 되고 아직 미푸시**다.
+> 원격 동기화: `popzap/VS_LIKE` `main` @ **`bd2f4ce`** (2026-08-31 — 47차 `D24` 까지 푸시됨).
+> 🔴 **로컬이 앞서 있다** — `4e60fdd`(C26 직업 3종 값 확정) · 48차(D25) 는 **커밋만 되고 아직 미푸시**다.
 >
 > 🎯 **16차는 처음으로 "직접 플레이해서 나온" 버그 보고에서 출발했다** (I-50).
 > 로그로만 검증하던 단계에서는 절대 발견할 수 없는 종류였다 — 자세한 건 2-20.
@@ -2025,6 +2025,102 @@ Play 모드에서 Warrior 로 런을 시작하고 `Unity_RunCommand` 로 재료�
 > ⚠️ **건물 앞 `E` 실조작은 아직 미검증이다.** 위는 `EvolveClass` 를 직접 부른 것이고,
 > `FindAltarClassEvolution` 은 이미 검증된 `FindAltarEvolution` 과 같은 로직이지만
 > **실제로 터렛을 세우고 다가가서 눌러 본 적은 없다** → [`TODO.md`](TODO.md) §1
+
+---
+
+## 2-52. ✅ 재화 분리 — 런 골드 ↔ 메타 골드 (D25, 2026-08-31 48차)
+
+**한 줄:** 지갑을 둘로 갈랐다. **이제 상점 가격과 메타 강화 가격을 따로 잡을 수 있다.**
+
+> 전문 [`Parallel/DONE/D25.md`](Parallel/DONE/D25.md) · 근거 [`TODO.md`](TODO.md) §2-B(결정 3, 2026-08-29 확정)
+
+### 원인 / 배경
+
+런 골드와 메타 골드가 **`MetaProgression.Currency` 하나**였다.
+[`BALANCE.md`](BALANCE.md) §3-1 기준 10층 런의 예상 수입 **약 1,240G** 중
+**처치 보상이 ≈1,084G** 인데 상점 아이템은 **5~12G** 다. 상점이 사실상 무제한이었다.
+
+문제는 "상점이 싸다"가 아니라 **값을 잡을 수가 없다**는 것이었다 —
+상점 가격을 올리면 메타 강화가 같이 비싸지고, 메타를 싸게 하면 상점이 공짜가 된다.
+**한 지갑에 성격이 다른 두 예산이 들어 있었다.** 이래서 §3-1 의 가격이 계속 미정으로 남아 있었다.
+
+### 지갑 둘
+
+| | 런 골드 `GameManager.RunGold` | 메타 골드 `MetaProgression.Currency` |
+|---|---|---|
+| **번다** | 적 처치 · 골드 픽업 · 농장 건물 · 런 중 이벤트 | **스테이지 클리어 보상만** (8 / 20 / 60) |
+| **쓴다** | 상점 구매 · 상점 리롤 · 레벨업 리롤 | 영구 강화 · 캐릭터/스킨 해금 |
+| **끝나면** | 🔴 **소멸** | 저장된다 |
+| **보인다** | HUD · 스테이지 맵 · 상점 | 메인 메뉴 · 런 종료 화면(`Earned`) |
+| **10층 예산** | **≈1,084G** | **≈156G** |
+
+**수치는 하나도 안 바꿨다.** 원래 있던 두 흐름을 각자의 지갑에 꽂았을 뿐이다.
+
+🔑 **클리어 보상은 곧바로 메타에 안 들어간다.** `GrantMetaGold` 는 `_pendingMetaGold` 에
+**적립만** 하고, `SettleRun()`(사망 / 보스 처치)이 한 번에 `MetaProgression` 으로 넘긴다.
+
+```
+GrantMetaGold(8)  ──> _pendingMetaGold += 8      (Currency 그대로)
+      …
+OnPlayerDied() ──> SettleRun() ──> Currency += pending · RunGold = 0 · Save()
+```
+
+`TODO.md` §2-B 의 **"`MetaProgression.Currency` 는 런 종료 정산에서만 늘어나게 한다"** 를
+글자 그대로 구현한 것이다. 부수 효과로 **런을 끝내야 메타 골드를 번다** 는 규칙이 생겼다 —
+일시정지 메뉴의 `Quit` 은 `SettleRun` 을 거치지 않으므로 적립분이 사라진다. (의도한 동작)
+
+### 변경한 파일
+
+| 파일 | 무엇 |
+|---|---|
+| `Assets/Scripts/Core/GameManager.cs` | 🔴 **핵심.** `RunGold` · `OnRunGoldChanged` · `AddRunGold` · `SpendRunGold` · `GrantMetaGold` · `SettleRun` · `LastSettledMetaGold` 신설. `GrantGold` 가 런 골드로 방향 전환. `StartRun` 이 지갑 초기화, `OnWaveCleared`/`OnPlayerDied` 가 정산 |
+| `Assets/Scripts/Shop/ShopManager.cs` | 구매·리롤·환급이 전부 런 골드 |
+| `Assets/Scripts/LevelUp/LevelUpManager.cs` | 레벨업 리롤 비용이 런 골드 (`SpendRunGold` 반환값으로 잔액 검사까지 한 번에) |
+| `Assets/Scripts/Building/FarmBuilding.cs` | `meta.AddCurrency` → `GrantGold`. 중복이던 `GoldGain` 곱셈도 제거 |
+| `Assets/Scripts/Meta/EventManager.cs` | 이벤트 `CurrencyBonus` → 런 골드 |
+| `Assets/Scripts/UI/HUDManager.cs` · `StageMapUI.cs` · `ShopUI.cs` · `StageClearUI.cs` | 표시·구독 대상을 런 골드로 |
+| `Assets/Scripts/UI/RunEndUI.cs` | `Gold {누적 보유액}` → **`Earned {이번 런이 번 메타 골드}`** |
+| `Assets/Scripts/Dev/DevPanel.cs` | `Run n G` / `Meta n G (+적립)` 둘 다 표시 · 버튼도 2개 |
+
+**씬·프리팹·CSV·SO 변경 0** — 새 직렬화 필드가 없어 `SampleScene.unity` 는 손대지 않았다
+(`D24` 의 교훈대로 `git diff` 로 확인).
+
+### 검증 로그 — 8건 전부 PASS
+
+플레이 모드에서 `GameManager` API 를 직접 호출해 판정했다. **에디터 정지 · 콘솔 에러 0 · 잔류 오브젝트 0.**
+
+| # | 판정 | 결과 |
+|---|---|---|
+| ① | `GrantGold(100)` 이 **런 골드**로 간다 | ✅ `Run 0→100` · `Meta 1231` **그대로** |
+| ② | `GrantMetaGold(50)` 은 **적립만** 한다 | ✅ `Pending 0→50` · `Meta 1231` **그대로** |
+| ③ | `SpendRunGold` 경계 | ✅ `30`→`True`(Run 70) · `999999`→`False` (잔액 불변) |
+| ④ | `StartRun()` 이 런 지갑을 비운다 | ✅ `Run=0` · `Pending=0` |
+| ⑤ | **실제 사망 경로**로 처치 골드가 런에 붙는다 | ✅ 고블린 1마리(`CurrencyDrop=1`) → `Run 0→1` · `Meta` 불변 |
+| ⑥ | 🔴 **상점이 보는 지갑이 런 골드다** | ✅ 10G 슬롯 기준 `Run 0`→False · `9`→False · `10`→**True** (`Meta 1231` 은 무관) |
+| ⑦ | 런 종료 정산 | ✅ `OnPlayerDied()` → `Meta 1231→1319`(+88) · `Run 500→0` · `Pending 0` · `LastSettled 88` |
+| ⑧ | 화면 3곳이 각자 맞는 지갑을 본다 | ✅ 아래 |
+
+**⑧ 내역** — `Run=777` · `Meta=1231` 인 상태에서 씬의 `CurrencyText` 를 전부 읽었다.
+
+| 경로 | 표시 | 봐야 하는 것 |
+|---|---|---|
+| `UI Canvas/HUD/CurrencyText` | **`777 G`** | 런 골드 ✅ |
+| `UI Canvas/MainMenuPanel/CurrencyText` | **`1231 G`** | 메타 골드 ✅ |
+| `UI Canvas/StageMapPanel/CurrencyText` | `0 G` | 런 골드 ✅ (그리는 시점이 `StartRun` 직후라 0) |
+
+> ⚠️ **⑥ 은 한 번 헛짚었다.** 처음엔 `CanReroll()` 로 판정했는데 `True/True` 가 나왔다.
+> 버그가 아니라 **상점을 연 적이 없어 `CurrentRerollCost` 가 `0G`** 였던 것이다 (`0 >= 0`).
+> 가격 10G 짜리 슬롯으로 다시 쟀다 → **교훈 180**.
+
+검증으로 늘어난 메타 골드 **88G 는 회수**했다 (`AddCurrency(-88)` + `Save`) — 시작값 `1231` 로 복귀 확인.
+다만 `OnPlayerDied()` 가 `RegisterRunResult` 도 부르므로 **개발용 세이브의 `TotalRuns` 가 1 늘었다.**
+
+### 남은 것 — 🔴 이제 값을 잡을 수 있다
+
+분리 자체가 목적이 아니라 **가격을 잡기 위한 전제**였다.
+[`Parallel/REQ/CONTENT.md`](Parallel/REQ/CONTENT.md) **요청-18** 로 넘겼다 —
+상점 가격(런 골드 ≈1,084G 예산)과 메타 강화 가격(메타 골드 ≈156G 예산)을 **따로** 산정.
+`BALANCE.md` §3-1 은 CONTENT 소유다.
 
 ---
 
@@ -4956,6 +5052,7 @@ Play 모드 — 한 세션에서 두 경로 전부:
 | **D23** | 문서가 **36개 · 약 1.1MB** 로 불었다(`SETUP_STATUS.md` 혼자 **388KB**). 편집기로는 어디에 뭐가 있는지 못 찾아 매번 `grep` 를 돌렸다. **문제는 내용이 아니라 열람 수단**이었다 | ✅ 해결 (2026-08-31 45차 → 2-49) — **디렉터리 정션 하나**. `D:\obsidian_claude\UNITY_GAME\VS_LIKE` → `C:\Unity\VS_LIKE\Docs`. 🔴 **옮기지도 복사하지도 않았다** — 복사하면 두 벌이 되고 두 벌은 반드시 갈라진다. `CLAUDE.md` 의 `Docs/...` 경로 규정과 git 이력도 그대로 산다. vault 에 `00_INDEX.md`(36문서 전체 지도 + "어떤 문서에 적나" 라우팅표)와 `지도\개발 지도.md`(`SETUP_STATUS` 절 목차 · `DONE` 25건 한 줄 요약 · 문서↔실제 어긋난 곳 표 · `02_DEV_세션_프롬프트` 가 원본보다 뒤처진 7곳) 신설. 낡은 노트 2건은 **지우지 않고** `아카이브/` 로 옮기며 경고 배너(그중 🔴 *"스크립트 코드는 수정하지 마"* 는 2026-08-26 부로 **폐기된 규칙**). 🔴 **코드·애셋 변경 0 · Unity 미접촉**(`BOARD §2` 내내 `IDLE`) · repo `.md` **본문 무수정**(frontmatter 금지). 🔑 **교훈 — 검사 도구가 "이상 없음"을 반환하면 그 도구부터 의심한다**: 1차 링크 검사 `grep -oP '\]\(\K'` 가 **"전 노트 0 링크"** 를 돌려줬는데, 링크가 눈에 보이는데 0 이면 통과가 아니라 고장이다. `sed` 로 다시 도니 `지도\개발 지도.md` 의 **36개가 전부 깨져 있었다**(하위 폴더에서 `../` 누락). 고쳐서 최종 **57/57 도달, 깨짐 0**. **보고만 하고 안 고친 것** — 문서↔실제 불일치 3건(`D13` 머리말 *"12개 전부 PASS"* 인데 **⑪ 실패** · `C22` §4 의 72° 근거가 `C23` 실측으로 뒤집혔는데 표시 없음 · `C1` §2 소제목이 자기 결론과 반대) + 없는 대상 참조 4건(`SfxId.Crit` 예약만 · `offsetAngle` 72° **코드 자체가 없음** · `Assets/Scripts/{Weapons,Visual}/` **없는 폴더** · `TUNING.md §3` "문어가 서는 자리"는 `C23` 이 지움). `BOARD §0` 에 `Tools/Art/`·`Tools/Audio/` 누락은 CONTENT 소유라 요청-15 로 넘겼다. ⚠️ **병렬 사고** — CONTENT 의 `C24` 커밋(`4c282e2`)이 내가 스테이지도 안 한 `BOARD.md` 의 `D23` 줄을 같이 가져갔다(`add`+`commit` 을 한 명령으로 붙여야 하는 이유). ⚠️ `cmd //c mklink /J` 는 이 bash 에서 **안 된다**(MSYS 인자 파괴) — PowerShell `New-Item -ItemType Junction` |
 | **D20**<br>(C23) | 적을 죽여도 나오는 게 **경험치 구슬 하나뿐**이었다. 자석·상자는 엘리트 전용이라 **잡몹은 사실상 아무것도 안 줬다** — 뱀서라이크에서 "잡몹을 밀어붙일 이유"의 절반이 비어 있었다 | ✅ 해결 (2026-08-31 46차 → 2-50) — CONTENT 요청-17 의 재료(그림 5 · SFX 3 · 확률 6 · 행운 곡선)를 게임에 넣었다. **행운 스탯 신설**(`StatBlock.Luck` → `PassiveData.BonusLuck` → `PassiveEffect` → `BalanceImporter` **임포트+익스포트**) · **시한 버프**(`GrantInvincibility`/`GrantHaste`) · **픽업 4종**(`Bomb`·`Invincible`·`Haste`·`Gold`) · **드랍표**(`RollPickupDrop`) · 애셋 8개 임포트 + `AudioLibrary` 24→**27** + 프리팹 4종. 🔑 **설계 판단 셋** — ① 드랍은 **한 번만** 굴린다(종류별로 굴리면 폭탄+무적이 같이 나오고 표의 "합계 6.7%"가 실제와 어긋난다. 행운은 합계가 아니라 **각 항목에** 곱해 종류별 비율을 행운과 무관하게 유지) · ② 힐 픽업은 새로 안 만들고 기존 `HealPickup.prefab` 을 드랍표에 넣되 **회복량을 `ExperienceManager` 가 주입**한다(건물 레벨이 없어 안 주면 **0 을 회복하고 조용히 사라진다**) · ③ 드랍표는 **나란한 배열**이다 — `SceneWiring.csv` 는 **구조체 배열을 못 쓴다**(`WriteProperty` 가 원소마다 `WriteScalar` 를 부르는데 구조체는 `Generic` 이라 `! 타입 미지원`). 🔴 `StatBlock.Zero()` 에도 `Luck` 추가(I-21) · 🔴 **익스포트도 같이** 고쳤다(안 그러면 다음 Export 때 `BonusLuck` 열이 사라져 CSV 가 조용히 망가진다) · 🔴 **`minAttackSpeed = 0.1f` 하한 신설**(`WeaponBase.cs:54` 가 쿨다운에 `AttackSpeed` 를 **곱한다**. 최악 조합 `Aegis −0.05 + AttackSpeed Lv5 −0.30 + 공속 −0.50 = 0.15` 로 여유가 **0.05** 뿐). **판정 6건 중 5건 PASS** — ① `BonusLuck` 기존 10개 전부 0 · ② 실체 높이 480 vs Magnet 482 · ③ `allItems` 25개 · ④ 행운 Lv5 에서 **2.001배**(5만 회 × 2) · ⑤ **실물리** Demon 사망 / Ogre 생존 + 11유닛 밖 무피해(반경 10 정확). ⑥ 소리 구분은 **귀로만 판정 가능 → 사용자 몫**. 🔑 **통계 이상은 로직보다 "세는 방법"을 먼저 의심한다** — ④ 첫 시행 −3.1σ 를 `ObjectPool` 이 활성 오브젝트를 재사용하지 않음을 확인해 계수 오류부터 배제한 뒤 시드를 바꿔 재실행, 편차 소멸(**시드 탓**). ⚠️ **씬 배선은 임시다** — `SceneWiring.csv` 가 CONTENT 소유라 요청-16 으로 넘겼다(그 행이 CSV 에 없어 Import 가 덮어쓰지 않는다). **고치지 않고 보고만 한 것** — 🔴 `B5` 새 증상(`Die():449` NRE 가 `DetonateBomb` 의 `foreach` **밖으로 전파**돼 뒤쪽 적이 피해를 안 받고 폭탄이 바닥에 남는다. 같은 모양이 `AoeProjectile`·`MeleeWeapon`·`SummonWeapon`·`ToxinField` 에도 → 우선순위 `낮음`→`재검토 필요`) · 스프라이트 bbox 기준 차이(CONTENT `a>127` vs `PIL` `a>0`, `Magnet`·`GoldGain` 의 잔여 픽셀 1.4~1.5% 가 bbox 를 최대 311px 부풀린다 — **측정 기준 차이지 애셋 결함 아님**) · `.meta` 복사 시 **GUID 말고 서브애셋 이름이 세 곳**에 박혀 있다 · `ExecutionResult.Log` 는 **정렬 지정자(`{1,-24}`)를 못 쓴다** · **대량 스폰 실험은 플레이 세션을 오염시킨다**(잔여 픽업이 먹히며 `LevelUp`(timeScale 0)에 들어가 `WorldPickup.Update` 가 조기 반환 → 다음 검증이 통째로 막힘) |
 | **D24**<br>(C25) | `D20` 이 넣은 픽업 드랍표가 **DEV 가 손으로 꽂은 임시 배선**이었다. `SceneWiring.csv` 는 CONTENT 소유라 요청-16 으로 넘겼고 `C25` 가 3줄을 채워 돌려줬다 — **Import 1회**가 전부인 작업. | `Game/Balance/Import CSV -> ScriptableObjects` 1회 + `File/Save`. **코드·애셋·CSV 변경 0** | 판정 **6/6 PASS** — `SceneWiring.csv : 12/12 적용`(경고 0) · `pickupPrefabs`/`pickupChances` **6칸=6칸** · 확률 합 **6.7%** · `healPickupAmount` **30** · 죽은 필드 `magnetPrefab`/`magnetDropChance` `FindProperty` **둘 다 null** · 실제 사망 경로 **300 처치 → 21개(7.0%)**, 6종 전부 등장(Gold 9·Heal 5·Haste 3·Magnet 2·Bomb 1·Invincible 1) | 🔴 **`D20` 커밋(`a3e9e5c`)의 씬은 `allItems` `24` 였다 — 행운이 레벨업 3택에 안 뜨는 상태였다.** `D20` 은 **런타임 25개**를 읽고 판정 PASS 를 적었는데 `File/Save` 가 빠져 디스크에 안 들어갔다. 예외도 로그도 안 나는 종류다 ⇒ **씬·프리팹을 바꾸는 판정은 `git diff` 로 재확인**(`TODO.md` §1 등재) · `B5` 정량화 — 웨이브 밖 사망 **300/300 전부 예외**. 다만 예외가 `RollPickupDrop` **뒤**라 드랍은 살아 있다 |
+| **D25** | 런 골드와 메타 골드가 **`MetaProgression.Currency` 하나**였다. 10층 런 수입 ≈1,240G 중 **처치 보상이 ≈1,084G** 인데 상점 아이템은 **5~12G** — 상점이 사실상 무제한. 문제는 "싸다"가 아니라 **값을 잡을 수가 없다**는 것이었다: 상점을 올리면 메타가 같이 비싸지고 메타를 내리면 상점이 공짜가 된다. **한 지갑에 성격이 다른 두 예산**이 들어 있었다 (`TODO.md` §2-B 결정 3) | ✅ 해결 (2026-08-31 48차 → 2-52) — 지갑을 둘로 갈랐다. `GameManager.RunGold`(처치·픽업·농장·이벤트 → 상점·리롤, **런 종료 시 소멸**) ↔ `MetaProgression.Currency`(**스테이지 클리어 보상만** → 영구 강화·해금). `GrantMetaGold` 는 `_pendingMetaGold` 에 적립만 하고 `SettleRun()` 이 런 종료에 한 번에 넘긴다. 코드 10개 파일. **씬·프리팹·CSV·SO 변경 0 · 수치 변경 0** | 판정 **8/8 PASS** — `GrantGold(100)`→`Run 0→100`(Meta 불변) · `GrantMetaGold(50)`→`Pending 0→50`(Meta 불변) · `SpendRunGold` 경계 `30`✅/`999999`❌ · `StartRun` 이 두 지갑 초기화 · **실제 사망 경로** 고블린 1마리→`Run 0→1` · **상점이 보는 지갑이 런 골드**(10G 슬롯: `0`❌/`9`❌/`10`✅) · `OnPlayerDied`→`Meta 1231→1319`(+88)·`Run 500→0` · UI 3곳(HUD `777 G` 런 / MainMenu `1231 G` 메타 / StageMap 런). 콘솔 에러 0 · 세이브 `1231` 복원 |
 
 ### 해결 상세
 
@@ -5665,6 +5762,23 @@ private void LateUpdate()
      ⇒ Import·인스펙터 편집처럼 **직렬화 파일을 바꾸는 작업**은 커밋 직전에
      `git diff <파일>` 에 그 변화가 **실제로 보이는지** 확인한다.
      이번엔 `D24` 가 우연히 같은 Import 를 다시 돌려서 드러났을 뿐이다.
+
+180. 🔴 **경계가 0 인 판정은 아무것도 증명하지 못한다** (D25).
+     "상점이 런 골드를 보는가"를 `CanReroll()` 로 쟀더니 `RunGold = 0` 인데도 `True` 가 나왔다.
+     버그가 아니었다 — 상점을 연 적이 없어 `_currentRerollCost` 가 아직 `0` 이었고,
+     검사식이 `0 >= 0` 이라 **무엇을 넣어도 통과**하는 상태였던 것이다.
+     ⇒ `a >= b` 를 검증할 때는 **`b` 가 0 이 아닌지부터 확인**한다.
+     경계값이 0 이면 그 테스트는 참/거짓을 가르지 않는다.
+     다시 잴 때는 `Price = 10` 짜리 슬롯을 손으로 만들어 `0`/`9`/`10` 세 점을 찍었다 —
+     **거짓이 나와야 하는 점**이 실제로 거짓이 되는지를 봐야 판정이 성립한다.
+
+181. 🔑 **한 변수에 성격이 다른 두 예산이 들어 있으면 수치는 영원히 안 잡힌다** (D25).
+     상점 가격이 반 년 가까이 "미정"이었던 이유는 게임 디자인이 어려워서가 아니라
+     `MetaProgression.Currency` 하나가 **≈1,084G 짜리 소비 예산**과
+     **≈156G 짜리 저축 예산**을 동시에 담고 있었기 때문이다.
+     한쪽을 만지면 반드시 다른 쪽이 망가지니 어떤 값도 "맞다"가 될 수 없었다.
+     ⇒ 밸런싱이 계속 제자리면 **값을 의심하기 전에 그릇이 하나인지 둘인지**를 본다.
+     이번 수정은 **수치를 단 하나도 바꾸지 않았는데** 튜닝이 가능해졌다.
 
 **16~17 과정에서 함께 처리한 것**
 

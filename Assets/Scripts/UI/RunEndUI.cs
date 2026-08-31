@@ -43,12 +43,13 @@ public class RunEndUI : GameStatePanel
         if (summaryText == null) return;
 
         var wave = GameManager.Instance?.WaveManager;
-        var meta = GameManager.Instance?.MetaProgression;
         int   kills = wave != null ? wave.TotalKillCount : 0;
         float time  = wave != null ? wave.TotalElapsedTime : 0f;
-        int   gold  = meta != null ? meta.Currency : 0;
 
-        summaryText.text = $"Kills   {kills}\nTime    {FormatTime(time)}\nGold    {gold} G";
+        // 이번 런이 **벌어 간** 메타 골드다 (누적 보유액이 아니다). 런 골드는 여기서 소멸했다.
+        int gold = GameManager.Instance != null ? GameManager.Instance.LastSettledMetaGold : 0;
+
+        summaryText.text = $"Kills   {kills}\nTime    {FormatTime(time)}\nEarned  {gold} G";
     }
 
     private static string FormatTime(float seconds)
