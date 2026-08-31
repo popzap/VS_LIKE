@@ -3,35 +3,42 @@
 # RefId    = 그 카테고리 테이블의 Id. Weapon 이면 Weapons.csv 의 Id, Passive 면 Passives.csv 의 Id.
 # 값에 쉼표를 쓰려면 큰따옴표로 감싼다. Description 은 UI 에 그대로 나오므로 영문 유지.
 # ShopPrice 는 상점 구매가. 제거 환급은 ShopManager.refundRate(0.5) 배.
+#
+# ⚠️ C27 에서 5~12 → 40~110 으로 올렸다. 물가가 바뀐 게 아니라 "지갑이 갈라져서"다 (D25).
+#    런 골드는 판이 끝나면 소멸하므로 런 안에서 다 쓰이도록 값이 커야 한다.
+#    한 판 처치 수입이 약 1,100G 인데 예전 가격으로는 상점을 통째로 사도 30G 였다.
+#    ⛔ 값을 낮추기 전에 BALANCE.md 3-1 의 "가격을 못 내리는 이유"를 먼저 읽을 것 —
+#       GrantGold 의 Mathf.Max(1,..) 때문에 적 1마리당 최소 1G 이 보장돼
+#       CurrencyDrop 을 아무리 깎아도 한 판 수입이 약 550G 밑으로 내려가지 않는다.
 Id,ItemName,Description,Icon,Category,MaxLevel,RefId,ShopPrice
-Sword,Sword,Cleaves a wide arc right in front of you. Short reach.,Assets/Game/Sprites/Weapons/Sword.png,Weapon,5,Sword,8
-Bow,Bow,Long range shots that fan out as it levels.,Assets/Game/Sprites/Weapons/Bow.png,Weapon,5,Bow,8
-Gun,Gun,Rapid low damage fire.,Assets/Game/Sprites/Weapons/Gun.png,Weapon,5,Gun,9
-Fireball,Fireball,Explodes on the nearest enemy.,Assets/Game/Sprites/Weapons/Fireball.png,Weapon,5,Fireball,10
-Bomb,Bomb,Slow but heavy area damage.,Assets/Game/Sprites/Weapons/Bomb.png,Weapon,5,Bomb,11
-Shuriken,Shuriken,Spinning stars that punch through three enemies in a line.,Assets/Game/Sprites/Weapons/Shuriken.png,Weapon,5,Shuriken,9
-Toxin,Toxin,Spills a toxic pool nearby. Enemies inside are slowed and keep taking damage.,Assets/Game/Sprites/Weapons/Toxin.png,Weapon,5,Toxin,10
+Sword,Sword,Cleaves a wide arc right in front of you. Short reach.,Assets/Game/Sprites/Weapons/Sword.png,Weapon,5,Sword,70
+Bow,Bow,Long range shots that fan out as it levels.,Assets/Game/Sprites/Weapons/Bow.png,Weapon,5,Bow,70
+Gun,Gun,Rapid low damage fire.,Assets/Game/Sprites/Weapons/Gun.png,Weapon,5,Gun,80
+Fireball,Fireball,Explodes on the nearest enemy.,Assets/Game/Sprites/Weapons/Fireball.png,Weapon,5,Fireball,90
+Bomb,Bomb,Slow but heavy area damage.,Assets/Game/Sprites/Weapons/Bomb.png,Weapon,5,Bomb,100
+Shuriken,Shuriken,Spinning stars that punch through three enemies in a line.,Assets/Game/Sprites/Weapons/Shuriken.png,Weapon,5,Shuriken,80
+Toxin,Toxin,Spills a toxic pool nearby. Enemies inside are slowed and keep taking damage.,Assets/Game/Sprites/Weapons/Toxin.png,Weapon,5,Toxin,90
 # ── 소환수 (C19) — 설명문에 "follows you" 를 반드시 넣는다.
 #    이 둘만 화면에 몸통이 보이는 무기라, 플레이어가 아이템 설명에서 그걸 예상할 수 있어야 한다.
-SummonDragon,Dragon,A dragon flies at your side and spits fireballs that burst on impact.,Assets/Game/Sprites/Weapons/Dragon.png,Weapon,5,SummonDragon,12
-SummonOctopus,Octopus,An octopus drifts along with you and lashes every enemy around it.,Assets/Game/Sprites/Weapons/Octopus.png,Weapon,5,SummonOctopus,11
-Turret,Turret,Deploys a turret that shoots the nearest enemy.,Assets/Game/Sprites/Buildings/Turret.png,Building,5,Turret,10
-Bombard,Bombard,Deploys a cannon that damages every enemy around it.,Assets/Game/Sprites/Buildings/Bombard.png,Building,5,Bombard,12
-Village,Village,Deploys a village that generates experience over time.,Assets/Game/Sprites/Buildings/House.png,Building,5,Village,10
-Farm,Farm,Deploys a farm that generates gold over time.,Assets/Game/Sprites/Buildings/Farm.png,Building,5,Farm,10
-Restaurant,Restaurant,Deploys a restaurant that drops a healing meal. The next one waits until you eat it.,Assets/Game/Sprites/Buildings/Restaurant.png,Building,5,Restaurant,12
-Damage,Damage Up,Increases all weapon damage.,Assets/Game/Sprites/Passives/Damage.png,Passive,5,Damage,7
-Speed,Move Speed,Increases movement speed.,Assets/Game/Sprites/Passives/MoveSpeed.png,Passive,5,MoveSpeed,6
-AttackSpeed,Attack Speed,Shortens weapon cooldowns.,Assets/Game/Sprites/Passives/AttackSpeed.png,Passive,5,AttackSpeed,7
-MaxHp,Max Health,Increases maximum health.,Assets/Game/Sprites/Passives/MaxHp.png,Passive,5,MaxHp,6
-Armor,Armor,Reduces damage taken.,Assets/Game/Sprites/Passives/Armor.png,Passive,5,Armor,6
-PickupRadius,Pickup Radius,Collects experience from farther away.,Assets/Game/Sprites/Passives/PickupRadius.png,Passive,5,PickupRadius,5
-XpGain,Experience Gain,Increases experience gained.,Assets/Game/Sprites/Passives/XpGain.png,Passive,5,XpGain,6
-GoldGain,Gold Gain,Increases gold gained.,Assets/Game/Sprites/Passives/GoldGain.png,Passive,5,GoldGain,6
-CritChance,Critical Chance,Increases critical hit chance.,Assets/Game/Sprites/Passives/CritChance.png,Passive,5,CritChance,7
-BuildingCooldown,Building Speed,Buildings work more often.,Assets/Game/Sprites/Passives/BuildingCooldown.png,Passive,5,BuildingCooldown,7
+SummonDragon,Dragon,A dragon flies at your side and spits fireballs that burst on impact.,Assets/Game/Sprites/Weapons/Dragon.png,Weapon,5,SummonDragon,110
+SummonOctopus,Octopus,An octopus drifts along with you and lashes every enemy around it.,Assets/Game/Sprites/Weapons/Octopus.png,Weapon,5,SummonOctopus,100
+Turret,Turret,Deploys a turret that shoots the nearest enemy.,Assets/Game/Sprites/Buildings/Turret.png,Building,5,Turret,90
+Bombard,Bombard,Deploys a cannon that damages every enemy around it.,Assets/Game/Sprites/Buildings/Bombard.png,Building,5,Bombard,110
+Village,Village,Deploys a village that generates experience over time.,Assets/Game/Sprites/Buildings/House.png,Building,5,Village,90
+Farm,Farm,Deploys a farm that generates gold over time.,Assets/Game/Sprites/Buildings/Farm.png,Building,5,Farm,90
+Restaurant,Restaurant,Deploys a restaurant that drops a healing meal. The next one waits until you eat it.,Assets/Game/Sprites/Buildings/Restaurant.png,Building,5,Restaurant,110
+Damage,Damage Up,Increases all weapon damage.,Assets/Game/Sprites/Passives/Damage.png,Passive,5,Damage,60
+Speed,Move Speed,Increases movement speed.,Assets/Game/Sprites/Passives/MoveSpeed.png,Passive,5,MoveSpeed,50
+AttackSpeed,Attack Speed,Shortens weapon cooldowns.,Assets/Game/Sprites/Passives/AttackSpeed.png,Passive,5,AttackSpeed,60
+MaxHp,Max Health,Increases maximum health.,Assets/Game/Sprites/Passives/MaxHp.png,Passive,5,MaxHp,50
+Armor,Armor,Reduces damage taken.,Assets/Game/Sprites/Passives/Armor.png,Passive,5,Armor,50
+PickupRadius,Pickup Radius,Collects experience from farther away.,Assets/Game/Sprites/Passives/PickupRadius.png,Passive,5,PickupRadius,40
+XpGain,Experience Gain,Increases experience gained.,Assets/Game/Sprites/Passives/XpGain.png,Passive,5,XpGain,50
+GoldGain,Gold Gain,Increases gold gained.,Assets/Game/Sprites/Passives/GoldGain.png,Passive,5,GoldGain,50
+CritChance,Critical Chance,Increases critical hit chance.,Assets/Game/Sprites/Passives/CritChance.png,Passive,5,CritChance,60
+BuildingCooldown,Building Speed,Buildings work more often.,Assets/Game/Sprites/Passives/BuildingCooldown.png,Passive,5,BuildingCooldown,60
 # ── 행운 (C23) — 픽업 드랍 확률 배율. 값은 Passives.csv 의 BonusLuck 열이다.
-Luck,Luck,Enemies drop pickups more often. Doubles the chance at max level.,Assets/Game/Sprites/Passives/Luck.png,Passive,5,Luck,7
+Luck,Luck,Enemies drop pickups more often. Doubles the chance at max level.,Assets/Game/Sprites/Passives/Luck.png,Passive,5,Luck,60
 # ── 진화 결과 아이템 ────────────────────────────────────────────────────────
 # ⚠️ 이 아이템들은 SceneWiring.csv 의 LevelUpManager,allItems 에 넣지 말 것.
 #    넣으면 레벨업 3택과 상점에 그냥 나와서 진화라는 절차 자체가 무의미해진다.

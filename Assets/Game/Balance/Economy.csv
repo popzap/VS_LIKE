@@ -13,17 +13,35 @@ GameManager,bossClearReward,60,보스 노드 클리어(런 승리) 보상
 # ── 레벨업 곡선 (index = 레벨, value = 다음 레벨까지 필요 XP) ────
 # 표를 넘어서면 마지막 값 + 현재레벨*50 으로 계산된다 (ExperienceManager.XpToNext)
 ExperienceManager,xpThresholds,5|10|20|35|55|80|110|150|200|260,Lv1~Lv10 필요 경험치
+# ── 스테이지 맵 구성 (StageMapManager) ───────────────────────────
+# ⚠️ C27 에서 새로 옮겨 온 줄이다. 값은 코드 기본값 그대로라 첫 Import 는 아무것도 안 바꾼다.
+#    옮긴 이유: 런 골드 예산이 통째로 이 가중치에 매달려 있는데 숨어 있었다.
+#    10층 = 0층 노말 고정 + 1~8층 추첨 + 9층 보스 고정. 즉 추첨은 8칸뿐이다.
+#    기대 구성 = 노말 5.0 / 엘리트 1.6 / 상점 1.2 / 이벤트 1.2 / 보스 1.0
+#    ⛔ 상점 가중치를 만지면 상점 방문 횟수가 바뀌어 Items.csv 가격이 통째로 어긋난다.
+StageMapManager,totalLayers,10,총 층 수 (마지막은 항상 보스)
+StageMapManager,maxNodesPerLayer,3,한 층에 놓이는 노드 최대 수
+StageMapManager,weightNormal,0.5,1~8층 추첨 가중치 — 노말
+StageMapManager,weightElite,0.2,1~8층 추첨 가중치 — 엘리트
+StageMapManager,weightShop,0.15,1~8층 추첨 가중치 — 상점. 한 판 상점 방문 ~1.2회
+StageMapManager,weightEvent,0.15,1~8층 추첨 가중치 — 이벤트
 # ── 상점 ─────────────────────────────────────────────────────────
+# ⚠️ C27 에서 리롤 비용을 3/1 → 25/15 로 올렸다. 아이템이 40~110G 인데 리롤이 3G 이면
+#    "원하는 게 나올 때까지 돌린다"가 언제나 정답이라 진열 자체가 의미를 잃는다.
+#    리롤 1회 ≈ 싼 아이템의 절반이 되도록 맞췄다.
 ShopManager,shopSlotCount,3,한 번에 진열되는 상품 수
-ShopManager,baseRerollCost,3,리롤 기본 비용(골드)
-ShopManager,rerollCostIncrease,1,리롤 1회마다 비용 증가
+ShopManager,baseRerollCost,25,리롤 기본 비용(골드)
+ShopManager,rerollCostIncrease,15,리롤 1회마다 비용 증가. 25 → 40 → 55 …
 ShopManager,refundRate,0.5,아이템 제거 시 환급 비율
 # ── 레벨업 선택 리롤 ─────────────────────────────────────────────
 # 레벨업 1회당 리롤은 딱 한 번만 가능하다. 그래서 비용 증가 항목이 없다.
-LevelUpManager,rerollCost,1,레벨업 선택지 리롤 비용(골드). 레벨업당 1회 제한
+# 1G 는 사실상 공짜라 항상 눌렀다. 한 판 레벨업이 10~12회이므로 10G 면 총 100~120G — 상점 아이템 한 개 값이다.
+LevelUpManager,rerollCost,10,레벨업 선택지 리롤 비용(골드). 레벨업당 1회 제한
 # ── 메타 진행 ────────────────────────────────────────────────────
-MetaProgressionManager,characterUnlockCost,30,캐릭터 해금 비용
-MetaProgressionManager,skinUnlockCost,15,스킨 해금 비용
+# 메타 골드는 노드 클리어로만 번다. 완주 한 판 = 5.0x8 + 1.6x20 + 60 = 약 132G.
+# 중간에 죽으면 그때까지 깬 노드분만 남는다(보통 50~80G).
+MetaProgressionManager,characterUnlockCost,150,캐릭터 해금 비용. 완주 1.1판 / 실전 2~3판
+MetaProgressionManager,skinUnlockCost,75,스킨 해금 비용. 캐릭터의 절반
 # ── 플레이어 기본 스탯 ───────────────────────────────────────────
 PlayerStats,baseStats.MaxHp,100,최대 체력
 PlayerStats,baseStats.MoveSpeed,4,이동 속도

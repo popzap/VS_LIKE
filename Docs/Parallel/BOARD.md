@@ -30,6 +30,7 @@
 | DEV | `D22` | `Docs/DESIGN_EVENTS.md`(신설) · `Docs/ROADMAP.md` | 2026-08-31 | 🅿️ **보류(사용자)** — "이벤트 관련은 나중에". 문서는 **다 썼다** (`E1 함정방` 상세 + `E2`~`E6` 자리표). 🔴 **코드 변경 0.** 재개 조건 = **§7 결정 6건.** ROADMAP §0·§7 에 "이벤트 노드가 비어 있다" 갭 등재 완료 |
 | CONTENT | `C6` | `Docs/DESIGN_CLASSES.md`(신설) · 이후 `Assets/Game/Balance/*.csv` · `_Incoming/` | 2026-08-30 | `진행중` — 직업 6종 컨셉 재편 + 신규 무기 6종 설계 (사용자 지시). **1~5단계 전부 닫힘.** 남은 건 6단계뿐 → `C26` |
 | CONTENT | `C26` | `Docs/DESIGN_CLASSES.md` · `Docs/TUNING.md` · **이후** `Assets/Game/Balance/{Classes,SceneWiring}.csv` | 2026-08-31 | **`대기(REQ→DEV)`** — **C6 6단계: 직업 3종**(폭발광·어쎄신·소환사). 값은 **전부 확정**([`DESIGN_CLASSES.md`](../DESIGN_CLASSES.md) §7-B) · 막힌 건 **그림 6장뿐** → [`REQ/DEV.md`](REQ/DEV.md) **요청-19**. 🔴 **CSV 는 그림이 들어온 뒤에 쓴다** — 순서를 뒤집으면 임포터가 **경고 없이** 빈 직업을 만든다 |
+| CONTENT | `C27` | `Assets/Game/Balance/{Items,Economy}.csv` · `Docs/BALANCE.md` · `Docs/TUNING.md` · `REQ/DEV.md` | 2026-08-31 | `대기(REQ→DEV)` — 가격 재산정 **끝**([`REQ/CONTENT.md`](REQ/CONTENT.md) 요청-18). 상점 `5~12→40~110` · 리롤 `3/1→25/15` · 해금 `30/15→150/75`. 🔴 **요청-18 의 전제 셋이 틀렸다** — 메타는 156G 가 아니라 **132G**(상점·이벤트 노드는 클리어 보상 0) · 해금 비용은 이미 `Economy.csv` 에 있었다 · `UpgradeDefinition` 은 **애셋 0개 + `I-19` 함정**. **Import 1회 대기** → [`REQ/DEV.md`](REQ/DEV.md) **요청-20** · [`DONE/C27.md`](DONE/C27.md) |
 
 > 상태값: `진행중` · `대기(REQ→DEV)` · `검증대기` · `막힘(B1)`
 > 끝나면 **자기 줄을 지운다.**
@@ -201,7 +202,7 @@ CONTENT 는 **읽기만** 한다 — 내 요청이 언제 처리될지 가늠하
 | 세션 | 다음 이슈 번호 |
 |---|---|
 | DEV | `D26` |
-| CONTENT | `C27` |
+| CONTENT | `C28` |
 | 버그(공용) | `B7` |
 
 > 번호를 쓸 때 이 표를 **즉시** 올린다. 선점이 곧 예약이다.
