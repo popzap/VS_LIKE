@@ -1786,6 +1786,7 @@ C 의 대가를 A·B 와 같은 자로 다시 적으면 — **잃는 것이 4 %*
 |---|---|
 | `Assets/Game/Balance/Passives.csv` | 🔴 **열 신설 `BonusLuck`** — 헤더 맨 끝. 기존 10행은 전부 `0\|0\|0\|0\|0`. 새 행 `Luck` 하나 |
 | `Assets/Game/Balance/Items.csv` | 새 행 `Luck` 하나 (Category `Passive` · RefId `Luck` · MaxLevel 5 · ShopPrice 7) |
+| `Assets/Game/Balance/SceneWiring.csv` | `LevelUpManager,allItems` 끝에 `Luck.asset` (**24 → 25개**) |
 
 🔴 **`BonusLuck` 은 새 열이라 CSV 만으로는 안 들어간다.** 셋 다 네가 해야 한다:
 
@@ -1798,10 +1799,16 @@ C 의 대가를 A·B 와 같은 자로 다시 적으면 — **잃는 것이 4 %*
 > ⚠️ `StatBlock` 보너스는 반드시 `StatBlock.Zero()` 로 만들 것 (CLAUDE.md §3 / I-21).
 > 기본 생성자를 쓰면 합산에서 2배가 된다.
 
-- 🔴 **`Luck` 을 `SceneWiring.csv` 의 `LevelUpManager,allItems` 에 넣어야 한다** — 안 넣으면
-  레벨업 3택·상점에 안 나와서 **패시브가 존재하지 않는 것과 같다.**
-  그 파일은 내 소유인데 **지금은 안 건드렸다** — `C6` 이 같은 줄을 만지고 있어 충돌한다.
-  ⇒ **말해 주면 내가 넣는다.** 아니면 네가 넣어도 된다(한 줄 이어붙이기).
+- ✅ **`SceneWiring.csv` 의 `LevelUpManager,allItems` 에 `Luck.asset` 을 넣었다** —
+  맨 끝에 이어붙였다. **24 → 25개.** (안 넣으면 3택·상점에 안 나와서 패시브가 없는 것과 같다)
+  > 처음엔 "`C6` 과 충돌해서 대기"라고 적었는데 **확인해 보니 아니었다** —
+  > 이 파일의 마지막 커밋은 `39e2b57`(C19) 로 **내 것**이고 `C6` 은 아직 설계 문서 단계다.
+  > 보드의 "만지는 경로"만 보고 판단했던 것이라 **파일 이력을 보고 정정했다.**
+
+> 🔴 **순서가 있다 — ⓐ 를 Import 보다 먼저 해라.**
+> 임포터에 `BonusLuck` 열이 없는 채로 Import 하면 `Luck.asset` 은 **만들어지고 3택에도 뜨는데
+> 값이 전부 0** 이다. "행운을 먹었는데 아무 일도 안 일어난다"가 되고, 원인이 코드가 아니라
+> **임포트 순서**라서 찾기 어렵다. ⓐⓑⓒ 를 넣고 나서 Import 할 것.
 
 #### ② 그림 5장 — `_Incoming/Sprites/`
 
@@ -1912,8 +1919,8 @@ C 의 대가를 A·B 와 같은 자로 다시 적으면 — **잃는 것이 4 %*
 
 ### 7. 안 한 것
 
-- `SceneWiring.csv` 의 `allItems` (위 ① 참고 — `C6` 과 충돌해서 대기)
 - `AudioLibrary.asset` 등재 · `SfxId` enum · 스프라이트 임포트 — **전부 네 소유 경로**
+- 소리·그림의 **최종 판정** — 자로 잰 것뿐이다. 판정은 귀와 눈으로만 난다
 
 ---
 
