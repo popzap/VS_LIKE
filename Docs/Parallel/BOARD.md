@@ -28,12 +28,10 @@
 | 세션 | 이슈 | 만지는 경로 | 시작 | 상태 |
 |---|---|---|---|---|
 | DEV | `D22` | `Docs/DESIGN_EVENTS.md`(신설) | 2026-08-31 | `설계중` — **이벤트 설계 문서.** 첫 사례로 `E1 함정방`(무한적 + 시간제한 생존). 🔴 **코드 변경 없음** — 사용자 지시가 "일단 문서화만". 🔴 **결정 6건 사용자 대기**(§7) |
-| DEV | `D21` | `Assets/Prefabs/Fx_TentacleLash.prefab` | 2026-08-31 | `진행중` — 촉수를 **플레이어 뒤로.** `m_SortingOrder` `20`→`-5` 한 줄. CONTENT 요청-16(C22) 의 답 — D19 와 분리해서 친다 |
 | DEV | `D20` | `Assets/Scripts/Pickup/**` · `Assets/Scripts/Player/StatBlock.cs` · `Assets/Scripts/Passive/**` · `Assets/Editor/BalanceImporter.cs` | 2026-08-31 | `대기(REQ→CONTENT)` — 적 처치 시 **픽업 6종 저확률 드랍** + **행운(Luck) 패시브**. 그림·수치는 [`REQ/CONTENT.md`](REQ/CONTENT.md) 요청-12 |
 | CONTENT | `C6` | `Docs/DESIGN_CLASSES.md`(신설) · 이후 `Assets/Game/Balance/*.csv` · `_Incoming/` | 2026-08-30 | `진행중` — 직업 6종 컨셉 재편 + 신규 무기 6종 설계 (사용자 지시) |
 | CONTENT | `C19` | `Assets/Game/Balance/{Weapons,Items,SceneWiring}.csv` · `Tools/Art/gen_octopus.py` · `_Incoming/Effects/` · `Docs/TUNING.md` | 2026-08-30 | `대기(REQ→DEV)` — 소환수 CSV 3파일 + **촉수 그림 재작업** + SFX 볼륨 2값. DEV 요청-7·8 의 답 — [`REQ/DEV.md`](REQ/DEV.md) 요청-13 |
 | CONTENT | `C20` | `Tools/Audio/gen_{tentacle_lash,dragon_spit}.py` · `_Incoming/Audio/` · `Docs/TUNING.md` | 2026-08-30 | `대기(REQ→DEV)` — 소환수 SFX 2종 + ⛔ **요청-13 ③ 검 0.35 철회** — [`REQ/DEV.md`](REQ/DEV.md) 요청-14 |
-| CONTENT | `C22` | `Docs/TUNING.md` · `Docs/Parallel/REQ/*` | 2026-08-31 | `대기(REQ→DEV)` — 촉수가 플레이어를 덮는 문제(요청-10 ③). ⛔ **DEV 가 낸 A·B 를 둘 다 반려** → `Fx_TentacleLash.prefab` `m_SortingOrder` `20`→`-5` 한 줄 + 청취 5건 이관 — [`REQ/DEV.md`](REQ/DEV.md) 요청-16. ⚠️ **`D19` 와 겹친다** (아래) |
 | CONTENT | `C23` | `Tools/Art/` · `Tools/Audio/` · `_Incoming/{Sprites,Audio}/` · `Assets/Game/Balance/{Passives,Items,SceneWiring}.csv` · `Docs/TUNING.md` | 2026-08-31 | `대기(REQ→DEV)` — 픽업 드랍 6종 + 행운 패시브. 그림 5장 · SFX 3종 · `BonusLuck` 5값 · 확률 6값(사용자 **C 안** · 잠정) · 무적 3초/공속 8초 — [`REQ/DEV.md`](REQ/DEV.md) 요청-17 · [`DONE/C23.md`](DONE/C23.md). ✅ `allItems` **24→25** 등록 완료 (`C6` 충돌은 **오판**이었다 — 파일 이력 확인 후 정정) |
 
 > 상태값: `진행중` · `대기(REQ→DEV)` · `검증대기` · `막힘(B1)`
@@ -86,6 +84,15 @@
 > 으로 정정 + 체감 3값 등재를 요청했다.
 > ⚠️ **`C22` 는 안 닫혔다** — 문어가 2번칸이면 2.40~3.07 로 물러나지만 **단독이면 1번칸 1.20** 이라 그대로다.
 > CONTENT 경고("둘을 같이 바꾸면 어느 쪽이 들었는지 모른다")를 지켜 **`D21` 로 따로 친다.**
+>
+> ✅ **`D21`·`C22` 둘 다 닫혔다** (2026-08-31). `Fx_TentacleLash.prefab:83` `m_SortingOrder` `20`→**`-5`**
+> **한 줄**이 전부다 → [`DONE/D21.md`](DONE/D21.md). 같은 프레임을 두 번 렌더해서 뺐다 —
+> **기사 가림 93px → 0px**(실루엣 336px 중 최악 프레임 12.2% → 0) · 촉수 잉크 손실 **1.37%** ·
+> 적 8마리를 링에 붙인 최악 조건에서도 **1.5%** 라 폴백 `-1` **불필요**. `Fx_SwingArc` 는 `20` 그대로.
+> 🔑 **CONTENT 의 대조군이 문제의 성격을 바꿨다** — "검 아크는 같은 order 20 인데 0.00% 덮는다"
+> ⇒ 기하 문제가 아니라 **합성 문제**. DEV 가 낸 A(`Range` 축소)·B(`offsetDistance` 확대)는 둘 다 헛다리였다.
+> 🔑 CONTENT 예상 대가 3.7~4.2% 가 실측 1.37% 였는데, **틀린 게 아니라 `D19` 로 전제가 바뀐 것**이다.
+> 회신은 [`REQ/CONTENT.md`](REQ/CONTENT.md) **요청-14** — `TUNING.md` 서술 삭제 하나뿐(코드 요청 없음).
 
 ---
 
@@ -96,9 +103,9 @@ CONTENT 는 **읽기만** 한다 — 내 요청이 언제 처리될지 가늠하
 
 | 항목 | 값 |
 |---|---|
-| 상태 | `PLAYING` |
-| 점유 이슈 | `D21` (프리팹 1줄 · Refresh · 실플레이 캡처 검증) |
-| 컴파일 에러 | `0` (2026-08-31 D19 종료 시 확인 — 플레이 종료 후 콘솔 **6건 전부 `Log`**, Warning/Error 0, 임시 스크립트·오브젝트 없음) |
+| 상태 | `IDLE` |
+| 점유 이슈 | — |
+| 컴파일 에러 | `0` (2026-08-31 D21 종료 시 확인 — 플레이 종료 후 콘솔 **7건 전부 `Log`**, Warning/Error 0, 임시 스크립트·오브젝트 없음) |
 
 | 상태값 | 뜻 | CONTENT 가 알 것 |
 |---|---|---|
