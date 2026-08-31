@@ -24,7 +24,8 @@
 | 2026-08-30 | CONTENT | `닫힘(D16)` | 🔴 **소환수 CSV 3파일 Import + 촉수 그림 교체 + SFX 볼륨 2값** (C19) · §6 **5단계 마감**. 요청-7·8 의 답이다. ⚠️ 반경은 **안 줄였다** — 문제는 크기가 아니라 그림의 가운데였다 — 아래 §요청-13. ⛔ **③ 의 검 0.35 는 C20 에서 철회했다 — 고치지 말 것** | [`REQ/CONTENT.md` 요청-7·8](CONTENT.md) · [`TUNING.md` §3](../../TUNING.md) |
 | 2026-08-30 | CONTENT | `닫힘(D16)` | **소환수 SFX 2종 배선** — `TentacleLash`(6) · `DragonSpit`(7). 클립 2장 + `SfxId` 2개 + 호출부 2줄 (C20). 요청-8 ③ 의 조건 4개를 자로 재서 맞췄다 — 아래 §요청-14 | [`TUNING.md` §2-C-2](../../TUNING.md) · `Tools/Audio/compare_sfx.py` |
 | 2026-08-30 | CONTENT | `닫힘(D17)` | **외곽선 굵기 2값 — `EnemyBase.cs:134` 한 줄** (C21). `14/12` → **`10.5/9`**. 🔴 **네 표의 숫자 3개를 정정했다** (Wolf 키 · "낱장 2.7%" · `SizeScale` 누락) — 아래 §요청-15 | [`REQ/CONTENT.md` 요청-9](CONTENT.md) · [`TUNING.md` §2-B](../../TUNING.md) |
-| 2026-08-31 | CONTENT | `열림` | 🔴 **문어 링이 플레이어를 덮는 문제 — `Fx_TentacleLash.prefab` 의 `m_SortingOrder` `20` → `-5` 한 줄** (C22). 요청-10 ③ 의 답이다. ⛔ **네가 낸 A·B 둘 다 안 골랐다** — 대조군(검 호: 같은 order 20 인데 덮는 비율 **0.00 %**)이 원인은 기하가 아니라 **합성**임을 보여줬다 — 아래 §요청-16 | [`REQ/CONTENT.md` 요청-10](CONTENT.md) · [`TUNING.md` §3](../../TUNING.md) · [`DONE/C22.md`](../DONE/C22.md) |
+| 2026-08-31 | CONTENT | `닫힘(D21)` | 🔴 **문어 링이 플레이어를 덮는 문제 — `Fx_TentacleLash.prefab` 의 `m_SortingOrder` `20` → `-5` 한 줄** (C22). 요청-10 ③ 의 답이다. ⛔ **네가 낸 A·B 둘 다 안 골랐다** — 대조군(검 호: 같은 order 20 인데 덮는 비율 **0.00 %**)이 원인은 기하가 아니라 **합성**임을 보여줬다 — 아래 §요청-16 | [`REQ/CONTENT.md` 요청-10](CONTENT.md) · [`TUNING.md` §3](../../TUNING.md) · [`DONE/C22.md`](../DONE/C22.md) · **회신** [`DONE/D21.md`](../DONE/D21.md) · [`REQ/CONTENT.md` 요청-14](CONTENT.md) |
+| 2026-08-31 | CONTENT | `열림` | **픽업 6종 + 행운 패시브의 재료 전부** (C23) — 그림 5장 · SFX 3종 · `BonusLuck` 5값 · 확률 6값(사용자 **C 안** · 잠정) · 무적 3초/공속 8초 — 아래 §요청-17. ⚠️ **원장 줄이 빠져 있어 `D23` 에서 추가했다** (본문 §요청-17 은 처음부터 있었다) | [`REQ/CONTENT.md` 요청-12](CONTENT.md) · [`DONE/C23.md`](../DONE/C23.md) |
 
 > 상태값: `열림` · `진행중` · `닫힘(D3)` · `보류(사유)`
 > 처리했으면 상태만 바꾼다. **줄을 지우지 않는다.**

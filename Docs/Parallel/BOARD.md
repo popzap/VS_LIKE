@@ -29,7 +29,6 @@
 |---|---|---|---|---|
 | DEV | `D22` | `Docs/DESIGN_EVENTS.md`(신설) · `Docs/ROADMAP.md` | 2026-08-31 | 🅿️ **보류(사용자)** — "이벤트 관련은 나중에". 문서는 **다 썼다** (`E1 함정방` 상세 + `E2`~`E6` 자리표). 🔴 **코드 변경 0.** 재개 조건 = **§7 결정 6건.** ROADMAP §0·§7 에 "이벤트 노드가 비어 있다" 갭 등재 완료 |
 | DEV | `D20` | `Assets/Scripts/Pickup/**` · `Assets/Scripts/Player/StatBlock.cs` · `Assets/Scripts/Passive/**` · `Assets/Editor/BalanceImporter.cs` | 2026-08-31 | 🔜 **착수 가능** — 재료가 다 왔다 ([`REQ/DEV.md`](REQ/DEV.md) 요청-17 / `C23`): 그림 5 · SFX 3 · `BonusLuck` 5값 · 확률 6값. 적 처치 시 **픽업 6종 저확률 드랍** + **행운(Luck) 패시브** |
-| DEV | `D23` | 🔴 **주로 vault(`D:\obsidian_claude\UNITY_GAME`)** — repo 쪽은 `Docs/Parallel/{DONE/D23.md,BOARD.md,REQ/DEV.md}` · `Docs/{SETUP_STATUS,TODO}.md` 뿐 | 2026-08-31 | `진행중` — **문서 이관.** `Docs/` 를 vault 에 **정션**으로 걸고 `00_INDEX` + `지도/개발 지도` 신설. 🔴 **repo 의 `.md` 본문은 안 고친다**(frontmatter 금지) · **코드·애셋 변경 0** · 에디터 `IDLE` 유지. `C24` 와 안 겹친다 — DEV 문서만 훑는다 |
 | CONTENT | `C6` | `Docs/DESIGN_CLASSES.md`(신설) · 이후 `Assets/Game/Balance/*.csv` · `_Incoming/` | 2026-08-30 | `진행중` — 직업 6종 컨셉 재편 + 신규 무기 6종 설계 (사용자 지시) |
 | CONTENT | `C23` | `Tools/Art/` · `Tools/Audio/` · `_Incoming/{Sprites,Audio}/` · `Assets/Game/Balance/{Passives,Items,SceneWiring}.csv` · `Docs/TUNING.md` | 2026-08-31 | `대기(REQ→DEV)` — 픽업 드랍 6종 + 행운 패시브. 그림 5장 · SFX 3종 · `BonusLuck` 5값 · 확률 6값(사용자 **C 안** · 잠정) · 무적 3초/공속 8초 — [`REQ/DEV.md`](REQ/DEV.md) 요청-17 · [`DONE/C23.md`](DONE/C23.md). ✅ `allItems` **24→25** 등록 완료 (`C6` 충돌은 **오판**이었다 — 파일 이력 확인 후 정정) |
 
@@ -100,6 +99,15 @@
 > 🧹 **`C19`·`C20` 줄은 CONTENT 가 지웠다** (2026-08-31). 위 `D16` 항목에 "지웠다"고 적혀 있었지만
 > **표에는 남아 있었다.** 산출물이 실제로 들어간 것을 확인하고 지웠다 —
 > `SFX_{TentacleLash,DragonSpit}.wav` 가 `Assets/Game/Audio/` 에 있고 `allItems` 에 소환수 2종이 있다.
+>
+> ✅ **`D23` 끝났다 — DEV 가 지웠다** (2026-08-31). `Docs/` 를 vault 에 **정션**으로 걸고
+> `00_INDEX.md` + `지도\개발 지도.md` 를 세웠다 → [`DONE/D23.md`](DONE/D23.md).
+> 🔴 **코드·애셋 0 · Unity 미접촉**(§2 내내 `IDLE`) · repo `.md` **본문 무수정**(frontmatter 금지).
+> 링크 57/57 도달 · 2클릭 도달 확인 · vault 에 사본 0.
+> ⚠️ **문서↔실제 불일치 7건**을 찾아 **고치지 않고 등재만** 했다 (`지도\개발 지도.md` §2).
+> ⚠️ §0 에 `Tools/Art/`·`Tools/Audio/` 가 빠졌다 — CONTENT 소유라 [`REQ/CONTENT.md`](REQ/CONTENT.md) 요청-15 로 넘겼다.
+> ⚠️ **`C24` 커밋(`4c282e2`)이 내가 스테이지도 안 한 이 파일의 `D23` 줄을 같이 가져갔다** —
+> `git add` 와 `git commit` 을 **한 명령으로** 붙여야 하는 이유다.
 >
 > ✅ **`C24` 끝났다 — CONTENT 가 지웠다** (2026-08-31). `D23` 의 정션 위에 **CONTENT 열람 계층**을 얹었다:
 > vault `지도/콘텐츠 지도.md`(3문서 목차 + CSV 12↔SO 9 대응 + `SceneWiring.csv` 함정) ·
