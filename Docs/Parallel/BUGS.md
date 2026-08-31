@@ -19,6 +19,7 @@
 | **B4** | 2026-08-30 | CONTENT | **DEV** | 일시정지·옵션창 글자 6곳이 **빈칸으로 나온다.** 씬에 한글이 남아 있는데 폰트가 Static 115자라 한글이 없다 | `수정됨(D5)` |
 | **B5** | 2026-08-30 | DEV(D9 검증 중) | **DEV** | **웨이브 밖에서 적이 죽으면 `WaveManager.OnEnemyKilled` 가 NRE 를 던진다** (`_currentWaveData` 가 null). 지금 게임 경로로는 안 난다. 🔴 **2026-08-31 증상 추가 — 광역기가 첫 사망자에서 통째로 멈춘다(D20)** | `열림(우선순위 재검토 필요)` |
 | **B6** | 2026-08-30 | DEV(D14 검증 중) | **DEV** | **Dev 패널로 무기 레벨을 내리면 무기가 사라질 수 있다.** `무기 슬롯 꽉 참` 경고 3회 — `CanAcquire` 가 된다고 한 걸 `AddOrUpgradeWeapon` 이 거절한다 | `수정됨(D18)` |
+| **B7** | 2026-08-31 | DEV(D26 작업 중) | **DEV** | **승급 4종(`Sentinel`·`Doomlord`·`Warden`·`Aegis`) 초상·걷기 시트의 임포트 설정이 T1 3종과 다르다.** 필터가 `Bilinear` 이고 **압축이 켜져 있고** `maxTextureSize` 가 2048 이다 — 픽셀아트가 뭉개진 채로 2배 해상도로 들어온다. `I-61` 이 PPU 만 고치고 나머지를 놓쳤다 | `열림(등재만 — 사용자 판단 2026-08-31: 이번엔 안 고친다)` |
 
 > 상태값: `열림` · `확인중` · `수정됨(D3)` · `재현안됨` · `보류(사유)`
 > **줄을 지우지 않는다.** 닫혀도 그대로 둔다 — 재발했을 때 근거가 된다.
@@ -538,3 +539,40 @@ WeaponManager.Instance?.AddOrUpgradeWeapon(cls.StartingWeapon, ...);
 | **C** | 시작 무기를 슬롯 상한에서 면제한다 (상한 +1) | 밸런스가 바뀐다 — 실질 무기 칸이 한 칸 는다 |
 
 🔴 **고치지 않았다.** D15 는 외곽선 작업이고 이건 그 범위 밖이다 (`SESSION_PROMPT.md` §5).
+
+---
+
+## B7 — 승급 4종 그림이 뭉개진 채로 들어와 있다 (임포트 설정만 다르다)
+
+**증상:** 승급 직업 4종(`Sentinel`·`Doomlord`·`Warden`·`Aegis`)의 초상·걷기 시트가
+T1 3종(`Warrior`·`Ranger`·`Mage`)보다 **흐릿하고 색 경계에 압축 잡티가 있다.**
+예외도 경고도 나지 않는다 — **설정값만 다르다.**
+
+**재현 절차:** `Assets/Game/Sprites/Classes/` 에서 `Warrior.png` 와 `Sentinel.png` 를
+인스펙터로 나란히 열고 `Filter Mode` · `Compression` · `Max Size` 를 비교한다.
+
+### 실측 (2026-08-31, D26 작업 중)
+
+| | PPU | `maxTextureSize` | `filterMode` | 압축 |
+|---|---:|---:|---|---|
+| `Warrior` · `Ranger` · `Mage` | 1024 | 512 | `Point` | 없음 |
+| `Sentinel` · `Doomlord` · `Warden` · `Aegis` | 1024 | 🔴 **2048** | 🔴 **`Bilinear`** | 🔴 **켜짐** |
+
+걷기 시트도 같은 상태다.
+
+### 원인
+
+`I-61` 이 이 4종의 **PPU 만** 규약값으로 고치고 `filterMode`·`textureCompression`·
+`maxTextureSize` 를 손대지 않았다. PPU 가 맞으니 **크기는 정상으로 보이고**,
+차이는 선명도로만 드러나서 눈에 안 띈 것이다.
+
+> 🟡 유효 `maxTextureSize` 는 `.meta` 최상단 값이 아니라
+> `platformSettings[buildTarget: DefaultTexturePlatform]` 안의 값이다.
+> 최상단만 읽으면 T1 3종도 2048 로 보인다 — **여기서 한 번 틀렸다.**
+
+**고치는 법은 이미 있다.** D26 에서 T1 3종과 신규 3종에 쓴 `Unity_RunCommand` 를
+경로만 바꿔 4종에 돌리면 된다 (`GetDefaultPlatformTextureSettings` → `maxTextureSize`·
+`textureCompression` 설정 → `SetPlatformTextureSettings` → `SaveAndReimport`).
+
+🔴 **고치지 않았다.** D26 은 신규 3종 생성 작업이고 4종 재임포트는 그 범위 밖이다.
+**사용자가 2026-08-31 에 "등재만" 으로 판단**했다. 되돌아올 때 위 명령만 돌리면 끝난다.

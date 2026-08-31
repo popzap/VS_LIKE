@@ -6,7 +6,7 @@
 > 기존의 「C# 스크립트는 완성 단계」라는 전제와 「요청 없이 코드 건드리지 말 것」 규칙이 **해제됨**.
 > 이제 게임 완성을 위해 C# 스크립트 신규 작성·수정이 허용된다.
 >
-> **최종 갱신:** 2026-08-31 (48차 — 재화 분리: 런 골드 ↔ 메타 골드, D25)
+> **최종 갱신:** 2026-08-31 (49차 — 직업 3종 그림 6장, D26)
 >
 > 🔀 **25차부터 이슈 번호가 `세션 접두어 + 번호` 다** — `D`(DEV) · `C`(CONTENT) · `B`(버그 공용).
 > 병렬 2세션 체제로 바뀌었기 때문이다 (D1). 과거 `I-1`~`I-61` 은 그대로 둔다.
@@ -18,7 +18,7 @@
 > [`ROADMAP.md`](ROADMAP.md) §8 의 **1·2·3단계 완료** (I-43~I-49) — HUD 정보 · 타격 반응 · 오디오 ·
 > 병렬 소환 · 적 행동 분화 · 보물상자/자석. **"조용한 프로토타입" 단계는 끝났다.**
 > 원격 동기화: `popzap/VS_LIKE` `main` @ **`bd2f4ce`** (2026-08-31 — 47차 `D24` 까지 푸시됨).
-> 🔴 **로컬이 앞서 있다** — `4e60fdd`(C26 직업 3종 값 확정) · 48차(D25) 는 **커밋만 되고 아직 미푸시**다.
+> 🔴 **로컬이 5커밋 앞서 있다** — `4e60fdd`(C26) · `e2dda0e`(48차 D25) · `4379d6c`·`f3d144f`·`f09558e`(C27) 는 **커밋만 되고 아직 미푸시**다.
 >
 > 🎯 **16차는 처음으로 "직접 플레이해서 나온" 버그 보고에서 출발했다** (I-50).
 > 로그로만 검증하던 단계에서는 절대 발견할 수 없는 종류였다 — 자세한 건 2-20.
@@ -2025,6 +2025,110 @@ Play 모드에서 Warrior 로 런을 시작하고 `Unity_RunCommand` 로 재료�
 > ⚠️ **건물 앞 `E` 실조작은 아직 미검증이다.** 위는 `EvolveClass` 를 직접 부른 것이고,
 > `FindAltarClassEvolution` 은 이미 검증된 `FindAltarEvolution` 과 같은 로직이지만
 > **실제로 터렛을 세우고 다가가서 눌러 본 적은 없다** → [`TODO.md`](TODO.md) §1
+
+---
+
+## 2-53. ✅ 직업 3종 그림 6장 — 그리고 "실패했다"는 보고를 믿었다면 버릴 뻔했다 (D26, 2026-08-31 49차)
+
+**한 줄:** Unity AI 로 폭발광·어쎄신·소환사 초상 3장 + 걷기 시트 3장을 뽑았다. **`C6` 6단계의 유일한 막힘이 풀렸다.**
+
+> 전문 [`Parallel/DONE/D26.md`](Parallel/DONE/D26.md) · 요청 [`Parallel/REQ/DEV.md`](Parallel/REQ/DEV.md) 요청-19 · 답신 [`Parallel/REQ/CONTENT.md`](Parallel/REQ/CONTENT.md) 요청-19
+
+### 원인 / 배경 — 값은 다 정해졌는데 그림이 없었다
+
+CONTENT 가 `DESIGN_CLASSES.md` §7-B 에 직업 3종의 값을 **전부 확정**해 뒀다
+(무기 · HP · 이동 · 공속 · 치명 · 방어 · 슬롯 9칸까지). 그런데 `Classes.csv` 를 쓸 수 없었다.
+**Unity AI 생성은 에디터 조작이라 CONTENT 세션이 못 하기 때문**이다.
+
+순서를 뒤집으면 안 되는 이유도 분명했다 — `BalanceImporter.cs:848`(`LoadRef`) 와
+`:861`(`LoadSpriteSheet`) 은 그림을 못 찾으면 **로그 한 줄 없이 fallback** 한다.
+CSV 를 먼저 쓰면 기본 그림이 조용히 박히고 아무도 모른다. **그림이 먼저다.**
+
+### 변경한 파일
+
+| 파일 | 무엇 |
+|---|---|
+| `Assets/Game/Sprites/Classes/Demolitionist.png` (+`.meta`) | 신규 · 초상 · 알파 `0–255` · 투명 60.9 % |
+| `Assets/Game/Sprites/Classes/Assassin.png` (+`.meta`) | 신규 · 초상 · 알파 `0–255` · 투명 79.9 % |
+| `Assets/Game/Sprites/Classes/Summoner.png` (+`.meta`) | 신규 · 초상 · 알파 `0–255` · 투명 75.8 % |
+| `Assets/Game/Sprites/Classes/Walk/Demolitionist_Walk.png` (+`.meta`) | 신규 · 16프레임 · 색 81,800 |
+| `Assets/Game/Sprites/Classes/Walk/Assassin_Walk.png` (+`.meta`) | 신규 · 16프레임 · 색 11,265 |
+| `Assets/Game/Sprites/Classes/Walk/Summoner_Walk.png` (+`.meta`) | 신규 · 16프레임 · 색 135,134 |
+| `Docs/Parallel/BUGS.md` | `B7` 등재 (승급 4종 임포트 설정) |
+
+🔴 **C# 변경 0 · 씬 변경 0 · 프리팹 변경 0 · CSV 변경 0.** 애셋 6장이 전부다.
+`Warrior.png.meta` 도 `git status` 에 안 뜬다 — 기준선에 맞추는 명령을 같이 돌렸는데
+**이미 그 값이었다**는 뜻이다(대조군이 제 역할을 했다).
+
+### 검증 로그
+
+초상 4종(`Warrior` 는 기준선):
+
+```
+Warrior / Demolitionist / Assassin / Summoner
+  → ppu=1024 maxTS=512 filter=Point comp=Uncompressed mode=Single loaded=512x512
+```
+
+걷기 시트 4종:
+
+```
+[SLICE] Warrior_Walk         ppu=256 maxTS=1024 filter=Point comp=Uncompressed mode=Multiple sprites=16
+[SLICE] Demolitionist_Walk   ppu=256 maxTS=1024 filter=Point comp=Uncompressed mode=Multiple sprites=16
+[SLICE] Assassin_Walk        ppu=256 maxTS=1024 filter=Point comp=Uncompressed mode=Multiple sprites=16
+[SLICE] Summoner_Walk        ppu=256 maxTS=1024 filter=Point comp=Uncompressed mode=Multiple sprites=16
+```
+
+| # | 판정 기준 (요청-19) | 결과 |
+|---|---|---|
+| ① | 6장이 정확한 경로·이름에 | ✅ |
+| ② | 전부 1024×1024 | ✅ |
+| ③ | `.meta` 가 `Warrior`/`Warrior_Walk` 와 같은가 | ✅ 필드 단위 대조 |
+| ④ | 시트마다 16 슬라이스 | ✅ |
+| ⑤ | 알파 최솟값 0 | ✅ |
+| ⑥ | 칸마다 캐릭터 하나 · 여백 30px | 🟡 아래 |
+
+**⑥ 은 기준선 자체가 못 지키는 기준이었다.** 48칸을 알파 `getbbox` 로 재 보니
+`Warrior_Walk` 의 최소 여백이 **2px** 다. 새 3장은 14 / 25 / 31px 로 **전부 기준선보다 낫고**,
+48칸 어디에도 칸 넘침이 없다. 중요한 건 30 이라는 숫자가 아니라 **0 이 아니라는 것**이다.
+
+### 🔴 이번 작업의 진짜 소득 — 두 번의 "낡은 정보를 믿었다"
+
+| | 무엇을 믿었나 | 결과 |
+|---|---|---|
+| **DEV(나)** | Unity AI 툴의 `success: false` 반환값 | **성공한 생성을 버릴 뻔했다** |
+| **CONTENT** | 1~2분 전에 읽은 파일 상태 | **이미 고쳐진 것을 반려**했다 (`f09558e`) |
+
+Kling 호출이 실패를 반환했는데 붙어 온 job GUID 가 **직전 seedance 실패 때와 똑같았다** —
+세션이 **낡은 job 결과를 재생**한 것이다. 반환값만 봤으면 여기서 접었다.
+파일을 열어 보니 1,166.6 KB · 색 102,531 개짜리 **진짜 16프레임 시트**였다.
+
+CONTENT 쪽도 같은 종류다. 그쪽이 "빈 파일이니 재생성하라"고 지목한 `Summoner_Walk` 는
+seedance 가 3번 실패하며 남긴 **자리표시 파일**이었고, 그 시점엔 이미 다시 뽑아 둔 뒤였다
+(`mtime` 14:53:29 vs 반려 커밋 14:54:53).
+
+> **믿을 수 있는 신호는 디스크의 파일뿐이다** — 크기 · 색 수 · 알파 extrema.
+> 그리고 **애셋 판정에는 `mtime` 을 같이 적는다.** 답신에 양쪽 다 그렇게 하자고 제안했다.
+
+### 🟡 함정 — 유효 `maxTextureSize` 는 `.meta` 최상단에 없다
+
+`.meta` 최상단의 `maxTextureSize: 2048` 을 읽고 한 번 틀렸다. 적용되는 값은
+`platformSettings[buildTarget: DefaultTexturePlatform]` 안에 있다(초상은 **512**).
+
+```csharp
+var ps = ti.GetDefaultPlatformTextureSettings();
+ps.maxTextureSize     = 512;
+ps.textureCompression = TextureImporterCompression.Uncompressed;
+ti.SetPlatformTextureSettings(ps);
+```
+
+### 안 한 것
+
+- **`Classes.csv` · `SceneWiring.csv`** — CONTENT 소유다. 답신을 보냈으니 그쪽이 쓴다
+- **Assassin 시트 자주 악센트** — CONTENT 권고였고 필수 아님. 3번 실패 끝에 얻은 시트라
+  재생성 위험이 크고, 어두운 타일 위 시인성은 **외곽선(`D15`)으로 푸는 게 싸다**
+- **승급 4종(`Sentinel`·`Doomlord`·`Warden`·`Aegis`) 임포트 설정** — `Bilinear` + 압축 + `maxTS 2048` 로
+  T1 3종과 다르다. `I-61` 이 PPU 만 고치고 놓쳤다. 별건이라 [`Parallel/BUGS.md`](Parallel/BUGS.md) `B7` 로
+  **등재만** 했다 (사용자 판단 2026-08-31)
 
 ---
 
@@ -5053,6 +5157,7 @@ Play 모드 — 한 세션에서 두 경로 전부:
 | **D20**<br>(C23) | 적을 죽여도 나오는 게 **경험치 구슬 하나뿐**이었다. 자석·상자는 엘리트 전용이라 **잡몹은 사실상 아무것도 안 줬다** — 뱀서라이크에서 "잡몹을 밀어붙일 이유"의 절반이 비어 있었다 | ✅ 해결 (2026-08-31 46차 → 2-50) — CONTENT 요청-17 의 재료(그림 5 · SFX 3 · 확률 6 · 행운 곡선)를 게임에 넣었다. **행운 스탯 신설**(`StatBlock.Luck` → `PassiveData.BonusLuck` → `PassiveEffect` → `BalanceImporter` **임포트+익스포트**) · **시한 버프**(`GrantInvincibility`/`GrantHaste`) · **픽업 4종**(`Bomb`·`Invincible`·`Haste`·`Gold`) · **드랍표**(`RollPickupDrop`) · 애셋 8개 임포트 + `AudioLibrary` 24→**27** + 프리팹 4종. 🔑 **설계 판단 셋** — ① 드랍은 **한 번만** 굴린다(종류별로 굴리면 폭탄+무적이 같이 나오고 표의 "합계 6.7%"가 실제와 어긋난다. 행운은 합계가 아니라 **각 항목에** 곱해 종류별 비율을 행운과 무관하게 유지) · ② 힐 픽업은 새로 안 만들고 기존 `HealPickup.prefab` 을 드랍표에 넣되 **회복량을 `ExperienceManager` 가 주입**한다(건물 레벨이 없어 안 주면 **0 을 회복하고 조용히 사라진다**) · ③ 드랍표는 **나란한 배열**이다 — `SceneWiring.csv` 는 **구조체 배열을 못 쓴다**(`WriteProperty` 가 원소마다 `WriteScalar` 를 부르는데 구조체는 `Generic` 이라 `! 타입 미지원`). 🔴 `StatBlock.Zero()` 에도 `Luck` 추가(I-21) · 🔴 **익스포트도 같이** 고쳤다(안 그러면 다음 Export 때 `BonusLuck` 열이 사라져 CSV 가 조용히 망가진다) · 🔴 **`minAttackSpeed = 0.1f` 하한 신설**(`WeaponBase.cs:54` 가 쿨다운에 `AttackSpeed` 를 **곱한다**. 최악 조합 `Aegis −0.05 + AttackSpeed Lv5 −0.30 + 공속 −0.50 = 0.15` 로 여유가 **0.05** 뿐). **판정 6건 중 5건 PASS** — ① `BonusLuck` 기존 10개 전부 0 · ② 실체 높이 480 vs Magnet 482 · ③ `allItems` 25개 · ④ 행운 Lv5 에서 **2.001배**(5만 회 × 2) · ⑤ **실물리** Demon 사망 / Ogre 생존 + 11유닛 밖 무피해(반경 10 정확). ⑥ 소리 구분은 **귀로만 판정 가능 → 사용자 몫**. 🔑 **통계 이상은 로직보다 "세는 방법"을 먼저 의심한다** — ④ 첫 시행 −3.1σ 를 `ObjectPool` 이 활성 오브젝트를 재사용하지 않음을 확인해 계수 오류부터 배제한 뒤 시드를 바꿔 재실행, 편차 소멸(**시드 탓**). ⚠️ **씬 배선은 임시다** — `SceneWiring.csv` 가 CONTENT 소유라 요청-16 으로 넘겼다(그 행이 CSV 에 없어 Import 가 덮어쓰지 않는다). **고치지 않고 보고만 한 것** — 🔴 `B5` 새 증상(`Die():449` NRE 가 `DetonateBomb` 의 `foreach` **밖으로 전파**돼 뒤쪽 적이 피해를 안 받고 폭탄이 바닥에 남는다. 같은 모양이 `AoeProjectile`·`MeleeWeapon`·`SummonWeapon`·`ToxinField` 에도 → 우선순위 `낮음`→`재검토 필요`) · 스프라이트 bbox 기준 차이(CONTENT `a>127` vs `PIL` `a>0`, `Magnet`·`GoldGain` 의 잔여 픽셀 1.4~1.5% 가 bbox 를 최대 311px 부풀린다 — **측정 기준 차이지 애셋 결함 아님**) · `.meta` 복사 시 **GUID 말고 서브애셋 이름이 세 곳**에 박혀 있다 · `ExecutionResult.Log` 는 **정렬 지정자(`{1,-24}`)를 못 쓴다** · **대량 스폰 실험은 플레이 세션을 오염시킨다**(잔여 픽업이 먹히며 `LevelUp`(timeScale 0)에 들어가 `WorldPickup.Update` 가 조기 반환 → 다음 검증이 통째로 막힘) |
 | **D24**<br>(C25) | `D20` 이 넣은 픽업 드랍표가 **DEV 가 손으로 꽂은 임시 배선**이었다. `SceneWiring.csv` 는 CONTENT 소유라 요청-16 으로 넘겼고 `C25` 가 3줄을 채워 돌려줬다 — **Import 1회**가 전부인 작업. | `Game/Balance/Import CSV -> ScriptableObjects` 1회 + `File/Save`. **코드·애셋·CSV 변경 0** | 판정 **6/6 PASS** — `SceneWiring.csv : 12/12 적용`(경고 0) · `pickupPrefabs`/`pickupChances` **6칸=6칸** · 확률 합 **6.7%** · `healPickupAmount` **30** · 죽은 필드 `magnetPrefab`/`magnetDropChance` `FindProperty` **둘 다 null** · 실제 사망 경로 **300 처치 → 21개(7.0%)**, 6종 전부 등장(Gold 9·Heal 5·Haste 3·Magnet 2·Bomb 1·Invincible 1) | 🔴 **`D20` 커밋(`a3e9e5c`)의 씬은 `allItems` `24` 였다 — 행운이 레벨업 3택에 안 뜨는 상태였다.** `D20` 은 **런타임 25개**를 읽고 판정 PASS 를 적었는데 `File/Save` 가 빠져 디스크에 안 들어갔다. 예외도 로그도 안 나는 종류다 ⇒ **씬·프리팹을 바꾸는 판정은 `git diff` 로 재확인**(`TODO.md` §1 등재) · `B5` 정량화 — 웨이브 밖 사망 **300/300 전부 예외**. 다만 예외가 `RollPickupDrop` **뒤**라 드랍은 살아 있다 |
 | **D25** | 런 골드와 메타 골드가 **`MetaProgression.Currency` 하나**였다. 10층 런 수입 ≈1,240G 중 **처치 보상이 ≈1,084G** 인데 상점 아이템은 **5~12G** — 상점이 사실상 무제한. 문제는 "싸다"가 아니라 **값을 잡을 수가 없다**는 것이었다: 상점을 올리면 메타가 같이 비싸지고 메타를 내리면 상점이 공짜가 된다. **한 지갑에 성격이 다른 두 예산**이 들어 있었다 (`TODO.md` §2-B 결정 3) | ✅ 해결 (2026-08-31 48차 → 2-52) — 지갑을 둘로 갈랐다. `GameManager.RunGold`(처치·픽업·농장·이벤트 → 상점·리롤, **런 종료 시 소멸**) ↔ `MetaProgression.Currency`(**스테이지 클리어 보상만** → 영구 강화·해금). `GrantMetaGold` 는 `_pendingMetaGold` 에 적립만 하고 `SettleRun()` 이 런 종료에 한 번에 넘긴다. 코드 10개 파일. **씬·프리팹·CSV·SO 변경 0 · 수치 변경 0** | 판정 **8/8 PASS** — `GrantGold(100)`→`Run 0→100`(Meta 불변) · `GrantMetaGold(50)`→`Pending 0→50`(Meta 불변) · `SpendRunGold` 경계 `30`✅/`999999`❌ · `StartRun` 이 두 지갑 초기화 · **실제 사망 경로** 고블린 1마리→`Run 0→1` · **상점이 보는 지갑이 런 골드**(10G 슬롯: `0`❌/`9`❌/`10`✅) · `OnPlayerDied`→`Meta 1231→1319`(+88)·`Run 500→0` · UI 3곳(HUD `777 G` 런 / MainMenu `1231 G` 메타 / StageMap 런). 콘솔 에러 0 · 세이브 `1231` 복원 |
+| **D26** | 직업 3종(폭발광·어쎄신·소환사) 값이 `DESIGN_CLASSES.md` §7-B 에 **전부 확정**돼 있는데 `Classes.csv` 를 쓸 수 없었다 — **그림이 없고, Unity AI 생성은 에디터 조작이라 CONTENT 세션이 못 한다.** 순서를 뒤집을 수도 없었다: `BalanceImporter.cs:848`(`LoadRef`)·`:861`(`LoadSpriteSheet`) 은 그림을 못 찾으면 **로그 없이 fallback** 해서 기본 그림이 조용히 박힌다 (`C6` 6단계의 유일한 막힘) | ✅ 해결 (2026-08-31 49차 → 2-53) — 초상 3장(`gpt-image-1-5`) + 걷기 시트 3장(`video-kling-v3-i2v-standard`) 생성, 임포트 설정을 `Warrior`/`Warrior_Walk` 와 **필드 단위로** 맞추고 4×4 16분할. **C#·씬·프리팹·CSV 변경 0** | 판정 **①~⑤ PASS** — 초상 4종 `ppu=1024 maxTS=512 filter=Point comp=Uncompressed mode=Single`, 시트 4종 `ppu=256 sprites=16`, 알파 전부 `0–255`, 색 81,800 / 11,265 / 135,134. ⑥(여백 30px)은 **기준선 `Warrior_Walk` 가 2px** 이라 기준 자체가 틀렸다 — 새 3장은 14/25/31px 로 전부 낫다. 🔴 **Kling 이 `success:false` 를 반환했는데 파일은 성공작이었다**(낡은 job GUID 재생) |
 
 ### 해결 상세
 
@@ -5779,6 +5884,21 @@ private void LateUpdate()
      한쪽을 만지면 반드시 다른 쪽이 망가지니 어떤 값도 "맞다"가 될 수 없었다.
      ⇒ 밸런싱이 계속 제자리면 **값을 의심하기 전에 그릇이 하나인지 둘인지**를 본다.
      이번 수정은 **수치를 단 하나도 바꾸지 않았는데** 튜닝이 가능해졌다.
+
+182. 🔑 **도구가 "실패했다"고 말해도, 판정은 디스크의 파일로 한다** (D26).
+     Unity AI 생성 호출이 `success: false` 를 반환했는데 **결과물은 멀쩡했다** —
+     세션이 직전 실패의 **낡은 job GUID 를 재생**하고 있었다. 반환값만 믿었으면
+     1,166 KB · 색 102,531 개짜리 완성된 16프레임 시트를 버리고 작업을 접었을 것이다.
+     같은 날 CONTENT 는 **1~2분 전에 읽은 상태**로 이미 고쳐진 애셋을 반려했다(`f09558e`).
+     ⇒ 도구의 반환값도, 남이 적어 준 관측도 **둘 다 과거형이다.**
+     애셋은 **크기·색 수·알파 extrema** 로 지금 재고, 판정을 적을 땐 **`mtime` 을 같이 적는다.**
+
+183. 🔑 **판정 기준을 새로 쓸 때는 기존 것부터 그 기준으로 재 본다** (D26).
+     요청-19 의 판정 ⑥ 은 "칸마다 여백 30px 이상" 이었다. 그런데 기준선인
+     `Warrior_Walk` 를 재 보니 **2px** 였다 — **기존 7장 중 어느 것도 통과 못 하는 기준**이었다.
+     통과시켜야 할 진짜 조건은 30 이라는 숫자가 아니라 **여백이 0 이 아닐 것**(칸 넘침 없음)이다.
+     ⇒ 새 산출물에만 적용되는 기준은 **기존 산출물을 불합격시키는지 먼저 확인**한다.
+     아니면 멀쩡한 물건을 다시 만들게 된다.
 
 **16~17 과정에서 함께 처리한 것**
 
