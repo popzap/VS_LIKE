@@ -1,0 +1,307 @@
+# VS_LIKE — 이벤트 설계
+
+> **최초 작성:** 2026-08-31 (`D22`, DEV) · **상태:** 📋 **설계만. 코드 변경 없음**
+> **지시:** 사용자 (2026-08-31) — *"EVENT로서 발생할 수 있는 전투 중 함정방 느낌으로,
+> 무한적 + 시간제한으로 살아남기 같은 컨셉. 여러 이벤트를 추가할거라 그중 하나로 일단은 문서화만"*
+
+---
+
+## 0. 이 문서의 자리
+
+| 문서 | 담는 것 |
+|---|---|
+| **이 문서** | **이벤트가 무엇이고 어떻게 굴러가는지.** 흐름 · 코드 접점 · 결정해야 할 것 |
+| [`BALANCE.md`](BALANCE.md) | 수치를 **고치는 법**(CSV 파이프라인). 이벤트 수치가 확정되면 이쪽 |
+| [`TUNING.md`](TUNING.md) | **플레이해야만 판정되는 값**. 이벤트가 구현된 뒤 체감 항목이 이쪽으로 간다 |
+| [`TODO.md`](TODO.md) | 아직 안 된 것. 이 문서의 §7 이 거기로 나간다 |
+
+**소유:** `DEV`. 이벤트는 **게임 상태 전이와 웨이브 루프를 건드리는 구조 설계**라 코드 쪽에 붙는다.
+CONTENT 는 **읽고**, 수치·문구·그림은 [`Parallel/REQ/DEV.md`](Parallel/REQ/DEV.md) 로 제안한다.
+([`DESIGN_CLASSES.md`](DESIGN_CLASSES.md) 는 반대로 CONTENT 소유다 — 그쪽은 컨셉·수치가 본체다.)
+
+---
+
+## 1. 🔴 먼저 — **이미 있는 것부터 세어 본다**
+
+착수 전에 코드를 읽었다. **이벤트는 이미 절반쯤 있다.** 없는 걸 정확히 알아야 설계가 안 헛돈다.
+
+### 있다
+
+| 무엇 | 어디 | 상태 |
+|---|---|---|
+| `StageType.Event` 노드 타입 | `Stage/StageMapManager.cs:4` | ✅ 열거형에 있다 |
+| 맵에 이벤트 노드가 **실제로 깔린다** | `StageMapManager.cs:34` `weightEvent` **0.15** | ✅ 15% 확률로 생성 |
+| 맵 UI 에 `"Event"` 로 표시된다 | `UI/StageMapUI.cs:160,169` | ✅ 이름·색 있다 |
+| `GameState.Event` 상태 | `Core/GameManager.cs:13` | ✅ 있다 |
+| 노드를 고르면 이벤트로 분기한다 | `GameManager.cs:252-265` | ✅ 배선돼 있다 |
+| 이벤트 목록 · 실행기 | `Meta/EventManager.cs` (58줄) | 🟡 **스텁**. 보상 주고 끝 |
+| 이벤트 데이터가 CSV 로 관리된다 | `Assets/Game/Balance/Events.csv` · `Editor/BalanceImporter.cs:534` | ✅ 5행. 씬의 `EventManager` 에 직접 기록 |
+| **"이벤트가 전투를 튼다"는 개념** | `EventManager.cs:41` `TriggerRandomWave` | 🟡 있다 — 근데 **그냥 노말 웨이브**를 튼다 |
+| **시간 생존 클리어** | `Wave/WaveData.cs:40-41` `UseTimerClear`/`SurvivalTime` | ✅ 노말 웨이브가 전부 이 방식이다 |
+| **동시 생존 적 상한** | `WaveData.cs:56` `MaxAlive` · `WaveManager.cs:173` `WaitForSpawnSlot` | ✅ 차면 **대기**한다(취소가 아니다) |
+| **소환 시간창** | `WaveData.cs:20-23` `StartTime`/`EndTime` | ✅ 항목별 병렬. `EndTime=0` 이면 **제한 없음** |
+| **도망쳐도 적이 안 떨어진다** | `WaveManager.cs:253` `RecycleFarEnemies` (반경 ×1.9) | ✅ 멀어진 적을 **죽이지 않고 앞으로 옮긴다** |
+| 남은 시간 HUD | `UI/HUDManager.cs:133-146` | ✅ `WaveRemainingTime >= 0` 이면 자동으로 뜬다 |
+
+### 🔑 그래서 — **"무한적 + 시간제한"의 뼈대는 이미 다 있다**
+
+지금 있는 `WaveData` 하나로 이렇게 쓸 수 있다.
+
+```
+UseTimerClear=1, SurvivalTime=45, MaxAlive=140
+Spawns = Zombie*9999@0.4:0-0          <- EndTime 0 = 끝까지, Count 는 사실상 무한
+```
+
+`MaxAlive` 가 차면 소환이 **대기**했다가 자리가 나면 즉시 채우므로, 결과적으로
+**"죽여도 죽여도 계속 나온다"**가 된다. `RecycleFarEnemies` 덕에 **도망도 안 통한다.**
+
+⇒ 이 이벤트에 필요한 건 **새 전투 시스템이 아니라 "다른 성격의 웨이브를 고르는 길"**이다.
+
+### 없다 (= 이번에 만들 것)
+
+| # | 없는 것 | 왜 문제인가 |
+|---|---|---|
+| ① | **이벤트 전용 `WaveData` 를 고를 수 없다** | `WaveManager.cs:81-86` 이 `StageType` 으로만 고른다. `Event` 는 `_ =>` 로 떨어져 **노말 웨이브**가 나온다. 지금 `Events.csv` 의 `Ambush` 가 딱 이 상태 — **"함정"인데 평범한 웨이브다** |
+| ② | **"방"이 없다** | `Stage/GroundTiler.cs:7` — *"이 게임에는 아레나 경계가 없다"*. `CameraController.useBounds` = `false`. 무한 평면이라 **가둘 벽이 없다** |
+| ③ | **이벤트 보상이 노말과 같다** | `GameManager.cs:272-277` 에서 `Event` 는 `_ => normalClearReward`(**8골드**). 위험이 커도 보상이 안 는다 |
+| ④ | **진입 경고가 없다** | 노드를 누르면 즉시 시작된다. 함정은 *"아, 잘못 밟았다"* 가 있어야 함정이다 |
+| ⑤ | **실패라는 개념이 없다** | 웨이브를 못 깨는 유일한 길은 **죽는 것**이다. 중도 포기/실패가 없다 |
+
+---
+
+## 2. 이벤트란 무엇인가 — 웨이브와의 경계
+
+| | 일반 웨이브 (Normal/Elite/Boss) | **이벤트** |
+|---|---|---|
+| 목적 | 진행의 **기본 박자** | 박자를 **깨뜨리는 것** |
+| 예측 가능성 | 들어가기 전에 뭐가 나올지 안다 | **모르고 들어간다** |
+| 길이 | 60~120초 | **짧다** (20~60초) 또는 **0초**(즉시 해소) |
+| 위험 | 고름 | **몰려 있다** — 짧고 굵게 |
+| 보상 | 고정 | **위험에 비례**. 때로는 선택지 |
+| 코드 | `WaveManager.StartWave` | `EventManager` 가 **무엇을 할지 정하고** 웨이브를 부를 수도, 안 부를 수도 있다 |
+
+이벤트는 **두 갈래**다. 지금 `Events.csv` 의 `TriggerRandomWave` 열이 이미 이 갈래를 나눈다.
+
+| 갈래 | 뜻 | 지금 예 |
+|---|---|---|
+| **정적 이벤트** | 보상/선택만 주고 곧바로 다음 노드로 | `Abandoned Cache` · `Ancient Shrine` |
+| **전투 이벤트** | 특수한 규칙의 전투를 하나 튼다 | `Ambush` · `Cursed Offering` |
+
+**이번에 설계하는 함정방은 "전투 이벤트"의 첫 제대로 된 사례**다.
+
+---
+
+## 3. 이벤트 카탈로그 (자리표)
+
+여러 개를 넣을 거라 **번호를 지금 잡아 둔다.** 이번 문서에서 상세 설계하는 건 **`E1` 하나**다.
+
+| # | 이름 (UI 표기) | 갈래 | 한 줄 | 상태 |
+|---|---|---|---|---|
+| **E1** | **`Trap Room`** | 전투 | **무한적 + 시간제한 생존.** 도망갈 곳이 없다 | 📋 **이 문서 §4** |
+| E2 | `Elite Ambush` | 전투 | 적은 적게, 대신 **전부 엘리트** | 🔲 자리만 |
+| E3 | `Cursed Offering` | 선택 | **버프를 받는 대신** 그 판이 어려워진다 | 🔲 자리만 (지금 CSV 에 이름만 있다) |
+| E4 | `Abandoned Cache` | 정적 | 상자/골드. 지금 있는 것 | ✅ 이미 동작 |
+| E5 | `Wandering Merchant` | 정적 | 즉석 거래 1건 | 🟡 지금은 골드만 준다 |
+| E6 | `Sacrifice` | 선택 | **체력을 걸고** 무기 레벨/진화 재료를 얻는다 | 🔲 자리만 |
+
+> ⚠️ **E2~E6 은 여기에 이름만 있다.** 설계하기 전엔 구현하지 않는다.
+
+---
+
+## 4. `E1` — **함정방 (Trap Room)** 상세 설계
+
+### 4-1. 한 줄
+
+> **"밟았다. `40`초 동안 끝없이 밀려드는 것들 사이에서 버틴다."**
+
+일반 웨이브가 *"시간을 채우면 끝"* 이라면, 함정방은 *"시간이 안 가는 것처럼 느껴지게"* 하는 게 목적이다.
+같은 40초라도 **밀도**로 다른 경험을 만든다.
+
+### 4-2. 흐름
+
+```
+   맵에서 [Event] 노드 선택
+        ↓
+ ① 진입 경고     "Trap Room"  +  "Survive 40s"        (0.8초, 화면 중앙)
+        ↓
+ ② 봉인          §4-5 — 어떤 방식으로 "방"을 만들 것인가
+        ↓
+ ③ 생존          무한 소환. MaxAlive 로 밀도 유지. 시간이 갈수록 조여든다 (§4-4)
+        ↓  (타이머 0)
+ ④ 해제          살아 있는 적 전부 ForceDespawn (기존 ClearWave 가 이미 한다)
+        ↓
+ ⑤ 보상          eventClearReward — 노말보다 확실히 크다 (§4-6)
+        ↓
+      StageClearUI  "Survived!"   →  StageMap
+```
+
+### 4-3. 무한적을 어떻게 만드나 — **3안 비교**
+
+| 안 | 방법 | 장점 | 단점 | 판정 |
+|---|---|---|---|---|
+| **A** | `Count` 를 큰 수(`9999`)로, `EndTime=0` | **코드 0줄.** CSV 한 줄이면 끝 | `9999` 라는 숫자가 **거짓말이다** — 읽는 사람이 "9999마리가 나오나?" 하고 오해한다 | 🟡 |
+| **B** | `Count <= 0` 을 **"무한"으로 해석**한다 | 뜻이 명확하다. `SpawnEntryRoutine` 의 `for` 를 `while` 로 바꾸는 **1줄** | 기존 CSV 에 `Count=0` 행이 없는지 확인해야 한다 | ✅ **권장** |
+| **C** | 이벤트 전용 소환 루프를 새로 짠다 | 자유롭다 | `MaxAlive` · `WaitForSpawnSlot` · `RecycleFarEnemies` 를 **전부 다시 짜야 한다.** 이미 잘 도는 걸 복제하는 것 | ⛔ |
+
+**B 를 권장한다.** `WaveSpawnEntry.Count` 의 뜻을 *"0 이하 = 웨이브가 끝날 때까지"* 로 넓히면
+`WaveManager.cs:156` 의 반복 하나만 고치면 된다. 무한 소환은 **`SurvivalTime` 이 반드시 있어야**
+멈추므로, `UseTimerClear=0` + `Count<=0` 조합은 **임포터에서 거절**해야 한다(안 그러면 안 끝나는 판이 된다).
+
+### 4-4. 시간이 갈수록 조여든다 — 밀도 곡선
+
+무한 소환만으로는 **40초 내내 같은 느낌**이라 지루하다. 기존 `StartTime` 시간창으로 층을 쌓는다.
+
+```
+Zombie   0.5초 간격   0s ~ 끝     <- 바닥. 계속 깔린다
+Wolf     1.2초 간격  12s ~ 끝     <- 빨라진다. 이때부터 못 서 있다
+Demon    3.0초 간격  25s ~ 끝     <- 원거리. 도는 것만으로는 안 된다
+```
+
+`MaxAlive` 는 **하나만** 있으므로 밀도의 상한은 고정이다. 조여드는 느낌은
+**"수"가 아니라 "종류"**에서 나온다 — 위 세 줄은 각각 *깔림 → 추격 → 견제* 로 성격이 다르다.
+
+> 🔴 **`MaxAlive` 를 노말(60~130)보다 크게 잡을 것.** 다만 **프레임이 상한**이다.
+> D 세션이 실측한 적이 없다 → 구현 시 **실측하고 `TUNING.md` 에 남긴다.**
+
+### 4-5. 🔴 **"방"을 어떻게 만드나** — 가장 큰 결정
+
+`GroundTiler.cs:7` 이 못 박아 뒀다: **"이 게임에는 아레나 경계가 없다."**
+플레이어는 어디로든 무한히 갈 수 있고, 카메라도 `useBounds=false` 다.
+"함정**방**"이라는 말은 **갇힘**을 전제하는데, 지금은 가둘 수단이 없다.
+
+| 안 | 방법 | 대가 | 판정 |
+|---|---|---|---|
+| **A. 벽을 세운다** | 이벤트 동안만 `CircleCollider2D`(반경 ~12) 또는 사각 벽 4개를 켠다. 카메라도 `useBounds=true` | 🔴 **진짜 벽은 뱀서라이크에서 위험하다** — 구석에 몰리면 카이팅이 불가능해져 **회피 실력이 아니라 운**이 된다. 넉백·돌진 적과 겹치면 즉사 구간이 생긴다 | 🟡 |
+| **B. 보이지 않는 밀어냄** | 경계 밖으로 나가면 **중심으로 서서히 끌린다**(벽이 아니라 자기장). 화면에는 원형 표식 | 갇힘은 만들되 즉사는 안 만든다. 다만 "왜 안 나가지"가 **설명 없이는 억울하다** — 표식이 반드시 보여야 한다 | ✅ **권장** |
+| **C. 안 가둔다 (연출만)** | 벽 없음. **바닥 색만 붉게** + `RecycleFarEnemies` 에 기대 "도망쳐도 따라온다"로 처리 | 🔑 **코드 0줄.** 이미 도망이 안 통한다(반경 ×1.9 를 넘으면 적이 앞으로 옮겨진다). "방"은 은유가 된다 | ✅ **최소안** |
+
+> 🔑 **B 와 C 의 차이는 생각보다 작다.** 이미 `RecycleFarEnemies` 때문에
+> **도망쳐도 적이 그대로 따라온다.** 즉 **기능적으로는 이미 갇혀 있다.**
+> B 가 더 주는 건 *"갇혔다는 사실을 눈으로 알려주는 것"* 뿐이다.
+>
+> ⇒ **C 로 시작해서 실플레이 후 필요하면 B 를 얹는 걸 권한다.** A 는 하지 말 것.
+
+### 4-6. 보상 — 위험만큼 준다
+
+지금 `GameManager.cs:272-277` 은 `Event` 를 노말과 똑같이 **8골드**로 친다.
+
+| 노드 | 지금 | 제안 |
+|---|---:|---:|
+| Normal | 8 | 8 |
+| **Event (함정방)** | **8** | **`eventClearReward` 신설 — 24 안팎** (엘리트 20 과 보스 60 사이) |
+| Elite | 20 | 20 |
+| Boss | 60 | 60 |
+
+**골드만으로는 약하다.** 함정방은 **짧고 밀도가 높아 경험치가 많이 들어온다** —
+그 자체가 이미 보상이다(레벨업 카드 여러 장). 그러니 골드는 *"덤"* 이면 충분하고,
+🔴 **추가 보상을 얹는다면 골드가 아니라 `상자 1개`가 낫다** — `ExperienceManager.SpawnChest` 가 이미 있다.
+
+> ⚠️ **숫자는 아직 정하지 않는다.** [`CLAUDE.md`](../CLAUDE.md) 방침대로
+> **기능을 먼저 완성하고 플레이하며 조절한다.** 위 24 는 자리표시다.
+
+### 4-7. 실패하면 어떻게 되나
+
+지금은 **죽는 것 말고 실패가 없다.** 함정방도 그대로 두는 걸 권한다.
+
+- **죽으면** → 기존 `GameManager.OnPlayerDied()` 그대로. 런 종료
+- **중도 포기 없음** → 뱀서라이크에 "도망" 버튼은 안 맞는다
+- 🔴 다만 **함정방이 사실상 사형선고면 안 된다.** 이벤트 노드는 맵에서 **15% 확률**로 나오고
+  플레이어가 **스스로 고른다**(다른 노드를 고를 수 있다). 그러니 *"고를 만한 위험"* 이어야 한다
+  — 죽을 확률이 아니라 **체력을 크게 깎는 것**이 적정선이다
+
+### 4-8. 연출 (있으면 좋은 것 · 없어도 굴러간다)
+
+| 무엇 | 어떻게 | 우선순위 |
+|---|---|---|
+| 진입 경고 문구 | 화면 중앙 `"TRAP ROOM"` / `"Survive 40s"` 0.8초 | 🔴 **필수** — 없으면 왜 갑자기 몰리는지 모른다 |
+| 남은 시간 | ✅ **이미 뜬다** — `HUDManager` 가 `WaveRemainingTime` 을 폰다 | ✅ 공짜 |
+| 바닥 색 | `GroundTiler` 에 붉은 톤 (또는 카메라 비네트) | 🟡 |
+| 전용 BGM | `GameManager.cs:150` 이 지금은 **보스 여부로만** 곡을 고른다. 갈래 하나 추가 | 🟡 |
+| 봉인/해제 SFX | `AudioManager.Play` — 새 `SfxId` 2개 | 🟡 |
+
+---
+
+## 5. 필요한 코드 변경 — **최소 집합**
+
+권장안(§4-3 **B** · §4-5 **C**) 기준. 전부 DEV 소유 경로다.
+
+| # | 파일 | 무엇 | 크기 |
+|---|---|---|---|
+| ① | `Wave/WaveManager.cs:81-86` | `StageType.Event` 갈래 추가 + `eventWaves[]` 필드 | 작음 |
+| ② | `Wave/WaveManager.cs:156` | `Count <= 0` = 웨이브 끝까지 무한 소환 | **1줄** |
+| ③ | `Meta/EventManager.cs` | `GameEvent` 에 `WaveKind`(또는 `EventWaveId`) 추가. `TriggerRandomWave` 를 **어떤 웨이브인지**까지 말할 수 있게 넓힌다 | 중간 |
+| ④ | `Core/GameManager.cs:272-277` | `eventClearReward` 신설 + `StageType.Event` 갈래 | 작음 |
+| ⑤ | `UI/StageClearUI.cs:115-120` | `StageType.Event` → `"Survived!"` | **1줄** |
+| ⑥ | (연출) 진입 경고 UI | 기존 배너/토스트가 있으면 재활용, 없으면 신설 | 미조사 |
+
+**손대지 않는 것** — `MaxAlive` · `WaitForSpawnSlot` · `RecycleFarEnemies` · `TimerRoutine` ·
+`ClearWave` · HUD 타이머. **이미 필요한 대로 동작한다.**
+
+### ⚠️ 조심할 자리
+
+- **`WaveManager.cs:193,206` 의 오버라이드 게이트가 `StageType` 으로 하드코딩돼 있다.**
+  `Elite`/`Boss` 일 때만 엘리트/보스가 나온다 → **이벤트 웨이브는 엘리트를 못 부른다.**
+  `E2 Elite Ambush` 를 만들려면 여기부터 손대야 한다
+- **`EventManager` 는 `Events.csv` 로 씬에 직접 기록된다**(`BalanceImporter.cs:534`).
+  필드를 늘리면 **CSV 열도 같이 늘려야 한다** — 그건 **CONTENT 소유**다
+- **`Count<=0` + `UseTimerClear=0` 조합은 끝나지 않는 판**이다. 임포터에서 막을 것
+
+---
+
+## 6. CONTENT 가 채울 것
+
+| 무엇 | 어디 | 비고 |
+|---|---|---|
+| `Events.csv` 새 열 + 함정방 행 | `Assets/Game/Balance/Events.csv` | 영문 `Title`/`Description` 유지 |
+| 함정방 전용 웨이브 행 | `Assets/Game/Balance/Waves.csv` | `Trap1` 등. 적 구성 · `SurvivalTime` · `MaxAlive` |
+| 진입 경고 문구 | 위 CSV | 🔴 **영문** (`CLAUDE.md` §3) |
+| 봉인/해제 SFX 2종 | `Tools/Audio/` → `_Incoming/Audio/` | 있으면 좋은 것 |
+| 이벤트 노드 아이콘/색 | `UI/StageMapUI.cs` 는 지금 **색만** 쓴다 | 있으면 좋은 것 |
+
+⇒ 구현에 착수할 때 [`Parallel/REQ/CONTENT.md`](Parallel/REQ/CONTENT.md) 로 정식 요청한다. **지금은 아니다.**
+
+---
+
+## 7. 🔴 결정해야 할 것 (사용자 몫)
+
+구현 착수 전에 답이 필요하다. **답이 없으면 코드를 쓰지 않는다.**
+
+| # | 질문 | 선택지 | 내 추천 |
+|---|---|---|---|
+| ① | **가둘 것인가** | A 진짜 벽 / B 보이지 않는 밀어냄 / C 안 가둠(연출만) | **C 로 시작** — 이미 도망이 안 통한다(§4-5) |
+| ② | **얼마나 버티나** | 30 / 40 / 60초 | **40** — 노말(60~120)의 절반 이하라야 "밀도"가 산다 |
+| ③ | **얼마나 몰려오나** | `MaxAlive` 를 노말의 몇 배로 | 실측 후 결정. **프레임이 상한**이다 |
+| ④ | **보상** | 골드만 / 골드 + 상자 / 상자만 | **골드 + 상자 1개** (경험치는 이미 많이 들어온다) |
+| ⑤ | **실패** | 죽음만 / 중도 포기 허용 | **죽음만** — 뱀서라이크에 도망 버튼은 안 맞는다 |
+| ⑥ | **이벤트 노드를 나눌 것인가** | 이벤트 노드가 정적/전투를 **랜덤**으로 뽑는다 / 맵에서 **미리 구분**해 보여준다 | **랜덤 유지** — 모르고 밟는 게 함정이다 |
+
+---
+
+## 8. 이 문서가 안 다루는 것
+
+- **E2~E6 의 상세 설계** — 이름만 잡아 뒀다 (§3)
+- **수치** — 방침상 기능 완성 후 플레이하며 잡는다. 여기 숫자는 전부 **자리표시**
+- **메타 진행과의 연결** — 이벤트 클리어가 메타 재화를 주는지는 별도 결정
+- **보스 이벤트** — 보스 층은 이미 `StageType.Boss` 로 따로 있다
+
+---
+
+## 부록. 근거 파일 목록
+
+이 문서의 모든 "있다/없다"는 아래를 직접 읽고 적었다 (2026-08-31 기준).
+
+```
+Assets/Scripts/Stage/StageMapManager.cs      StageType 열거형 · weightEvent 0.15
+Assets/Scripts/Core/GameManager.cs           GameState.Event · OnStageNodeSelected · 클리어 보상
+Assets/Scripts/Meta/EventManager.cs          GameEvent 스텁 · TriggerRandomEvent
+Assets/Scripts/Wave/WaveData.cs              UseTimerClear · MaxAlive · StartTime/EndTime
+Assets/Scripts/Wave/WaveManager.cs           StartWave 선택 · SpawnEntryRoutine · RecycleFarEnemies
+Assets/Scripts/Stage/GroundTiler.cs          "이 게임에는 아레나 경계가 없다"
+Assets/Scripts/Camera/CameraController.cs    useBounds = false
+Assets/Scripts/UI/HUDManager.cs              WaveRemainingTime 폴링
+Assets/Scripts/UI/StageClearUI.cs            클리어 헤더 문구
+Assets/Scripts/UI/StageMapUI.cs              노드 이름·색
+Assets/Editor/BalanceImporter.cs             ImportEvents (씬 EventManager 직접 기록)
+Assets/Game/Balance/Events.csv               5행 · TriggerRandomWave 열
+Assets/Game/Balance/Waves.csv                Spawns 문법 `Enemy*Count@Interval:Start-End`
+```
