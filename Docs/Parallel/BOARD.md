@@ -10,7 +10,7 @@
 | 세션 | 접두어 | 하는 일 | 소유 경로 (쓰기 가능) |
 |---|---|---|---|
 | **DEV** | `D` | 개발·뼈대. 코드 · 씬 배선 · **Unity 에디터 전담** · 실플레이 검증 | `Assets/Scripts/**` · `Assets/Editor/` · `Assets/Scenes/` · `Assets/Prefabs/` · `Assets/GameObjects/` · `Assets/Game/*Data/` (SO) · `Assets/Settings/` · `ProjectSettings/` · `Docs/DESIGN_EVENTS.md` |
-| **CONTENT** | `C` | 코드 외적. 그림 · 소리 · 애니메이션 소스 · 수치 · 문서 | `_Incoming/` · `Assets/Game/{Sprites,ICON,Tiles,Materials,Shaders,Audio}` · `Assets/Game/Balance/*.csv` · `Assets/Fonts/` · `Docs/BALANCE.md` · `Docs/TUNING.md` |
+| **CONTENT** | `C` | 코드 외적. 그림 · 소리 · 애니메이션 소스 · 수치 · 문서 | `_Incoming/` · `Assets/Game/{Sprites,ICON,Tiles,Materials,Shaders,Audio}` · `Assets/Game/Balance/*.csv` · `Assets/Fonts/` · `Docs/BALANCE.md` · `Docs/TUNING.md` · `Docs/DESIGN_CLASSES.md` |
 
 **소유하지 않은 경로는 읽기만 한다.** 고쳐야 하면 `REQ/<대상>.md` 에 요청을 남긴다.
 
@@ -29,6 +29,7 @@
 |---|---|---|---|---|
 | DEV | `D22` | `Docs/DESIGN_EVENTS.md`(신설) · `Docs/ROADMAP.md` | 2026-08-31 | 🅿️ **보류(사용자)** — "이벤트 관련은 나중에". 문서는 **다 썼다** (`E1 함정방` 상세 + `E2`~`E6` 자리표). 🔴 **코드 변경 0.** 재개 조건 = **§7 결정 6건.** ROADMAP §0·§7 에 "이벤트 노드가 비어 있다" 갭 등재 완료 |
 | DEV | `D20` | `Assets/Scripts/Pickup/**` · `Assets/Scripts/Player/StatBlock.cs` · `Assets/Scripts/Passive/**` · `Assets/Editor/BalanceImporter.cs` | 2026-08-31 | 🔜 **착수 가능** — 재료가 다 왔다 ([`REQ/DEV.md`](REQ/DEV.md) 요청-17 / `C23`): 그림 5 · SFX 3 · `BonusLuck` 5값 · 확률 6값. 적 처치 시 **픽업 6종 저확률 드랍** + **행운(Luck) 패시브** |
+| DEV | `D23` | 🔴 **주로 vault(`D:\obsidian_claude\UNITY_GAME`)** — repo 쪽은 `Docs/Parallel/{DONE/D23.md,BOARD.md,REQ/DEV.md}` · `Docs/{SETUP_STATUS,TODO}.md` 뿐 | 2026-08-31 | `진행중` — **문서 이관.** `Docs/` 를 vault 에 **정션**으로 걸고 `00_INDEX` + `지도/개발 지도` 신설. 🔴 **repo 의 `.md` 본문은 안 고친다**(frontmatter 금지) · **코드·애셋 변경 0** · 에디터 `IDLE` 유지. `C24` 와 안 겹친다 — DEV 문서만 훑는다 |
 | CONTENT | `C6` | `Docs/DESIGN_CLASSES.md`(신설) · 이후 `Assets/Game/Balance/*.csv` · `_Incoming/` | 2026-08-30 | `진행중` — 직업 6종 컨셉 재편 + 신규 무기 6종 설계 (사용자 지시) |
 | CONTENT | `C23` | `Tools/Art/` · `Tools/Audio/` · `_Incoming/{Sprites,Audio}/` · `Assets/Game/Balance/{Passives,Items,SceneWiring}.csv` · `Docs/TUNING.md` | 2026-08-31 | `대기(REQ→DEV)` — 픽업 드랍 6종 + 행운 패시브. 그림 5장 · SFX 3종 · `BonusLuck` 5값 · 확률 6값(사용자 **C 안** · 잠정) · 무적 3초/공속 8초 — [`REQ/DEV.md`](REQ/DEV.md) 요청-17 · [`DONE/C23.md`](DONE/C23.md). ✅ `allItems` **24→25** 등록 완료 (`C6` 충돌은 **오판**이었다 — 파일 이력 확인 후 정정) |
 
@@ -99,6 +100,16 @@
 > 🧹 **`C19`·`C20` 줄은 CONTENT 가 지웠다** (2026-08-31). 위 `D16` 항목에 "지웠다"고 적혀 있었지만
 > **표에는 남아 있었다.** 산출물이 실제로 들어간 것을 확인하고 지웠다 —
 > `SFX_{TentacleLash,DragonSpit}.wav` 가 `Assets/Game/Audio/` 에 있고 `allItems` 에 소환수 2종이 있다.
+>
+> ✅ **`C24` 끝났다 — CONTENT 가 지웠다** (2026-08-31). `D23` 의 정션 위에 **CONTENT 열람 계층**을 얹었다:
+> vault `지도/콘텐츠 지도.md`(3문서 목차 + CSV 12↔SO 9 대응 + `SceneWiring.csv` 함정) ·
+> `지도/미판정 체감값.md`(`TUNING.md` 880줄에서 **미판정 69건**, 항목마다 판정기준·고칠파일·현재값) ·
+> `게임 설계/` 빈 파일 2개를 리다이렉트로 → [`DONE/C24.md`](DONE/C24.md).
+> 🔴 **repo `.md` 본문 변경 0** (frontmatter 포함) · **코드·애셋 0** · 에디터 미접촉.
+> 링크 20개 전부 도달 확인(MISS 0) · vault 에 repo 문서 복사본 **없다**.
+> ℹ️ §0 에 `Docs/DESIGN_CLASSES.md` 는 **이미 있어서** 중복 요청을 안 만들었다.
+> ⚠️ `개발_아이디어/03_CONTENT_세션_프롬프트.md` 는 `SESSION_PROMPT.md` 와 **중복이 아니라 안 지웠다** —
+> §6(사고 이력 7건)이 원본에 없다. 사용자 판단 필요 → [`DONE/C24.md`](DONE/C24.md) §5.
 
 ---
 
@@ -128,8 +139,8 @@ CONTENT 는 **읽기만** 한다 — 내 요청이 언제 처리될지 가늠하
 
 | 세션 | 다음 이슈 번호 |
 |---|---|
-| DEV | `D23` |
-| CONTENT | `C24` |
+| DEV | `D24` |
+| CONTENT | `C25` |
 | 버그(공용) | `B7` |
 
 > 번호를 쓸 때 이 표를 **즉시** 올린다. 선점이 곧 예약이다.
