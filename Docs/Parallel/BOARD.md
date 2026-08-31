@@ -30,8 +30,6 @@
 | DEV | `D22` | `Docs/DESIGN_EVENTS.md`(신설) | 2026-08-31 | `설계중` — **이벤트 설계 문서.** 첫 사례로 `E1 함정방`(무한적 + 시간제한 생존). 🔴 **코드 변경 없음** — 사용자 지시가 "일단 문서화만". 🔴 **결정 6건 사용자 대기**(§7) |
 | DEV | `D20` | `Assets/Scripts/Pickup/**` · `Assets/Scripts/Player/StatBlock.cs` · `Assets/Scripts/Passive/**` · `Assets/Editor/BalanceImporter.cs` | 2026-08-31 | `대기(REQ→CONTENT)` — 적 처치 시 **픽업 6종 저확률 드랍** + **행운(Luck) 패시브**. 그림·수치는 [`REQ/CONTENT.md`](REQ/CONTENT.md) 요청-12 |
 | CONTENT | `C6` | `Docs/DESIGN_CLASSES.md`(신설) · 이후 `Assets/Game/Balance/*.csv` · `_Incoming/` | 2026-08-30 | `진행중` — 직업 6종 컨셉 재편 + 신규 무기 6종 설계 (사용자 지시) |
-| CONTENT | `C19` | `Assets/Game/Balance/{Weapons,Items,SceneWiring}.csv` · `Tools/Art/gen_octopus.py` · `_Incoming/Effects/` · `Docs/TUNING.md` | 2026-08-30 | `대기(REQ→DEV)` — 소환수 CSV 3파일 + **촉수 그림 재작업** + SFX 볼륨 2값. DEV 요청-7·8 의 답 — [`REQ/DEV.md`](REQ/DEV.md) 요청-13 |
-| CONTENT | `C20` | `Tools/Audio/gen_{tentacle_lash,dragon_spit}.py` · `_Incoming/Audio/` · `Docs/TUNING.md` | 2026-08-30 | `대기(REQ→DEV)` — 소환수 SFX 2종 + ⛔ **요청-13 ③ 검 0.35 철회** — [`REQ/DEV.md`](REQ/DEV.md) 요청-14 |
 | CONTENT | `C23` | `Tools/Art/` · `Tools/Audio/` · `_Incoming/{Sprites,Audio}/` · `Assets/Game/Balance/{Passives,Items,SceneWiring}.csv` · `Docs/TUNING.md` | 2026-08-31 | `대기(REQ→DEV)` — 픽업 드랍 6종 + 행운 패시브. 그림 5장 · SFX 3종 · `BonusLuck` 5값 · 확률 6값(사용자 **C 안** · 잠정) · 무적 3초/공속 8초 — [`REQ/DEV.md`](REQ/DEV.md) 요청-17 · [`DONE/C23.md`](DONE/C23.md). ✅ `allItems` **24→25** 등록 완료 (`C6` 충돌은 **오판**이었다 — 파일 이력 확인 후 정정) |
 
 > 상태값: `진행중` · `대기(REQ→DEV)` · `검증대기` · `막힘(B1)`
@@ -93,6 +91,14 @@
 > ⇒ 기하 문제가 아니라 **합성 문제**. DEV 가 낸 A(`Range` 축소)·B(`offsetDistance` 확대)는 둘 다 헛다리였다.
 > 🔑 CONTENT 예상 대가 3.7~4.2% 가 실측 1.37% 였는데, **틀린 게 아니라 `D19` 로 전제가 바뀐 것**이다.
 > 회신은 [`REQ/CONTENT.md`](REQ/CONTENT.md) **요청-14** — `TUNING.md` 서술 삭제 하나뿐(코드 요청 없음).
+> ✅ **CONTENT 가 처리했다** (`C23` 뒤처리) — `TUNING.md` §"C7~C15 느낌값" 표의 촉수 정렬 줄을
+> 🔴 미판정에서 **✅ 닫힘**으로 바꿨다. 실측 `93px → 0px` · 잉크 손실 1.37% · 폴백 `-1` 불필요를
+> 값과 함께 남겼고, "대조군(검 호가 같은 order 20 인데 0.00%)이 기하→합성으로 문제의 성격을 바꿨다"는
+> 교훈도 같이 뒀다.
+>
+> 🧹 **`C19`·`C20` 줄은 CONTENT 가 지웠다** (2026-08-31). 위 `D16` 항목에 "지웠다"고 적혀 있었지만
+> **표에는 남아 있었다.** 산출물이 실제로 들어간 것을 확인하고 지웠다 —
+> `SFX_{TentacleLash,DragonSpit}.wav` 가 `Assets/Game/Audio/` 에 있고 `allItems` 에 소환수 2종이 있다.
 
 ---
 
