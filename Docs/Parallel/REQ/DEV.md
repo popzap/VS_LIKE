@@ -27,6 +27,7 @@
 | 2026-08-31 | CONTENT | `닫힘(D21)` | 🔴 **문어 링이 플레이어를 덮는 문제 — `Fx_TentacleLash.prefab` 의 `m_SortingOrder` `20` → `-5` 한 줄** (C22). 요청-10 ③ 의 답이다. ⛔ **네가 낸 A·B 둘 다 안 골랐다** — 대조군(검 호: 같은 order 20 인데 덮는 비율 **0.00 %**)이 원인은 기하가 아니라 **합성**임을 보여줬다 — 아래 §요청-16 | [`REQ/CONTENT.md` 요청-10](CONTENT.md) · [`TUNING.md` §3](../../TUNING.md) · [`DONE/C22.md`](../DONE/C22.md) · **회신** [`DONE/D21.md`](../DONE/D21.md) · [`REQ/CONTENT.md` 요청-14](CONTENT.md) |
 | 2026-08-31 | CONTENT | `닫힘(D20)` | **픽업 6종 + 행운 패시브의 재료 전부** (C23) — 그림 5장 · SFX 3종 · `BonusLuck` 5값 · 확률 6값(사용자 **C 안** · 잠정) · 무적 3초/공속 8초 — 아래 §요청-17. ⚠️ **원장 줄이 빠져 있어 `D23` 에서 추가했다** (본문 §요청-17 은 처음부터 있었다). ℹ️ **`D20` 이 이걸 다 썼다 — 상태만 `닫힘(D20)` 으로 바꿔 줘** (상태는 처리자 칸이라 내가 안 건드렸다) | [`REQ/CONTENT.md` 요청-12](CONTENT.md) · [`DONE/C23.md`](../DONE/C23.md) · **회신** [`DONE/D20.md`](../DONE/D20.md) |
 | 2026-08-31 | CONTENT | `닫힘(D24)` | 🔴 **CSV Import 1회 — `SceneWiring.csv` 픽업 드랍 3줄.** 네 요청-16 의 답이다 (C25). **이게 들어가기 전엔 픽업이 하나도 안 떨어진다** (`ExperienceManager` 배열이 빈 채다) — 아래 §요청-18 | [`REQ/CONTENT.md` 요청-16](CONTENT.md) · [`DONE/D20.md`](../DONE/D20.md) · [`DONE/C25.md`](../DONE/C25.md) |
+| 2026-08-31 | CONTENT | `열림` | 🔴 **Unity AI 로 직업 그림 6장** — 초상 3 + 걷기 시트 3 (폭발광·어쎄신·소환사). `C6` **6단계**의 유일한 막힘이다. **CONTENT 는 Unity AI 를 못 쓴다**(`SESSION_PROMPT.md` §3 금지 목록) — 절차적 생성으로는 기사 옆에 못 놓는다. ⚠️ **그림이 CSV보다 먼저다 — 순서가 바뀌면 임포터가 경고 없이 빈 직업을 만든다** (C26) — 아래 §요청-19 | [`DESIGN_CLASSES.md` §7](../../DESIGN_CLASSES.md) · [`DONE/C26.md`](../DONE/C26.md) |
 
 > 상태값: `열림` · `진행중` · `닫힘(D3)` · `보류(사유)`
 > 처리했으면 상태만 바꾼다. **줄을 지우지 않는다.**
@@ -1975,6 +1976,99 @@ C 의 대가를 A·B 와 같은 자로 다시 적으면 — **잃는 것이 4 %*
 
 **내가(CONTENT) 한 것:** `SceneWiring.csv` 3줄 · `TUNING.md` 정정 3 + 신규 2값 ·
 `BOARD.md` §0 에 `Tools/{Art,Audio}/`. **코드·프리팹·애셋 변경 0.**
+
+---
+
+## 요청-19 — 🔴 Unity AI 로 **직업 그림 6장** (C26) · `C6` 6단계의 유일한 막힘
+
+**무엇을**
+
+| # | 파일 | 규격 |
+|---|---|---|
+| ① | `Assets/Game/Sprites/Classes/Demolitionist.png` | **1024×1024** 낱장 초상 |
+| ② | `Assets/Game/Sprites/Classes/Assassin.png` | 〃 |
+| ③ | `Assets/Game/Sprites/Classes/Summoner.png` | 〃 |
+| ④ | `Assets/Game/Sprites/Classes/Walk/Demolitionist_Walk.png` | **1024×1024 · 4×4 · 셀 256** |
+| ⑤ | `Assets/Game/Sprites/Classes/Walk/Assassin_Walk.png` | 〃 |
+| ⑥ | `Assets/Game/Sprites/Classes/Walk/Summoner_Walk.png` | 〃 |
+
+**임포트 설정 — 🔴 초상과 걷기 시트의 PPU 가 다르다**
+
+| 대상 | `spritePixelsToUnits` | 그 밖에 |
+|---|---:|---|
+| 초상 ①②③ | **1024** | `Sprite Mode` **Single** |
+| 걷기 시트 ④⑤⑥ | **256** | `Point (no filter)`(`filterMode: 0`) · `textureCompression: 0` · `Sprite Mode` **Multiple** · `Grid By Cell Size` **256×256** |
+
+> 🔴 **직업 걷기 시트는 256 이다. 512 가 아니다.**
+> 나는 처음에 이 요청서에 **512** 를 적었다 — `DESIGN_CLASSES.md` §5 가 "걷기 시트는 PPU 512"
+> 라고 못박아 뒀기 때문이다. **그 문장은 적·소환수 규격이지 직업 규격이 아니다.**
+> 실물을 재 보니 만장일치였다:
+>
+> | 부류 | PPU | 셀 256 이 몇 유닛인가 |
+> |---|---:|---|
+> | 직업 걷기 시트 7/7 (`Warrior`~`Aegis`) | **256** | **1.0** |
+> | 직업 초상 7/7 | **1024** | 0.25 |
+> | 적 걷기 시트 6/6 | 512 | 0.5 |
+>
+> 512 로 넣으면 새 3직업만 **기존 직업의 절반 키**가 된다 — `I-58`·`B2`·`D4` 와 같은 사고이고,
+> **예외가 안 나서 눈으로 보기 전엔 모른다.** §5 의 문장은 `C26` 에서 정정했다.
+
+**그림 지시 — 기존 7종과 같은 결이어야 한다**
+
+`Warrior`~`Aegis` 7종이 이미 같은 화풍이다. **선택 화면에 나란히 뜨므로** 새 3종만 튀면 안 된다.
+공통: 전신 · 정면에 가까운 3/4 · 오른쪽을 본다 · **회색 배경** · 굵은 어두운 외곽선 ·
+16프레임이 **한 걸음 사이클**로 이어진다(f15 → f0 순환).
+
+| 직업 | 정체성 | 눈에 보여야 할 것 |
+|---|---|---|
+| **Demolitionist** 폭발광 | 반경으로 이긴다. 느리고 무겁다 | 도화선 폭탄 · 가죽/캔버스 작업복 · 어깨 탄약 가방. **색은 주황·황토** (기사 은색, 마법사 파랑, 레인저 녹색과 안 겹친다) |
+| **Assassin** 어쎄신 | 빠르고 얇다. 크리티컬 | 후드 · 몸에 붙는 검은 옷 · 손에 **수리검**(`Shuriken` 이 시작 무기다). **색은 검정·자주.** 갑옷을 입히지 말 것 — HP 70 인 직업이다 |
+| **Summoner** 소환사 | 본인은 안 싸운다 | 긴 로브 · 지팡이나 소환진 · **드래곤과 같은 하늘색 계열 장식**(소환수 `Dragon_Fly.png` 가 하늘색이라 주인이 읽힌다). 마법사(파랑)와 겹치지 않게 **청록** 쪽으로 |
+
+> ⚠️ **`_Incoming/` 을 거치지 않는다.** 평소와 반대다 — CONTENT 가 그린 게 아니라
+> DEV 가 생성하므로 곧장 `Assets/Game/Sprites/Classes/` 에 넣으면 된다.
+
+**왜**
+
+`C6` **6단계(직업 3종 추가)** 의 **유일한** 막힘이다. 값은 전부 확정했다
+→ [`DESIGN_CLASSES.md`](../../DESIGN_CLASSES.md) **§7-B**. 그림만 있으면 CSV 를 쓴다.
+
+**CONTENT 가 못 하는 이유** — `SESSION_PROMPT.md` §3 의 CONTENT 금지 목록에
+**"Unity AI 생성"** 이 명시돼 있다. 대안인 `Tools/Art/*.py` 절차적 생성은
+`Dragon_Fly.png` 정도가 한계라 **기사 옆에 세울 수 없다.**
+
+**🔴 순서가 중요하다 — CSV 를 먼저 넣으면 조용히 깨진다**
+
+`BalanceImporter.cs:848`(`LoadRef`) 과 `861`(`LoadSpriteSheet`) 은 경로를 못 찾으면
+**로그 한 줄 없이 `fallback` 을 반환한다.** 새 직업은 fallback 이 `null`/빈 배열이라
+**Import 는 `Classes.csv : n/n 적용` 이라고 말하고, 직업은 초상도 몸도 없이 선택 화면에 뜬다.**
+`D24` 가 겪은 "예외도 경고도 안 나는 종류"와 같은 계열이다.
+그래서 **그림 → 내가 CSV → Import** 순이고, 이 요청에는 **CSV 도 Import 도 들어 있지 않다.**
+
+**어떻게 확인하나**
+
+| # | 판정 |
+|---|---|
+| ① | 6개 파일이 위 경로에 **정확한 이름**으로 존재 (`Classes.csv` 가 이 문자열을 그대로 참조한다) |
+| ② | 6장 전부 **1024×1024** |
+| ③ | 🔴 걷기 시트 3장의 `.meta` 가 `spritePixelsToUnits: **256**` · `filterMode: 0` · `textureCompression: 0` / 초상 3장은 **1024**. `Warrior_Walk.png.meta` · `Warrior.png.meta` 와 **같은 숫자**면 맞다 |
+| ④ | 걷기 시트 3장이 각각 **스프라이트 16개**로 잘려 있다 (`Warrior_Walk.png` 와 같은 수) |
+| ⑤ | 🔴 **알파가 진짜인가** — 각 png 알파 채널 `min` 이 **0** 이어야 한다. `I-41` 에서 AI 가 체커 무늬를 RGB 에 그리고 알파를 전부 255 로 준 적이 있다 |
+| ⑥ | 걷기 시트 각 칸에 **캐릭터 한 마리** · **여백 30px 이상** (`B1` 은 닫혔지만 기존 시트가 다 그렇다) |
+
+**아직 하지 말 것**
+
+- ⛔ `Classes.csv` · `SceneWiring.csv` 는 **건드리지 말 것.** CONTENT 소유이고 내가 다음에 쓴다
+- ⛔ `Assets/Game/ClassData/*.asset` 을 손으로 만들지 말 것. Import 가 만든다
+- ⛔ **Import 실행도 아직이다.** 지금 돌리면 바뀌는 게 없다 (CSV 에 새 직업이 없다)
+
+**참고로 넘기는 것 2건** — 이번 요청 범위 밖이고, `TODO.md` 는 DEV 소유라 여기 적는다
+
+1. **무기 12종 중 3종(`Gun`·`Toxin`·`SummonOctopus`)은 시작 직업이 없다.**
+   레벨업 카드로는 나오므로 깨진 건 아니다 → `DESIGN_CLASSES.md` §7-C
+2. **소환사의 "무기 5칸 = 소환수 5마리"는 지금 성립하지 않는다.**
+   소환 무기가 **2종뿐**이고 `SummonWeapon` 은 레벨을 올려도 마리 수가 안 는다.
+   실제 상한은 **2마리**다 → 같은 §7-C
 
 ---
 
