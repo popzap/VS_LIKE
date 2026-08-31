@@ -6,7 +6,7 @@
 > 기존의 「C# 스크립트는 완성 단계」라는 전제와 「요청 없이 코드 건드리지 말 것」 규칙이 **해제됨**.
 > 이제 게임 완성을 위해 C# 스크립트 신규 작성·수정이 허용된다.
 >
-> **최종 갱신:** 2026-08-31 (46차 — 잡몹이 물건을 떨군다: 픽업 6종 + 행운, D20 / C23)
+> **최종 갱신:** 2026-08-31 (47차 — 픽업 드랍표 CSV Import · 행운이 카드에 안 뜨던 것 발견, D24 / C25)
 >
 > 🔀 **25차부터 이슈 번호가 `세션 접두어 + 번호` 다** — `D`(DEV) · `C`(CONTENT) · `B`(버그 공용).
 > 병렬 2세션 체제로 바뀌었기 때문이다 (D1). 과거 `I-1`~`I-61` 은 그대로 둔다.
@@ -17,8 +17,8 @@
 > **현재 상태: 메인메뉴 → 스테이지맵 → 웨이브 → 클리어 → 게임오버 전체 루프 런타임 검증 완료 (18/18 PASS), 콘솔 에러 0 / 경고 0.**
 > [`ROADMAP.md`](ROADMAP.md) §8 의 **1·2·3단계 완료** (I-43~I-49) — HUD 정보 · 타격 반응 · 오디오 ·
 > 병렬 소환 · 적 행동 분화 · 보물상자/자석. **"조용한 프로토타입" 단계는 끝났다.**
-> 원격 동기화: `popzap/VS_LIKE` `main` @ **`a3e9e5c`** (2026-08-31 — 46차 `D20` 까지 푸시됨).
-> 직전 3커밋: `cbc29cd`(D23 문서이관) · `4c282e2`(C24) · `a3e9e5c`(D20 픽업 드랍 + 행운).
+> 원격 동기화: `popzap/VS_LIKE` `main` @ **`39aeb1a`** (2026-08-31 — 46차 `D20` 까지 푸시됨).
+> 🔴 **로컬이 앞서 있다** — `556b769`(C25 드랍표 CSV) · 47차(D24) 는 **커밋만 되고 아직 미푸시**다.
 >
 > 🎯 **16차는 처음으로 "직접 플레이해서 나온" 버그 보고에서 출발했다** (I-50).
 > 로그로만 검증하던 단계에서는 절대 발견할 수 없는 종류였다 — 자세한 건 2-20.
@@ -2025,6 +2025,75 @@ Play 모드에서 Warrior 로 런을 시작하고 `Unity_RunCommand` 로 재료�
 > ⚠️ **건물 앞 `E` 실조작은 아직 미검증이다.** 위는 `EvolveClass` 를 직접 부른 것이고,
 > `FindAltarClassEvolution` 은 이미 검증된 `FindAltarEvolution` 과 같은 로직이지만
 > **실제로 터렛을 세우고 다가가서 눌러 본 적은 없다** → [`TODO.md`](TODO.md) §1
+
+---
+
+## 2-51. ✅ 픽업 드랍표 CSV Import — 그리고 행운이 카드에 안 뜨던 것을 잡았다 (D24 / C25, 2026-08-31 47차)
+
+**한 줄:** Import 한 번이 전부인 작업이었는데, **그 한 번이 46차가 놓친 것을 드러냈다.**
+
+### 원인 / 배경
+
+46차(`D20`)가 코드·프리팹·스프라이트·SFX 를 전부 넣었지만
+`ExperienceManager` 의 드랍표는 **DEV 가 손으로 꽂아 둔 임시 배선**이었다.
+`SceneWiring.csv` 는 CONTENT 소유 경로라 [요청-16](Parallel/REQ/CONTENT.md) 으로 넘겼고,
+CONTENT 가 `C25` 에서 3줄(`pickupPrefabs`·`pickupChances`·`healPickupAmount`)을 채워
+[요청-18](Parallel/REQ/DEV.md) 로 돌려줬다. **DEV 가 할 일은 Import 1회.**
+
+### 변경한 파일
+
+| 파일 | 무엇 |
+|---|---|
+| `Assets/Scenes/SampleScene.unity` | `allItems` **24 → 25** (`Luck` 추가). **픽업 배열은 diff 0** |
+| `Docs/Parallel/DONE/D24.md` | 신설 |
+| `Docs/Parallel/REQ/DEV.md` | 요청-17 `닫힘(D20)` · 요청-18 `닫힘(D24)` |
+| `Docs/Parallel/BOARD.md` · `TODO.md` | 현황 반영 |
+
+🔴 **코드·애셋·CSV 변경 0.**
+
+### 검증 로그 — 판정 6건 전부 PASS
+
+| # | 판정 | 결과 |
+|---|---|---|
+| ① | Import 경고 `! ... 필드 없음` 이 없다 | ✅ `SceneWiring.csv : 12/12 적용` · 경고 0 · 에러 0 |
+| ② | `pickupPrefabs` 6칸 · 순서 Gold/Heal/Haste/Bomb/Magnet/Invincible | ✅ 순서까지 일치 |
+| ③ | `pickupChances` 6칸 · `0.025/0.015/0.01/0.007/0.006/0.004` | ✅ **합 0.067 (6.7 %)** |
+| ④ | `healPickupAmount` = 30 | ✅ |
+| ⑤ | 🔴 두 배열 길이가 같다 (어긋나면 조용히 틀린다) | ✅ **6 = 6** |
+| ⑥ | 실제 사망 경로에서 가끔 떨어진다 | ✅ **300 처치 → 21개 (7.0 %)** |
+
+⑥ 내역 — Gold 9 · Heal 5 · Haste 3 · Magnet 2 · Bomb 1 · Invincible 1. **6종 전부 등장.**
+특히 `HealPickup` 은 이름 규칙에서 벗어난 유일한 항목이라 경로가 틀렸으면 **여기서만 0** 이 나왔을 것이다.
+죽은 필드 `magnetPrefab`·`magnetDropChance` 는 `FindProperty` 가 둘 다 `null` — 완전히 사라졌다.
+
+### 🔴 발견 — `D20` 커밋은 행운이 **레벨업 3택에 안 뜨는** 상태였다
+
+Import 뒤 씬 diff 가 **딱 한 곳**이었다: `allItems.Array.size` **24 → 25**(`Luck`).
+픽업 배열은 diff 가 **0** — `D20` 의 임시 배선이 CONTENT CSV 와 값이 완전히 같았다는 뜻이라
+그건 좋은 소식이다. 문제는 `allItems` 다.
+
+| 커밋 | 씬의 `allItems.Array.size` |
+|---|---:|
+| `dc9c03b` (45차) | 24 |
+| **`a3e9e5c` (46차 D20)** | **24** ← 🔴 Luck 없음 |
+| 지금 (47차) | **25** |
+
+`D20` 은 **런타임에서 25개를 읽고 판정 ③ PASS** 로 적었다. 그런데 디스크에는 안 들어갔다.
+런타임 `Length == 25` 는 *"메모리에 있다"* 까지만 증명한다 — 둘 사이에 `File/Save` 가 있다.
+그 상태로 빌드했으면 **드랍 확률을 올리는 유일한 수단이 게임에서 사라지고,
+`BonusLuck` 배관은 전부 살아 있으니 예외도 로그도 안 난다.**
+
+🔑 **교훈 — 씬·프리팹을 바꾸는 판정은 `git diff` 로 한 번 더 본다.**
+Import·인스펙터 편집처럼 **직렬화 파일을 건드리는 작업**은 커밋 직전에
+`git diff <파일>` 에 그 변화가 실제로 보이는지 확인해야 한다.
+이번엔 `D24` 가 우연히 같은 Import 를 다시 돌려서 드러났을 뿐이다 → [`TODO.md`](TODO.md) §1 에 등재.
+
+### 부수 — `B5` 가 정량화됐다
+
+300 처치에서 **300회 전부 예외**가 났다(웨이브 밖 사망 = `_currentWaveData` null).
+다만 예외 지점이 `RollPickupDrop` **뒤**라 드랍 자체는 살아 있었다 —
+`Die()` 순서가 `SpawnExpDrop` → `RollPickupDrop` → `GrantGold` → **`WaveManager.OnEnemyKilled`** 다.
+→ [`Parallel/BUGS.md`](Parallel/BUGS.md) `B5`
 
 ---
 
@@ -4886,6 +4955,7 @@ Play 모드 — 한 세션에서 두 경로 전부:
 | **D21**<br>(C22) | 문어 촉수 링(`Fx_TentacleLash`)이 `m_SortingOrder: 20` 이라 **플레이어보다 앞**에 그려졌다(D16 육안 확인 → 요청-10 ③). DEV 가 낸 A(`Range` 축소)·B(`offsetDistance` 확대)를 CONTENT 가 **둘 다 반려** — A 는 Lv1 넓이의 44% 가 되고 B 는 플레이어에게 달라붙은 적을 링이 못 잡는다 | ✅ 해결 (2026-08-31 44차 → 2-48) — `Fx_TentacleLash.prefab:83` `m_SortingOrder` **`20` → `-5`** **한 줄**(`git diff --stat` = 1 file · 1 insertion · 1 deletion). 🔑 **CONTENT 가 낸 대조군이 문제의 성격을 바꿨다** — "검 아크는 **같은 order 20 인데 기사를 0.00% 덮는다. 중앙이 비어 있어서다**" ⇒ 기하 문제가 아니라 **합성 문제**이고 A·B 는 둘 다 헛다리. `-5` 는 새 층이 아니라 `Proj_ToxinField` 가 이미 쓰는 자리다(바닥 -100 < 촉수·독장판 -5 < 플레이어·적 0 < 픽업 1 … 검 아크 20). 🔴 **D19 와 일부러 분리**했다 — CONTENT 경고 "둘을 같이 바꾸면 어느 쪽이 들었는지 모른다". `Fx_SwingArc` 는 `20` 그대로. 검증은 **같은 프레임을 order 20/-5 로 두 번 렌더해서 뺐다**(플레이어 고정 · Lv3 · `Range` 2.2 · `SwingArcFx` 꺼서 프레임 정지): 기사 실루엣 336px 중 **가림 93px → 0px**(최악 프레임 `_5` 12.2% → 0) · 촉수 잉크 7829 → 7722(**손실 1.37%**, 바닥에 안 묻힌다) · **적 8마리를 링 둘레에 일부러 배치한 최악 조건**에서도 7826 → 7706(**1.5%**)이라 폴백 `-1` **불필요** · 육안으로도 기사 허리를 가로지르던 가닥이 뒤로 넘어감 · 콘솔 **Log 7건, Warning/Error 0**. 🔑 **CONTENT 예상 대가 3.7~4.2% 가 실측 1.37% 였는데 틀린 게 아니라 전제가 바뀐 것** — D19 로 문어가 1.20 뒤로 물러나 링 중심과 기사 중심이 어긋났다(예상은 공전 시절 기준). **`protected` 필드는 `RunCommand` 에서 안 보인다** — `WeaponBase.Data`/`Level` 이 `CS0122`, `[SerializeField]` 도 아니라 `SerializedObject.FindProperty` 는 null → NRE. `System.Reflection` 은 금지라 **public 우회로**(`AssetDatabase.LoadAssetAtPath<ItemData>` → `.WeaponRef`/`.CurrentLevel`/`.GetRange`)와 **스프라이트 시트 직접 로드**로 풀었다 |
 | **D23** | 문서가 **36개 · 약 1.1MB** 로 불었다(`SETUP_STATUS.md` 혼자 **388KB**). 편집기로는 어디에 뭐가 있는지 못 찾아 매번 `grep` 를 돌렸다. **문제는 내용이 아니라 열람 수단**이었다 | ✅ 해결 (2026-08-31 45차 → 2-49) — **디렉터리 정션 하나**. `D:\obsidian_claude\UNITY_GAME\VS_LIKE` → `C:\Unity\VS_LIKE\Docs`. 🔴 **옮기지도 복사하지도 않았다** — 복사하면 두 벌이 되고 두 벌은 반드시 갈라진다. `CLAUDE.md` 의 `Docs/...` 경로 규정과 git 이력도 그대로 산다. vault 에 `00_INDEX.md`(36문서 전체 지도 + "어떤 문서에 적나" 라우팅표)와 `지도\개발 지도.md`(`SETUP_STATUS` 절 목차 · `DONE` 25건 한 줄 요약 · 문서↔실제 어긋난 곳 표 · `02_DEV_세션_프롬프트` 가 원본보다 뒤처진 7곳) 신설. 낡은 노트 2건은 **지우지 않고** `아카이브/` 로 옮기며 경고 배너(그중 🔴 *"스크립트 코드는 수정하지 마"* 는 2026-08-26 부로 **폐기된 규칙**). 🔴 **코드·애셋 변경 0 · Unity 미접촉**(`BOARD §2` 내내 `IDLE`) · repo `.md` **본문 무수정**(frontmatter 금지). 🔑 **교훈 — 검사 도구가 "이상 없음"을 반환하면 그 도구부터 의심한다**: 1차 링크 검사 `grep -oP '\]\(\K'` 가 **"전 노트 0 링크"** 를 돌려줬는데, 링크가 눈에 보이는데 0 이면 통과가 아니라 고장이다. `sed` 로 다시 도니 `지도\개발 지도.md` 의 **36개가 전부 깨져 있었다**(하위 폴더에서 `../` 누락). 고쳐서 최종 **57/57 도달, 깨짐 0**. **보고만 하고 안 고친 것** — 문서↔실제 불일치 3건(`D13` 머리말 *"12개 전부 PASS"* 인데 **⑪ 실패** · `C22` §4 의 72° 근거가 `C23` 실측으로 뒤집혔는데 표시 없음 · `C1` §2 소제목이 자기 결론과 반대) + 없는 대상 참조 4건(`SfxId.Crit` 예약만 · `offsetAngle` 72° **코드 자체가 없음** · `Assets/Scripts/{Weapons,Visual}/` **없는 폴더** · `TUNING.md §3` "문어가 서는 자리"는 `C23` 이 지움). `BOARD §0` 에 `Tools/Art/`·`Tools/Audio/` 누락은 CONTENT 소유라 요청-15 로 넘겼다. ⚠️ **병렬 사고** — CONTENT 의 `C24` 커밋(`4c282e2`)이 내가 스테이지도 안 한 `BOARD.md` 의 `D23` 줄을 같이 가져갔다(`add`+`commit` 을 한 명령으로 붙여야 하는 이유). ⚠️ `cmd //c mklink /J` 는 이 bash 에서 **안 된다**(MSYS 인자 파괴) — PowerShell `New-Item -ItemType Junction` |
 | **D20**<br>(C23) | 적을 죽여도 나오는 게 **경험치 구슬 하나뿐**이었다. 자석·상자는 엘리트 전용이라 **잡몹은 사실상 아무것도 안 줬다** — 뱀서라이크에서 "잡몹을 밀어붙일 이유"의 절반이 비어 있었다 | ✅ 해결 (2026-08-31 46차 → 2-50) — CONTENT 요청-17 의 재료(그림 5 · SFX 3 · 확률 6 · 행운 곡선)를 게임에 넣었다. **행운 스탯 신설**(`StatBlock.Luck` → `PassiveData.BonusLuck` → `PassiveEffect` → `BalanceImporter` **임포트+익스포트**) · **시한 버프**(`GrantInvincibility`/`GrantHaste`) · **픽업 4종**(`Bomb`·`Invincible`·`Haste`·`Gold`) · **드랍표**(`RollPickupDrop`) · 애셋 8개 임포트 + `AudioLibrary` 24→**27** + 프리팹 4종. 🔑 **설계 판단 셋** — ① 드랍은 **한 번만** 굴린다(종류별로 굴리면 폭탄+무적이 같이 나오고 표의 "합계 6.7%"가 실제와 어긋난다. 행운은 합계가 아니라 **각 항목에** 곱해 종류별 비율을 행운과 무관하게 유지) · ② 힐 픽업은 새로 안 만들고 기존 `HealPickup.prefab` 을 드랍표에 넣되 **회복량을 `ExperienceManager` 가 주입**한다(건물 레벨이 없어 안 주면 **0 을 회복하고 조용히 사라진다**) · ③ 드랍표는 **나란한 배열**이다 — `SceneWiring.csv` 는 **구조체 배열을 못 쓴다**(`WriteProperty` 가 원소마다 `WriteScalar` 를 부르는데 구조체는 `Generic` 이라 `! 타입 미지원`). 🔴 `StatBlock.Zero()` 에도 `Luck` 추가(I-21) · 🔴 **익스포트도 같이** 고쳤다(안 그러면 다음 Export 때 `BonusLuck` 열이 사라져 CSV 가 조용히 망가진다) · 🔴 **`minAttackSpeed = 0.1f` 하한 신설**(`WeaponBase.cs:54` 가 쿨다운에 `AttackSpeed` 를 **곱한다**. 최악 조합 `Aegis −0.05 + AttackSpeed Lv5 −0.30 + 공속 −0.50 = 0.15` 로 여유가 **0.05** 뿐). **판정 6건 중 5건 PASS** — ① `BonusLuck` 기존 10개 전부 0 · ② 실체 높이 480 vs Magnet 482 · ③ `allItems` 25개 · ④ 행운 Lv5 에서 **2.001배**(5만 회 × 2) · ⑤ **실물리** Demon 사망 / Ogre 생존 + 11유닛 밖 무피해(반경 10 정확). ⑥ 소리 구분은 **귀로만 판정 가능 → 사용자 몫**. 🔑 **통계 이상은 로직보다 "세는 방법"을 먼저 의심한다** — ④ 첫 시행 −3.1σ 를 `ObjectPool` 이 활성 오브젝트를 재사용하지 않음을 확인해 계수 오류부터 배제한 뒤 시드를 바꿔 재실행, 편차 소멸(**시드 탓**). ⚠️ **씬 배선은 임시다** — `SceneWiring.csv` 가 CONTENT 소유라 요청-16 으로 넘겼다(그 행이 CSV 에 없어 Import 가 덮어쓰지 않는다). **고치지 않고 보고만 한 것** — 🔴 `B5` 새 증상(`Die():449` NRE 가 `DetonateBomb` 의 `foreach` **밖으로 전파**돼 뒤쪽 적이 피해를 안 받고 폭탄이 바닥에 남는다. 같은 모양이 `AoeProjectile`·`MeleeWeapon`·`SummonWeapon`·`ToxinField` 에도 → 우선순위 `낮음`→`재검토 필요`) · 스프라이트 bbox 기준 차이(CONTENT `a>127` vs `PIL` `a>0`, `Magnet`·`GoldGain` 의 잔여 픽셀 1.4~1.5% 가 bbox 를 최대 311px 부풀린다 — **측정 기준 차이지 애셋 결함 아님**) · `.meta` 복사 시 **GUID 말고 서브애셋 이름이 세 곳**에 박혀 있다 · `ExecutionResult.Log` 는 **정렬 지정자(`{1,-24}`)를 못 쓴다** · **대량 스폰 실험은 플레이 세션을 오염시킨다**(잔여 픽업이 먹히며 `LevelUp`(timeScale 0)에 들어가 `WorldPickup.Update` 가 조기 반환 → 다음 검증이 통째로 막힘) |
+| **D24**<br>(C25) | `D20` 이 넣은 픽업 드랍표가 **DEV 가 손으로 꽂은 임시 배선**이었다. `SceneWiring.csv` 는 CONTENT 소유라 요청-16 으로 넘겼고 `C25` 가 3줄을 채워 돌려줬다 — **Import 1회**가 전부인 작업. | `Game/Balance/Import CSV -> ScriptableObjects` 1회 + `File/Save`. **코드·애셋·CSV 변경 0** | 판정 **6/6 PASS** — `SceneWiring.csv : 12/12 적용`(경고 0) · `pickupPrefabs`/`pickupChances` **6칸=6칸** · 확률 합 **6.7%** · `healPickupAmount` **30** · 죽은 필드 `magnetPrefab`/`magnetDropChance` `FindProperty` **둘 다 null** · 실제 사망 경로 **300 처치 → 21개(7.0%)**, 6종 전부 등장(Gold 9·Heal 5·Haste 3·Magnet 2·Bomb 1·Invincible 1) | 🔴 **`D20` 커밋(`a3e9e5c`)의 씬은 `allItems` `24` 였다 — 행운이 레벨업 3택에 안 뜨는 상태였다.** `D20` 은 **런타임 25개**를 읽고 판정 PASS 를 적었는데 `File/Save` 가 빠져 디스크에 안 들어갔다. 예외도 로그도 안 나는 종류다 ⇒ **씬·프리팹을 바꾸는 판정은 `git diff` 로 재확인**(`TODO.md` §1 등재) · `B5` 정량화 — 웨이브 밖 사망 **300/300 전부 예외**. 다만 예외가 `RollPickupDrop` **뒤**라 드랍은 살아 있다 |
 
 ### 해결 상세
 
@@ -5586,6 +5656,15 @@ private void LateUpdate()
      소환을 **취소가 아니라 대기**시켜서 **죽인 만큼 즉시 채워지며**, `RecycleFarEnemies` 는
      멀어진 적을 죽이지 않고 앞으로 옮겨 **도망이 이미 불가능**하다.
      남은 건 `WaveManager.cs:156` 의 `Count <= 0` 재해석 **한 줄**이었다.
+
+179. 🔴 **런타임 로그는 "메모리에 있다"까지만 증명한다. 디스크는 `git diff` 로 봐라** (D24).
+     `D20` 은 플레이 중에 `allItems.Length == 25` 를 읽고 **판정 PASS** 를 적었다.
+     그런데 커밋된 씬은 **`allItems.Array.size: 24`** 였다 — `File/Save` 가 빠진 것이다.
+     그대로 나갔으면 **행운 패시브가 레벨업 3택에 영원히 안 뜬다.**
+     `BonusLuck` 배관은 전부 살아 있으니 **예외도 경고도 안 난다** — 조용히 없는 기능이 된다.
+     ⇒ Import·인스펙터 편집처럼 **직렬화 파일을 바꾸는 작업**은 커밋 직전에
+     `git diff <파일>` 에 그 변화가 **실제로 보이는지** 확인한다.
+     이번엔 `D24` 가 우연히 같은 Import 를 다시 돌려서 드러났을 뿐이다.
 
 **16~17 과정에서 함께 처리한 것**
 
