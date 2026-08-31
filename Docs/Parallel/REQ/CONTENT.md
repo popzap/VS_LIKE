@@ -22,9 +22,9 @@
 | 2026-08-31 | DEV | `닫힘(C23)` | 🔴 **픽업 드랍 6종 + 행운(Luck) 패시브** (D20 착수) — **그림 4장 · SFX 3종 · CSV 열 1개(`BonusLuck`) · 확률 6값**이 있어야 게임에 나온다. ⚠️ **사용자가 말한 1~3% 는 지금 자석(0.6%)의 2~5배다 — 웨이브당 수백 마리가 죽으니 숫자를 다시 봐 줘** — 아래 §요청-12 | [`BOARD.md`](../BOARD.md) `D20` · **회신** [`DONE/C23.md`](../DONE/C23.md) · [`REQ/DEV.md` 요청-17](DEV.md) |
 | 2026-08-31 | DEV | `닫힘(C23)` | 🔴 **`TUNING.md` §3 의 "72° 재배치"는 사실이 아니다 — 그런 코드가 없다.** 네가 요청-16 §3 에서 그걸 근거로 각도 조정을 보류했으니 정정이 필요하다. + **소환수가 이제 꼬리처럼 따라온다**(D19) — 그 항목 자체가 통째로 갈아엎어졌다. 체감 3값 등재 부탁 — 아래 §요청-13 | [`DONE/D19.md`](../DONE/D19.md) · [`REQ/DEV.md` 요청-16](DEV.md) · **회신** [`DONE/C23.md`](../DONE/C23.md) §1 |
 | 2026-08-31 | DEV | `닫힘(C23)` | ✅ **요청-16(C22) 반영 완료 — 촉수가 기사를 덮는 픽셀이 `93 → 0`** (D21). `m_SortingOrder` `20`→`-5` 한 줄. 요청은 `TUNING.md` 서술 정정 **하나뿐**(코드 요청 없음) — 아래 §요청-14 | [`DONE/D21.md`](../DONE/D21.md) · **회신** `TUNING.md` §3 촉수 정렬 줄 |
-| 2026-08-31 | DEV | `열림` | 🔴 **`SceneWiring.csv` 2줄이 이제 없는 C# 필드를 가리킨다** (D20) — `magnetPrefab`·`magnetDropChance` 를 지우고 `pickupPrefabs`·`pickupChances`·`healPickupAmount` 3줄로 갈아야 한다. ⚠️ **`healPickupAmount = 30` 은 내가 지어낸 값이다 — 요청-17 에 없었다** — 아래 §요청-16 | [`REQ/DEV.md` 요청-17](DEV.md) · [`BOARD.md`](../BOARD.md) `D20` |
-| 2026-08-31 | DEV | `열림` | 🟡 **`TUNING.md` §3 픽업 절이 "배선 예정" 인 채로 남아 있다 — 이제 게임에 나온다**(D20). 네 6값·무적·공속·폭탄·골드는 **그대로 들어갔다.** 🔴 **표에 없는 값 2개를 내가 지어냈다** — `healPickupAmount` **30** · `minAttackSpeed` **0.1** — 아래 §요청-17 | [`DONE/D20.md`](../DONE/D20.md) · [`REQ/DEV.md` 요청-17](DEV.md) · `TUNING.md` §3 |
-| 2026-08-31 | DEV | `열림` | 🟡 **`BOARD.md` §0 소유 표에 `Tools/Art/` · `Tools/Audio/` 가 없다.** 네 `C23` 줄은 **그 두 경로에 쓴다고 스스로 적어 놓았다.** 표에 없으면 다음 세션이 "주인 없는 경로"로 보고 건드릴 수 있다 — 아래 §요청-15 | [`BOARD.md`](../BOARD.md) §0 · [`DONE/D23.md`](../DONE/D23.md) §4-3 |
+| 2026-08-31 | DEV | `닫힘(C25)` | 🔴 **`SceneWiring.csv` 2줄이 이제 없는 C# 필드를 가리킨다** (D20) — `magnetPrefab`·`magnetDropChance` 를 지우고 `pickupPrefabs`·`pickupChances`·`healPickupAmount` 3줄로 갈아야 한다. ⚠️ **`healPickupAmount = 30` 은 내가 지어낸 값이다 — 요청-17 에 없었다** — 아래 §요청-16 | [`REQ/DEV.md` 요청-17](DEV.md) · [`BOARD.md`](../BOARD.md) `D20` · **회신** [`REQ/DEV.md` 요청-18](DEV.md) (Import 필요) |
+| 2026-08-31 | DEV | `닫힘(C25)` | 🟡 **`TUNING.md` §3 픽업 절이 "배선 예정" 인 채로 남아 있다 — 이제 게임에 나온다**(D20). 네 6값·무적·공속·폭탄·골드는 **그대로 들어갔다.** 🔴 **표에 없는 값 2개를 내가 지어냈다** — `healPickupAmount` **30** · `minAttackSpeed` **0.1** — 아래 §요청-17 | [`DONE/D20.md`](../DONE/D20.md) · [`REQ/DEV.md` 요청-17](DEV.md) · **회신** `TUNING.md` §2·§3 (정정 3 + 신규 2) |
+| 2026-08-31 | DEV | `닫힘(C25)` | 🟡 **`BOARD.md` §0 소유 표에 `Tools/Art/` · `Tools/Audio/` 가 없다.** 네 `C23` 줄은 **그 두 경로에 쓴다고 스스로 적어 놓았다.** 표에 없으면 다음 세션이 "주인 없는 경로"로 보고 건드릴 수 있다 — 아래 §요청-15 | [`BOARD.md`](../BOARD.md) §0 · [`DONE/D23.md`](../DONE/D23.md) §4-3 · **회신** `BOARD.md` §0 CONTENT 행 |
 
 > 상태값: `열림` · `진행중` · `닫힘(C2)` · `보류(사유)`
 > 처리했으면 상태만 바꾼다. **줄을 지우지 않는다.**
@@ -1483,6 +1483,16 @@ Assets/Scripts/Weapon/SummonWeapon.cs:104   float rad = offsetAngle * Mathf.Deg2
 > ℹ️ 같이 확인한 것: §0 의 **나머지 경로는 전부 실물과 맞았다.**
 > `Docs/DESIGN_CLASSES.md` 는 이미 CONTENT 칸에 있었다 (`C24` 도 같은 결론).
 
+### ✅ 닫힘 (C25, 2026-08-31)
+
+`BOARD.md` §0 CONTENT 행에 `Tools/Art/` · `Tools/Audio/` 를 넣었다.
+`Assets/Fonts/` 와 `Docs/BALANCE.md` 사이다.
+
+> ℹ️ **아직 §0 에 없는 CONTENT 경로가 둘 더 있다** — `Docs/Parallel/DONE/C*.md` ·
+> `Docs/Parallel/REQ/DEV.md`. 둘 다 매 작업마다 쓰지만 §0 은 `Docs/Parallel/` 을
+> 아예 안 다룬다(DEV 칸에도 없다). **`Parallel/` 전체의 소유를 어떻게 적을지는
+> 한 줄 규칙이 필요해서 나 혼자 정하지 않았다.** 다음에 §0 을 손볼 때 같이 보자.
+
 ---
 
 ## 요청-16 — 🔴 `SceneWiring.csv` 픽업 드랍 3줄로 교체 (D20)
@@ -1554,6 +1564,47 @@ ExperienceManager,healPickupAmount,30,드랍으로 나온 힐 픽업의 회복�
 > ℹ️ `Passives.csv`(`BonusLuck` 열) · `Items.csv`(`Luck` 행) · `allItems` 25개는
 > **이미 들어와 있는 것을 확인했다.** 이 요청은 `SceneWiring.csv` 만이다.
 
+### ✅ 닫힘 (C25, 2026-08-31) — 3줄 넣었다. **Import 가 남았다**
+
+`SceneWiring.csv` 14~15행(`magnetPrefab`·`magnetDropChance`)을 지우고 3줄을 넣었다.
+`chestPrefab`(13행)은 손대지 않았다.
+
+**쓰기 전에 실물을 대조했다** (문서만 믿지 않는다):
+
+| 확인 | 결과 |
+|---|---|
+| `ExperienceManager.cs` 에 새 필드 3개 | ✅ `pickupPrefabs`(59) · `pickupChances`(62) · `healPickupAmount`(65) |
+| 옛 필드 2개 | ✅ **정말 없다** — `magnetPrefab`·`magnetDropChance` 검색 0건 |
+| 프리팹 6개 실존 | ✅ `Pickup_Gold` · `HealPickup` · `Pickup_Haste` · `Pickup_Bomb` · `Pickup_Magnet` · `Pickup_Invincible` 전부 `Assets/Prefabs/` 에 있다 |
+| 순서·길이 | ✅ 둘 다 **6** · 표 순서 그대로 (Gold 0.025 / Heal 0.015 / Haste 0.01 / Bomb 0.007 / Magnet 0.006 / Invincible 0.004) |
+
+### ⚠️ 확인 요청 2개에 대한 답
+
+**① `healPickupAmount` = 30 — 네 값을 그대로 뒀다. 다만 판정 기준을 붙였다.**
+
+내가 못 하는 게 플레이다. 감으로 30→15 로 흔드는 건 네 추측을 **내 추측으로 바꾸는 것뿐**이라
+값은 두고, 대신 repo 안에서 **실제로 대조 가능한 기준**을 찾아 `TUNING.md` 에 적었다:
+
+| 근거 | 값 |
+|---|---|
+| 기본 최대체력 (`StatBlock.cs:9`) | **100** → 30 은 **30 %** |
+| 오거 접촉 피해 (`Enemies.csv`) | **25** → 30 은 **한 대를 되돌린다** |
+| 🔴 식당 `Output` (`Buildings.csv:13`) | **15\|25\|40\|60\|85** (쿨 60→40초) |
+
+🔴 **진짜 위험은 "먹으나 마나"가 아니라 식당이 초라해 보이는 것이다.**
+30 은 식당 **Lv1(15)·Lv2(25)보다 크다.** 건물 슬롯을 쓰고 레벨까지 올린 투자가
+1.5 % 랜덤 드랍보다 못하면 그건 값이 아니라 **순서가 틀린 것**이다.
+그때 고칠 값은 **드랍 15**(= 식당 Lv1). 반대로 먹은 줄도 모르겠으면 **40**.
+👉 **네가 실플레이할 때 힐을 먹고 식당을 같이 봐 줘.**
+
+**② `Pickup_Chest` 를 뺀 것 — 맞다.** 상자는 엘리트·보스 **확정** 드랍이라
+잡몹 확률표에 들어가면 안 된다. `chestPrefab` 줄이 따로 있는 게 정확하다.
+
+### 🔴 아직 안 끝났다 — Import 요청을 넣었다
+
+CSV 는 **저장만** 할 수 있다. 임포트 전까지 `ExperienceManager` 는 여전히 빈 배열이라
+**픽업이 하나도 안 떨어진다.** → [`REQ/DEV.md`](DEV.md) **요청-18**
+
 ---
 
 ## 요청-17 — `TUNING.md` §3 픽업 절이 이제 **"예정"이 아니다** + 내가 지어낸 값 2개 (D20)
@@ -1603,6 +1654,41 @@ ExperienceManager,healPickupAmount,30,드랍으로 나온 힐 픽업의 회복�
 
 `TUNING.md` §3 픽업 절에서 **"예정" 이라는 단어가 사라졌고**,
 `healPickupAmount` · `minAttackSpeed` 두 줄이 표에 있으면 끝이다. **코드 요청은 없다.**
+
+### ✅ 닫힘 (C25, 2026-08-31)
+
+**정정 3곳** — 전부 네가 짚은 대로 고쳤다:
+
+| 위치 | 전 | 후 |
+|---|---|---|
+| §3 절 제목 | `(C23 → D20 배선 예정)` | `(C23 / D20, 2026-08-31 배선 완료)` |
+| §3 "고치는 곳" | `ExperienceManager 의 드랍 테이블 (지금은 magnetDropChance 한 값뿐)` | `SceneWiring.csv 의 pickupChances 한 줄(6값 \| 구분)` + **Import 필요** 명시 |
+| §2 SFX 절 제목 | `🟡 픽업 3종 — 클립은 구웠다. 배선은 D20 대기` | `✅ 픽업 3종 — 배선 끝` + `SfxId 25·26·27` |
+
+`magnetDropChance` 가 **없어졌다**는 사실과, 🔴 **`pickupPrefabs`/`pickupChances` 의
+순서·길이가 어긋나면 예외 없이 조용히 틀린다**는 함정도 §3 에 같이 박았다.
+네 실측(1마리당 굴림 1번 ⇒ 6.7 % 가 문자 그대로 드랍률 · 행운은 종별로 곱해 비율 유지 ·
+5만 회 × 2 로 **2.001배**)도 근거로 넣었다 — `1/k` 배 규칙이 유효하다는 확인이 거기 달렸다.
+
+**신규 2값** — §3 "지속시간 · 피해량" 표에 넣었다. 힐 회복량은 요청-16 회신 참조.
+
+`minAttackSpeed` 는 **네 말대로 체감값이 아니라 안전장치**라 그렇게 적었다.
+다만 표 밖 주석이 아니라 **표 안에 `⚙️` 로** 넣었다 — 이유가 둘이다:
+
+1. 판정 방법이 다른 값들과 똑같다. **"8초 동안 발사가 부자연스럽게 끊기나"** 를 보면 된다
+2. 🔴 **끊겼을 때 고칠 것이 하한이 아니라 바로 윗줄의 공속 세기(−0.5)** 라
+   **두 줄이 붙어 있어야** 다음 사람이 엉뚱한 쪽을 만지지 않는다.
+   하한을 내리면 무한 발사 쪽으로 다시 열린다는 것도 같이 적었다
+
+여백은 **0.05** 다 (최악 누적 0.15 vs 하한 0.10). 공속 세기를 −0.6 으로만 올려도
+`Aegis` + `AttackSpeed` Lv5 와 겹치는 순간 **하한에 닿는다** — 세기를 올리자는 판정이 나오면
+그때는 하한도 같이 봐야 한다.
+
+### §4 에 대해 — 무적·공속이 같은 소리인 건 **이미 내 체크리스트에 있다**
+
+`TUNING.md` §2 에 *"무적과 공속이 같은 소리인 게 헷갈리지 않는가"* 로 들어가 있다.
+헷갈린다는 판정이 나오면 클립 하나를 새로 굽는다(= CONTENT). **미리 안 굽는다** —
+안 헷갈릴 수도 있고, 그러면 `SfxId` 만 하나 늘어난다.
 
 ---
 

@@ -25,7 +25,8 @@
 | 2026-08-30 | CONTENT | `닫힘(D16)` | **소환수 SFX 2종 배선** — `TentacleLash`(6) · `DragonSpit`(7). 클립 2장 + `SfxId` 2개 + 호출부 2줄 (C20). 요청-8 ③ 의 조건 4개를 자로 재서 맞췄다 — 아래 §요청-14 | [`TUNING.md` §2-C-2](../../TUNING.md) · `Tools/Audio/compare_sfx.py` |
 | 2026-08-30 | CONTENT | `닫힘(D17)` | **외곽선 굵기 2값 — `EnemyBase.cs:134` 한 줄** (C21). `14/12` → **`10.5/9`**. 🔴 **네 표의 숫자 3개를 정정했다** (Wolf 키 · "낱장 2.7%" · `SizeScale` 누락) — 아래 §요청-15 | [`REQ/CONTENT.md` 요청-9](CONTENT.md) · [`TUNING.md` §2-B](../../TUNING.md) |
 | 2026-08-31 | CONTENT | `닫힘(D21)` | 🔴 **문어 링이 플레이어를 덮는 문제 — `Fx_TentacleLash.prefab` 의 `m_SortingOrder` `20` → `-5` 한 줄** (C22). 요청-10 ③ 의 답이다. ⛔ **네가 낸 A·B 둘 다 안 골랐다** — 대조군(검 호: 같은 order 20 인데 덮는 비율 **0.00 %**)이 원인은 기하가 아니라 **합성**임을 보여줬다 — 아래 §요청-16 | [`REQ/CONTENT.md` 요청-10](CONTENT.md) · [`TUNING.md` §3](../../TUNING.md) · [`DONE/C22.md`](../DONE/C22.md) · **회신** [`DONE/D21.md`](../DONE/D21.md) · [`REQ/CONTENT.md` 요청-14](CONTENT.md) |
-| 2026-08-31 | CONTENT | `열림` | **픽업 6종 + 행운 패시브의 재료 전부** (C23) — 그림 5장 · SFX 3종 · `BonusLuck` 5값 · 확률 6값(사용자 **C 안** · 잠정) · 무적 3초/공속 8초 — 아래 §요청-17. ⚠️ **원장 줄이 빠져 있어 `D23` 에서 추가했다** (본문 §요청-17 은 처음부터 있었다) | [`REQ/CONTENT.md` 요청-12](CONTENT.md) · [`DONE/C23.md`](../DONE/C23.md) |
+| 2026-08-31 | CONTENT | `열림` | **픽업 6종 + 행운 패시브의 재료 전부** (C23) — 그림 5장 · SFX 3종 · `BonusLuck` 5값 · 확률 6값(사용자 **C 안** · 잠정) · 무적 3초/공속 8초 — 아래 §요청-17. ⚠️ **원장 줄이 빠져 있어 `D23` 에서 추가했다** (본문 §요청-17 은 처음부터 있었다). ℹ️ **`D20` 이 이걸 다 썼다 — 상태만 `닫힘(D20)` 으로 바꿔 줘** (상태는 처리자 칸이라 내가 안 건드렸다) | [`REQ/CONTENT.md` 요청-12](CONTENT.md) · [`DONE/C23.md`](../DONE/C23.md) · **회신** [`DONE/D20.md`](../DONE/D20.md) |
+| 2026-08-31 | CONTENT | `열림` | 🔴 **CSV Import 1회 — `SceneWiring.csv` 픽업 드랍 3줄.** 네 요청-16 의 답이다 (C25). **이게 들어가기 전엔 픽업이 하나도 안 떨어진다** (`ExperienceManager` 배열이 빈 채다) — 아래 §요청-18 | [`REQ/CONTENT.md` 요청-16](CONTENT.md) · [`DONE/D20.md`](../DONE/D20.md) · [`DONE/C25.md`](../DONE/C25.md) |
 
 > 상태값: `열림` · `진행중` · `닫힘(D3)` · `보류(사유)`
 > 처리했으면 상태만 바꾼다. **줄을 지우지 않는다.**
@@ -1922,6 +1923,58 @@ C 의 대가를 A·B 와 같은 자로 다시 적으면 — **잃는 것이 4 %*
 
 - `AudioLibrary.asset` 등재 · `SfxId` enum · 스프라이트 임포트 — **전부 네 소유 경로**
 - 소리·그림의 **최종 판정** — 자로 잰 것뿐이다. 판정은 귀와 눈으로만 난다
+
+---
+
+## 요청-18 — 🔴 CSV Import 1회 · `SceneWiring.csv` 픽업 드랍 3줄 (C25) · [`REQ/CONTENT.md` 요청-16](CONTENT.md) 의 답
+
+**무엇을** — `Game/Balance/Import CSV -> ScriptableObjects` **한 번**. CSV 는 이미 저장했다.
+
+`Assets/Game/Balance/SceneWiring.csv` 의 `ExperienceManager` 블록이 이렇게 바뀌었다:
+
+| | 전 | 후 |
+|---|---|---|
+| 13행 | `chestPrefab` | **그대로** (안 건드렸다) |
+| 14행 | ~~`magnetPrefab`~~ | `pickupPrefabs` — 프리팹 6개를 `\|` 로 |
+| 15행 | ~~`magnetDropChance,0.006`~~ | `pickupChances,0.025\|0.015\|0.01\|0.007\|0.006\|0.004` |
+| 16행(신규) | — | `healPickupAmount,30` |
+
+순서는 네 요청-16 표 그대로다: **Gold / Heal / Haste / Bomb / Magnet / Invincible**.
+
+**왜** — `D20` 이 코드·프리팹·스프라이트·SFX 를 전부 넣었는데
+**`ExperienceManager` 의 배열이 아직 비어 있다.** `TryDropPickup` 이 `pickupPrefabs == null` 에서
+바로 돌아오므로 **지금 플레이하면 픽업이 하나도 안 떨어진다.** CSV 는 내가 저장만 할 수 있다.
+
+⚠️ **에디터가 플레이 모드면 Import 가 `InvalidOperationException` 으로 실패한다**
+(`MarkSceneDirty` 가 플레이 중엔 못 돈다 — 일시정지도 플레이 모드다). `Stop` 먼저.
+
+**어떻게 확인하나**
+
+| # | 판정 |
+|---|---|
+| ① | Import 로그에 `! ExperienceManager.magnetPrefab 필드 없음` · `! ...magnetDropChance 필드 없음` 이 **없다** (`CLAUDE.md` §2 — 필드가 사라졌으면 CSV 행도 지운다) |
+| ② | 인스펙터 `ExperienceManager` 의 `pickupPrefabs` **6칸**이 전부 채워졌다. 순서가 Gold / Heal / Haste / Bomb / Magnet / Invincible |
+| ③ | `pickupChances` 도 **6칸** · `0.025 / 0.015 / 0.01 / 0.007 / 0.006 / 0.004` |
+| ④ | `healPickupAmount` = **30** |
+| ⑤ | 🔴 **두 배열의 길이가 같다.** 코드가 짧은 쪽으로 잘라 쓰므로 **어긋나도 예외가 안 난다 — 조용히 틀린다.** 5칸/6칸이면 Invincible 이 영원히 안 나오고 아무도 모른다 |
+| ⑥ | 실플레이에서 잡몹이 죽을 때 픽업이 **가끔** 나온다 (네가 로그로 세는 게 정확하다) |
+
+### 같이 봐 줬으면 하는 것 — `healPickupAmount` 30
+
+**네 값을 그대로 뒀다.** 감으로 흔들면 네 추측이 내 추측으로 바뀔 뿐이라,
+대신 repo 안에서 대조 가능한 기준을 찾아 `TUNING.md` §3 에 판정 기준으로 박았다.
+
+🔴 **위험은 "먹으나 마나"가 아니라 식당이 초라해 보이는 것이다.**
+`Buildings.csv:13` 의 식당 `Output` 이 **15\|25\|40\|60\|85** 인데 드랍 힐이 **30** 이다 —
+**Lv1·Lv2 보다 크다.** 건물 슬롯을 쓰고 레벨까지 올린 투자가 1.5 % 랜덤보다 못하면
+값이 아니라 **순서가 틀린 것**이고, 그때 내릴 값은 **15**(= 식당 Lv1) 다. 반대면 **40**.
+👉 실플레이 때 **힐을 먹고 식당을 같이 봐 줘.**
+
+ℹ️ `Pickup_Chest` 를 잡몹 표에서 뺀 것 — **맞다.** 엘리트·보스 확정 드랍이라
+`chestPrefab` 줄이 따로 있는 게 정확하다 (네 확인 요청 ②).
+
+**내가(CONTENT) 한 것:** `SceneWiring.csv` 3줄 · `TUNING.md` 정정 3 + 신규 2값 ·
+`BOARD.md` §0 에 `Tools/{Art,Audio}/`. **코드·프리팹·애셋 변경 0.**
 
 ---
 

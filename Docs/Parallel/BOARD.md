@@ -10,7 +10,7 @@
 | 세션 | 접두어 | 하는 일 | 소유 경로 (쓰기 가능) |
 |---|---|---|---|
 | **DEV** | `D` | 개발·뼈대. 코드 · 씬 배선 · **Unity 에디터 전담** · 실플레이 검증 | `Assets/Scripts/**` · `Assets/Editor/` · `Assets/Scenes/` · `Assets/Prefabs/` · `Assets/GameObjects/` · `Assets/Game/*Data/` (SO) · `Assets/Settings/` · `ProjectSettings/` · `Docs/DESIGN_EVENTS.md` |
-| **CONTENT** | `C` | 코드 외적. 그림 · 소리 · 애니메이션 소스 · 수치 · 문서 | `_Incoming/` · `Assets/Game/{Sprites,ICON,Tiles,Materials,Shaders,Audio}` · `Assets/Game/Balance/*.csv` · `Assets/Fonts/` · `Docs/BALANCE.md` · `Docs/TUNING.md` · `Docs/DESIGN_CLASSES.md` |
+| **CONTENT** | `C` | 코드 외적. 그림 · 소리 · 애니메이션 소스 · 수치 · 문서 | `_Incoming/` · `Assets/Game/{Sprites,ICON,Tiles,Materials,Shaders,Audio}` · `Assets/Game/Balance/*.csv` · `Assets/Fonts/` · `Tools/Art/` · `Tools/Audio/` · `Docs/BALANCE.md` · `Docs/TUNING.md` · `Docs/DESIGN_CLASSES.md` |
 
 **소유하지 않은 경로는 읽기만 한다.** 고쳐야 하면 `REQ/<대상>.md` 에 요청을 남긴다.
 
@@ -28,8 +28,8 @@
 | 세션 | 이슈 | 만지는 경로 | 시작 | 상태 |
 |---|---|---|---|---|
 | DEV | `D22` | `Docs/DESIGN_EVENTS.md`(신설) · `Docs/ROADMAP.md` | 2026-08-31 | 🅿️ **보류(사용자)** — "이벤트 관련은 나중에". 문서는 **다 썼다** (`E1 함정방` 상세 + `E2`~`E6` 자리표). 🔴 **코드 변경 0.** 재개 조건 = **§7 결정 6건.** ROADMAP §0·§7 에 "이벤트 노드가 비어 있다" 갭 등재 완료 |
+| DEV | `D24` | `Assets/Game/*Data/`(SO) · `Assets/Scenes/SampleScene.unity` · `Docs/Parallel/REQ/DEV.md`(상태칸) | 2026-08-31 | `진행중` — [`REQ/DEV.md`](REQ/DEV.md) **요청-18**(`C25`) CSV Import 1회 + 판정 6건. **`D20` 의 픽업이 실제로 떨어지게 만드는 마지막 한 칸**이다. ⚠️ **Unity 에디터 점유**(Import + 플레이 검증) |
 | CONTENT | `C6` | `Docs/DESIGN_CLASSES.md`(신설) · 이후 `Assets/Game/Balance/*.csv` · `_Incoming/` | 2026-08-30 | `진행중` — 직업 6종 컨셉 재편 + 신규 무기 6종 설계 (사용자 지시) |
-| CONTENT | `C23` | `Tools/Art/` · `Tools/Audio/` · `_Incoming/{Sprites,Audio}/` · `Assets/Game/Balance/{Passives,Items,SceneWiring}.csv` · `Docs/TUNING.md` | 2026-08-31 | `대기(REQ→DEV)` — 픽업 드랍 6종 + 행운 패시브. 그림 5장 · SFX 3종 · `BonusLuck` 5값 · 확률 6값(사용자 **C 안** · 잠정) · 무적 3초/공속 8초 — [`REQ/DEV.md`](REQ/DEV.md) 요청-17 · [`DONE/C23.md`](DONE/C23.md). ✅ `allItems` **24→25** 등록 완료 (`C6` 충돌은 **오판**이었다 — 파일 이력 확인 후 정정) |
 
 > 상태값: `진행중` · `대기(REQ→DEV)` · `검증대기` · `막힘(B1)`
 > 끝나면 **자기 줄을 지운다.**
@@ -132,6 +132,21 @@
 > 바닥에 남는다). 같은 모양이 `AoeProjectile`·`MeleeWeapon`·`SummonWeapon`·`ToxinField` **4곳 더** 있다.
 > D20 범위 밖이라 **고치지 않고** [`BUGS.md` B5](BUGS.md) 에 증상만 추가했다.
 > ℹ️ `C23` 줄은 **CONTENT 소유라 남겨 뒀다** — 재료는 전부 소비했으니 확인하고 지워도 된다.
+>
+> ✅ **`C25` 끝났다 · `C23` 줄도 같이 지웠다** (2026-08-31). `REQ/CONTENT.md` **열림 3건을 한 번에 닫았다**
+> (요청-15·16·17) → [`DONE/C25.md`](DONE/C25.md).
+> 🔴 **`SceneWiring.csv` 픽업 3줄**(`pickupPrefabs`·`pickupChances`·`healPickupAmount`)을 넣고
+> 죽은 2줄(`magnetPrefab`·`magnetDropChance`)을 지웠다 — **쓰기 전에 C# 필드 3개·프리팹 6개를 실물 대조**했다.
+> `TUNING.md` 는 정정 3(§2·§3 의 "배선 예정" 소멸) + **신규 2값**(`healPickupAmount` 30 · `minAttackSpeed` 0.1).
+> `BOARD.md` §0 에 `Tools/Art/`·`Tools/Audio/` 추가(요청-15). **코드·애셋 변경 0 · 에디터 미접촉.**
+> 🔴 **아직 안 떨어진다 — Import 1회가 남았다** → [`REQ/DEV.md`](REQ/DEV.md) **요청-18**.
+> ℹ️ `healPickupAmount` **30 은 DEV 값을 그대로 뒀다** — 플레이를 못 하는 내가 흔들면 추측이 추측으로
+> 바뀔 뿐이라, 대신 **대조 가능한 기준**을 줬다: 식당 `Output` 이 `15|25|40|60|85` 인데 드랍이 30 이라
+> **Lv1·Lv2 보다 크다.** 건물 투자가 초라해 보이면 값이 아니라 순서가 틀린 것 → 드랍을 `15` 로.
+> ℹ️ `REQ/DEV.md` **요청-17** 은 `D20` 이 다 썼는데 상태가 `열림` 이다 — **상태 칸은 처리자 것이라
+> 안 건드렸다.** DEV 가 `닫힘(D20)` 으로 바꿔 주면 된다.
+> ⚠️ §0 에 아직 없는 CONTENT 경로 둘 — `Docs/Parallel/DONE/C*.md` · `REQ/DEV.md`.
+> §0 이 `Docs/Parallel/` 자체를 안 다뤄서(DEV 칸에도 없다) **혼자 정하지 않았다.**
 
 ---
 
@@ -142,8 +157,8 @@ CONTENT 는 **읽기만** 한다 — 내 요청이 언제 처리될지 가늠하
 
 | 항목 | 값 |
 |---|---|
-| 상태 | `IDLE` |
-| 점유 이슈 | — |
+| 상태 | `BUSY` |
+| 점유 이슈 | `D24` — `SceneWiring.csv` Import 1회(요청-18) + 드랍 실플레이 검증 |
 | 컴파일 에러 | `0` (2026-08-31 **D20 종료 시** 확인 — C# 9파일 컴파일 후 콘솔 0줄 · 플레이 정지) |
 
 | 상태값 | 뜻 | CONTENT 가 알 것 |
@@ -161,8 +176,8 @@ CONTENT 는 **읽기만** 한다 — 내 요청이 언제 처리될지 가늠하
 
 | 세션 | 다음 이슈 번호 |
 |---|---|
-| DEV | `D24` |
-| CONTENT | `C25` |
+| DEV | `D25` |
+| CONTENT | `C26` |
 | 버그(공용) | `B7` |
 
 > 번호를 쓸 때 이 표를 **즉시** 올린다. 선점이 곧 예약이다.
