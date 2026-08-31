@@ -33,7 +33,7 @@
 | CONTENT | `C19` | `Assets/Game/Balance/{Weapons,Items,SceneWiring}.csv` · `Tools/Art/gen_octopus.py` · `_Incoming/Effects/` · `Docs/TUNING.md` | 2026-08-30 | `대기(REQ→DEV)` — 소환수 CSV 3파일 + **촉수 그림 재작업** + SFX 볼륨 2값. DEV 요청-7·8 의 답 — [`REQ/DEV.md`](REQ/DEV.md) 요청-13 |
 | CONTENT | `C20` | `Tools/Audio/gen_{tentacle_lash,dragon_spit}.py` · `_Incoming/Audio/` · `Docs/TUNING.md` | 2026-08-30 | `대기(REQ→DEV)` — 소환수 SFX 2종 + ⛔ **요청-13 ③ 검 0.35 철회** — [`REQ/DEV.md`](REQ/DEV.md) 요청-14 |
 | CONTENT | `C22` | `Docs/TUNING.md` · `Docs/Parallel/REQ/*` | 2026-08-31 | `대기(REQ→DEV)` — 촉수가 플레이어를 덮는 문제(요청-10 ③). ⛔ **DEV 가 낸 A·B 를 둘 다 반려** → `Fx_TentacleLash.prefab` `m_SortingOrder` `20`→`-5` 한 줄 + 청취 5건 이관 — [`REQ/DEV.md`](REQ/DEV.md) 요청-16. ⚠️ **`D19` 와 겹친다** (아래) |
-| CONTENT | `C23` | `Tools/Art/` · `Tools/Audio/` · `_Incoming/{Sprites,Audio}/` · `Assets/Game/Balance/{Passives,Items}.csv` · `Docs/TUNING.md` | 2026-08-31 | `진행중` — 픽업 드랍 6종 + 행운 패시브. 그림 5장 · SFX 3종 · `BonusLuck` 5값 · 확률 6값. DEV 요청-12 의 답 — [`REQ/CONTENT.md`](REQ/CONTENT.md) 요청-12. 🔴 **확률 A/B/C 는 사용자 결정 대기** |
+| CONTENT | `C23` | `Tools/Art/` · `Tools/Audio/` · `_Incoming/{Sprites,Audio}/` · `Assets/Game/Balance/{Passives,Items}.csv` · `Docs/TUNING.md` | 2026-08-31 | `대기(REQ→DEV)` — 픽업 드랍 6종 + 행운 패시브. 그림 5장 · SFX 3종 · `BonusLuck` 5값 · 확률 6값(사용자 **C 안** · 잠정) · 무적 3초/공속 8초 — [`REQ/DEV.md`](REQ/DEV.md) 요청-17 · [`DONE/C23.md`](DONE/C23.md). 🔴 **`SceneWiring.csv` `allItems` 에 `Luck` 미등록** — `C6` 과 같은 줄이라 대기 |
 
 > 상태값: `진행중` · `대기(REQ→DEV)` · `검증대기` · `막힘(B1)`
 > 끝나면 **자기 줄을 지운다.**

@@ -30,6 +30,8 @@ XpGain,Experience Gain,Increases experience gained.,Assets/Game/Sprites/Passives
 GoldGain,Gold Gain,Increases gold gained.,Assets/Game/Sprites/Passives/GoldGain.png,Passive,5,GoldGain,6
 CritChance,Critical Chance,Increases critical hit chance.,Assets/Game/Sprites/Passives/CritChance.png,Passive,5,CritChance,7
 BuildingCooldown,Building Speed,Buildings work more often.,Assets/Game/Sprites/Passives/BuildingCooldown.png,Passive,5,BuildingCooldown,7
+# ── 행운 (C23) — 픽업 드랍 확률 배율. 값은 Passives.csv 의 BonusLuck 열이다.
+Luck,Luck,Enemies drop pickups more often. Doubles the chance at max level.,Assets/Game/Sprites/Passives/Luck.png,Passive,5,Luck,7
 # ── 진화 결과 아이템 ────────────────────────────────────────────────────────
 # ⚠️ 이 아이템들은 SceneWiring.csv 의 LevelUpManager,allItems 에 넣지 말 것.
 #    넣으면 레벨업 3택과 상점에 그냥 나와서 진화라는 절차 자체가 무의미해진다.

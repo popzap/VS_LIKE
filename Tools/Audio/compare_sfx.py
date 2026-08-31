@@ -38,9 +38,24 @@ TARGETS = [
     ("Explosion   (3)", "Assets/Game/Audio/SFX_Explosion.wav", 3),
     ("WeaponSwing (4)", "Assets/Game/Audio/SFX_WeaponSwing.wav", 4),
     ("ToxinSpill  (5)", "Assets/Game/Audio/SFX_ToxinSpill.wav", 5),
-    ("TentacleLash(6)", "_Incoming/Audio/SFX_TentacleLash.wav", 6),
-    ("DragonSpit  (7)", "_Incoming/Audio/SFX_DragonSpit.wav", 7),
+    # ⚠️ 이 둘은 `_Incoming/` 경로였다. DEV 가 `Assets/` 로 옮겨 배선하면서 표에서 빠져 있었다 —
+    #    새 소리를 만들 때 **이미 있는 소리가 목록에서 사라지는** 게 이 자의 가장 위험한 고장이다.
+    ("TentacleLash(6)", "Assets/Game/Audio/SFX_TentacleLash.wav", 6),
+    ("DragonSpit  (7)", "Assets/Game/Audio/SFX_DragonSpit.wav", 7),
     ("EnemyHit   (10)", "Assets/Game/Audio/SFX_EnemyHit.wav", 10),
+    # ── 픽업 무리 (C23 에서 추가) ──────────────────────────────────────────────
+    # 🔴 원래 이 목록은 **무기 소리만** 보고 있었다. 그래서 픽업 3종을 만들 때
+    #    정작 부딪힐 상대(XpPickup·Magnet·LevelUp·Heal)가 표에 없었다.
+    #    픽업끼리는 짧은 시간에 **연달아** 나므로 무기보다 더 갈려 있어야 한다.
+    ("XpPickup   (20)", "Assets/Game/Audio/SFX_XpPickup.wav", 20),
+    ("LevelUp    (21)", "Assets/Game/Audio/SFX_LevelUp.wav", 21),
+    ("ChestOpen  (22)", "Assets/Game/Audio/SFX_ChestOpen.wav", 22),
+    ("Magnet     (23)", "Assets/Game/Audio/SFX_Magnet.wav", 23),
+    ("Heal       (24)", "Assets/Game/Audio/SFX_Heal.wav", 24),
+    ("BombPickup (25)", "_Incoming/Audio/SFX_BombPickup.wav", 25),
+    ("BuffPickup (26)", "_Incoming/Audio/SFX_BuffPickup.wav", 26),
+    ("GoldPickup (27)", "_Incoming/Audio/SFX_GoldPickup.wav", 27),
+    ("UiSelect   (40)", "Assets/Game/Audio/SFX_UiSelect.wav", 40),
 ]
 
 BANDS = [(0, 200), (200, 800), (800, 3000), (3000, 9000), (9000, 22050)]
