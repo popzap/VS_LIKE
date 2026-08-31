@@ -27,8 +27,8 @@
 
 | 세션 | 이슈 | 만지는 경로 | 시작 | 상태 |
 |---|---|---|---|---|
-| DEV | `D22` | `Docs/DESIGN_EVENTS.md`(신설) | 2026-08-31 | `설계중` — **이벤트 설계 문서.** 첫 사례로 `E1 함정방`(무한적 + 시간제한 생존). 🔴 **코드 변경 없음** — 사용자 지시가 "일단 문서화만". 🔴 **결정 6건 사용자 대기**(§7) |
-| DEV | `D20` | `Assets/Scripts/Pickup/**` · `Assets/Scripts/Player/StatBlock.cs` · `Assets/Scripts/Passive/**` · `Assets/Editor/BalanceImporter.cs` | 2026-08-31 | `대기(REQ→CONTENT)` — 적 처치 시 **픽업 6종 저확률 드랍** + **행운(Luck) 패시브**. 그림·수치는 [`REQ/CONTENT.md`](REQ/CONTENT.md) 요청-12 |
+| DEV | `D22` | `Docs/DESIGN_EVENTS.md`(신설) · `Docs/ROADMAP.md` | 2026-08-31 | 🅿️ **보류(사용자)** — "이벤트 관련은 나중에". 문서는 **다 썼다** (`E1 함정방` 상세 + `E2`~`E6` 자리표). 🔴 **코드 변경 0.** 재개 조건 = **§7 결정 6건.** ROADMAP §0·§7 에 "이벤트 노드가 비어 있다" 갭 등재 완료 |
+| DEV | `D20` | `Assets/Scripts/Pickup/**` · `Assets/Scripts/Player/StatBlock.cs` · `Assets/Scripts/Passive/**` · `Assets/Editor/BalanceImporter.cs` | 2026-08-31 | 🔜 **착수 가능** — 재료가 다 왔다 ([`REQ/DEV.md`](REQ/DEV.md) 요청-17 / `C23`): 그림 5 · SFX 3 · `BonusLuck` 5값 · 확률 6값. 적 처치 시 **픽업 6종 저확률 드랍** + **행운(Luck) 패시브** |
 | CONTENT | `C6` | `Docs/DESIGN_CLASSES.md`(신설) · 이후 `Assets/Game/Balance/*.csv` · `_Incoming/` | 2026-08-30 | `진행중` — 직업 6종 컨셉 재편 + 신규 무기 6종 설계 (사용자 지시) |
 | CONTENT | `C23` | `Tools/Art/` · `Tools/Audio/` · `_Incoming/{Sprites,Audio}/` · `Assets/Game/Balance/{Passives,Items,SceneWiring}.csv` · `Docs/TUNING.md` | 2026-08-31 | `대기(REQ→DEV)` — 픽업 드랍 6종 + 행운 패시브. 그림 5장 · SFX 3종 · `BonusLuck` 5값 · 확률 6값(사용자 **C 안** · 잠정) · 무적 3초/공속 8초 — [`REQ/DEV.md`](REQ/DEV.md) 요청-17 · [`DONE/C23.md`](DONE/C23.md). ✅ `allItems` **24→25** 등록 완료 (`C6` 충돌은 **오판**이었다 — 파일 이력 확인 후 정정) |
 
