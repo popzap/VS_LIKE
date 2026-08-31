@@ -28,5 +28,6 @@ public class PassiveEffect
         stat.XpGain         += Data.GetXpGain(Level);
         stat.GoldGain       += Data.GetGoldGain(Level);
         stat.BuildingCooldown += Data.GetBuildingCooldown(Level);
+        stat.Luck           += Data.GetLuck(Level);
     }
 }

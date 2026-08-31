@@ -48,11 +48,21 @@ public class ExperienceManager : MonoBehaviour
 
     [Header("보상 드랍")]
     [SerializeField] private GameObject chestPrefab;
-    [SerializeField] private GameObject magnetPrefab;
 
-    [Tooltip("잡몹 하나가 자석을 떨굴 확률. 웨이브당 수백 마리가 죽으므로 아주 낮게 잡는다")]
-    [Range(0f, 1f)]
-    [SerializeField] private float magnetDropChance = 0.006f;
+    // ── 픽업 드랍표 ──────────────────────────────────────────────
+    //
+    // 두 배열을 나란히 쓰는 이유는 SceneWiring.csv 가 구조체 배열을 못 쓰기 때문이다
+    // (BalanceImporter.WriteProperty 는 배열 원소를 스칼라로만 쓴다).
+    // 나란한 배열은 길이가 어긋나면 조용히 틀리므로 아래에서 길이를 맞춰 잘라 쓴다.
+
+    [Tooltip("잡몹이 떨굴 수 있는 픽업 프리팹. pickupChances 와 같은 순서·같은 길이여야 한다")]
+    [SerializeField] private GameObject[] pickupPrefabs;
+
+    [Tooltip("위 프리팹 각각의 드랍 확률(0~1). 행운 배율이 곱해지기 전의 기본값이다")]
+    [SerializeField] private float[] pickupChances;
+
+    [Tooltip("드랍으로 나온 힐 픽업의 회복량. 식당이 뱉는 것과 달리 건물 레벨이 없어 여기서 정한다")]
+    [SerializeField] private float healPickupAmount = 30f;
 
     /// <summary>엘리트/보스 처치 시 호출. 상자는 확률이 아니라 <b>확정</b>이다.</summary>
     public void SpawnChest(Vector2 position)
@@ -61,12 +71,44 @@ public class ExperienceManager : MonoBehaviour
         expPool.Get(chestPrefab, position, Quaternion.identity);
     }
 
-    /// <summary>잡몹 처치 시 호출. 확률로 자석을 떨군다.</summary>
-    public void RollMagnetDrop(Vector2 position)
+    /// <summary>
+    /// 잡몹 처치 시 호출. 드랍표를 <b>한 번만</b> 굴려 최대 하나를 떨군다.
+    ///
+    /// <para>종류마다 따로 굴리지 않는 이유는, 그러면 한 마리가 폭탄과 무적을 같이 떨구는
+    /// 일이 생기고 표의 "합계 6.7%" 가 실제 값과 어긋나기 때문이다. 누적 확률을 한 번
+    /// 지나가면 합계가 곧 드랍률이고, 표를 읽는 사람이 계산할 게 없다.</para>
+    ///
+    /// <para>행운은 <b>각 항목에</b> 곱해진다 — 최종확률 = 기본확률 × (1 + Luck).
+    /// 합계에 곱하는 것과 값은 같지만, 이렇게 두면 종류별 비율이 행운과 무관하게 유지된다.</para>
+    /// </summary>
+    public void RollPickupDrop(Vector2 position)
     {
-        if (magnetPrefab == null) return;
-        if (Random.value >= magnetDropChance) return;
-        expPool.Get(magnetPrefab, position, Quaternion.identity);
+        if (pickupPrefabs == null || pickupChances == null) return;
+
+        int count = Mathf.Min(pickupPrefabs.Length, pickupChances.Length);
+        if (count == 0) return;
+
+        float luck = _playerStats != null ? _playerStats.Final.Luck : 0f;
+        float mult = 1f + Mathf.Max(0f, luck);
+
+        float roll = Random.value;
+        float acc  = 0f;
+        for (int i = 0; i < count; i++)
+        {
+            acc += pickupChances[i] * mult;
+            if (roll >= acc) continue;
+
+            var prefab = pickupPrefabs[i];
+            if (prefab == null) return;
+
+            var go = expPool.Get(prefab, position, Quaternion.identity);
+
+            // 힐 픽업만 초기화가 필요하다 — 원래 식당이 회복량을 주입하던 물건이라,
+            // 안 주면 0 을 회복하고 조용히 사라진다.
+            var heal = go.GetComponent<HealPickup>();
+            if (heal != null) heal.Initialize(healPickupAmount, expPool, null);
+            return;
+        }
     }
 
     /// <summary>

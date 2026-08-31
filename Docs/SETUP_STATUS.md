@@ -6,7 +6,7 @@
 > 기존의 「C# 스크립트는 완성 단계」라는 전제와 「요청 없이 코드 건드리지 말 것」 규칙이 **해제됨**.
 > 이제 게임 완성을 위해 C# 스크립트 신규 작성·수정이 허용된다.
 >
-> **최종 갱신:** 2026-08-31 (44차 — 촉수가 기사 뒤로 간다, D21 / C22)
+> **최종 갱신:** 2026-08-31 (46차 — 잡몹이 물건을 떨군다: 픽업 6종 + 행운, D20 / C23)
 >
 > 🔀 **25차부터 이슈 번호가 `세션 접두어 + 번호` 다** — `D`(DEV) · `C`(CONTENT) · `B`(버그 공용).
 > 병렬 2세션 체제로 바뀌었기 때문이다 (D1). 과거 `I-1`~`I-61` 은 그대로 둔다.
@@ -17,7 +17,8 @@
 > **현재 상태: 메인메뉴 → 스테이지맵 → 웨이브 → 클리어 → 게임오버 전체 루프 런타임 검증 완료 (18/18 PASS), 콘솔 에러 0 / 경고 0.**
 > [`ROADMAP.md`](ROADMAP.md) §8 의 **1·2·3단계 완료** (I-43~I-49) — HUD 정보 · 타격 반응 · 오디오 ·
 > 병렬 소환 · 적 행동 분화 · 보물상자/자석. **"조용한 프로토타입" 단계는 끝났다.**
-> 원격 동기화: `popzap/VS_LIKE` `main` @ **`3686a62`** (2026-08-31, 44차 D21 까지 푸시됨 — CONTENT `C23` 포함)
+> 원격 동기화: `popzap/VS_LIKE` `main` @ **`c56d55c`** (2026-08-31 — CONTENT `C23` 뒤처리까지 푸시됨).
+> 🔴 **로컬이 앞서 있다** — `cbc29cd`(D23) · `4c282e2`(C24) · 46차(D20) 는 **커밋만 되고 아직 미푸시**다.
 >
 > 🎯 **16차는 처음으로 "직접 플레이해서 나온" 버그 보고에서 출발했다** (I-50).
 > 로그로만 검증하던 단계에서는 절대 발견할 수 없는 종류였다 — 자세한 건 2-20.
@@ -2024,6 +2025,121 @@ Play 모드에서 Warrior 로 런을 시작하고 `Unity_RunCommand` 로 재료�
 > ⚠️ **건물 앞 `E` 실조작은 아직 미검증이다.** 위는 `EvolveClass` 를 직접 부른 것이고,
 > `FindAltarClassEvolution` 은 이미 검증된 `FindAltarEvolution` 과 같은 로직이지만
 > **실제로 터렛을 세우고 다가가서 눌러 본 적은 없다** → [`TODO.md`](TODO.md) §1
+
+---
+
+## 2-50. ✅ 잡몹이 물건을 떨군다 — 픽업 6종 + 행운 (D20 / C23, 2026-08-31 46차)
+
+### 왜 했나
+
+적을 죽여도 나오는 게 **경험치 구슬 하나뿐**이었다. 자석·상자는 있었지만 엘리트 전용이라
+**잡몹은 사실상 아무것도 안 줬다.** 뱀서라이크에서 "잡몹을 밀어붙일 이유"의 절반은
+가끔 튀어나오는 물건인데 그 자리가 비어 있었다.
+
+CONTENT 가 [`REQ/DEV.md`](Parallel/REQ/DEV.md) 요청-17(`C23`)로 **그림 5장 · 소리 3개 ·
+드랍표 확률 6개 · 행운 곡선**을 한 번에 넘겼다. DEV 는 그것을 **게임 안에서 굴러가게** 만들었다.
+
+### 무엇을 했나
+
+| 갈래 | 내용 |
+|---|---|
+| **행운 스탯 신설** | `StatBlock.Luck` → `PassiveData.BonusLuck` → `PassiveEffect` 합산 → `BalanceImporter` 임포트·**익스포트** |
+| **시한 버프** | `GrantInvincibility(sec)` · `GrantHaste(sec, delta)` · `IsHasted` |
+| **픽업 4종** | `PickupKind` 에 `Bomb`·`Invincible`·`Haste`·`Gold` 추가 |
+| **드랍표** | `ExperienceManager.RollPickupDrop` — 누적 확률을 **한 번만** 통과 |
+| **애셋 8개** | 그림 5 · SFX 3 임포트 + `AudioLibrary` 등재(24→**27**) + 프리팹 4종 |
+
+🔴 **`StatBlock.Zero()` 에도 `Luck` 을 넣었다** (I-21). 보너스용 블록이 기본 생성자로 만들어지면
+기본 스탯이 그대로 더해져 값이 2배가 된다 — 새 필드를 넣을 때마다 같이 봐야 한다.
+
+🔴 **익스포트도 같이 고쳤다.** 임포트만 고치면 다음 Export 때 `BonusLuck` 열이 통째로 사라져
+CSV 가 조용히 망가진다. 왕복이 맞아야 CSV 가 원본 노릇을 한다.
+
+🔴 **`minAttackSpeed = 0.1f` 하한 신설.** `WeaponBase.cs:54` 가 쿨다운에 `Final.AttackSpeed` 를
+**곱하므로** 이 값이 0 이하가 되면 쿨다운이 0 이 된다. 오늘 최악 조합이
+`Aegis −0.05 + AttackSpeed Lv5 −0.30 + 공속 −0.50 = 0.15` — 여유가 **0.05** 뿐이라
+값이 아니라 **바닥**을 깔았다.
+
+### 🔑 설계 판단 셋
+
+**① 드랍은 한 번만 굴린다.** 종류마다 따로 굴리면 한 마리가 폭탄과 무적을 같이 떨구고,
+표의 "합계 6.7%" 가 실제 드랍률과 어긋난다. 한 번만 굴리면 **합계가 곧 드랍률**이다.
+행운은 합계가 아니라 **각 항목에** 곱한다 — 값은 같지만 **종류별 비율이 행운과 무관하게 유지**된다.
+
+**② 힐 픽업은 새로 안 만들었다.** 기존 `HealPickup.prefab` 을 드랍표에 그대로 넣었다.
+다만 드랍으로 나올 땐 건물 레벨이 없어 회복량을 줄 사람이 없으므로 `healPickupAmount` 를
+`ExperienceManager` 가 들고 주입한다. 안 주면 **0 을 회복하고 조용히 사라진다.**
+
+**③ 드랍표는 나란한 배열이다.** `SceneWiring.csv` 는 **구조체 배열을 못 쓴다** —
+`BalanceImporter.WriteProperty`(605행)가 원소마다 `WriteScalar` 를 부르는데 구조체 원소는
+`SerializedPropertyType.Generic` 이라 `! 타입 미지원` 으로 튕긴다.
+`GameObject[]` + `float[]` 를 **같은 순서·같은 길이**로 두는 것이 유일한 길이고,
+어긋나면 조용히 틀리므로 `Mathf.Min` 으로 잘라 쓴다.
+
+### 변경한 파일
+
+| 파일 | 무엇을 |
+|---|---|
+| `Scripts/Player/StatBlock.cs` | `Luck` 필드 + `Zero()` |
+| `Scripts/Passive/PassiveData.cs` · `PassiveEffect.cs` | `BonusLuck` · `GetLuck` · 합산 |
+| `Scripts/Player/PlayerStats.cs` | 무적/공속 타이머 · `minAttackSpeed` 하한 |
+| `Scripts/Audio/AudioId.cs` | `BombPickup`·`BuffPickup`·`GoldPickup` (25/26/27) |
+| `Scripts/Pickup/WorldPickup.cs` | `PickupKind` 4종 + 분기 + `DetonateBomb` |
+| `Scripts/Experience/ExperienceManager.cs` | 드랍표 3필드 + `RollPickupDrop` |
+| `Scripts/Enemy/EnemyBase.cs` | `Die()` — 엘리트·보스=상자 / 잡몹=드랍표 |
+| `Editor/BalanceImporter.cs` | `BonusLuck` 임포트 + 익스포트 |
+| `Game/Sprites/Pickups/{Bomb,Invincible,Haste,Gold}.png` · `Passives/Luck.png` | **신규** (+meta) |
+| `Game/Audio/SFX_{Bomb,Buff,Gold}Pickup.wav` · `AudioLibrary.asset` | **신규 3** + 등재 |
+| `Prefabs/Pickup_{Bomb,Invincible,Haste,Gold}.prefab` | **신규** |
+| `Game/PassiveData/Luck.asset` · `Game/ItemData/Luck.asset` | **신규** (Import 산출물) |
+| `Scenes/SampleScene.unity` | `ExperienceManager` 드랍표 **임시 배선** |
+| `Docs/Parallel/BUGS.md` · `REQ/CONTENT.md` · `DONE/D20.md` | B5 증상 추가 · 요청-16 · 상세 |
+
+`git diff --stat` = **32 files · 455 insertions(+) · 21 deletions(-)** (신규 파일 제외).
+
+⚠️ **씬 배선은 임시다.** `SceneWiring.csv` 는 CONTENT 소유라 못 고친다. 지금은 씬에 직접 써 뒀고
+그 행이 CSV 에 아직 없어 **Import 가 덮어쓰지 않는다.** 요청-16 이 처리되면 CSV 가 원본이 된다.
+
+### 검증 로그
+
+컴파일 에러 **0**. CSV Import — Passives 10→**11** · Items 28 · `SceneWiring.csv : 9/11 적용`
+(못 적용한 2줄은 **예상된 것** — `magnetPrefab`/`magnetDropChance` 가 코드에서 사라졌다).
+
+| # | 기준 | 결과 |
+|---|---|---|
+| ① | `Luck` SO `BonusLuck` = 0.15/0.3/0.5/0.7/1 · 기존 10개는 전부 0 | ✅ 기존 non-zero **0건** |
+| ② | 픽업 5종이 Magnet 과 같은 크기 | ✅ 실체 높이 **480** vs Magnet **482** · 월드 0.50 동일 |
+| ③ | `Luck` 이 3택 카드에 뜬다 | ✅ `allItems` **25**개, Luck 포함 |
+| ④ | 행운 Lv5 에서 드랍이 정확히 2배 | ✅ **2.001배** (6.688% → 13.368%, 5만 회 × 2) |
+| ⑤ | 폭탄이 Demon 은 지우고 Ogre 는 안 지운다 | ✅ **실물리 확인** |
+| ⑥ | 소리 3종이 각자 다르게 들린다 | ❌ **불가** — 귀로만 판정 → 사용자 몫 |
+
+**⑤ 는 한 마리씩 두 번 놓아 확인했다** (아래 B5 때문에 같이 놓으면 루프가 끊긴다):
+Demon 3유닛 → 사망(`ExpDrop` 0→1) · Ogre 5유닛 → `DamagePopup` **오우거 자리 1건뿐** ·
+`ExpDrop` 변화 **0**(생존) · 11유닛 밖 Demon **무피해**(반경 10 정확) · 폭탄 `active=False`(정상 despawn).
+산술과도 맞는다 — Demon `200−4=196 ≥ 160` · Ogre `200−6=194 < 220`(**26 남음**).
+
+### 🔑 통계 이상을 보면 로직보다 **세는 방법**을 먼저 의심한다
+
+④ 의 첫 시행에서 −3.1σ 가 나왔다. 로직을 고치기 전에 `ObjectPool.cs` 를 읽어
+**켜져 있는 오브젝트를 재사용하지 않는다**(= 개수 세기가 정확하다)를 확인해 계수 오류를
+배제한 뒤 시드를 바꿔 다시 돌렸다. 편차는 사라졌다 — **시드 탓이었다.**
+
+### 하다가 발견한 것 (고치지 않음)
+
+- 🔴 **B5 에 새 증상** — `Die():449` 의 NRE 가 `DetonateBomb` 의 `foreach` **밖으로 전파**된다.
+  뒤쪽 적은 피해를 아예 안 받고, `Collect()` 가 `Despawn()` 전에 끊겨 **폭탄이 바닥에 남는다.**
+  같은 모양이 `AoeProjectile`·`MeleeWeapon`·`SummonWeapon`·`ToxinField` 에도 있다 →
+  [`BUGS.md` B5](Parallel/BUGS.md) 에 등재, 우선순위 `낮음`→`재검토 필요`
+- ℹ️ **스프라이트 bbox 기준이 서로 달랐다** — CONTENT 는 `alpha>127`, `PIL.getbbox()` 는 `alpha>0`.
+  `Magnet`·`GoldGain` 에 거의 안 보이는 AI 잔여 픽셀이 **1.4~1.5%** 흩어져 있어 `a>0` bbox 가
+  최대 311px 부풀었다. **애셋 결함이 아니라 측정 기준 차이**다(새 5장은 부분 알파 **0픽셀**)
+- ℹ️ `.meta` 를 복사해 쓸 때 **GUID 말고 하나 더 있다** — 원본의 스프라이트 서브애셋 이름이
+  `internalIDToNameTable`·`spriteSheet.sprites[].name`·`nameFileIdTable` **세 곳**에 박혀 있다
+- ℹ️ `ExecutionResult.Log` 는 **정렬 지정자(`{1,-24}`)를 못 쓴다** — 그대로 문자로 찍힌다
+- ℹ️ **대량 스폰 실험은 플레이 세션을 오염시킨다** — 5만 회 실험이 남긴 픽업 하나가 플레이어에게
+  끌려가 먹히며 `LevelUp`(timeScale 0)로 들어갔고, `WorldPickup.Update` 가 그 상태에서 조기
+  반환하므로 **다음 검증이 통째로 막혔다.** 실험 뒤에는 플레이를 껐다 켤 것
 
 ---
 
@@ -4769,6 +4885,7 @@ Play 모드 — 한 세션에서 두 경로 전부:
 | **D22** | 사용자 지시 *"EVENT로서 전투 중 함정방 느낌 · 무한적 + 시간제한 생존 · 여러 이벤트 중 하나로 **일단은 문서화만**"*. 이벤트가 하나도 설계돼 있지 않았다 | ✅ 해결 (2026-08-31 43차 → 2-47) — `Docs/DESIGN_EVENTS.md` **신설**(307줄, DEV 소유). 🔴 **코드 변경 0** — 지시가 문서화만이었다. 🔑 **코드를 먼저 읽었더니 설계가 바뀌었다** — 이벤트 시스템은 **이미 절반 지어져 있었다**: `StageType.Event`(맵 가중치 15%) · `GameState.Event` · `EventManager` 뼈대 · `Events.csv` 5행 · `UseTimerClear`/`SurvivalTime`(**시간제한 생존이 이미 된다**) · `MaxAlive`(차 있으면 소환이 **대기**한다, 취소가 아니다 → 죽인 만큼 즉시 채워진다) · `RecycleFarEnemies`(멀어진 적을 죽이지 않고 앞으로 옮긴다 → **도망은 이미 불가능**). ⇒ "무한적 + 시간제한"에 **새 전투 시스템이 필요 없다.** 무한 소환은 `WaveManager.cs:156` 의 `Count <= 0` 재해석 **한 줄**(§4 B안 권장). **진짜 벽으로 가두는 A안은 권장하지 않는다** — 뱀서라이크에서 몰리는 것은 회피 실력의 결과여야지 운이 되면 안 된다(§4-5 C안 권장). 🔴 **결정 6건 사용자 대기**(§7) — 사용자가 *"이벤트 관련은 나중에"* 로 보류. ⚠️ `E2 Elite Ambush` 는 `WaveManager.cs:193,206` 이 엘리트/보스 관문을 `StageType` 으로 하드코딩해 그 두 줄을 건드려야 한다 |
 | **D21**<br>(C22) | 문어 촉수 링(`Fx_TentacleLash`)이 `m_SortingOrder: 20` 이라 **플레이어보다 앞**에 그려졌다(D16 육안 확인 → 요청-10 ③). DEV 가 낸 A(`Range` 축소)·B(`offsetDistance` 확대)를 CONTENT 가 **둘 다 반려** — A 는 Lv1 넓이의 44% 가 되고 B 는 플레이어에게 달라붙은 적을 링이 못 잡는다 | ✅ 해결 (2026-08-31 44차 → 2-48) — `Fx_TentacleLash.prefab:83` `m_SortingOrder` **`20` → `-5`** **한 줄**(`git diff --stat` = 1 file · 1 insertion · 1 deletion). 🔑 **CONTENT 가 낸 대조군이 문제의 성격을 바꿨다** — "검 아크는 **같은 order 20 인데 기사를 0.00% 덮는다. 중앙이 비어 있어서다**" ⇒ 기하 문제가 아니라 **합성 문제**이고 A·B 는 둘 다 헛다리. `-5` 는 새 층이 아니라 `Proj_ToxinField` 가 이미 쓰는 자리다(바닥 -100 < 촉수·독장판 -5 < 플레이어·적 0 < 픽업 1 … 검 아크 20). 🔴 **D19 와 일부러 분리**했다 — CONTENT 경고 "둘을 같이 바꾸면 어느 쪽이 들었는지 모른다". `Fx_SwingArc` 는 `20` 그대로. 검증은 **같은 프레임을 order 20/-5 로 두 번 렌더해서 뺐다**(플레이어 고정 · Lv3 · `Range` 2.2 · `SwingArcFx` 꺼서 프레임 정지): 기사 실루엣 336px 중 **가림 93px → 0px**(최악 프레임 `_5` 12.2% → 0) · 촉수 잉크 7829 → 7722(**손실 1.37%**, 바닥에 안 묻힌다) · **적 8마리를 링 둘레에 일부러 배치한 최악 조건**에서도 7826 → 7706(**1.5%**)이라 폴백 `-1` **불필요** · 육안으로도 기사 허리를 가로지르던 가닥이 뒤로 넘어감 · 콘솔 **Log 7건, Warning/Error 0**. 🔑 **CONTENT 예상 대가 3.7~4.2% 가 실측 1.37% 였는데 틀린 게 아니라 전제가 바뀐 것** — D19 로 문어가 1.20 뒤로 물러나 링 중심과 기사 중심이 어긋났다(예상은 공전 시절 기준). **`protected` 필드는 `RunCommand` 에서 안 보인다** — `WeaponBase.Data`/`Level` 이 `CS0122`, `[SerializeField]` 도 아니라 `SerializedObject.FindProperty` 는 null → NRE. `System.Reflection` 은 금지라 **public 우회로**(`AssetDatabase.LoadAssetAtPath<ItemData>` → `.WeaponRef`/`.CurrentLevel`/`.GetRange`)와 **스프라이트 시트 직접 로드**로 풀었다 |
 | **D23** | 문서가 **36개 · 약 1.1MB** 로 불었다(`SETUP_STATUS.md` 혼자 **388KB**). 편집기로는 어디에 뭐가 있는지 못 찾아 매번 `grep` 를 돌렸다. **문제는 내용이 아니라 열람 수단**이었다 | ✅ 해결 (2026-08-31 45차 → 2-49) — **디렉터리 정션 하나**. `D:\obsidian_claude\UNITY_GAME\VS_LIKE` → `C:\Unity\VS_LIKE\Docs`. 🔴 **옮기지도 복사하지도 않았다** — 복사하면 두 벌이 되고 두 벌은 반드시 갈라진다. `CLAUDE.md` 의 `Docs/...` 경로 규정과 git 이력도 그대로 산다. vault 에 `00_INDEX.md`(36문서 전체 지도 + "어떤 문서에 적나" 라우팅표)와 `지도\개발 지도.md`(`SETUP_STATUS` 절 목차 · `DONE` 25건 한 줄 요약 · 문서↔실제 어긋난 곳 표 · `02_DEV_세션_프롬프트` 가 원본보다 뒤처진 7곳) 신설. 낡은 노트 2건은 **지우지 않고** `아카이브/` 로 옮기며 경고 배너(그중 🔴 *"스크립트 코드는 수정하지 마"* 는 2026-08-26 부로 **폐기된 규칙**). 🔴 **코드·애셋 변경 0 · Unity 미접촉**(`BOARD §2` 내내 `IDLE`) · repo `.md` **본문 무수정**(frontmatter 금지). 🔑 **교훈 — 검사 도구가 "이상 없음"을 반환하면 그 도구부터 의심한다**: 1차 링크 검사 `grep -oP '\]\(\K'` 가 **"전 노트 0 링크"** 를 돌려줬는데, 링크가 눈에 보이는데 0 이면 통과가 아니라 고장이다. `sed` 로 다시 도니 `지도\개발 지도.md` 의 **36개가 전부 깨져 있었다**(하위 폴더에서 `../` 누락). 고쳐서 최종 **57/57 도달, 깨짐 0**. **보고만 하고 안 고친 것** — 문서↔실제 불일치 3건(`D13` 머리말 *"12개 전부 PASS"* 인데 **⑪ 실패** · `C22` §4 의 72° 근거가 `C23` 실측으로 뒤집혔는데 표시 없음 · `C1` §2 소제목이 자기 결론과 반대) + 없는 대상 참조 4건(`SfxId.Crit` 예약만 · `offsetAngle` 72° **코드 자체가 없음** · `Assets/Scripts/{Weapons,Visual}/` **없는 폴더** · `TUNING.md §3` "문어가 서는 자리"는 `C23` 이 지움). `BOARD §0` 에 `Tools/Art/`·`Tools/Audio/` 누락은 CONTENT 소유라 요청-15 로 넘겼다. ⚠️ **병렬 사고** — CONTENT 의 `C24` 커밋(`4c282e2`)이 내가 스테이지도 안 한 `BOARD.md` 의 `D23` 줄을 같이 가져갔다(`add`+`commit` 을 한 명령으로 붙여야 하는 이유). ⚠️ `cmd //c mklink /J` 는 이 bash 에서 **안 된다**(MSYS 인자 파괴) — PowerShell `New-Item -ItemType Junction` |
+| **D20**<br>(C23) | 적을 죽여도 나오는 게 **경험치 구슬 하나뿐**이었다. 자석·상자는 엘리트 전용이라 **잡몹은 사실상 아무것도 안 줬다** — 뱀서라이크에서 "잡몹을 밀어붙일 이유"의 절반이 비어 있었다 | ✅ 해결 (2026-08-31 46차 → 2-50) — CONTENT 요청-17 의 재료(그림 5 · SFX 3 · 확률 6 · 행운 곡선)를 게임에 넣었다. **행운 스탯 신설**(`StatBlock.Luck` → `PassiveData.BonusLuck` → `PassiveEffect` → `BalanceImporter` **임포트+익스포트**) · **시한 버프**(`GrantInvincibility`/`GrantHaste`) · **픽업 4종**(`Bomb`·`Invincible`·`Haste`·`Gold`) · **드랍표**(`RollPickupDrop`) · 애셋 8개 임포트 + `AudioLibrary` 24→**27** + 프리팹 4종. 🔑 **설계 판단 셋** — ① 드랍은 **한 번만** 굴린다(종류별로 굴리면 폭탄+무적이 같이 나오고 표의 "합계 6.7%"가 실제와 어긋난다. 행운은 합계가 아니라 **각 항목에** 곱해 종류별 비율을 행운과 무관하게 유지) · ② 힐 픽업은 새로 안 만들고 기존 `HealPickup.prefab` 을 드랍표에 넣되 **회복량을 `ExperienceManager` 가 주입**한다(건물 레벨이 없어 안 주면 **0 을 회복하고 조용히 사라진다**) · ③ 드랍표는 **나란한 배열**이다 — `SceneWiring.csv` 는 **구조체 배열을 못 쓴다**(`WriteProperty` 가 원소마다 `WriteScalar` 를 부르는데 구조체는 `Generic` 이라 `! 타입 미지원`). 🔴 `StatBlock.Zero()` 에도 `Luck` 추가(I-21) · 🔴 **익스포트도 같이** 고쳤다(안 그러면 다음 Export 때 `BonusLuck` 열이 사라져 CSV 가 조용히 망가진다) · 🔴 **`minAttackSpeed = 0.1f` 하한 신설**(`WeaponBase.cs:54` 가 쿨다운에 `AttackSpeed` 를 **곱한다**. 최악 조합 `Aegis −0.05 + AttackSpeed Lv5 −0.30 + 공속 −0.50 = 0.15` 로 여유가 **0.05** 뿐). **판정 6건 중 5건 PASS** — ① `BonusLuck` 기존 10개 전부 0 · ② 실체 높이 480 vs Magnet 482 · ③ `allItems` 25개 · ④ 행운 Lv5 에서 **2.001배**(5만 회 × 2) · ⑤ **실물리** Demon 사망 / Ogre 생존 + 11유닛 밖 무피해(반경 10 정확). ⑥ 소리 구분은 **귀로만 판정 가능 → 사용자 몫**. 🔑 **통계 이상은 로직보다 "세는 방법"을 먼저 의심한다** — ④ 첫 시행 −3.1σ 를 `ObjectPool` 이 활성 오브젝트를 재사용하지 않음을 확인해 계수 오류부터 배제한 뒤 시드를 바꿔 재실행, 편차 소멸(**시드 탓**). ⚠️ **씬 배선은 임시다** — `SceneWiring.csv` 가 CONTENT 소유라 요청-16 으로 넘겼다(그 행이 CSV 에 없어 Import 가 덮어쓰지 않는다). **고치지 않고 보고만 한 것** — 🔴 `B5` 새 증상(`Die():449` NRE 가 `DetonateBomb` 의 `foreach` **밖으로 전파**돼 뒤쪽 적이 피해를 안 받고 폭탄이 바닥에 남는다. 같은 모양이 `AoeProjectile`·`MeleeWeapon`·`SummonWeapon`·`ToxinField` 에도 → 우선순위 `낮음`→`재검토 필요`) · 스프라이트 bbox 기준 차이(CONTENT `a>127` vs `PIL` `a>0`, `Magnet`·`GoldGain` 의 잔여 픽셀 1.4~1.5% 가 bbox 를 최대 311px 부풀린다 — **측정 기준 차이지 애셋 결함 아님**) · `.meta` 복사 시 **GUID 말고 서브애셋 이름이 세 곳**에 박혀 있다 · `ExecutionResult.Log` 는 **정렬 지정자(`{1,-24}`)를 못 쓴다** · **대량 스폰 실험은 플레이 세션을 오염시킨다**(잔여 픽업이 먹히며 `LevelUp`(timeScale 0)에 들어가 `WorldPickup.Update` 가 조기 반환 → 다음 검증이 통째로 막힘) |
 
 ### 해결 상세
 

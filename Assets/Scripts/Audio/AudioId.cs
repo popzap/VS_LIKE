@@ -42,6 +42,9 @@ public enum SfxId
     ChestOpen   = 22,
     Magnet      = 23,
     Heal        = 24,     // 회복(식당 힐템 · 힐 픽업)
+    BombPickup  = 25,     // 화면 폭탄 픽업
+    BuffPickup  = 26,     // 무적·공속 공용. 둘을 가르지 않는 이유는 화면 연출이 이미 다르기 때문이다
+    GoldPickup  = 27,     // 골드 픽업
 
     // 건물 · 진행
     BuildingPlace = 30,

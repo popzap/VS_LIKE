@@ -109,6 +109,18 @@ MonoBehaviour:
     Clip: {fileID: 8300000, guid: 60c1d296c232a34479786ee6ee4db4cc, type: 3}
     Volume: 0.32
     PitchJitter: 0.14
+  - Id: 25
+    Clip: {fileID: 8300000, guid: 527eb2f466de4b1da141c45c773c2296, type: 3}
+    Volume: 0.9
+    PitchJitter: 0.03
+  - Id: 26
+    Clip: {fileID: 8300000, guid: ad6761f347a349458a9a7f4bad4a1d2b, type: 3}
+    Volume: 0.75
+    PitchJitter: 0.06
+  - Id: 27
+    Clip: {fileID: 8300000, guid: cf69051425de47c8a0f01ea2b15789b7, type: 3}
+    Volume: 0.65
+    PitchJitter: 0.1
   bgm:
   - Id: 1
     Clip: {fileID: 8300000, guid: 19157b1c841d1cb4fa7b36c2fade82ba, type: 3}

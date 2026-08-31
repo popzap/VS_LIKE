@@ -16,6 +16,10 @@ public class PlayerStats : MonoBehaviour
     [Tooltip("피격 후 무적 시간(초). 접촉 피해가 연타되지 않도록 막는다.")]
     [SerializeField] private float invincibleTime = 0.6f;
 
+    [Header("버프 안전장치")]
+    [Tooltip("쿨다운 배율의 하한. 0 이하가 되면 무기가 매 프레임 발사된다.")]
+    [SerializeField] private float minAttackSpeed = 0.1f;
+
     // 런타임 수치 (base + meta + class + passive 합산)
     public StatBlock Final { get; private set; } = new();
 
@@ -60,6 +64,17 @@ public class PlayerStats : MonoBehaviour
 
     private float _invincibleTimer;
 
+    // ── 픽업 버프 (시간이 지나면 저절로 꺼진다) ──────────────────
+    //
+    // 패시브(_activePassives)와 나란히 두지 않은 이유: 패시브는 한 번 얻으면 런이 끝날 때까지
+    // 남는 영구값이고, 이쪽은 몇 초 뒤에 사라진다. 같은 목록에 섞으면 만료 처리를 위해
+    // 매 프레임 목록을 훑어야 하고 "지금 내 스탯이 왜 이러지"를 추적하기 어려워진다.
+    private float _hasteTimer;
+    private float _hasteAttackSpeed;
+
+    /// <summary>공속 버프가 켜져 있는가. HUD·VFX 가 물어볼 자리다.</summary>
+    public bool IsHasted => _hasteTimer > 0f;
+
     private readonly List<PassiveEffect> _activePassives = new();
 
     private PlayerController _controller;
@@ -75,6 +90,14 @@ public class PlayerStats : MonoBehaviour
     private void Update()
     {
         if (_invincibleTimer > 0f) _invincibleTimer -= Time.deltaTime;
+
+        if (_hasteTimer > 0f)
+        {
+            _hasteTimer -= Time.deltaTime;
+            // 만료된 프레임에 한 번만 재계산한다. 매 프레임 돌리면 패시브·직업 사슬을
+            // 통째로 다시 더하게 되므로 켜져 있는 동안 내내 비용을 낸다.
+            if (_hasteTimer <= 0f) { _hasteTimer = 0f; RecalculateStats(); }
+        }
     }
 
     private void Start()
@@ -226,6 +249,43 @@ public class PlayerStats : MonoBehaviour
 
         foreach (var p in _activePassives)
             p.Apply(Final);
+
+        // 픽업 버프는 패시브 다음이다 — 임시값이 영구값 위에 얹히는 순서여야
+        // 버프가 꺼졌을 때 원래 자리로 정확히 돌아간다.
+        if (_hasteTimer > 0f) Final.AttackSpeed += _hasteAttackSpeed;
+
+        // 🔴 쿨다운 배율이 0 이하로 내려가면 WeaponBase 의 _timer 가 0 이하에서 시작해
+        // 무기가 매 프레임 발사된다. 지금 최악은 Aegis(-0.05) + AttackSpeed Lv5(-0.30)
+        // + 공속 버프(-0.50) = 0.15 라 이 하한에 안 닿지만, 값이 하나만 더 붙으면 닿는다.
+        Final.AttackSpeed = Mathf.Max(minAttackSpeed, Final.AttackSpeed);
+    }
+
+    // ── 픽업 버프 ────────────────────────────────────────────────
+
+    /// <summary>
+    /// 픽업으로 얻는 완전 무적. 피격 무적(<see cref="invincibleTime"/>)과 <b>같은 타이머</b>를 쓴다.
+    ///
+    /// <para>타이머를 따로 두지 않은 이유는 <see cref="TryTakeHit"/> 가 무적 중이면 아예
+    /// 되돌아가기 때문이다. 즉 버프가 켜진 동안에는 피격 무적이 타이머를 덮어쓸 일이 없다.
+    /// 반대로 <b>짧은 피격 무적이 긴 버프를 잘라내지 않도록</b> 긴 쪽을 남긴다.</para>
+    /// </summary>
+    public void GrantInvincibility(float seconds)
+    {
+        _invincibleTimer = Mathf.Max(_invincibleTimer, seconds);
+    }
+
+    /// <summary>
+    /// 픽업으로 얻는 공격 속도 버프. <paramref name="attackSpeedBonus"/> 는 쿨다운 배율에
+    /// <b>더해지는 값</b>이라 음수가 "더 빠름"이다 (-0.5 = 쿨다운 절반).
+    ///
+    /// <para>겹치면 <b>더 센 것 하나만</b> 남기고 시간만 늘린다. 더하면 두 개만 겹쳐도
+    /// 쿨다운이 0 이 되므로, 슬로우 중첩(<c>EnemyBase.ApplySlow</c>)과 같은 규칙을 쓴다.</para>
+    /// </summary>
+    public void GrantHaste(float seconds, float attackSpeedBonus)
+    {
+        _hasteAttackSpeed = Mathf.Min(_hasteAttackSpeed, attackSpeedBonus); // 음수라 Min 이 "더 셈"
+        _hasteTimer       = Mathf.Max(_hasteTimer, seconds);
+        RecalculateStats();
     }
 
     // ── 피해 / 회복 ──────────────────────────────────────────────

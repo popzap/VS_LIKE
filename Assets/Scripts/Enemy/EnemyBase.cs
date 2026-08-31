@@ -435,11 +435,11 @@ public class EnemyBase : MonoBehaviour
         // 경험치 드랍
         ExperienceManager.Instance?.SpawnExpDrop(transform.position, XpDrop);
 
-        // 보물상자 / 자석 드랍.
-        // 상자는 엘리트·보스 확정, 자석은 잡몹에게만 낮은 확률로 나온다 —
-        // 엘리트가 자석까지 떨구면 상자와 겹쳐 어느 쪽을 먹은 건지 알 수 없다.
+        // 보물상자 / 픽업 드랍.
+        // 상자는 엘리트·보스 확정, 픽업은 잡몹에게만 낮은 확률로 나온다 —
+        // 엘리트가 픽업까지 떨구면 상자와 겹쳐 어느 쪽을 먹은 건지 알 수 없다.
         if (IsElite || IsBoss) ExperienceManager.Instance?.SpawnChest(transform.position);
-        else                   ExperienceManager.Instance?.RollMagnetDrop(transform.position);
+        else                   ExperienceManager.Instance?.RollPickupDrop(transform.position);
 
         // 재화 드랍 (GrantGold 가 GoldGain 배율을 적용한다)
         if (CurrencyDrop > 0)

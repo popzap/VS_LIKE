@@ -20,6 +20,16 @@ public class StatBlock
     public float BuildingCooldown = 1f; // 건물 쿨다운 배율 (낮을수록 빠름)
 
     /// <summary>
+    /// 행운. <b>드랍 확률에 곱하는 배율의 "덧셈분"</b>이다 —
+    /// 최종확률 = 기본확률 × (1 + <c>Luck</c>). 0 이면 배율 1배라 아무 일도 안 일어난다.
+    ///
+    /// <para>다른 필드와 달리 기본값이 <b>1 이 아니라 0</b> 인 이유가 여기 있다.
+    /// <c>XpGain</c>/<c>GoldGain</c> 은 그 자체가 배율이라 1 에서 시작하지만,
+    /// 이건 배율에 <b>더해지는 값</b>이라 1 로 두면 시작부터 드랍이 2배가 된다.</para>
+    /// </summary>
+    public float Luck = 0f;
+
+    /// <summary>
     /// 전부 0 인 블록. <b>"보너스"로 쓸 때는 반드시 이걸 써야 한다.</b>
     ///
     /// <para>기본 생성자는 위 초기값(MaxHp 100, MoveSpeed 4 …)을 가진다. 그건 인스펙터에서
@@ -41,5 +51,6 @@ public class StatBlock
         XpGain         = 0f,
         GoldGain       = 0f,
         BuildingCooldown = 0f,
+        Luck             = 0f,
     };
 }

@@ -10,9 +10,9 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 8b780c200f55ddd4ea4c5e1257eeadfb, type: 3}
-  m_Name: BuildingCooldown
+  m_Name: Luck
   m_EditorClassIdentifier: Assembly-CSharp::PassiveData
-  PassiveName: Building Speed
+  PassiveName: Luck
   BonusMaxHp:
   - 0
   - 0
@@ -74,14 +74,14 @@ MonoBehaviour:
   - 0
   - 0
   BonusBuildingCooldown:
-  - -0.1
-  - -0.18
-  - -0.26
-  - -0.34
-  - -0.42
+  - 0
+  - 0
+  - 0
+  - 0
+  - 0
   BonusLuck:
-  - 0
-  - 0
-  - 0
-  - 0
-  - 0
+  - 0.15
+  - 0.3
+  - 0.5
+  - 0.7
+  - 1

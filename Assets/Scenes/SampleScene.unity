@@ -15904,6 +15904,62 @@ PrefabInstance:
       propertyPath: expDropPrefab
       value: 
       objectReference: {fileID: 5031122426119572849, guid: ab11ad2470e5bbd448f175b544113393, type: 3}
+    - target: {fileID: 3487634682706099646, guid: 662dda8a5b427484cbf8f24476baa8f0, type: 3}
+      propertyPath: pickupChances.Array.size
+      value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: 3487634682706099646, guid: 662dda8a5b427484cbf8f24476baa8f0, type: 3}
+      propertyPath: pickupPrefabs.Array.size
+      value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: 3487634682706099646, guid: 662dda8a5b427484cbf8f24476baa8f0, type: 3}
+      propertyPath: 'pickupChances.Array.data[0]'
+      value: 0.025
+      objectReference: {fileID: 0}
+    - target: {fileID: 3487634682706099646, guid: 662dda8a5b427484cbf8f24476baa8f0, type: 3}
+      propertyPath: 'pickupChances.Array.data[1]'
+      value: 0.015
+      objectReference: {fileID: 0}
+    - target: {fileID: 3487634682706099646, guid: 662dda8a5b427484cbf8f24476baa8f0, type: 3}
+      propertyPath: 'pickupChances.Array.data[2]'
+      value: 0.01
+      objectReference: {fileID: 0}
+    - target: {fileID: 3487634682706099646, guid: 662dda8a5b427484cbf8f24476baa8f0, type: 3}
+      propertyPath: 'pickupChances.Array.data[3]'
+      value: 0.007
+      objectReference: {fileID: 0}
+    - target: {fileID: 3487634682706099646, guid: 662dda8a5b427484cbf8f24476baa8f0, type: 3}
+      propertyPath: 'pickupChances.Array.data[4]'
+      value: 0.006
+      objectReference: {fileID: 0}
+    - target: {fileID: 3487634682706099646, guid: 662dda8a5b427484cbf8f24476baa8f0, type: 3}
+      propertyPath: 'pickupChances.Array.data[5]'
+      value: 0.004
+      objectReference: {fileID: 0}
+    - target: {fileID: 3487634682706099646, guid: 662dda8a5b427484cbf8f24476baa8f0, type: 3}
+      propertyPath: 'pickupPrefabs.Array.data[0]'
+      value: 
+      objectReference: {fileID: 1151350119078902949, guid: 07a536b975bdeb8499edc581e5f3a130, type: 3}
+    - target: {fileID: 3487634682706099646, guid: 662dda8a5b427484cbf8f24476baa8f0, type: 3}
+      propertyPath: 'pickupPrefabs.Array.data[1]'
+      value: 
+      objectReference: {fileID: 9173637372866440354, guid: d59fecf81985b5342a3db7d4577ff4be, type: 3}
+    - target: {fileID: 3487634682706099646, guid: 662dda8a5b427484cbf8f24476baa8f0, type: 3}
+      propertyPath: 'pickupPrefabs.Array.data[2]'
+      value: 
+      objectReference: {fileID: 7643726423324120768, guid: a4baa945d051c7f4e8aa09e1cd2b9df1, type: 3}
+    - target: {fileID: 3487634682706099646, guid: 662dda8a5b427484cbf8f24476baa8f0, type: 3}
+      propertyPath: 'pickupPrefabs.Array.data[3]'
+      value: 
+      objectReference: {fileID: 2737255475073933788, guid: f4f2e6e0e539ab3498a40a254167fcb7, type: 3}
+    - target: {fileID: 3487634682706099646, guid: 662dda8a5b427484cbf8f24476baa8f0, type: 3}
+      propertyPath: 'pickupPrefabs.Array.data[4]'
+      value: 
+      objectReference: {fileID: 4471753706764302437, guid: 34f63be18fdf25d45800059eea4aa862, type: 3}
+    - target: {fileID: 3487634682706099646, guid: 662dda8a5b427484cbf8f24476baa8f0, type: 3}
+      propertyPath: 'pickupPrefabs.Array.data[5]'
+      value: 
+      objectReference: {fileID: 8323487029373996655, guid: c93b099c6bcfe9540af40b3c9a47a21f, type: 3}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []

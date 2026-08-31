@@ -17,7 +17,7 @@
 | **B2** | 2026-08-30 | 사용자(실플레이) | **CONTENT** | **원인 확정** — Goblin·Slime 걷기 시트가 깨졌다. 16칸 중 12칸이 프레임이 아니라 **작은 캐릭터 9~16마리 뭉치** | `수정됨(C1/D4)` |
 | **B3** | 2026-08-30 | 사용자(실플레이) | **DEV** | Turret·Restaurant 가 설치된 상태에서 Village 를 얻고 `Z` 를 누르면 **Village 가 아니라 Turret·Restaurant 가 한 번 더 설치된다** | `보류(B안 적용 D2 — 표시만 넣었고 큐 순서는 그대로)` |
 | **B4** | 2026-08-30 | CONTENT | **DEV** | 일시정지·옵션창 글자 6곳이 **빈칸으로 나온다.** 씬에 한글이 남아 있는데 폰트가 Static 115자라 한글이 없다 | `수정됨(D5)` |
-| **B5** | 2026-08-30 | DEV(D9 검증 중) | **DEV** | **웨이브 밖에서 적이 죽으면 `WaveManager.OnEnemyKilled` 가 NRE 를 던진다** (`_currentWaveData` 가 null). 지금 게임 경로로는 안 난다 | `열림(우선순위 낮음)` |
+| **B5** | 2026-08-30 | DEV(D9 검증 중) | **DEV** | **웨이브 밖에서 적이 죽으면 `WaveManager.OnEnemyKilled` 가 NRE 를 던진다** (`_currentWaveData` 가 null). 지금 게임 경로로는 안 난다. 🔴 **2026-08-31 증상 추가 — 광역기가 첫 사망자에서 통째로 멈춘다(D20)** | `열림(우선순위 재검토 필요)` |
 | **B6** | 2026-08-30 | DEV(D14 검증 중) | **DEV** | **Dev 패널로 무기 레벨을 내리면 무기가 사라질 수 있다.** `무기 슬롯 꽉 참` 경고 3회 — `CanAcquire` 가 된다고 한 걸 `AddOrUpgradeWeapon` 이 거절한다 | `수정됨(D18)` |
 
 > 상태값: `열림` · `확인중` · `수정됨(D3)` · `재현안됨` · `보류(사유)`
@@ -447,6 +447,41 @@ if (_currentWaveData.UseKillClear && _killCount >= _currentWaveData.KillTarget)
 
 **고치는 법 (한 줄):** `if (_currentWaveData != null && _currentWaveData.UseKillClear && …)`
 🔴 **고치지 않았다.** D9 는 화살 임포트 작업이고 이건 그 범위 밖이다 (`SESSION_PROMPT.md` §5).
+
+### 🔴 증상 추가 — 광역기가 첫 사망자에서 멈춘다 (2026-08-31, DEV / D20 검증 중)
+
+위의 *"우선순위 낮음"* 은 **적 하나가 죽는 경우**만 본 판정이다. **여러 적을 한 번에 때리는
+경로**에서는 피해가 훨씬 크다. D20 의 폭탄 픽업(`WorldPickup.DetonateBomb`)이 그렇다:
+
+```csharp
+foreach (var h in hits)          // ← 예외가 이 루프 밖으로 나간다
+    enemy.TakeDamage(bombDamage, center);
+```
+
+`TakeDamage` → `Die()` → `OnEnemyKilled` NRE 가 **루프를 통째로 걷어찬다.** 결과:
+
+| | 실제로 본 것 (플레이 모드, `MainMenu` 상태) |
+|---|---|
+| 뒤쪽 적 | Demon 이 죽는 순간 예외 → **같은 반경 안의 Ogre 는 피해를 아예 안 받았다** |
+| 픽업 | `Collect()` 가 `Despawn()` 전에 끊겨 **폭탄이 바닥에 그대로 남는다.** `_collected=true` 라 다시 먹히지도 않는다 |
+
+**같은 모양(`OverlapCircleAll` → `foreach` → `TakeDamage`)이 4곳 더 있다** — 전수로 찾아 확인했다:
+
+| 파일 | 행 | 무엇 |
+|---|---|---|
+| `Weapon/AoeProjectile.cs` | 51·55 | 폭발 투사체 |
+| `Weapon/MeleeWeapon.cs` | 69·77 | 근접 휘두르기 |
+| `Weapon/SummonWeapon.cs` | 235·239 | 소환수 광역 공격 |
+| `Weapon/ToxinField.cs` | 82·88 | 독장판 **(틱마다 돈다)** |
+
+즉 웨이브 밖에서 광역기가 도는 상황이 생기면 **전부 같은 식으로 반쯤 먹는다.**
+(`BuildingBase.cs:80` 은 루프 밖 단일 대상이라 이 증상이 없다.)
+
+> ℹ️ 정상 경로(웨이브 중)에서는 여전히 안 난다. 다만 "우선순위 낮음"의 근거였던
+> *"사망 처리 한 건이 덜 도는 정도"* 는 **틀렸다** — 광역기에서는 **다른 적들의 피해가 통째로 사라진다.**
+
+🔴 **여기서도 고치지 않았다.** D20 은 픽업 드랍 작업이고 `WaveManager.cs` 는 그 범위 밖이다.
+D20 의 판정 ⑤ 는 적을 **한 마리씩** 놓는 두 번의 시행으로 우회해 검증했다.
 
 ---
 

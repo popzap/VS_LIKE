@@ -22,6 +22,9 @@ public class PassiveData : ScriptableObject
     public float[] BonusGoldGain       = { 0, 0, 0, 0, 0 };
     public float[] BonusBuildingCooldown = { 0, 0, 0, 0, 0 }; // 음수 = 건물이 빨라짐
 
+    /// <summary>픽업 드랍 확률 배율에 더해진다. 최종확률 = 기본확률 × (1 + Luck). 1.0 이면 정확히 2배.</summary>
+    public float[] BonusLuck            = { 0, 0, 0, 0, 0 };
+
     private float Get(float[] arr, int lv) => arr.Length == 0 ? 0 :
         arr[Mathf.Clamp(lv - 1, 0, arr.Length - 1)];
 
@@ -36,4 +39,5 @@ public class PassiveData : ScriptableObject
     public float GetXpGain(int lv)         => Get(BonusXpGain, lv);
     public float GetGoldGain(int lv)       => Get(BonusGoldGain, lv);
     public float GetBuildingCooldown(int lv) => Get(BonusBuildingCooldown, lv);
+    public float GetLuck(int lv)           => Get(BonusLuck, lv);
 }
