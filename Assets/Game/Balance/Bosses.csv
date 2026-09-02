@@ -13,7 +13,33 @@
 #   SlamWindup      : 🔴 예고 시간. 이만큼은 피할 수 있어야 한다. 0 이면 피할 수 없는 공격이다
 #   SlamRadius      : 월드 유닛. 참고로 카메라 세로 반경이 6 이다
 #
-# 🔴 값은 임시다 (D31). 플레이해 보고 CONTENT 가 정한다 (REQ/CONTENT.md 요청-23).
-#    지금 근거는 하나뿐이다 — Boss1 웨이브가 240초짜리이고 보스 HP 가 2200 이다.
+# ── 값의 근거 (C30) — 상세는 Docs/BALANCE.md `Bosses.csv` 절 ────────
+#
+# 보스의 실제 수치부터 알고 시작한다 (Enemies.csv 의 Ogre × 보스 배수):
+#   HP 220 x 7 = 1540 · 이동 1.2 x 0.9 = 1.08 · 접촉 25 x 2 = 50 · 크기 1.6 x 2 = 3.2
+#
+# 🔴 보스는 플레이어를 절대 못 쫓아온다. 실속도 1.08 인데 가장 느린 직업이 3.5 다.
+#    그래서 접촉 피해 50 은 거의 안 쓰이고, 이 싸움의 내용물은 내려찍기와 소환이다.
+#    소환수(Goblin 2.2)도 못 쫓아온다 — 보스 주위에 깔려서 "무기 사거리 안에 서 있는 것"을
+#    방해하는 게 역할이다. 그래서 SummonRadius 는 플레이어가 아니라 보스 기준이어야 맞다.
+#
+# 🔴 SlamWindup / SlamRadius 를 정한 규칙 — 가장 느린 직업이 반응 시간까지 쓰고도 피할 것
+#    BossSlam 은 예고 시작 시점의 플레이어 자리에 원을 깔고 따라오지 않으며,
+#    터지는 순간의 거리로만 판정한다(BossSlam.cs:66). 즉 필요한 것은 딱 하나 —
+#    "windup 초 안에 radius 만큼 걸어나가기" = 필요 속도 radius / windup.
+#
+#      DEV 임시값 3.2 / 0.9 -> 필요 3.56 u/s
+#        폭발광(3.5)은 반응 0초에도 못 피한다. 반응 0.25초를 주면 레인저(4.6)조차 못 피한다.
+#      지금 값 2.4 / 1.15 -> 필요 2.09 u/s
+#        반응 0.25초를 빼고도 전 직업이 1.3배 이상 여유로 벗어난다.
+#
+#    ⚠️ 직업 이동속도를 바꾸면 이 표가 깨진다. Classes.csv 의 BonusMoveSpeed 를 내리면
+#       여기 windup 도 같이 올려야 한다 (가장 느린 직업 기준).
+#
+# SlamDamage 18 : 가장 물렁한 어쎄신(HP 70)의 약 1/4 이다. 방어력이 적용되고
+#                 무적 프레임도 준다(TryTakeHit). 전사(130/방어2)는 15 씩 8.7 대.
+# PhaseSpeedMult 1|1.5|2.2 : 1.08 -> 1.62 -> 2.38. DEV 안(1.35배=1.46)은 체감이 안 난다.
+#                 3페이즈에도 가장 느린 직업(3.5)보다 느리다 — 카이팅을 막지 않는 선이다.
+# Summon* : DEV 임시값 그대로 뒀다. 바꿀 근거가 없었다 (TUNING.md 로 넘김).
 Id,EnemyId,PhaseThresholds,PhaseSpeedMult,SlamWindup,SlamRadius,SlamDamage,SlamCooldown,SummonEnemyId,SummonCount,SummonCooldown,SummonRadius,EntryShakeMagnitude,EntryShakeDuration
-BossOgre,Ogre,0.7|0.4,1|1.15|1.35,0.9,3.2,22,5|3.8|2.6,Goblin,3|4|6,12|9|7,3.5,0.55,0.7
+BossOgre,Ogre,0.7|0.4,1|1.5|2.2,1.15,2.4,18,5|3.8|2.6,Goblin,3|4|6,12|9|7,3.5,0.55,0.7

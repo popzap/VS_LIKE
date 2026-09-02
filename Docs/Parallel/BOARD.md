@@ -34,6 +34,8 @@
 
 | CONTENT | `C29` | `Assets/Game/Balance/Upgrades.csv` · `Docs/BALANCE.md` · `Docs/TUNING.md` · `REQ/DEV.md` | 2026-09-03 | `대기(REQ→DEV)` — **영구 강화 7종 값 확정** ([`REQ/CONTENT.md`](REQ/CONTENT.md) 요청-22). 총 **3,910G ≈ 완주 30판** (DEV 임시값은 6,150 이 아니라 실제 **8,600G · 65판**이었다). 🔴 **Greed 를 뺐다** — 카드 설명이 못 지키는 약속인 데다 `GrantMetaGold` 도 `GoldGain` 을 곱해서(`GameManager.cs:380`) **메타로 사서 메타를 늘리는 되먹임**이 숨어 있었다. 대신 **Precision(`CritMultiplier`)** 신설 — 어떤 직업·패시브도 안 건드리는 유일한 축이다. `Armor` 3→2(`Max(1,raw−Armor)` 라 +4 면 좀비까지 바닥값 1) · `MoveSpeed` +0.7→**+0.2**(레인저 정체성 +0.6 의 1/3). 🔴 **Import 만으로는 반영 안 됨** — `upgrades` 배열이 씬에 손으로 꽂혀 있어 `SceneWiring.csv` 줄이 필요하다 → [`REQ/DEV.md`](REQ/DEV.md) **요청-23** · [`DONE/C29.md`](DONE/C29.md) |
 
+| CONTENT | `C30` | `Assets/Game/Balance/Bosses.csv` · `Assets/Game/Sprites/Effects/` · `Tools/Art/` · `Docs/{BALANCE,TUNING}.md` · `REQ/DEV.md` | 2026-09-03 | `대기(REQ→DEV)` — **보스 수치 확정** ([`REQ/CONTENT.md`](REQ/CONTENT.md) 요청-23). 🔴 **DEV 가 "플레이해 봐야 안다"고 넘긴 것 중 하나가 책상에서 풀렸다** — `BossSlam` 이 예고 시작 자리에 원을 깔고 따라오지 않고 터지는 순간의 거리로만 판정하므로(`BossSlam.cs:66`) 답은 `radius ÷ windup` 이다. 임시값 `3.2/0.9`(필요 3.56 u/s)는 **폭발광(3.5)이 반응 0초에도 못 피하고 반응 0.25초를 주면 레인저(4.6)조차 못 피한다** → `2.4/1.15`(필요 2.09). 🔑 **보스 실속도가 1.08 이라 플레이어를 절대 못 쫓아온다** — 소환수(2.2)도 마찬가지다. 셋이 *사거리 진입 → 소환수가 자리 막음 → 내려찍기가 벌함* 이라는 **단일 위협 경로**를 이루고 있어 `Summon*` 은 근거 없이 안 건드렸다. ✅ 예고 원 스프라이트 **신설**(`BossSlamRing.png` 512² · PPU 512) — 정밀 회피로 바꾼 이상 **보이는 원과 판정 원이 같아야** 해서 선택이 아니게 됐다 → [`REQ/DEV.md`](REQ/DEV.md) **요청-24** · [`DONE/C30.md`](DONE/C30.md) |
+
 > 상태값: `진행중` · `대기(REQ→DEV)` · `검증대기` · `막힘(B1)`
 > 끝나면 **자기 줄을 지운다.**
 >
