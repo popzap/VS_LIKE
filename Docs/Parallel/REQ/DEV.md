@@ -29,7 +29,7 @@
 | 2026-08-31 | CONTENT | `닫힘(D24)` | 🔴 **CSV Import 1회 — `SceneWiring.csv` 픽업 드랍 3줄.** 네 요청-16 의 답이다 (C25). **이게 들어가기 전엔 픽업이 하나도 안 떨어진다** (`ExperienceManager` 배열이 빈 채다) — 아래 §요청-18 | [`REQ/CONTENT.md` 요청-16](CONTENT.md) · [`DONE/D20.md`](../DONE/D20.md) · [`DONE/C25.md`](../DONE/C25.md) |
 | 2026-08-31 | CONTENT | `진행중` **(3/6 · 걷기 3장 반려)** | 🔴 **Unity AI 로 직업 그림 6장** — 초상 3 + 걷기 시트 3 (폭발광·어쎄신·소환사). ✅ **초상 3장 판정 전부 통과**(C27 이 실측) · 🔴 **걷기 시트 3장 도착했으나 전부 반려** — Demolitionist·Assassin 은 **알파가 255 뿐**(`I-41`, 회색 배경이 RGB 에 칠해져 있다 → `GenerateAsset("RemoveImageBackground")`, `a85cc9f` 에 네가 세운 해법), **`Summoner_Walk` 는 색이 1개뿐인 빈 파일**(재생성 필요, 배경 제거를 또 돌리면 안 된다), **PPU 3장 다 1024 → `256`**. `C6` **6단계**의 유일한 막힘이다. **CONTENT 는 Unity AI 를 못 쓴다**(`SESSION_PROMPT.md` §3 금지 목록) — 절차적 생성으로는 기사 옆에 못 놓는다. ⚠️ **그림이 CSV보다 먼저다 — 순서가 바뀌면 임포터가 경고 없이 빈 직업을 만든다** (C26) — 아래 §요청-19 | [`DESIGN_CLASSES.md` §7](../../DESIGN_CLASSES.md) · [`DONE/C26.md`](../DONE/C26.md) |
 | 2026-09-03 | CONTENT | `열림` | 🔴 **구슬 수명 상한은 두지 않는다** — `D27` 인계의 답 (C28). 얻는 게 **0.5 ms(예산의 3 %)** 인데 잃는 게 **자석 픽업의 존재 이유**라 거래가 성립을 안 한다(단가 0.9 µs 는 네 §8-7 실측이고, §8-8 에서 귀속을 이미 철회했다). **대신 `RecycleFarEnemies` 의 원칙을 구슬에도 적용해 줘** — `MaintainRoutine`(0.25초) 안에서 **38유닛(적과 같은 상수)** 밖 구슬을 즉시 회수. 🔴 **진짜 문제는 수명이 아니라 `ClearWave` 가 구슬을 안 치워 한 판 10층에 걸쳐 누적된다는 것.** ⚠️ **경험치 수입이 는다 — 회수량 로그(판정 ③)가 있어야 밸런스를 잡는다** — 아래 §요청-21 | [`PERF.md` §8-7](../../PERF.md) · [`TUNING.md` §I](../../TUNING.md) · [`DONE/C28.md`](../DONE/C28.md) |
-| 2026-08-31 | CONTENT | `열림` | 🔴 **CSV Import 1회** — 상점 가격 `5~12 → 40~110` · 리롤 `3/1 → 25/15` · 해금 `30/15 → 150/75` · **`Economy.csv` 에 `StageMapManager` 6줄 신설**(no-op, 튜닝용). ⚠️ **요청-18 의 예산 숫자가 틀렸다 — 메타는 156G 가 아니라 132G** 다(상점·이벤트 노드는 0G). + 코드 2건은 **알아만 둘 것**: `UpgradeDefinition` 이 `I-19` 함정에 걸려 있고, `GrantGold` 의 `Max(1,..)` 가 수입에 551G 바닥을 만든다 — 아래 §요청-20 | [`REQ/CONTENT.md` 요청-18](CONTENT.md) · [`BALANCE.md` §3-1](../../BALANCE.md) · [`DONE/C27.md`](../DONE/C27.md) |
+| 2026-08-31 | CONTENT | `닫힘(D28)` | 🔴 **CSV Import 1회** — 상점 가격 `5~12 → 40~110` · 리롤 `3/1 → 25/15` · 해금 `30/15 → 150/75` · **`Economy.csv` 에 `StageMapManager` 6줄 신설**(no-op, 튜닝용). ⚠️ **요청-18 의 예산 숫자가 틀렸다 — 메타는 156G 가 아니라 132G** 다(상점·이벤트 노드는 0G). + 코드 2건은 **알아만 둘 것**: `UpgradeDefinition` 이 `I-19` 함정에 걸려 있고, `GrantGold` 의 `Max(1,..)` 가 수입에 551G 바닥을 만든다 — 아래 §요청-20 | [`REQ/CONTENT.md` 요청-18](CONTENT.md) · [`BALANCE.md` §3-1](../../BALANCE.md) · [`DONE/C27.md`](../DONE/C27.md) |
 
 > 상태값: `열림` · `진행중` · `닫힘(D3)` · `보류(사유)`
 > 처리했으면 상태만 바꾼다. **줄을 지우지 않는다.**
@@ -2367,6 +2367,51 @@ Assassin 은 요청한 **자주 악센트가 전혀 없고** 평균 밝기 `0.09
 ℹ️ **`MaxAlive` 를 올릴지는 아직 안 정했다.** 130 에 성능 근거가 없었다는 게 이번에 드러났으니
 (난이도 곡선으로 정한 값이다) **"장르답게 더 많이"** 는 이제 체감 문제다 → `TUNING.md` §I-1.
 올리게 되면 **여섯 웨이브를 같은 비율로** 올리고, 400 을 넘길 때만 너에게 다시 온다.
+
+---
+
+### ✅ 처리 결과 (D28, 2026-09-03) — **판정 5/5 PASS**
+
+Import 1회로 끝났다. 코드 2건은 네 말대로 **안 건드렸다.**
+
+```
+[BalanceImporter] Import 완료
+  Items     : 28
+  Economy.csv     : 49/49 적용
+  SceneWiring.csv : 12/12 적용
+```
+
+| # | 판정 기준 | 결과 |
+|---|---|---|
+| ① | `Items.csv` 실패 줄(`!`) 없을 것 | ✅ `Items : 28` · `!` **0건** |
+| ② | 🔴 `! 씬에 StageMapManager 없음` 이 뜨나 | ✅ **안 떴다.** `Economy.csv : 49/49` — 6줄 전부 붙었다 |
+| ③ | `ItemData/Sword.asset` 의 가격 | ✅ **`ShopPrice: 8 → 70`** |
+| ④ | 씬 `ShopManager` | ✅ `baseRerollCost 3→25` · `rerollCostIncrease 1→15` |
+| ⑤ | 씬 `StageMapManager` 가 **하나도 안 바뀔 것** | ✅ **오버라이드가 0개 생겼다** (아래 참조) |
+
+같이 붙은 것: `LevelUpManager.rerollCost 1→10` · `MetaProgressionManager.characterUnlockCost 30→150`·`skinUnlockCost 15→75`.
+
+#### ⑤ 를 "안 바뀜"으로만 읽으면 안 된다 — **두 가지가 동시에 확인됐다**
+
+씬 diff 에 `StageMapManager` 오버라이드가 **한 줄도 안 생겼다.** 이건 두 가지를 같이 뜻한다:
+
+1. 값이 코드 기본값과 같다 (네가 의도한 no-op) ✅
+2. **임포터가 그 컴포넌트를 실제로 찾았다** — 못 찾았으면 `49/49` 가 아니라 `43/49` + `!` 였다
+
+⇒ **이제 `weightShop` 을 `Economy.csv` 에서 튜닝할 수 있다.** 네 §5 후보 ①번이 열렸다.
+
+> ℹ️ **필드 이름이 `shopPrice` 가 아니라 `ShopPrice` 다** (대문자). 판정을 자동화할 때 참고.
+> ℹ️ **값은 프리팹이 아니라 씬 인스턴스에 오버라이드로 들어간다** —
+> `ShopManager.prefab` 은 여전히 `3/1` 이다. 인스펙터로 확인할 땐 **씬 오브젝트**를 봐야 한다.
+
+#### 🔴 곁가지 — `ProjectSettings/QualitySettings.asset` 이 같이 커밋됐다
+
+`D27` 이 품질 레벨을 `0`(Very Low) → **`5`(Ultra)** 로 올려 두고 갔다.
+근거는 있다 (`PERF.md` §7 — *"Standalone 기본값이 5 라 Very Low 로 재면 렌더 비용이 실제보다 낮게 나온다"*).
+**사용자 판단으로 5 를 유지**했다. 다만 **Ultra 는 `vSyncCount: 1`** 이라
+이제 **에디터 플레이가 144 Hz 에 고정된다** — 하네스가 삭제돼서 강제로 꺼 주는 것도 없다.
+`TODO.md` §1-B 에 등재했고, `TUNING.md` §G 는 **네 소유라 내가 안 썼다** —
+[`REQ/CONTENT.md`](CONTENT.md) **요청-20** 으로 넘겼다. **네 파트에는 영향 없다** (CSV·SO·그림·소리 무관).
 
 ---
 

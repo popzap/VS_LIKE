@@ -15714,6 +15714,14 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 2511448331381239456, guid: de8a7ae83c535e141af72623fbfd15f9, type: 3}
+      propertyPath: baseRerollCost
+      value: 25
+      objectReference: {fileID: 0}
+    - target: {fileID: 2511448331381239456, guid: de8a7ae83c535e141af72623fbfd15f9, type: 3}
+      propertyPath: rerollCostIncrease
+      value: 15
+      objectReference: {fileID: 0}
     - target: {fileID: 2731221690385166392, guid: de8a7ae83c535e141af72623fbfd15f9, type: 3}
       propertyPath: m_Name
       value: ShopManager
@@ -16601,6 +16609,10 @@ PrefabInstance:
     m_TransformParent: {fileID: 0}
     m_Modifications:
     - target: {fileID: 2390381838099993656, guid: c31a45deba47f474fbd07507a573c2b2, type: 3}
+      propertyPath: rerollCost
+      value: 10
+      objectReference: {fileID: 0}
+    - target: {fileID: 2390381838099993656, guid: c31a45deba47f474fbd07507a573c2b2, type: 3}
       propertyPath: levelUpPanel
       value: 
       objectReference: {fileID: 1472713033}
@@ -17333,6 +17345,14 @@ PrefabInstance:
     - target: {fileID: 3077925836200775779, guid: 7b1f61914c81d7c40a288cfc846aac23, type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4584500756073718419, guid: 7b1f61914c81d7c40a288cfc846aac23, type: 3}
+      propertyPath: skinUnlockCost
+      value: 75
+      objectReference: {fileID: 0}
+    - target: {fileID: 4584500756073718419, guid: 7b1f61914c81d7c40a288cfc846aac23, type: 3}
+      propertyPath: characterUnlockCost
+      value: 150
       objectReference: {fileID: 0}
     - target: {fileID: 4584500756073718419, guid: 7b1f61914c81d7c40a288cfc846aac23, type: 3}
       propertyPath: upgrades.Array.size

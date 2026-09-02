@@ -30,7 +30,6 @@
 | DEV | `D22` | `Docs/DESIGN_EVENTS.md`(신설) · `Docs/ROADMAP.md` | 2026-08-31 | 🅿️ **보류(사용자)** — "이벤트 관련은 나중에". 문서는 **다 썼다** (`E1 함정방` 상세 + `E2`~`E6` 자리표). 🔴 **코드 변경 0.** 재개 조건 = **§7 결정 6건.** ROADMAP §0·§7 에 "이벤트 노드가 비어 있다" 갭 등재 완료 |
 | CONTENT | `C6` | `Docs/DESIGN_CLASSES.md`(신설) · 이후 `Assets/Game/Balance/*.csv` · `_Incoming/` | 2026-08-30 | `진행중` — 직업 6종 컨셉 재편 + 신규 무기 6종 설계 (사용자 지시). **1~5단계 전부 닫힘.** 남은 건 6단계뿐 → `C26` |
 | CONTENT | `C26` | `Docs/DESIGN_CLASSES.md` · `Docs/TUNING.md` · **이후** `Assets/Game/Balance/{Classes,SceneWiring}.csv` | 2026-08-31 | **`대기(REQ→DEV)`** — **C6 6단계: 직업 3종**(폭발광·어쎄신·소환사). 값은 **전부 확정**([`DESIGN_CLASSES.md`](../DESIGN_CLASSES.md) §7-B) · 막힌 건 **그림 6장뿐** → [`REQ/DEV.md`](REQ/DEV.md) **요청-19**. 🔴 **CSV 는 그림이 들어온 뒤에 쓴다** — 순서를 뒤집으면 임포터가 **경고 없이** 빈 직업을 만든다 |
-| DEV | `D28` | `Assets/Game/{ItemData,Balance}/**`(Import 산출물) · `Assets/Scenes/SampleScene.unity` · `CLAUDE.md` | 2026-09-03 | `진행중` — **요청-20**: 가격 재산정 **CSV Import 1회** + 판정 5건. 🔴 **코드 2건(가·나)은 "알아만 둘 것"이라 안 건드린다.** 곁일: `D27` 인계 반영 — `CLAUDE.md` §4 에 새 함정 2건(`Assets/Refresh` 가 재컴파일을 보장하지 않는다 · 컴파일 에러가 `Log` 타입으로 온다) |
 | CONTENT | `C27` | `Assets/Game/Balance/{Items,Economy}.csv` · `Docs/BALANCE.md` · `Docs/TUNING.md` · `REQ/DEV.md` | 2026-08-31 | `대기(REQ→DEV)` — 가격 재산정 **끝**([`REQ/CONTENT.md`](REQ/CONTENT.md) 요청-18). 상점 `5~12→40~110` · 리롤 `3/1→25/15` · 해금 `30/15→150/75`. 🔴 **요청-18 의 전제 셋이 틀렸다** — 메타는 156G 가 아니라 **132G**(상점·이벤트 노드는 클리어 보상 0) · 해금 비용은 이미 `Economy.csv` 에 있었다 · `UpgradeDefinition` 은 **애셋 0개 + `I-19` 함정**. **Import 1회 대기** → [`REQ/DEV.md`](REQ/DEV.md) **요청-20** · [`DONE/C27.md`](DONE/C27.md).<br>➕ 곁일: **요청-19 납품물 검수** — 초상 3장 ✅ / **걷기 시트 3장 🔴 반려**(알파 255 = `I-41` · `Summoner_Walk` 는 빈 파일 · PPU 1024→256). 해법은 `a85cc9f` 의 `RemoveImageBackground` — **에디터 명령이라 DEV 만 할 수 있다** |
 
 | CONTENT | `C28` | `Docs/BALANCE.md` · `Docs/TUNING.md` · `REQ/DEV.md` | 2026-09-03 | `대기(REQ→DEV)` — **`D27` 성능 인계 반영.** 🔴 **구슬 수명 상한은 두지 않는다** — 얻는 게 **0.5 ms(예산 3 %)** 인데 잃는 게 **자석 픽업의 존재 이유**다(단가 0.9 µs 는 `PERF.md` §8-7 실측이고 §8-8 에서 귀속이 이미 철회됐다). 🔑 **물어본 축이 틀렸다 — 진짜 성장 축은 `ClearWave` 가 구슬을 안 치워 한 판 10층에 누적된다는 것.** 답은 `RecycleFarEnemies` 주석에 이미 있었다(*"지우면 경험치가 증발하니 옮겨서 다시 쓴다"*) → **같은 38유닛 기준을 구슬에도** → [`REQ/DEV.md`](REQ/DEV.md) **요청-21**. ✅ `MaxAlive` **400 천장**을 [`BALANCE.md`](../BALANCE.md) 에 규칙으로 등재(**CSV 는 안 바꿈** — 현재 130, 여유 3배) · ✅ 겹침 3상수를 [`TUNING.md`](../TUNING.md) **§I** 로 신설하며 실측값 2개를 **판정 기준으로** 박음 · [`DONE/C28.md`](DONE/C28.md) |
@@ -54,6 +53,25 @@
 > ✅ 계측 전량 제거(심볼 소멸까지 조회 확인) · **`SampleScene.unity` 한 줄도 안 바뀜** · 콘솔 에러 0.
 > ➕ 곁가지: **건물 앞 `E` 승급이 촬영 중 처음으로 실제 조작 경로 검증됨**(외형 변화까지) — `TODO §1` 항목 닫힘.
 > 🔴 **무기 렉의 원인은 미확정으로 남는다** — `BehaviourUpdate` 의 71~81 %(정정 후 0.2~0.7 ms/frame)가 미설명이다.
+>
+> ✅ **`D28` 끝났다 — DEV 가 지웠다** (2026-09-03, 51차 → [`SETUP_STATUS.md`](../SETUP_STATUS.md) 2-55).
+> 요청-20 대로 **Import 1회**. 판정 **5/5 PASS** → [`DONE/D28.md`](DONE/D28.md).
+> `Economy.csv 49/49` · `SceneWiring.csv 12/12` · `Items 28` · 실패 줄 0 ·
+> `Sword.ShopPrice 8→70` · 씬 `ShopManager 3→25 / 1→15` · 해금 `30/15→150/75` · 레벨업 리롤 `1→10`.
+> 🔑 **네가 no-op 으로 넣은 판정 ⑤ 가 판정 하나를 공짜로 더 만들었다** — 씬에 `StageMapManager`
+> 오버라이드가 0개 생긴 건 *값이 같다* 와 ***임포터가 그 컴포넌트를 찾았다*** 를 동시에 뜻한다
+> (못 찾았으면 `43/49` + `!`). ⇒ **`weightShop` 튜닝 경로가 부작용 없이 증명됐다.**
+> ⚠️ 알아 둘 것 둘 — 필드가 `shopPrice` 가 아니라 **`ShopPrice`**(소문자로 조회하면 NRE) ·
+> **Import 값은 프리팹이 아니라 씬 인스턴스 오버라이드로 들어간다**(`ShopManager.prefab` 은 여전히 `3/1`).
+> ➕ **`D27` 인계를 마저 반영했다** — 새 함정 둘(`Assets/Refresh` 가 재컴파일을 보장하지 않는다 ·
+> 컴파일 에러가 `Log` 타입으로 온다)이 `PERF.md` 에만 있고 **`CLAUDE.md` 에 없었다.** §4 에 2행 넣었다.
+> 🔴 **품질 레벨 `0→5`(Ultra) 는 사용자 판단으로 유지하되 대가를 등재했다** — Ultra 는 `vSyncCount: 1` 이고
+> 꺼 주던 `PerfHarness` 는 지워졌다. **에디터 플레이가 이제 144 Hz 에 고정된다** → `TODO.md` §1-B.
+> `TUNING.md` §G 는 CONTENT 소유라 안 쓰고 [`REQ/CONTENT.md`](REQ/CONTENT.md) **요청-20** 으로 넘겼다.
+> ℹ️ **요청-19 의 `진행중(3/6)` 상태 칸은 안 건드렸다** — 요청자 것이다.
+> 반려가 stale 이라는 근거(`mtime`)는 요청-19 답신에 이미 보냈다. CONTENT 가 재고 닫으면 된다.
+> ℹ️ **`Docs/BALANCE.md`·`Docs/TUNING.md` 는 커밋에서 뺐다** — CONTENT 가 지금 `D27` 인계를 §I 로 정리 중이다.
+> ➡️ 다음은 **요청-21(구슬 회수)** 을 `D29` 로 처리한다.
 >
 > ✅ **`C12`·`C15` 는 CONTENT 가 확인하고 지웠다** (2026-08-30). DEV 가 D12 에서 Import 1회로
 > 처리를 마쳤고 판정 전부 PASS → [`DONE/D12.md`](DONE/D12.md).
@@ -223,9 +241,9 @@ CONTENT 는 **읽기만** 한다 — 내 요청이 언제 처리될지 가늠하
 
 | 항목 | 값 |
 |---|---|
-| 상태 | `BUSY` |
-| 점유 이슈 | `D28` (요청-20 — 가격 재산정 CSV Import 1회 · 판정 5건) |
-| 컴파일 에러 | `0` (2026-08-31 **D26 종료 시** 확인 — C# 변경이 없었다. 애셋 임포트 6장 · 플레이 정지 · 잔류 오브젝트 0) |
+| 상태 | `IDLE` |
+| 점유 이슈 | — |
+| 컴파일 에러 | `0` (2026-09-03 **D28 종료 시** 확인 — C# 변경이 없었다. Import 1회 · 플레이 미진입 · `Types:["All"]` 로 `error CS` 조회 0건) |
 
 | 상태값 | 뜻 | CONTENT 가 알 것 |
 |---|---|---|

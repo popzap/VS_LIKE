@@ -20,4 +20,4 @@ MonoBehaviour:
   WeaponRef: {fileID: 0}
   BuildingRef: {fileID: 0}
   PassiveRef: {fileID: 11400000, guid: 0019db9e29a70f1499709690b041900e, type: 2}
-  ShopPrice: 6
+  ShopPrice: 50

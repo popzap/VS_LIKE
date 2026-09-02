@@ -117,7 +117,9 @@ Unity MCP 릴레이로 **켜져 있는 에디터**를 직접 조작한다.
 | `Unity_ReadConsole` 이 로그를 놓침 | `Types: ["All"]` 를 항상 넘긴다. `FilterText` 는 신뢰하지 말 것 |
 | 메뉴 실행 실패 | `MenuPath` 에 `->` 를 **문자 그대로** 넘긴다 (`&gt;` 로 이스케이프되면 실패) |
 | `"Unity not detected"` | 도메인 리로드 중. `sleep 15~20` 후 `ManageEditor(GetState)` |
-| C# 수정 반영 | 파일 저장 → `Assets/Refresh` 실행 → `sleep 15` → 콘솔 확인 → `File/Save` |
+| C# 수정 반영 | 파일 저장 → `Assets/Refresh` → `sleep 15` → 콘솔 확인 → `File/Save`. 🔴 **`Assets/Refresh` 는 재컴파일을 보장하지 않는다** — 아래 두 줄을 같이 볼 것 (D27) |
+| 🔴 **에러 0 인데 새 필드가 없다** | `Assets/Refresh` 가 **컴파일을 건너뛴 것**이다 (D27). `CompilationPipeline.RequestScriptCompilation()` 을 직접 부르고, 반영 여부는 콘솔이 아니라 **로드된 어셈블리에서 새 심볼을 조회해** 확인한다. 스크립트에 `public const int Version` 을 두고 매번 조회하는 게 확실하다 — 그 가드가 실제로 **구버전 코드로 신버전 결과를 적을 뻔한 것**을 막았다 |
+| 🔴 **컴파일 에러가 `Error` 로 안 잡힌다** | Unity 컴파일 에러는 `Log` 타입으로 온다 (D27). `Types:["Error"]` 는 **0건**인데 `Types:["All"]` + `FilterText:"error CS"` 로 보면 **11건**이었다. ⇒ 컴파일 확인은 반드시 `["All"]` 로 한다 |
 | `RunCommand` 에서 `System.Reflection` / `AssetDatabase.DeleteAsset` | 금지됨. 다른 경로를 찾을 것 |
 | **플레이 중에 고친 C# 이 안 먹음** | 컴파일이 플레이 종료까지 밀린다. **플레이 모드를 껐다 켜고** 다시 검증할 것 |
 | `Unity_Camera_Capture` 를 인자 없이 호출 | 게임 카메라가 아니라 **씬 뷰**가 찍힌다. `Camera.main.gameObject.GetInstanceID()` 를 넘길 것 |
