@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>
@@ -28,6 +29,22 @@ public class ExpDrop : MonoBehaviour
     [Tooltip("자석으로 끌려올 때의 속도. 화면 끝에서 오는 것도 있어서 훨씬 빠르다")]
     [SerializeField] private float magnetSpeed = 22f;
 
+    // ── 활성 구슬 목록 ───────────────────────────────────────────
+    //
+    // 🔴 씬 전체 순회(FindObjectsByType)를 쓰지 않기 위한 목록이다 (D27 의 방침).
+    //    풀에서 꺼내지면 OnEnable 로 들어오고, 회수되면 OnDisable 로 빠진다 —
+    //    풀 반환도 SetActive(false) 라 같은 경로를 탄다.
+    //
+    // ⚠️ static 이라 도메인 리로드로 비워질 수 있다. 읽는 쪽은 null·비활성을 건너뛸 것.
+
+    private static readonly List<ExpDrop> ActiveDrops = new();
+
+    /// <summary>지금 필드에 떠 있는 구슬들. 순회 중 회수하려면 <b>뒤에서부터</b> 돌 것.</summary>
+    public static IReadOnlyList<ExpDrop> Active => ActiveDrops;
+
+    private void OnEnable()  => ActiveDrops.Add(this);
+    private void OnDisable() => ActiveDrops.Remove(this);
+
     public void Initialize(int amount)
     {
         _amount    = amount;
@@ -50,9 +67,34 @@ public class ExpDrop : MonoBehaviour
     /// </summary>
     public static void PullAllToPlayer()
     {
-        foreach (var d in FindObjectsByType<ExpDrop>(FindObjectsSortMode.None))
-            if (d.gameObject.activeInHierarchy && !d._collected)
-                d._forcePull = true;
+        // 씬 전체 순회 대신 활성 목록을 쓴다 (D27). 목록에 있는 것은 정의상 활성이다.
+        for (int i = ActiveDrops.Count - 1; i >= 0; i--)
+        {
+            var d = ActiveDrops[i];
+            if (d != null && !d._collected) d._forcePull = true;
+        }
+    }
+
+    /// <summary>
+    /// 멀어진 구슬을 <b>날아오게 하지 않고</b> 그 자리에서 거둔다 (요청-21).
+    ///
+    /// <para>🔴 <b>경험치를 직접 더하지 않고 양만 돌려준다.</b> 부르는 쪽이 합산해
+    /// <see cref="ExperienceManager.CollectXp"/> 를 <b>한 번만</b> 부르기 위해서다 —
+    /// 수백 개가 각자 부르면 그것대로 비용이고, 획득음도 그만큼 큐에 들어간다.</para>
+    ///
+    /// <para>🔴 <c>_forcePull</c> 을 켜지 않는 이유: 38유닛을 <c>magnetSpeed 22</c> 로 오면
+    /// 1.7초가 걸리고 그동안 계속 <c>Update</c> 를 돈다. <b>개체 수를 줄이려는 목적에 정면으로 반한다.</b></para>
+    /// </summary>
+    /// <returns>거둔 경험치. 이미 회수된 구슬이면 <c>0</c>.</returns>
+    public int Harvest()
+    {
+        if (_collected) return 0;
+        _collected = true;
+
+        int amount = _amount;
+        if (SharedPool != null) SharedPool.Return(gameObject);
+        else                    gameObject.SetActive(false);
+        return amount;
     }
 
     private void Update()

@@ -30,6 +30,29 @@ public class LevelUpManager : MonoBehaviour
     // null 이면 평범한 레벨업이라 고른 아이템을 그대로 적용한다.
     private System.Action<ItemData> _forcedChoiceHandler;
 
+    /// <summary>
+    /// 아직 카드를 못 준 레벨업 횟수 (B10).
+    ///
+    /// <para>경험치가 한 번에 크게 들어오면 <see cref="ExperienceManager.CollectXp"/> 의
+    /// <c>while</c> 이 오른 레벨 수만큼 <see cref="ShowLevelUpPanel"/> 을 부른다.
+    /// 예전에는 그때마다 <c>_currentChoices</c> 를 덮어써서 <b>카드가 한 장만 남았다</b> —
+    /// 레벨 숫자와 스탯은 정상인데 아이템만 조용히 사라지는, 찾기 어려운 손실이었다.
+    /// 이제는 세어 두고 <see cref="HidePanel"/> 에서 하나씩 소진한다.</para>
+    ///
+    /// <para>🔴 <b>진화 제안(<see cref="ShowForcedChoices"/>)은 이 값을 올리지 않는다.</b>
+    /// 그건 레벨업이 아니라 "카드만 한 번 더 고르는 것"이라 빚이 아니다.</para>
+    /// </summary>
+    private int _pendingLevelUps;
+
+    /// <summary>
+    /// 지금 떠 있는 패널이 <see cref="ShowForcedChoices"/> 로 열린 것인가 (B10).
+    ///
+    /// <para>진화 제안 패널이 떠 있는 동안 레벨업이 들어올 수 있다. 그때 진화 카드를 고른 것을
+    /// <b>레벨업 빚을 갚은 것으로 세면 대기 중인 레벨업이 그대로 사라진다.</b>
+    /// 어느 종류의 패널을 닫는지 알아야 빚을 옳게 센다.</para>
+    /// </summary>
+    private bool _panelIsForced;
+
     // ── Public API ───────────────────────────────────────────────
 
     /// <summary>
@@ -43,7 +66,9 @@ public class LevelUpManager : MonoBehaviour
     {
         _inventory.Clear();
         _currentChoices.Clear();
-        _rerollUsed = false;
+        _rerollUsed      = false;
+        _pendingLevelUps = 0;   // 이월되면 새 런 시작하자마자 패널이 뜬다
+        _panelIsForced   = false;
 
         if (allItems == null) return;
         foreach (var item in allItems)
@@ -52,11 +77,25 @@ public class LevelUpManager : MonoBehaviour
 
     public void ShowLevelUpPanel()
     {
+        _pendingLevelUps++;
+
+        // 🔴 이미 떠 있는 패널을 덮어쓰지 않는다 (B10). 덮어쓰면 그 선택권이 사라진다.
+        //    한 번의 CollectXp 로 3레벨이 오르면 여기가 세 번 불린다.
+        //    ⚠️ ?. 를 쓰지 않는다 — 미할당 필드는 "가짜 null" 이다 (I-24).
+        if (levelUpPanel != null && levelUpPanel.activeSelf) return;
+
+        OpenLevelUpPanel();
+    }
+
+    /// <summary>대기열에서 하나를 꺼내 실제로 패널을 연다. 카드 재추첨은 여기서만 한다.</summary>
+    private void OpenLevelUpPanel()
+    {
         _forcedChoiceHandler = null;   // 진화 패널이 취소된 채 남아 있으면 다음 선택을 가로챈다
+        _panelIsForced  = false;
         _rerollUsed     = false;       // 리롤 횟수는 레벨업 1회마다 초기화된다
         _currentChoices = PickItems(cards.Length);
         RefreshPanel();
-        levelUpPanel.SetActive(true);
+        if (levelUpPanel != null) levelUpPanel.SetActive(true);
     }
 
     /// <summary>
@@ -69,15 +108,34 @@ public class LevelUpManager : MonoBehaviour
     public void ShowForcedChoices(List<ItemData> choices, System.Action<ItemData> onSelected)
     {
         _forcedChoiceHandler = onSelected;
+        _panelIsForced       = true;   // 이건 레벨업이 아니다 — 빚으로 세지 않는다 (B10)
         _rerollUsed          = true;
         _currentChoices      = choices;
         RefreshPanel();
         levelUpPanel.SetActive(true);
     }
 
+    /// <summary>
+    /// 선택이 끝났다. <b>대기 중인 레벨업이 남아 있으면 창을 닫지 않고 다음 것을 띄운다</b> (B10).
+    ///
+    /// <para>진화 제안으로 열린 패널은 빚을 <b>만들지도 갚지도 않는다.</b>
+    /// 진화 도중에 레벨업이 들어왔다면 진화 카드를 고른 뒤 그 레벨업 카드가 이어서 뜬다.</para>
+    /// </summary>
     public void HidePanel()
     {
-        levelUpPanel.SetActive(false);
+        // 🔴 진화 제안 패널을 닫는 것은 레벨업 빚을 갚은 게 아니다.
+        //    여기서 같이 세면 대기 중인 레벨업이 카드 없이 사라진다.
+        if (!_panelIsForced && _pendingLevelUps > 0) _pendingLevelUps--;
+        _panelIsForced = false;
+
+        if (_pendingLevelUps > 0)
+        {
+            // 아직 갚을 게 남았다. 상태(LevelUp)와 일시정지는 그대로 두고 카드만 다시 뽑는다.
+            OpenLevelUpPanel();
+            return;
+        }
+
+        if (levelUpPanel != null) levelUpPanel.SetActive(false);
         GameManager.Instance.OnLevelUpCompleted();
     }
 

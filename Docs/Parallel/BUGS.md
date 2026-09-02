@@ -24,6 +24,7 @@
 | **B8** | 2026-09-02 | DEV(D27 조사 중) | **DEV** | **적이 뭉치면 무리 분리(separation)가 스스로 약해진다.** `EnemyBase.GetSeparation()` 의 이웃 버퍼가 **12칸 고정**인데 이 오버로드는 넘치는 이웃을 **경고 없이 버린다** | 🟡 `절반 수정(D27) — 버퍼 12→64 로 적 ≤400 에서 절단 0. 다만 겹침 자체는 거의 안 줄었다(0.5유닛내 84.6→85.1 %) — 원인은 밀도다`
 
 | **B9** | 2026-09-02 | DEV(D27 측정 중) | **DEV** | ~~게임이 `state=Wave` 인데 `timeScale=0` 으로 영구히 얼어붙는다~~ 🔴 **오진이었다.** 실제로는 `StageClearUI` 가 Continue 를 기다리며 정상적으로 멈춘 상태였다 (사용자 지적, 2026-09-02) | `✘ 철회(오진) — 잠재 결함 관찰만 남긴다` |
+| **B10** | 2026-09-03 | DEV(D29 착수 중) | **DEV** | **레벨이 한 번에 여러 번 오르면 카드를 1장만 받는다.** `ExperienceManager.CollectXp:145` 의 `while` 이 레벨마다 `TriggerLevelUp()` 을 부르는데 `LevelUpManager.ShowLevelUpPanel:53` 에 **큐가 없어** 패널이 덮어써진다. 나머지 레벨의 카드가 **조용히 사라진다** | `수정됨(D29)` |
 
 > 상태값: `열림` · `확인중` · `수정됨(D3)` · `재현안됨` · `보류(사유)`
 > **줄을 지우지 않는다.** 닫혀도 그대로 둔다 — 재발했을 때 근거가 된다.
@@ -792,3 +793,94 @@ public void ResumeWave()
 - 적끼리 물리 반발을 줄 것인가 → **설계 결정** → `TODO.md`
 - 공간 해시는 **질의 비용만** 없앤다. 적 800 기준 질의 4.35 ms / `1/d²` 누산 4.54 ms 로 반반이라
   얻을 수 있는 상한이 **절반**이다 → `TODO.md`
+
+---
+
+## B10 — 레벨이 한 번에 여러 번 오르면 **카드를 1장만 받는다**
+
+**증상:** 경험치가 한 번에 크게 들어와 레벨이 2단계 이상 오르면, 오른 레벨 수만큼이 아니라
+**카드 선택 창이 한 번만** 뜬다. 나머지 레벨의 선택권은 **아무 표시 없이 사라진다.**
+예외도 경고도 없다 — 레벨 숫자는 정상으로 올라가고 스탯도 오르지만 **아이템만 못 받는다.**
+
+**재현 절차:**
+1. Dev 패널(백틱)에서 경험치를 크게 준다 (또는 낮은 레벨에서 보물상자를 연달아 연다)
+2. 한 번의 획득으로 레벨이 2 이상 오르게 만든다
+3. 카드 창이 **한 번만** 뜬다. `[GameManager] State → LevelUp` 로그는 오른 횟수만큼 찍힌다
+
+### 원인 확정 (2026-09-03, DEV)
+
+`ExperienceManager.cs:145`
+
+```csharp
+while (CurrentXp >= XpToNext)
+{
+    CurrentXp -= XpToNext;
+    CurrentLevel++;
+    OnLevelUp?.Invoke(CurrentLevel);
+    TriggerLevelUp();          // ← 루프마다 부른다
+}
+```
+
+`TriggerLevelUp()` → `LevelUpManager.ShowLevelUpPanel()` (`LevelUpManager.cs:53`) 는
+
+```csharp
+_currentChoices = PickItems(cards.Length);
+RefreshPanel();
+levelUpPanel.SetActive(true);
+```
+
+**직전 호출이 만든 후보를 그냥 덮어쓴다.** 대기열도, "몇 번 남았는지" 세는 값도 없다.
+루프가 3번 돌면 패널이 3번 다시 만들어지고 **마지막 것만 화면에 남는다.**
+플레이어가 카드를 하나 고르면 `SelectItem` → `HidePanel` 로 창이 닫히고 **거기서 끝난다.**
+
+**얼어붙지는 않는다.** `GameManager.ChangeState:117` 의
+
+```csharp
+if (newState == GameState.LevelUp && CurrentState != GameState.LevelUp)
+    _stateBeforeLevelUp = CurrentState;
+```
+
+가드가 두 번째 호출에서 `_stateBeforeLevelUp` 이 `LevelUp` 으로 덮이는 것을 막아 준다.
+그래서 증상은 **정지가 아니라 조용한 손실**이다 — 더 찾기 어려운 종류다.
+
+### 지금은 왜 잘 안 보이나
+
+구슬 하나가 주는 경험치가 작고 `ExpDrop` 이 **개체마다 따로** `CollectXp` 를 부르기 때문에
+한 호출로 2레벨이 오르는 일이 드물다. 보물상자·`VillageBuilding` 처럼
+**큰 덩어리로 들어오는 경로**에서만 가끔 난다.
+
+🔴 **[`REQ/DEV.md` 요청-21](REQ/DEV.md)(구슬 원거리 회수)이 이걸 상시화한다.**
+그 요청은 회수한 구슬 수백 개를 **합산해 `CollectXp` 를 한 번만** 부르라고 한다
+(각자 부르면 그것대로 비용이라서다 — 맞는 요구다). 그러면 한 호출로 여러 레벨이 오르는 게
+예외가 아니라 **기본 동작**이 된다.
+
+⇒ **요청-21 은 이 버그를 먼저 닫지 않으면 플레이어 손해를 늘리는 변경이 된다.**
+CONTENT 도 요청-21 §3 에서 *"`LevelUpManager` 가 큐를 처리하는지 확인해 줘 —
+못 하면 이 요청은 거기서 막힌다"* 고 미리 짚었다. **확인 결과 큐는 없다.**
+
+**고치는 방향** — `LevelUpManager` 에 대기 횟수를 두고 `HidePanel` 에서 남은 만큼 다시 여는 것이
+가장 작다. 다만 **레벨업 중에 또 레벨업이 들어오는 경로**(진화 제안 `ShowForcedChoices`,
+보물상자 `GrantChestReward`)와 섞이므로 순서 규칙을 같이 정해야 한다.
+
+### ✅ 수정됨 (D29, 2026-09-03) — 사용자 판단으로 요청-21 보다 먼저 고쳤다
+
+`LevelUpManager` 에 `_pendingLevelUps` 를 두고 **떠 있는 패널을 덮지 않게** 했다.
+`HidePanel` 이 하나씩 소진하며 남아 있으면 다시 연다.
+
+🔑 **설계 도중에 상호작용 하나를 더 잡았다.** 처음 안은 `HidePanel` 에서 무조건 하나 깎는 것이었는데,
+**진화 제안 패널이 떠 있는 동안 레벨업이 들어오면** 진화 카드를 고른 것이 레벨업 빚을 갚은 것으로
+세어져 **대기 중인 레벨업이 그대로 사라진다.** `_panelIsForced` 로 패널 종류를 구분해
+**진화는 빚을 만들지도 갚지도 않게** 했다.
+
+검증 (플레이 모드 실측):
+
+```
+[B10] CollectXp(40) 후  Lv=1 → 4  state=LevelUp timeScale=0
+[B10] HidePanel 1회  state=LevelUp
+[B10] HidePanel 2회  state=LevelUp
+[B10] HidePanel 3회  state=Wave  timeScale=1
+```
+
+3레벨이 올랐고 **`HidePanel` 을 세 번 다 써야** `Wave` 로 돌아온다.
+수정 전이라면 **1회에 끝났을 것**이고, 그게 곧 카드 2장 유실이다.
+전문 [`DONE/D29.md`](DONE/D29.md).

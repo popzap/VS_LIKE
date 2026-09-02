@@ -229,6 +229,7 @@ public class WaveManager : MonoBehaviour
             yield return wait;
             PruneAlive();
             RecycleFarEnemies();
+            RecycleFarExpDrops();
         }
     }
 
@@ -266,6 +267,57 @@ public class WaveManager : MonoBehaviour
 
             e.Reposition(GetSpawnPosition());
         }
+    }
+
+    /// <summary>
+    /// 너무 멀어진 경험치 구슬을 <b>그 자리에서 거둬</b> 풀로 돌려보낸다 (요청-21).
+    ///
+    /// <para><see cref="RecycleFarEnemies"/> 와 <b>같은 원칙, 같은 상수</b>다.
+    /// 적에게는 "지우면 경험치·골드가 증발하니 옮겨서 다시 쓴다"는 규칙이 이미 있었는데
+    /// 구슬에는 없었다. 그래서 구슬은 웨이브 하나가 아니라 <b>한 판 10층 전체</b>에 걸쳐 쌓인다 —
+    /// <c>ClearWave</c> 가 적만 걷어내고 구슬은 안 건드리기 때문이다.</para>
+    ///
+    /// <para>🔴 <b>수명 상한을 두지 않는 이유</b>는 따로 있다. 구슬이 만료돼 사라지면
+    /// 자석 픽업(<see cref="ExpDrop.PullAllToPlayer"/>)의 가치가 "그동안 흘린 것 전부"에서
+    /// "최근 N초에 흘린 것"으로 바뀌는데, 흡수 반경이 이미 8이라 후자는 거의 0이다.
+    /// 여기서는 <b>버리지 않고 거둔다</b> — 경험치는 플레이어에게 그대로 간다.</para>
+    ///
+    /// <para>🔴 합산해서 <see cref="ExperienceManager.CollectXp"/> 를 <b>한 번만</b> 부른다.
+    /// 수백 개가 각자 부르면 그것대로 비용이고 획득음도 그만큼 쌓인다.</para>
+    /// </summary>
+    private void RecycleFarExpDrops()
+    {
+        if (playerTransform == null || _currentWaveData == null) return;
+
+        float limitSqr = _currentWaveData.SpawnRadius * RecycleRadiusMult;
+        limitSqr *= limitSqr;
+        Vector2 p = playerTransform.position;
+
+        int total = 0;
+        int count = 0;
+
+        // 🔴 뒤에서부터 돈다 — Harvest() 가 OnDisable 로 목록에서 자기를 뺀다.
+        var drops = ExpDrop.Active;
+        for (int i = drops.Count - 1; i >= 0; i--)
+        {
+            var d = drops[i];
+            if (d == null) continue;
+            if (((Vector2)d.transform.position - p).sqrMagnitude < limitSqr) continue;
+
+            int amount = d.Harvest();
+            if (amount <= 0) continue;
+
+            total += amount;
+            count++;
+        }
+
+        if (count == 0) return;
+
+        // ⚠️ 여기서 레벨이 여러 번 오를 수 있다. LevelUpManager 가 대기열로 받는다 (B10).
+        if (ExperienceManager.Instance != null) ExperienceManager.Instance.CollectXp(total);
+
+        // 밸런스 판정용 숫자다 — 회수가 경험치 수입을 얼마나 늘리는지는 이 로그로만 알 수 있다.
+        Debug.Log($"[WaveManager] 원거리 구슬 회수 {count}개 · XP +{total}");
     }
 
     private IEnumerator TimerRoutine()
