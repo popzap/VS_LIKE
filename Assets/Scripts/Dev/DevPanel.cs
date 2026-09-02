@@ -101,6 +101,7 @@ public class DevPanel : MonoBehaviour
         GUILayout.Space(6f);
 
         _scroll = GUILayout.BeginScrollView(_scroll);
+        DrawSpawn(gm);
         DrawItems(gm);
         DrawEvolutions(gm);
         GUILayout.EndScrollView();
@@ -116,6 +117,111 @@ public class DevPanel : MonoBehaviour
             if (_richLabel == null) _richLabel = new GUIStyle(GUI.skin.label) { richText = true };
             return _richLabel;
         }
+    }
+
+    // ── 적 소환 (부하 시험 · 촬영용) ─────────────────────────────
+    //
+    // 웨이브를 거치지 않고 직접 세운다. WaveManager 는 MaxAlive(60~130)로 상한을 걸고
+    // 시간창에 맞춰 나눠 소환하므로 "적 800마리"라는 조건 자체를 만들 수 없다.
+    //
+    // 🔴 소환된 적은 WaveManager 의 _alive 목록에 안 들어간다. 웨이브가 도는 중에
+    //    쓰면 웨이브가 자기 적을 그 위에 얹는다. 부하 시험은 웨이브 밖에서 하는 게 깨끗하다.
+
+    private EnemyData[] _spawnTypes;
+    private ObjectPool  _spawnPool;
+    private readonly List<GameObject> _devSpawned = new();
+    private float _spawnRadius = 12f;
+
+    private void DrawSpawn(GameManager gm)
+    {
+        GUILayout.Space(4f);
+        GUILayout.Label("<b>Enemy Spawn</b>  (load test / capture)", RichLabel);
+
+        EnsureSpawnRefs();
+
+        if (_spawnTypes == null || _spawnTypes.Length == 0)
+        {
+            GUILayout.Label("EnemyData not found.");
+            return;
+        }
+
+        // 살아 있는 수는 씬 전체에서 센다 — 웨이브가 소환한 것도 화면에 보이므로
+        // "지금 몇 마리가 돌고 있나"는 그쪽이 맞는 답이다.
+        int alive = 0;
+        foreach (var e in FindObjectsByType<EnemyBase>(FindObjectsSortMode.None))
+            if (e.gameObject.activeInHierarchy) alive++;
+
+        GUILayout.BeginHorizontal();
+        GUILayout.Label($"alive <b>{alive}</b>", RichLabel, GUILayout.Width(90f));
+        foreach (int n in new[] { 100, 200, 400, 800 })
+            if (GUILayout.Button($"+{n}", GUILayout.Width(52f))) SpawnEnemies(n);
+        if (GUILayout.Button("Clear", GUILayout.Width(60f))) ClearSpawned();
+        GUILayout.EndHorizontal();
+
+        GUILayout.BeginHorizontal();
+        GUILayout.Label($"radius {_spawnRadius:0}", GUILayout.Width(90f));
+        _spawnRadius = GUILayout.HorizontalSlider(_spawnRadius, 4f, 25f, GUILayout.Width(160f));
+        if (GUILayout.Button("Invincible 60s", GUILayout.Width(120f)))
+            PlayerStats.Current?.GrantInvincibility(60f);
+        GUILayout.EndHorizontal();
+
+        // 🔬 D27 임시 — 촬영 S2 (무리 분리 before/after) 용.
+        //    재컴파일 없이 한 세션에서 12칸 절단을 껐다 켤 수 있다.
+        GUILayout.BeginHorizontal();
+        bool old12 = EnemyBase.PerfNeighborLimit <= 12;
+        bool new12 = GUILayout.Toggle(old12, "  neighbour cap 12  (B8 = before)");
+        if (new12 != old12)
+            EnemyBase.PerfNeighborLimit = new12 ? 12 : EnemyBase.NeighborBufSize;
+        GUILayout.Label($"limit = {EnemyBase.PerfNeighborLimit}", GUILayout.Width(90f));
+        GUILayout.EndHorizontal();
+
+        GUILayout.Space(6f);
+    }
+
+    private void EnsureSpawnRefs()
+    {
+        if (_spawnPool == null) _spawnPool = FindFirstObjectByType<ObjectPool>();
+        if (_spawnTypes != null && _spawnTypes.Length > 0) return;
+
+#if UNITY_EDITOR
+        // 에디터에서만 애셋을 훑는다. 개발 빌드에는 AssetDatabase 가 없다.
+        var guids = UnityEditor.AssetDatabase.FindAssets("t:EnemyData");
+        var list  = new List<EnemyData>();
+        foreach (var g in guids)
+        {
+            var path = UnityEditor.AssetDatabase.GUIDToAssetPath(g);
+            var d    = UnityEditor.AssetDatabase.LoadAssetAtPath<EnemyData>(path);
+            if (d != null && d.Prefab != null) list.Add(d);
+        }
+        _spawnTypes = list.ToArray();
+#endif
+    }
+
+    private void SpawnEnemies(int count)
+    {
+        if (_spawnPool == null || _spawnTypes == null || _spawnTypes.Length == 0) return;
+
+        var player = GameObject.FindGameObjectWithTag("Player");
+        Vector2 c  = player != null ? (Vector2)player.transform.position : Vector2.zero;
+
+        for (int i = 0; i < count; i++)
+        {
+            var data = _spawnTypes[i % _spawnTypes.Length];
+            Vector2 p = c + Random.insideUnitCircle * _spawnRadius;
+
+            var go = _spawnPool.Get(data.Prefab, p, Quaternion.identity);
+            go.GetComponent<EnemyBase>().Initialize(data);
+            _devSpawned.Add(go);
+        }
+    }
+
+    private void ClearSpawned()
+    {
+        // 내가 세운 것만이 아니라 씬 전체를 치운다 — 웨이브가 얹은 것까지 같이 지워야
+        // "지금 화면에 N마리" 라는 조건을 깨끗하게 만들 수 있다.
+        foreach (var e in FindObjectsByType<EnemyBase>(FindObjectsSortMode.None))
+            if (e.gameObject.activeInHierarchy) e.ForceDespawn();
+        _devSpawned.Clear();
     }
 
     // ── 플레이어 한 줄 (레벨 / 골드) ─────────────────────────────

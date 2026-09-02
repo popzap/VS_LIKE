@@ -241,6 +241,15 @@ public class EnemyBase : MonoBehaviour
     // ── 🔬 성능 계측 (D27, 임시) ─────────────────────────────────
     // 평소엔 PerfProbeOn 이 false 라 분기 하나 값만 든다.
     // PerfHarness 가 켜고, 측정이 끝나면 이 블록과 아래 3줄을 지운다.
+    /// <summary>
+    /// 🔬 <b>촬영용 A/B (D27, 임시).</b> 분리 계산에 반영할 이웃 수를 런타임에 제한한다.
+    ///
+    /// <para>배열은 <see cref="NeighborBufSize"/>(64) 그대로 두고 이 값으로만 자른다.
+    /// <b>12 로 두면 수정 전 동작이 그대로 재현된다</b> — 재컴파일 없이 한 세션에서
+    /// before/after 를 비교할 수 있다 (촬영 S2 · <c>Docs/SHOTLIST.md</c>).</para>
+    /// </summary>
+    public static int PerfNeighborLimit = NeighborBufSize;
+
     public static bool  PerfProbeOn;
     public static long  PerfQueryCount;    // 분리 질의를 실제로 돈 횟수
     public static long  PerfNeighborSum;   // n 의 합 (평균용)
@@ -290,6 +299,9 @@ public class EnemyBase : MonoBehaviour
         long tStart = PerfProbeOn ? System.Diagnostics.Stopwatch.GetTimestamp() : 0L;
 
         int n = Physics2D.OverlapCircle(pos, r, _enemyFilter, NeighborBuf);
+
+        // 🔬 D27 임시 — 촬영용 A/B. 12 로 두면 수정 전(12칸 절단) 동작이 재현된다.
+        if (n > PerfNeighborLimit) n = PerfNeighborLimit;
 
         long tQuery = 0L;
         // 🔬 n == NeighborBufSize 이면 이웃이 잘렸을 수 있다 (B8).
