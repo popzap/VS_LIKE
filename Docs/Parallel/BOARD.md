@@ -30,6 +30,7 @@
 | DEV | `D22` | `Docs/DESIGN_EVENTS.md`(신설) · `Docs/ROADMAP.md` | 2026-08-31 | 🅿️ **보류(사용자)** — "이벤트 관련은 나중에". 문서는 **다 썼다** (`E1 함정방` 상세 + `E2`~`E6` 자리표). 🔴 **코드 변경 0.** 재개 조건 = **§7 결정 6건.** ROADMAP §0·§7 에 "이벤트 노드가 비어 있다" 갭 등재 완료 |
 | CONTENT | `C6` | `Docs/DESIGN_CLASSES.md`(신설) · 이후 `Assets/Game/Balance/*.csv` · `_Incoming/` | 2026-08-30 | `진행중` — 직업 6종 컨셉 재편 + 신규 무기 6종 설계 (사용자 지시). **1~5단계 전부 닫힘.** 남은 건 6단계뿐 → `C26` |
 | CONTENT | `C26` | `Docs/DESIGN_CLASSES.md` · `Docs/TUNING.md` · **이후** `Assets/Game/Balance/{Classes,SceneWiring}.csv` | 2026-08-31 | **`대기(REQ→DEV)`** — **C6 6단계: 직업 3종**(폭발광·어쎄신·소환사). 값은 **전부 확정**([`DESIGN_CLASSES.md`](../DESIGN_CLASSES.md) §7-B) · 막힌 건 **그림 6장뿐** → [`REQ/DEV.md`](REQ/DEV.md) **요청-19**. 🔴 **CSV 는 그림이 들어온 뒤에 쓴다** — 순서를 뒤집으면 임포터가 **경고 없이** 빈 직업을 만든다 |
+| DEV | `D27` | `Docs/TODO.md` · `Docs/Parallel/BUGS.md` · **이후** `Assets/Scripts/Enemy/` · `Assets/Scripts/Weapon/` · `Assets/Scripts/Dev/` | 2026-09-02 | `진행중` — **적 다수 시 프레임 저하 측정·최적화**(포트폴리오용). 1단계 **코드 조사 끝**: 🔴 **가설 하나를 스스로 반증했다** — 적↔적 충돌은 `Physics2DSettings` 매트릭스에서 **이미 꺼져 있다**(layer 6 마스크 `0x380` = Player·Projectile·Building). "체크박스 하나로 공짜" 는 없다. ⇒ 남은 1순위는 `EnemyBase.GetSeparation()` 물리 질의(적 200 기준 **초당 ≈2,500회** = 나머지 8곳 합의 60배 이상). 곁가지로 **`B8` 등재**(이웃 버퍼 12칸 무언 절단). MPB 는 **3순위로 내렸다** — `_AnimPhase`·`_FlashAmount` 가 진짜 per-instance 라 걷어낼 수 없다. **다음은 부하 하네스 + 기준선 측정** (Unity 필요) |
 | CONTENT | `C27` | `Assets/Game/Balance/{Items,Economy}.csv` · `Docs/BALANCE.md` · `Docs/TUNING.md` · `REQ/DEV.md` | 2026-08-31 | `대기(REQ→DEV)` — 가격 재산정 **끝**([`REQ/CONTENT.md`](REQ/CONTENT.md) 요청-18). 상점 `5~12→40~110` · 리롤 `3/1→25/15` · 해금 `30/15→150/75`. 🔴 **요청-18 의 전제 셋이 틀렸다** — 메타는 156G 가 아니라 **132G**(상점·이벤트 노드는 클리어 보상 0) · 해금 비용은 이미 `Economy.csv` 에 있었다 · `UpgradeDefinition` 은 **애셋 0개 + `I-19` 함정**. **Import 1회 대기** → [`REQ/DEV.md`](REQ/DEV.md) **요청-20** · [`DONE/C27.md`](DONE/C27.md).<br>➕ 곁일: **요청-19 납품물 검수** — 초상 3장 ✅ / **걷기 시트 3장 🔴 반려**(알파 255 = `I-41` · `Summoner_Walk` 는 빈 파일 · PPU 1024→256). 해법은 `a85cc9f` 의 `RemoveImageBackground` — **에디터 명령이라 DEV 만 할 수 있다** |
 
 > 상태값: `진행중` · `대기(REQ→DEV)` · `검증대기` · `막힘(B1)`
@@ -222,9 +223,9 @@ CONTENT 는 **읽기만** 한다 — 내 요청이 언제 처리될지 가늠하
 
 | 세션 | 다음 이슈 번호 |
 |---|---|
-| DEV | `D27` |
+| DEV | `D28` |
 | CONTENT | `C28` |
-| 버그(공용) | `B8` |
+| 버그(공용) | `B9` |
 
 > 번호를 쓸 때 이 표를 **즉시** 올린다. 선점이 곧 예약이다.
 > ℹ️ 과거 이력의 `I-1`~`I-61` 은 그대로 둔다. 새 번호만 접두어 방식이다.
