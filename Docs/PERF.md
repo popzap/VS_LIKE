@@ -48,6 +48,18 @@
 | 5 | 적 사망 처리 폭주 | 4회 중 **1회만** |
 | 6 | 데미지 팝업 | 4회 중 **1회만** |
 | 7 | **`OverlapCircleAll` 할당** | **프레임의 1.3 %** |
+| 8 | **투사체 `Update()`** | 투사체가 **1~3개**뿐이었다 |
+
+### ✅ 그래서 무기 쪽 렉의 진짜 원인 (§7-H 결과 ⑥)
+
+**"무기가 비싸다"가 아니라 "죽음이 비싸다"였다.**
+적이 죽으며 남기는 `ExpDrop`(337~581) · `DamagePopup`(65~475) · `WorldPickup`(81~336) —
+**500~1,400개**의 `Update()` 합이 `BehaviourUpdate` 의 **40~46 %** 다.
+
+그리고 `ExpDrop.Update()` 는 개체마다 **매 프레임 `GetComponent<PlayerStats>()`** 를 부르고,
+`Collect()` 는 주울 때마다 **`FindFirstObjectByType<ObjectPool>()`** 로 씬 전체를 훑는다.
+🔑 **`EnemyBase.cs:576` 은 같은 실수를 이미 고치고 주석까지 남겨 뒀는데,
+`ExpDrop`·`WorldPickup` 에는 그대로 남아 있다.**
 
 🔑 **이 작업의 결론은 "빠르게 만들었다"가 아니다.**
 **일곱 가지 가설을 숫자로 죽였고, 추측으로는 절대 못 찾았을 버그 둘을 찾았다**
@@ -776,10 +788,92 @@ Physics2D.Simulate   = 0.983 ms
 
 **무기를 켠 조건에서도 무리 분리가 가장 큰 스크립트 비용이다** (프레임의 16.6 %).
 
-### 남은 것 — `BehaviourUpdate` 안의 **투사체**
+### 🔴 결과 ⑥ — **투사체 가설도 기각. 범인은 "적이 죽으며 남기는 것들"이다**
 
-무기가 `Update()` 에서 하는 일은 질의(1.3 %)와 투사체 이동뿐이다.
-질의가 아니므로 **나머지 15 %는 투사체 `Update()`** 로 좁혀진다. 아직 직접 재지 않았다.
+`BehaviourUpdate` 에 사는 클래스별 **활성 인스턴스 수**를 표본 앞뒤로 셌다 (적 800 · 시나리오 B):
+
+| 클래스 | 시행 1 (before → after) | 시행 2 (before → after) |
+|---|---|---|
+| **`ProjectileBase`** | 🔴 **3 → 3** | 🔴 **1 → 1** |
+| `EnemyProjectile` | 33 → 51 | 38 → 38 |
+| **`ExpDrop`** | **554 → 581** | **337 → 8** |
+| **`DamagePopup`** | **65 → 475** | **422 → 33** |
+| **`WorldPickup`** | **81 → 177** | **231 → 336** |
+| `ToxinField` · `SummonVisual` | 0 | 0 |
+| `WeaponBase` | 3 | 3 |
+
+**투사체는 1~3개뿐이다.** 내가 "나머지 15 %는 투사체"라고 좁힌 것은 틀렸다.
+
+같은 시행의 `BehaviourUpdate`:
+
+| | 시행 1 | 시행 2 |
+|---|---:|---:|
+| `BehaviourUpdate` | **16.400 ms** | **20.814 ms** |
+| `PlayerLoop` | 40.684 | 44.983 |
+| **비중** | **40 %** | **46 %** |
+
+⇒ **질량은 `ExpDrop` + `DamagePopup` + `WorldPickup` = 500~1,400개다.**
+전부 **적이 죽으면서 생기는 것들**이다. 무기를 켜면 적이 죽고, 적이 죽으면 이것들이 쌓인다.
+**"무기가 비싸다"가 아니라 "죽음이 비싸다"** 였다.
+
+### 🔑 그리고 코드에 결정적인 것이 있었다
+
+**`Assets/Scripts/Experience/ExpDrop.cs:44-61` — `Update()` 가 매 프레임, 개체마다:**
+
+```csharp
+private void Update()
+{
+    if (_collected || _player == null) return;
+
+    float dist = Vector2.Distance(transform.position, _player.position);   // sqrt
+    var stats  = _player.GetComponent<PlayerStats>();                      // 🔴 매 프레임 GetComponent
+    float radius = stats != null ? stats.Final.PickupRadius : 2f;
+    ...
+}
+```
+
+**구슬이 554개면 매 프레임 `GetComponent` 554회 + `sqrt` 554회다.** `stats` 는 절대 안 바뀌는데.
+
+**`ExpDrop.cs:68` — 주울 때마다 씬 전체를 훑는다:**
+
+```csharp
+private void Collect()
+{
+    ...
+    FindFirstObjectByType<ObjectPool>()?.Return(gameObject);   // 🔴 씬 전체 순회
+}
+```
+
+`WorldPickup.cs:165` 도 똑같다.
+
+### 🔑 이 프로젝트는 **같은 교훈을 이미 한 번 배웠다**
+
+`Assets/Scripts/Enemy/EnemyBase.cs:576` 에 이렇게 적혀 있다:
+
+> *"예전에는 `ForceDespawn` 마다 `FindFirstObjectByType` 을 돌렸다. 씬 전체 순회라…"*
+
+**`EnemyBase` 는 고쳤는데 `ExpDrop` 과 `WorldPickup` 에는 같은 패턴이 그대로 남아 있다.**
+한 곳에서 배운 것을 나머지에 적용하지 않은 것이다.
+
+### 부수 — `ExpDrop` · `WorldPickup` 은 **수명이 없다**
+
+`DamagePopup` 은 `_lifetime = 0.8f` 로 만료된다. 그런데 `ExpDrop`·`WorldPickup` 은
+**주울 때까지 영원히 남는다.** 시행 2의 `WorldPickup` 이 231 → 336 으로 **단조 증가**하는 것이
+그 결과다. 이것이 §9 함정 ⑪("길게 돌리면 씬이 무거워진다")의 정체이기도 하다.
+
+> ⚠️ **하네스 때문에 과장된 부분이 있다.** 내 플레이어는 반경 6 의 원만 돌아서
+> 그 밖의 구슬을 영영 안 줍는다. 실플레이에서는 이동·자석으로 더 걷힌다.
+> **다만 `DamagePopup`(475개)은 플레이어 행동과 무관한 순수 연출이고,
+> `GetComponent`·`FindFirstObjectByType` 패턴은 개체 수와 무관하게 잘못이다.**
+
+### 고치는 법 (전부 지역적이다 · 아직 안 고쳤다)
+
+| # | 무엇 | 어디 |
+|---|---|---|
+| 1 | `_player.GetComponent<PlayerStats>()` 를 **캐시** | `ExpDrop.cs:49` |
+| 2 | `Vector2.Distance` → **`sqrMagnitude` 비교** (sqrt 제거) | `ExpDrop.cs:48` |
+| 3 | `FindFirstObjectByType<ObjectPool>()` → **정적 캐시** (`EnemyBase` 가 이미 하는 방식) | `ExpDrop.cs:68` · `WorldPickup.cs:165` |
+| 4 | `ExpDrop`·`WorldPickup` 에 **수명 상한** 부여 | 설계 결정 필요 → `TODO.md` |
 
 ### ⚠️ 장시간 실행에서 씬이 무거워진다
 
@@ -804,7 +898,8 @@ Physics2D.Simulate   = 0.983 ms
 | 2026-09-02 | `D27` | 코드 조사(§6) · 1순위 가설 반증 · `B8` 등재 · **이 문서 §1~§5 작성(측정 전)** |
 | 2026-09-02 | `D27` | 하네스 제작 · 시나리오 A 기준선(§7-A~D) · **`B8` 실측 확인** · §7-E 전제 반증 |
 | 2026-09-02 | `D27` | 시나리오 B(§7-F) — **§7-E 를 절반 정정** · 구간 분해(§7-G) · 렌더 대조군 |
-| 2026-09-02 | `D27` | 무기 렉 원인 특정(§7-H) — **가설 4개 추가 기각** · 짝 비교로 무기 비용 확정 · **`B9` 발견** |
+| 2026-09-02 | `D27` | 무기 렉 원인 특정(§7-H) — **가설 4개 추가 기각** · 짝 비교로 무기 비용 확정 · `B9` 발견 |
+| 2026-09-02 | `D27` | ✅ **무기 렉 원인 확정** — 투사체 가설도 기각, 범인은 사망 부산물(`ExpDrop`·`DamagePopup`·`WorldPickup`). 🔴 **`B9` 는 오진으로 철회**(사용자 지적 — `StageClearUI` 였다) |
 
 ### 이 측정에서 밟은 함정 7가지 (전부 실제로 겪은 것)
 

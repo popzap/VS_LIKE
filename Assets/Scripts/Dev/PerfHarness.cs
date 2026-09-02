@@ -30,7 +30,7 @@ public class PerfHarness : MonoBehaviour
     /// 실패하면 <b>옛 어셈블리가 그대로 남아</b> 타입 조회도 성공한다.
     /// 실제로 이번 세션에서 컴파일 에러가 난 채로 측정을 한 번 돌렸다.</para>
     /// </summary>
-    public const int Version = 8;
+    public const int Version = 9;
 
     [Header("적 구성")]
     [Tooltip("실제 웨이브와 같은 6종을 넣는다. 순서대로 돌아가며 소환된다")]
@@ -180,6 +180,7 @@ public class PerfHarness : MonoBehaviour
         int  counterFrames = 0;
 
         int sceneEnemiesBefore = CountAllEnemiesInScene();
+        string updatersBefore = CountUpdaters();
 
         for (int i = 0; i < _sectionMsSum.Length; i++) _sectionMsSum[i] = 0.0;
 
@@ -237,6 +238,9 @@ public class PerfHarness : MonoBehaviour
         EnemyBase.PerfProbeOn = false;
         PerfCounters.On = false;
         int sceneEnemiesAfter = CountAllEnemiesInScene();
+        Debug.Log($"[PERF-UPDATERS] n={enemyCount} trial={trial}\n" +
+                  $"  before | {updatersBefore}\n" +
+                  $"  after  | {CountUpdaters()}");
 
         ReportSpikes(enemyCount, trial, frameMs, fPoolGets, fPoolMakes, fDeaths, fPopups);
         ReportWeaponQueries(enemyCount, trial, sampleFrames, wallSec, wqCount, wqHits, wqTicks, wsTicks);
@@ -343,12 +347,17 @@ public class PerfHarness : MonoBehaviour
         var gm = GameManager.Instance;
         if (gm == null || _waveNode == null) return false;
 
-        // 🔴 B9 — state 는 Wave 인데 timeScale 이 0 으로 얼어붙는 경우가 있다.
-        //    OnLevelUpCompleted 가 복구를 ResumeWave() 에 맡기는데 그 함수는
-        //    _waveActive == false 면 아무것도 안 하고 돌아간다. 되살릴 주체가 없다.
-        //    이걸 안 풀면 모든 프레임이 표본에서 빠지고 측정이 조용히 죽는다 (5분을 날렸다).
+        // 🔴 state 가 Wave 인데 timeScale 이 0 인 상태가 있다.
+        //    B9 로 등재했다가 오진으로 철회했다 — 버그가 아니라 StageClearUI 가
+        //    Continue 를 기다리며 정상적으로 멈춘 것이다 (state 는 Wave 그대로 둔다).
+        //    사람은 버튼을 누르면 되지만 하네스는 누를 수가 없어 5분을 날렸다.
+        //    ⇒ 결과창을 치우고 웨이브를 다시 시작한다.
         if (gm.CurrentState == GameState.Wave && Time.timeScale <= 0f)
         {
+            var clearUI = StageClearUI.Instance;
+            if (clearUI != null) clearUI.gameObject.SetActive(false);
+
+            gm.WaveManager.StartWave(_waveNode);
             Time.timeScale = 1f;
             _b9Recoveries++;
             return true;
@@ -360,6 +369,31 @@ public class PerfHarness : MonoBehaviour
         gm.ChangeState(GameState.Wave);
         Time.timeScale = 1f;
         return true;
+    }
+
+    /// <summary>
+    /// 🔬 D27 — <c>BehaviourUpdate</c> 에 사는 클래스들이 <b>각각 몇 개나 살아 있는지</b> 센다.
+    ///
+    /// <para><c>BehaviourUpdate</c> 가 A 대비 16~65배로 뛰었는데(§7-H 결과 ④)
+    /// 무기 질의는 프레임의 1.3 % 뿐이었다(결과 ⑤). 남은 건 <b>인스턴스 수</b>다 —
+    /// 하나가 싼 <c>Update</c> 라도 수천 개면 합이 커진다.</para>
+    ///
+    /// <para>🔴 <b>표본 구간에는 부르지 않는다.</b> <c>FindObjectsByType</c> 는 비싸다.</para>
+    /// </summary>
+    private static string CountUpdaters()
+    {
+        int Count<T>() where T : MonoBehaviour
+        {
+            int c = 0;
+            foreach (var o in FindObjectsByType<T>(FindObjectsSortMode.None))
+                if (o.isActiveAndEnabled) c++;
+            return c;
+        }
+
+        return $"Projectile={Count<ProjectileBase>()}  EnemyProjectile={Count<EnemyProjectile>()}  " +
+               $"ExpDrop={Count<ExpDrop>()}  DamagePopup={Count<DamagePopup>()}  " +
+               $"Pickup={Count<WorldPickup>()}  ToxinField={Count<ToxinField>()}  " +
+               $"SummonVisual={Count<SummonVisual>()}  Weapon={Count<WeaponBase>()}";
     }
 
     /// <summary>

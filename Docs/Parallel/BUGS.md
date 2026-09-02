@@ -23,7 +23,7 @@
 
 | **B8** | 2026-09-02 | DEV(D27 조사 중) | **DEV** | **적이 뭉치면 무리 분리(separation)가 스스로 약해진다.** `EnemyBase.GetSeparation()` 의 이웃 버퍼가 **12칸 고정**인데 이 오버로드는 넘치는 이웃을 **경고 없이 버린다.** 뭉칠수록 더 뭉치는 자기강화 루프 | 🔴 `열림 — **실측으로 확인됨**(적 400에서 12~19 % · 800에서 58~66 % 절단)` |
 
-| **B9** | 2026-09-02 | DEV(D27 측정 중) | **DEV** | 🔴 **게임이 `state=Wave` 인데 `timeScale=0` 으로 영구히 얼어붙는다.** `OnLevelUpCompleted` 가 timeScale 복구를 `ResumeWave()` 에 맡기는데, 그 함수는 `_waveActive == false` 면 **아무것도 안 하고 돌아간다.** 되살릴 주체가 없다 | `열림(관측됨 — 실플레이 재현 절차 미확정)` |
+| **B9** | 2026-09-02 | DEV(D27 측정 중) | **DEV** | ~~게임이 `state=Wave` 인데 `timeScale=0` 으로 영구히 얼어붙는다~~ 🔴 **오진이었다.** 실제로는 `StageClearUI` 가 Continue 를 기다리며 정상적으로 멈춘 상태였다 (사용자 지적, 2026-09-02) | `✘ 철회(오진) — 잠재 결함 관찰만 남긴다` |
 
 > 상태값: `열림` · `확인중` · `수정됨(D3)` · `재현안됨` · `보류(사유)`
 > **줄을 지우지 않는다.** 닫혀도 그대로 둔다 — 재발했을 때 근거가 된다.
@@ -674,12 +674,14 @@ n=  1    2    3    4    5    6    7    8    9   10   11      12
 
 ---
 
-## B9 — 게임이 `timeScale = 0` 으로 영구히 얼어붙는다
+## B9 — ✘ 철회 (오진) — `timeScale = 0` 은 버그가 아니라 **스테이지 클리어 창**이었다
 
-**증상:** 상태는 `Wave` 인데 `Time.timeScale` 이 `0` 인 채로 멈춘다. 예외도 경고도 없다.
-화면은 그려지지만 아무것도 움직이지 않고, **되살릴 주체가 없다.**
+> 🔴 **이 항목은 오진이다.** 아래에 원래 보고와 정정을 **둘 다** 남긴다 —
+> 지워 버리면 "왜 그렇게 판단했는지"가 사라져서 같은 실수를 또 한다.
 
-**관측 (2026-09-02, D27 측정 중):** 시나리오 B 측정이 5분 넘게 진행이 없어서 상태를 찍었다.
+### 처음 보고한 것 (2026-09-02, D27 측정 중)
+
+측정이 5분 넘게 진행이 없어서 상태를 찍었다.
 
 ```
 살아있는 적=511 / EnemyBase 총=511
@@ -687,68 +689,72 @@ ObjectPool 자식 수=7220
 state=Wave  timeScale=0  frameCount=11515
 ```
 
-### 🔴 원인 — `ResumeWave()` 는 조용히 아무것도 안 할 수 있다
+`state` 가 `Wave` 인데 `timeScale` 이 `0` 이라 **게임이 얼어붙었다**고 판단했고,
+`OnLevelUpCompleted` → `ResumeWave()` 경로의 비대칭을 원인으로 지목했다.
 
-`Assets/Scripts/Wave/WaveManager.cs:106`
+### 🔴 정정 — 사용자 지적으로 원인이 드러났다 (2026-09-02)
+
+> *"영구정지하는거는 레벨업하면 뜨는 선택지를 안고르거나 스테이지 클리어시 멈추는거 때문에 그럴거야"*
+
+코드를 다시 봤더니 맞았다. `Assets/Scripts/UI/StageClearUI.cs:113`
+
+```csharp
+public void Show(StageNode clearedNode)
+{
+    ...
+    _waitingForInput = true;
+    Time.timeScale   = 0f;      // ← 멈춘다
+    // 🔴 그런데 ChangeState 를 하지 않는다 — state 는 Wave 그대로다
+}
+```
+
+`:194` `OnContinue()` 에서만 `Time.timeScale = 1f` + `ChangeState(StageMap)` 을 한다.
+
+**즉 `state = Wave` + `timeScale = 0` 은 버그가 아니라
+"스테이지 클리어 결과창이 Continue 를 기다리는 정상 상태"다.**
+사람이 플레이하면 버튼을 누르면 그만이다. 얼어붙은 것은 **누를 사람이 없는 측정 하네스**였다.
+
+### 왜 못 알아봤나
+
+내 하네스의 복구 로직이 이렇게 돼 있었다:
+
+```csharp
+if (gm.CurrentState == GameState.Wave || gm.CurrentState == GameState.LevelUp) return false;
+```
+
+**`state == Wave` 면 "정상"으로 보고 그냥 넘어간다.** `Wave` 이면서 멈춰 있을 수 있다는
+경우의 수를 상정하지 않았다. 게임 상태 기계에 **"UI 가 멈춰 세운 Wave"** 라는 칸이 있는데
+내 모델에는 없었던 것이다.
+
+> 🔑 **관측이 틀린 게 아니라 해석이 틀렸다.** `state=Wave · timeScale=0` 은 실제 값이었다.
+> 거기에 내가 아는 코드 경로(`ResumeWave` 비대칭)를 갖다 붙였을 뿐이다.
+> **설명이 그럴듯하면 검증을 건너뛰게 된다** — `StageClearUI` 를 열어 보기만 했으면 5분이면 끝났다.
+
+### 🟡 그래도 남는 것 — `ResumeWave()` 비대칭은 **여전히 잠재 결함**이다
+
+`WaveManager.cs:106`
 
 ```csharp
 public void ResumeWave()
 {
-    if (!_waveActive) return;      // ← 여기서 빠져나가면 timeScale 은 0 그대로다
+    if (!_waveActive) return;      // ← 웨이브가 안 돌면 timeScale 을 안 되돌린다
     _wavePaused = false;
     Time.timeScale = 1f;
 }
 ```
 
-`Assets/Scripts/Core/GameManager.cs:430`
+`GameManager.cs:430` `OnLevelUpCompleted()` 는 `_stateBeforeLevelUp == Wave` 일 때
+복구를 전적으로 이 함수에 맡긴다. 멈추는 쪽(`PauseWave`)은 **무조건** `timeScale = 0` 을 만드는데
+푸는 쪽만 조건부다.
 
-```csharp
-public void OnLevelUpCompleted()
-{
-    ChangeState(_stateBeforeLevelUp);
+🔴 **다만 이번 관측은 이것의 증거가 아니다.** 이게 실제로 터지는 경로가 있는지는 **모른다.**
+`StageClearUI` 가 열려 있으면 그쪽이 `:194` 에서 되돌려 주므로 대부분 구제된다.
 
-    // ResumeWave 는 웨이브가 돌고 있지 않으면 아무것도 하지 않는다 (timeScale 도 안 돌린다).
-    // 웨이브 밖에서 레벨업했다면 여기서 직접 풀어 주지 않으면 게임이 얼어붙는다.
-    if (_stateBeforeLevelUp == GameState.Wave) WaveManager.ResumeWave();
-    else                                       Time.timeScale = 1f;
-}
-```
-
-**주석이 위험을 정확히 알고 있는데, `else` 쪽만 막아 두었다.**
-`_stateBeforeLevelUp == Wave` 인데 그 사이 웨이브가 끝나 `_waveActive` 가 `false` 가 되면
-`ResumeWave()` 가 그냥 돌아가고 **timeScale 을 되돌리는 코드가 어디에도 없다.**
-
-레벨업은 `PauseWave()`(`:113`)로 `timeScale = 0` 을 만든다. 즉 **멈추는 쪽은 무조건 실행되고,
-푸는 쪽만 조건부**다. 이 비대칭이 버그의 형태다.
-
-### 고치는 법 (한 줄)
-
-```csharp
-if (_stateBeforeLevelUp == GameState.Wave) WaveManager.ResumeWave();
-else                                       Time.timeScale = 1f;
-// ↓ 어느 경로로 왔든 마지막에 보증한다
-if (Mathf.Approximately(Time.timeScale, 0f)) Time.timeScale = 1f;
-```
-
-또는 `ResumeWave()` 가 `_waveActive` 와 무관하게 `Time.timeScale = 1f` 을 보장하게 한다.
-**어느 쪽이든 "멈춘 것을 반드시 되돌린다"는 대칭을 만들어야 한다.**
-
-🔴 **고치지 않았다.** `D27` 은 성능 측정 작업이고 이건 그 범위 밖이다 (`SESSION_PROMPT.md` §5).
-대신 하네스가 이 상태를 감지해 `timeScale` 을 강제로 되돌리고 **그 횟수를 로그에 남긴다** —
-안 그러면 측정이 조용히 죽는다(실제로 5분을 날렸다).
-
-### ⚠️ 실플레이 재현 절차는 아직 모른다
-
-관측은 **측정 하네스가 레벨업을 자동으로 닫는 상황**에서 나왔다. 사람이 카드를 클릭하는
-경로도 같은 `HidePanel()` → `OnLevelUpCompleted()` 를 타므로 **코드상으로는 동일**하지만,
-"웨이브가 끝나는 순간과 레벨업이 겹치는" 타이밍을 사람이 실제로 만들 수 있는지는 확인 못 했다.
-
-> 🔑 **그래도 등재한다.** 재현 절차를 모른다는 것이 "안 일어난다"는 뜻은 아니다 —
-> `B5` 도 *"지금 게임 경로로는 안 난다"* 로 시작했다가 D20 에서 **광역기가 통째로 멈추는**
-> 훨씬 큰 증상이 붙었다.
+**등재는 유지하되 상태는 `철회`다.** 실플레이에서 진짜 정지를 만나면 그때 다시 연다.
 
 ### 곁가지 — 풀이 7,220개까지 자란다
 
-같은 관측에서 `ObjectPool` 의 자식이 **7,220개**였다. 씬의 워밍업 설정은 **5종 · 합계 110개**다.
-장시간 전투에서 풀이 계속 자란다는 뜻이고, 메모리와 `Return()` 의 `SetParent` 비용에 영향이 있다.
-**버그로 등재하지는 않는다** — 풀은 원래 자라는 자료구조다. 다만 [`../PERF.md`](../PERF.md) 에 수치를 남긴다.
+같은 관측에서 `ObjectPool` 의 자식이 **7,220개**였다 (씬 워밍업 설정은 5종 · 합계 110개).
+이건 정지와 무관하고, 장시간 실행에서 씬이 무거워지는 것과 관련이 있다
+([`../PERF.md`](../PERF.md) §7-H 함정 ⑪ — 같은 세션 시행 1 = 47 fps → 시행 2 = **3 fps**).
+"아직 안 판 것"이므로 [`../TODO.md`](../TODO.md) 소관이다.
