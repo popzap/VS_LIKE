@@ -31,10 +31,19 @@ public abstract class WeaponBase : MonoBehaviour
 
     protected virtual Transform FindNearestEnemy()
     {
+        // 🔬 D27 계측 (임시). 질의 + 아래 선형 탐색까지 통째로 잰다 —
+        //    PerfCounters.WeaponQueryTicks 와의 차이가 탐색(sqrt) 비용이다.
+        long _t0 = PerfCounters.On ? System.Diagnostics.Stopwatch.GetTimestamp() : 0L;
+
         float range = Data.GetRange(Level);
-        Collider2D[] hits = Physics2D.OverlapCircleAll(transform.position, range,
+        Collider2D[] hits = PerfCounters.OverlapCircleAll(transform.position, range,
                             LayerMask.GetMask("Enemy"));
-        if (hits.Length == 0) return null;
+        if (hits.Length == 0)
+        {
+            if (PerfCounters.On)
+                PerfCounters.WeaponScanTicks += System.Diagnostics.Stopwatch.GetTimestamp() - _t0;
+            return null;
+        }
 
         Transform nearest = null;
         float minDist = float.MaxValue;
@@ -43,6 +52,9 @@ public abstract class WeaponBase : MonoBehaviour
             float d = Vector2.Distance(transform.position, h.transform.position);
             if (d < minDist) { minDist = d; nearest = h.transform; }
         }
+
+        if (PerfCounters.On)
+            PerfCounters.WeaponScanTicks += System.Diagnostics.Stopwatch.GetTimestamp() - _t0;
         return nearest;
     }
 

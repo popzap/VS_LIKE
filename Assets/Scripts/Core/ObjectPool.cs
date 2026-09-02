@@ -37,6 +37,8 @@ public class ObjectPool : MonoBehaviour
     /// <summary>오브젝트 꺼내기.</summary>
     public GameObject Get(GameObject prefab, Vector3 position, Quaternion rotation)
     {
+        if (PerfCounters.On) PerfCounters.PoolGets++;   // 🔬 D27 계측 (임시)
+
         var queue = GetQueue(prefab);
         GameObject obj;
 
@@ -78,6 +80,9 @@ public class ObjectPool : MonoBehaviour
 
     private GameObject CreateNew(GameObject prefab)
     {
+        // 🔬 D27 계측 (임시). 풀이 비어 Instantiate 를 부르는 순간 = 스파이크 후보.
+        if (PerfCounters.On) PerfCounters.PoolCreates++;
+
         var obj = Instantiate(prefab, transform);
         obj.SetActive(false);
         _prefabByInstance[obj] = prefab;

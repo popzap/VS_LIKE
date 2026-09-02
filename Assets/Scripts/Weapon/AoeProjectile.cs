@@ -46,7 +46,7 @@ public class AoeProjectile : MonoBehaviour
 
         // 피해는 터지는 순간 바로 넣는다. 연출이 끝난 뒤에 넣으면 그 사이에
         // 폭심을 지나쳐 빠져나간 적이 그냥 살아남는다.
-        Collider2D[] hits = Physics2D.OverlapCircleAll(transform.position, _radius,
+        Collider2D[] hits = PerfCounters.OverlapCircleAll(transform.position, _radius,
                             LayerMask.GetMask("Enemy"));
         foreach (var h in hits)
         {

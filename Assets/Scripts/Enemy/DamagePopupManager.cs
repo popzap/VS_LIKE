@@ -15,6 +15,7 @@ public class DamagePopupManager : MonoBehaviour
     public void Show(Vector2 worldPos, float damage)
     {
         if (popupPrefab == null) return;
+        if (PerfCounters.On) PerfCounters.Popups++;   // 🔬 D27 계측 (임시)
         var go = pool.Get(popupPrefab, worldPos + Random.insideUnitCircle * 0.3f, Quaternion.identity);
         go.GetComponent<DamagePopup>()?.Setup(damage, pool);
     }

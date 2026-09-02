@@ -77,7 +77,7 @@ public class ToxinField : MonoBehaviour
 
     private void Tick()
     {
-        Collider2D[] hits = Physics2D.OverlapCircleAll(transform.position, _radius,
+        Collider2D[] hits = PerfCounters.OverlapCircleAll(transform.position, _radius,
                             LayerMask.GetMask("Enemy"));
         foreach (var h in hits)
         {

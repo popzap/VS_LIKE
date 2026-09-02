@@ -65,7 +65,7 @@ public class MeleeWeapon : WeaponBase
         Vector2 origin = transform.position;
         float   dmg    = CalculateDamage();
 
-        Collider2D[] hits = Physics2D.OverlapCircleAll(origin, range, LayerMask.GetMask("Enemy"));
+        Collider2D[] hits = PerfCounters.OverlapCircleAll(origin, range, LayerMask.GetMask("Enemy"));
         foreach (var h in hits)
         {
             Vector2 to = (Vector2)h.transform.position - origin;

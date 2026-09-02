@@ -470,6 +470,7 @@ public class EnemyBase : MonoBehaviour
     {
         if (IsDead) return;
         IsDead = true;
+        if (PerfCounters.On) PerfCounters.Deaths++;   // 🔬 D27 계측 (임시)
         Rb.linearVelocity = Vector2.zero;
 
         // 경험치 드랍

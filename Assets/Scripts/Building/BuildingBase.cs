@@ -82,7 +82,7 @@ public class BuildingBase : MonoBehaviour
 
     protected Transform FindNearestEnemy()
     {
-        var hits = Physics2D.OverlapCircleAll(transform.position, Data.GetRange(Level),
+        var hits = PerfCounters.OverlapCircleAll(transform.position, Data.GetRange(Level),
                    LayerMask.GetMask("Enemy"));
         if (hits.Length == 0) return null;
 

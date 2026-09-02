@@ -30,7 +30,7 @@ public class PerfHarness : MonoBehaviour
     /// 실패하면 <b>옛 어셈블리가 그대로 남아</b> 타입 조회도 성공한다.
     /// 실제로 이번 세션에서 컴파일 에러가 난 채로 측정을 한 번 돌렸다.</para>
     /// </summary>
-    public const int Version = 5;
+    public const int Version = 8;
 
     [Header("적 구성")]
     [Tooltip("실제 웨이브와 같은 6종을 넣는다. 순서대로 돌아가며 소환된다")]
@@ -87,6 +87,7 @@ public class PerfHarness : MonoBehaviour
     private float _kiteAngle;
     private bool  _driveKiting;
     private StageNode _waveNode;
+    private int   _b9Recoveries;   // 🔬 B9 강제 복구 횟수 (임시)
     private int   _vSyncBefore = -1;
     private int   _fpsBefore   = -1;
 
@@ -186,6 +187,15 @@ public class PerfHarness : MonoBehaviour
         EnemyBase.PerfProbeOn = true;
         float wallStart = Time.realtimeSinceStartup;
 
+        // 🔬 D27 — 프레임마다 "무슨 일이 몇 번 일어났는지". 스파이크는 평균에 안 잡힌다.
+        var fPoolGets  = new int[sampleFrames];
+        var fPoolMakes = new int[sampleFrames];
+        var fDeaths    = new int[sampleFrames];
+        var fPopups    = new int[sampleFrames];
+        long wqCount = 0, wqHits = 0, wqTicks = 0, wsTicks = 0;
+        PerfCounters.ResetFrame();
+        PerfCounters.On = true;
+
         // 🔴 표본에서 "게임이 멈춰 있던 프레임"을 뺀다.
         //    레벨업 패널이 뜨면 Time.timeScale 이 0 이 되고 FixedUpdate 가 통째로 멈춘다.
         //    그 프레임까지 세면 "적이 400마리인데 분리 질의가 0회"인 표가 나온다 (실제로 나왔다).
@@ -197,9 +207,20 @@ public class PerfHarness : MonoBehaviour
             if (EnsureWaveRunning()) waveRestarts++;
             yield return null;
 
-            if (!IsGameRunning()) { skipped++; continue; }
+            if (!IsGameRunning()) { PerfCounters.ResetFrame(); skipped++; continue; }
 
-            frameMs[i] = Time.unscaledDeltaTime * 1000f;
+            frameMs[i]    = Time.unscaledDeltaTime * 1000f;
+            fPoolGets[i]  = PerfCounters.PoolGets;
+            fPoolMakes[i] = PerfCounters.PoolCreates;
+            fDeaths[i]    = PerfCounters.Deaths;
+            fPopups[i]    = PerfCounters.Popups;
+
+            wqCount += PerfCounters.WeaponQueryCount;
+            wqHits  += PerfCounters.WeaponQueryHits;
+            wqTicks += PerfCounters.WeaponQueryTicks;
+            wsTicks += PerfCounters.WeaponScanTicks;
+
+            PerfCounters.ResetFrame();
 
             if (_gcAlloc.Valid)   { gcSum      += _gcAlloc.LastValue;   counterFrames++; }
             if (_setPass.Valid)     setPassSum += _setPass.LastValue;
@@ -214,7 +235,11 @@ public class PerfHarness : MonoBehaviour
 
         float wallSec = Time.realtimeSinceStartup - wallStart;
         EnemyBase.PerfProbeOn = false;
+        PerfCounters.On = false;
         int sceneEnemiesAfter = CountAllEnemiesInScene();
+
+        ReportSpikes(enemyCount, trial, frameMs, fPoolGets, fPoolMakes, fDeaths, fPopups);
+        ReportWeaponQueries(enemyCount, trial, sampleFrames, wallSec, wqCount, wqHits, wqTicks, wsTicks);
 
         Report(enemyCount, trial, frameMs, wallSec,
                gcSum, setPassSum, drawSum, batchSum, counterFrames,
@@ -317,6 +342,18 @@ public class PerfHarness : MonoBehaviour
 
         var gm = GameManager.Instance;
         if (gm == null || _waveNode == null) return false;
+
+        // 🔴 B9 — state 는 Wave 인데 timeScale 이 0 으로 얼어붙는 경우가 있다.
+        //    OnLevelUpCompleted 가 복구를 ResumeWave() 에 맡기는데 그 함수는
+        //    _waveActive == false 면 아무것도 안 하고 돌아간다. 되살릴 주체가 없다.
+        //    이걸 안 풀면 모든 프레임이 표본에서 빠지고 측정이 조용히 죽는다 (5분을 날렸다).
+        if (gm.CurrentState == GameState.Wave && Time.timeScale <= 0f)
+        {
+            Time.timeScale = 1f;
+            _b9Recoveries++;
+            return true;
+        }
+
         if (gm.CurrentState == GameState.Wave || gm.CurrentState == GameState.LevelUp) return false;
 
         gm.WaveManager.StartWave(_waveNode);
@@ -516,7 +553,8 @@ public class PerfHarness : MonoBehaviour
             $"[PERF] {label} n={enemyCount} trial={trial}\n" +
             $"  frames={frameMs.Length} wall={wallSec:F2}s  하네스 적={CountAlive()}  " +
             $"씬 전체 적={sceneBefore}->{sceneAfter}  레벨업={levelUps}  버린프레임={skipped}  " +
-            $"웨이브재시작={waveRestarts}{(complete ? "" : "  🔴 INVALID(표본 못 채움)")}\n" +
+            $"웨이브재시작={waveRestarts}  B9복구={_b9Recoveries}" +
+            $"{(complete ? "" : "  🔴 INVALID(표본 못 채움)")}\n" +
             $"  frame ms | p50={p50:F3} p95={p95:F3} p99={p99:F3} max={max:F3} (mean={mean:F3})\n" +
             $"  분리질의 | count={q} ({q / Mathf.Max(0.001f, wallSec):F0}/s)  " +
             $"query={queryMsTotal / f:F4} ms/frame  total={totalMsTotal / f:F4} ms/frame  " +
@@ -534,6 +572,101 @@ public class PerfHarness : MonoBehaviour
         int c = 0;
         foreach (var go in _spawned) if (go != null && go.activeSelf) c++;
         return c;
+    }
+
+    /// <summary>
+    /// 🔬 D27 — <b>가장 느린 프레임 10개</b>에 무엇이 몰려 있었는지 본다.
+    ///
+    /// <para>구간 프로파일링은 전 프레임 평균이라 250 ms 짜리 몇 개가 묻힌다.
+    /// 스파이크의 원인은 "평균적으로 무엇이 비싼가"가 아니라
+    /// <b>"느린 그 프레임에 무엇이 있었나"</b>로만 잡힌다.</para>
+    ///
+    /// <para>판정 기준은 <c>Docs/PERF.md</c> §7-H 에 <b>측정 전에</b> 적었다 —
+    /// 상위 10개의 평균이 나머지의 <b>5배 이상</b>인 항목이 범인이다.</para>
+    /// </summary>
+    private static void ReportSpikes(int enemyCount, int trial, float[] frameMs,
+                                     int[] gets, int[] makes, int[] deaths, int[] popups)
+    {
+        int n = frameMs.Length;
+        if (n < 20) return;
+
+        // 느린 순으로 인덱스를 고른다 (부분 선택 — 10개뿐이라 단순 반복으로 충분하다)
+        const int TopK = 10;
+        var top = new int[TopK];
+        var used = new bool[n];
+        for (int k = 0; k < TopK; k++)
+        {
+            int best = -1;
+            for (int i = 0; i < n; i++)
+                if (!used[i] && (best < 0 || frameMs[i] > frameMs[best])) best = i;
+            used[best] = true;
+            top[k] = best;
+        }
+
+        double msTop = 0, getTop = 0, makeTop = 0, deathTop = 0, popTop = 0;
+        foreach (int i in top)
+        {
+            msTop += frameMs[i]; getTop += gets[i]; makeTop += makes[i];
+            deathTop += deaths[i]; popTop += popups[i];
+        }
+
+        double msRest = 0, getRest = 0, makeRest = 0, deathRest = 0, popRest = 0;
+        int restCount = 0;
+        for (int i = 0; i < n; i++)
+        {
+            if (used[i]) continue;
+            msRest += frameMs[i]; getRest += gets[i]; makeRest += makes[i];
+            deathRest += deaths[i]; popRest += popups[i];
+            restCount++;
+        }
+
+        float R(double a, double b) => b > 0.0001 ? (float)(a / b) : -1f;
+
+        var sb = new StringBuilder();
+        sb.Append($"[PERF-SPIKE] n={enemyCount} trial={trial}\n");
+        sb.Append($"  느린 10프레임 평균 | ms={msTop / TopK:F1}  풀Get={getTop / TopK:F1}  " +
+                  $"🔴 풀Create={makeTop / TopK:F1}  사망={deathTop / TopK:F1}  팝업={popTop / TopK:F1}\n");
+        sb.Append($"  나머지 {restCount}프레임 평균 | ms={msRest / restCount:F1}  풀Get={getRest / restCount:F1}  " +
+                  $"풀Create={makeRest / restCount:F1}  사망={deathRest / restCount:F1}  팝업={popRest / restCount:F1}\n");
+        sb.Append($"  배수(느린/나머지) | ms={R(msTop / TopK, msRest / restCount):F1}x  " +
+                  $"풀Get={R(getTop / TopK, getRest / restCount):F1}x  " +
+                  $"🔴 풀Create={R(makeTop / TopK, makeRest / restCount):F1}x  " +
+                  $"사망={R(deathTop / TopK, deathRest / restCount):F1}x  " +
+                  $"팝업={R(popTop / TopK, popRest / restCount):F1}x   (5배 이상 = 범인)\n");
+
+        sb.Append("  느린 프레임 개별 | ");
+        foreach (int i in top)
+            sb.Append($"[{frameMs[i]:F0}ms get={gets[i]} make={makes[i]} die={deaths[i]} pop={popups[i]}] ");
+
+        long totMake = 0, totDeath = 0, totPop = 0, totGet = 0;
+        for (int i = 0; i < n; i++) { totGet += gets[i]; totMake += makes[i]; totDeath += deaths[i]; totPop += popups[i]; }
+        sb.Append($"\n  표본 합계 | 풀Get={totGet}  풀Create={totMake}  사망={totDeath}  팝업={totPop}");
+
+        Debug.Log(sb.ToString());
+    }
+
+    /// <summary>
+    /// 🔬 D27 — 무기 질의(<c>OverlapCircleAll</c>)와 그 뒤 선형 탐색의 비용.
+    ///
+    /// <para><c>BehaviourUpdate</c> 가 A 대비 16~65배로 뛴 것이 확인됐고(§7-H 결과 ④),
+    /// <c>Update()</c> 안에서 무기가 하는 일은 <b>이 질의</b>와 <b>투사체 이동</b> 둘뿐이다.
+    /// 여기 나오는 ms 가 <c>BehaviourUpdate</c> 의 대부분이면 질의가 범인이고,
+    /// 작으면 투사체 쪽이다.</para>
+    /// </summary>
+    private static void ReportWeaponQueries(int enemyCount, int trial, int frames, float wallSec,
+                                            long count, long hits, long queryTicks, long scanTicks)
+    {
+        double tickMs = 1000.0 / System.Diagnostics.Stopwatch.Frequency;
+        double qMs = queryTicks * tickMs;
+        double sMs = scanTicks  * tickMs;
+
+        Debug.Log(
+            $"[PERF-WEAPON] n={enemyCount} trial={trial}\n" +
+            $"  질의 | count={count} ({count / Mathf.Max(0.001f, wallSec):F0}/s)  " +
+            $"반환 콜라이더 합={hits}  1회 평균={(count > 0 ? hits / (double)count : 0):F1}개\n" +
+            $"  질의 시간      | {qMs / frames:F4} ms/frame  (합 {qMs:F1} ms)\n" +
+            $"  FindNearest 전체 | {sMs / frames:F4} ms/frame  (합 {sMs:F1} ms)\n" +
+            $"  ↳ 선형 탐색(sqrt) 몫 | {(sMs - qMs) / frames:F4} ms/frame");
     }
 
     private string SectionLine(int frames)

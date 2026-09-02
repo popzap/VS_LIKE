@@ -162,7 +162,7 @@ public class SummonWeapon : WeaponBase
         if (_body == null) return base.FindNearestEnemy();
 
         Vector2 origin = _body.transform.position;
-        Collider2D[] hits = Physics2D.OverlapCircleAll(origin, Data.GetRange(Level),
+        Collider2D[] hits = PerfCounters.OverlapCircleAll(origin, Data.GetRange(Level),
                             LayerMask.GetMask("Enemy"));
         if (hits.Length == 0) return null;
 
@@ -231,7 +231,7 @@ public class SummonWeapon : WeaponBase
         float   dmg    = CalculateDamage();
 
         // 🔴 부채꼴이 아니라 링이다. 각도를 안 보므로 뒤쪽 적도 맞는다.
-        Collider2D[] hits = Physics2D.OverlapCircleAll(origin, range, LayerMask.GetMask("Enemy"));
+        Collider2D[] hits = PerfCounters.OverlapCircleAll(origin, range, LayerMask.GetMask("Enemy"));
         foreach (var h in hits)
         {
             var enemy = h.GetComponent<EnemyBase>();

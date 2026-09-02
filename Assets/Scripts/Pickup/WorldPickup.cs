@@ -151,7 +151,7 @@ public class WorldPickup : MonoBehaviour
     {
         Vector2 center = _player != null ? (Vector2)_player.position : (Vector2)transform.position;
 
-        Collider2D[] hits = Physics2D.OverlapCircleAll(center, bombRadius, LayerMask.GetMask("Enemy"));
+        Collider2D[] hits = PerfCounters.OverlapCircleAll(center, bombRadius, LayerMask.GetMask("Enemy"));
         foreach (var h in hits)
         {
             var enemy = h.GetComponent<EnemyBase>();
