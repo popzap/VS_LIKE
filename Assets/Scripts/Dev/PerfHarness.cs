@@ -30,7 +30,7 @@ public class PerfHarness : MonoBehaviour
     /// 실패하면 <b>옛 어셈블리가 그대로 남아</b> 타입 조회도 성공한다.
     /// 실제로 이번 세션에서 컴파일 에러가 난 채로 측정을 한 번 돌렸다.</para>
     /// </summary>
-    public const int Version = 12;
+    public const int Version = 13;
 
     [Header("적 구성")]
     [Tooltip("실제 웨이브와 같은 6종을 넣는다. 순서대로 돌아가며 소환된다")]
@@ -77,6 +77,11 @@ public class PerfHarness : MonoBehaviour
              "🔴 한 실행 안에서 번갈아 재야 인스턴스 수가 같은 조건에서 단가만 비교된다 —\n" +
              "다른 실행으로 비교했더니 BEFORE 966개 vs AFTER 306개로 조건이 달라져 무효였다")]
     [SerializeField] private bool abDropPath;
+
+    [Header("H-A — Update() 호출 고정 비용")]
+    [Tooltip("켜면 적 대신 '빈 Update() 만 가진 더미'를 counts 만큼 세운다.\n" +
+             "🔴 본문이 없으므로 BehaviourUpdate 의 기울기가 곧 호출 단가다")]
+    [SerializeField] private bool dummyUpdaterTest;
 
     [Header("실행")]
     [SerializeField] private bool  autoRun = true;
@@ -551,6 +556,20 @@ public class PerfHarness : MonoBehaviour
 
     private void Spawn(int n)
     {
+        // 🔬 H-A — 적 대신 '빈 Update() 만 가진 더미'를 세운다.
+        //    렌더러도 콜라이더도 없다. 오직 Update 호출만 늘린다.
+        if (dummyUpdaterTest)
+        {
+            for (int i = 0; i < n; i++)
+            {
+                var d = new GameObject("__dummy");
+                d.transform.SetParent(transform);
+                d.AddComponent<PerfDummyUpdater>();
+                _spawned.Add(d);
+            }
+            return;
+        }
+
         for (int i = 0; i < n; i++)
         {
             var data = enemyTypes[i % enemyTypes.Length];
@@ -602,6 +621,9 @@ public class PerfHarness : MonoBehaviour
         foreach (var go in _spawned)
         {
             if (go == null) continue;
+
+            if (dummyUpdaterTest) { Destroy(go); continue; }
+
             var e = go.GetComponent<EnemyBase>();
             if (e != null) e.ForceDespawn(); else _pool.Return(go);
         }
