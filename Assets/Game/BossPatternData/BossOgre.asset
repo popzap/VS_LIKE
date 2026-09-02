@@ -18,11 +18,11 @@ MonoBehaviour:
   - 0.4
   PhaseSpeedMult:
   - 1
-  - 1.15
-  - 1.35
-  SlamWindup: 0.9
-  SlamRadius: 3.2
-  SlamDamage: 22
+  - 1.5
+  - 2.2
+  SlamWindup: 1.15
+  SlamRadius: 2.4
+  SlamDamage: 18
   SlamCooldown:
   - 5
   - 3.8
