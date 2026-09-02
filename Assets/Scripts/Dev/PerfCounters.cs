@@ -63,6 +63,14 @@ public static class PerfCounters
     /// <summary><c>Update</c> 가 실제로 돈 횟수 (= 인스턴스 × 프레임).</summary>
     public static long DropUpdateCalls;
 
+    /// <summary>
+    /// 🔬 <c>DamagePopup.Update</c> 단가. <c>ExpDrop</c> 이 개당 0.9 µs 로 나와
+    /// <c>BehaviourUpdate</c> 16 ms 를 설명하지 못했다 — 남은 후보가 여기다.
+    /// <c>TextMeshPro.alpha</c> 를 매 프레임 쓰면 버텍스 컬러가 다시 올라간다.
+    /// </summary>
+    public static long PopupUpdateTicks;
+    public static long PopupUpdateCalls;
+
     /// <summary>프레임마다 하네스가 부른다. 값을 읽어 간 뒤 0으로 되돌린다.</summary>
     public static void ResetFrame()
     {
@@ -80,8 +88,10 @@ public static class PerfCounters
     /// <summary>A/B 누적치만 따로 초기화한다 (프레임마다가 아니라 시행마다).</summary>
     public static void ResetDropTrial()
     {
-        DropUpdateTicks = 0;
-        DropUpdateCalls = 0;
+        DropUpdateTicks  = 0;
+        DropUpdateCalls  = 0;
+        PopupUpdateTicks = 0;
+        PopupUpdateCalls = 0;
     }
 
     /// <summary>

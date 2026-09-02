@@ -323,9 +323,13 @@ GC 할당은 눈에 띄지만 프레임 타임의 주범은 아니다 — **순�
 - [ ] 🔴 **진짜 레버는 단가가 아니라 인스턴스 수다** — `ExpDrop`·`WorldPickup` 은 수명이 없어
       주울 때까지 영원히 남는다. 개당 0.9 µs 여도 1,000개면 0.9 ms 이고, 그 콜라이더들이
       `Physics2D.Simulate` 를 0.3 → 3.5 ms 로 올린다. **수를 줄이는 쪽이 순서다**
-- [ ] **`DamagePopup`(TextMeshPro)을 아직 안 쟀다** — `BehaviourUpdate` 16 ms 를
-      `ExpDrop` 으로 설명할 수 없다(개당 0.9 µs × 700 = 0.63 ms). 이 그룹 안에서
-      팝업이 압도적일 가능성이 남아 있다
+- [x] ~~`DamagePopup` 측정~~ — **개당 1.6 µs · 프레임당 0.12~0.22 ms.** 압도적이지 않았다
+- [ ] 🔴 **무기 렉의 원인은 아직 미확정이다** → [`PERF.md`](PERF.md) §8-8.
+      `ExpDrop`+`Pickup`+`Popup` 을 다 합쳐도 `BehaviourUpdate` 의 **19~29 %** 뿐이고
+      **나머지 71~81 %가 무엇인지 모른다.** 남은 후보: `EnemyProjectile`(33~63개) ·
+      `ProjectileBase` · `WeaponBase` · 전투와 무관한 상시 `Update` 들
+- [ ] ⚠️ **"`BehaviourUpdate` 16 ms" 를 인용하지 말 것** — 그 값은 **열화된 세션 한 번**의
+      것이다(프레임 51~54 ms, 정상은 13 ms). 정상 세션에서는 **0.56~1.46 ms** 다
 - [ ] **`ExpDrop`·`WorldPickup` 에 수명이 없다** — 주울 때까지 영원히 남는다.
       (`DamagePopup` 은 `_lifetime = 0.8f` 로 만료된다.) 상한을 줄지는 **설계 결정**이다 —
       구슬이 사라지면 경험치가 증발한다

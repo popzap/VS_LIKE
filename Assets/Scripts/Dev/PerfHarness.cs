@@ -30,7 +30,7 @@ public class PerfHarness : MonoBehaviour
     /// 실패하면 <b>옛 어셈블리가 그대로 남아</b> 타입 조회도 성공한다.
     /// 실제로 이번 세션에서 컴파일 에러가 난 채로 측정을 한 번 돌렸다.</para>
     /// </summary>
-    public const int Version = 11;
+    public const int Version = 12;
 
     [Header("적 구성")]
     [Tooltip("실제 웨이브와 같은 6종을 넣는다. 순서대로 돌아가며 소환된다")]
@@ -255,15 +255,21 @@ public class PerfHarness : MonoBehaviour
         Debug.Log($"[PERF-SPACING] n={enemyCount} trial={trial}  bufSize={EnemyBase.NeighborBufSize}\n" +
                   $"  {NearestNeighborStats()}");
 
-        if (abDropPath)
         {
             double tickUs = 1_000_000.0 / System.Diagnostics.Stopwatch.Frequency;
-            long calls = PerfCounters.DropUpdateCalls;
-            double us  = calls > 0 ? PerfCounters.DropUpdateTicks * tickUs / calls : 0;
+
+            long dCalls = PerfCounters.DropUpdateCalls;
+            double dUs  = dCalls > 0 ? PerfCounters.DropUpdateTicks * tickUs / dCalls : 0;
+            long pCalls = PerfCounters.PopupUpdateCalls;
+            double pUs  = pCalls > 0 ? PerfCounters.PopupUpdateTicks * tickUs / pCalls : 0;
+
             Debug.Log($"[PERF-DROP-AB] n={enemyCount} trial={trial}  " +
-                      $"경로={(PerfCounters.SlowPath ? "최적화 전(GetComponent+sqrt)" : "최적화 후(캐시+sqrMagnitude)")}\n" +
-                      $"  Update 호출={calls}  단가={us:F3} µs/call  " +
-                      $"합={PerfCounters.DropUpdateTicks * tickUs / 1000.0:F1} ms");
+                      $"경로={(PerfCounters.SlowPath ? "최적화 전" : "최적화 후")}\n" +
+                      $"  ExpDrop+Pickup | 호출={dCalls}  단가={dUs:F3} µs  " +
+                      $"합={PerfCounters.DropUpdateTicks * tickUs / 1000.0:F1} ms\n" +
+                      $"  DamagePopup    | 호출={pCalls}  단가={pUs:F3} µs  " +
+                      $"합={PerfCounters.PopupUpdateTicks * tickUs / 1000.0:F1} ms  " +
+                      $"(프레임당 {PerfCounters.PopupUpdateTicks * tickUs / 1000.0 / Mathf.Max(1, frameMs.Length):F4} ms)");
         }
 
         ReportSpikes(enemyCount, trial, frameMs, fPoolGets, fPoolMakes, fDeaths, fPopups);
