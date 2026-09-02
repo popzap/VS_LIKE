@@ -208,9 +208,31 @@ public class EnemyBase : MonoBehaviour
     private const float SeparationWeight     = 0.9f;
     private const int   SeparationEveryNSteps = 4;
 
-    private static readonly Collider2D[] NeighborBuf = new Collider2D[12];
+    /// <summary>이웃 버퍼 크기. 🔴 이 값이 곧 <b>분리 계산에 반영되는 이웃 수의 상한</b>이다 (B8).</summary>
+    public  const  int NeighborBufSize = 12;
+
+    private static readonly Collider2D[] NeighborBuf = new Collider2D[NeighborBufSize];
     private static ContactFilter2D _enemyFilter;
     private static bool            _enemyFilterReady;
+
+    // ── 🔬 성능 계측 (D27, 임시) ─────────────────────────────────
+    // 평소엔 PerfProbeOn 이 false 라 분기 하나 값만 든다.
+    // PerfHarness 가 켜고, 측정이 끝나면 이 블록과 아래 3줄을 지운다.
+    public static bool  PerfProbeOn;
+    public static long  PerfQueryCount;    // 분리 질의를 실제로 돈 횟수
+    public static long  PerfNeighborSum;   // n 의 합 (평균용)
+    public static long  PerfQueryTicks;    // Physics2D.OverlapCircle 만의 누적 시간
+    public static long  PerfTotalTicks;    // 질의 + 1/d² 누산 루프까지 (= 공간 해시가 대체할 전부)
+    public static readonly int[] PerfNHist = new int[NeighborBufSize + 1];  // n 별 도수
+
+    public static void PerfReset()
+    {
+        PerfQueryCount  = 0;
+        PerfNeighborSum = 0;
+        PerfQueryTicks  = 0;
+        PerfTotalTicks  = 0;
+        for (int i = 0; i < PerfNHist.Length; i++) PerfNHist[i] = 0;
+    }
 
     private Vector2 _separation;
     private int     _sepCountdown;
@@ -241,7 +263,21 @@ public class EnemyBase : MonoBehaviour
         Vector2 pos = transform.position;
         float   r   = SeparationRadius * Mathf.Max(0.5f, transform.localScale.x);
 
+        // 🔬 D27 계측 (임시). Stopwatch 두 번이 약 50ns — 질의 자체(수 µs)에 비해 무시할 수준이다.
+        long tStart = PerfProbeOn ? System.Diagnostics.Stopwatch.GetTimestamp() : 0L;
+
         int n = Physics2D.OverlapCircle(pos, r, _enemyFilter, NeighborBuf);
+
+        long tQuery = 0L;
+        // 🔬 n == NeighborBufSize 이면 이웃이 잘렸을 수 있다 (B8).
+        if (PerfProbeOn)
+        {
+            tQuery = System.Diagnostics.Stopwatch.GetTimestamp();
+            PerfQueryTicks += tQuery - tStart;
+            PerfQueryCount++;
+            PerfNeighborSum += n;
+            PerfNHist[n]++;
+        }
 
         Vector2 sum = Vector2.zero;
         for (int i = 0; i < n; i++)
@@ -259,6 +295,10 @@ public class EnemyBase : MonoBehaviour
         }
 
         _separation = Vector2.ClampMagnitude(sum, 1f);
+
+        // 🔬 D27 계측 (임시)
+        if (PerfProbeOn) PerfTotalTicks += System.Diagnostics.Stopwatch.GetTimestamp() - tStart;
+
         return _separation;
     }
 
