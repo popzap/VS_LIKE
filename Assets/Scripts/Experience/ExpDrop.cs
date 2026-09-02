@@ -59,33 +59,10 @@ public class ExpDrop : MonoBehaviour
     {
         if (_collected || _player == null) return;
 
-        // 🔬 D27 A/B 계측 (임시). 최적화 전/후를 같은 실행 안에서 비교하기 위한 것이다.
-        long _t0 = PerfCounters.On ? System.Diagnostics.Stopwatch.GetTimestamp() : 0L;
-
-        float distSqr;
-        float radius;
-
-        if (PerfCounters.SlowPath)
-        {
-            // 🔬 최적화 전 코드 경로 — 매 프레임 GetComponent + sqrt
-            float dist   = Vector2.Distance(transform.position, _player.position);
-            var   stats  = _player.GetComponent<PlayerStats>();
-            distSqr = dist * dist;
-            radius  = stats != null ? stats.Final.PickupRadius : 2f;
-        }
-        else
-        {
-            // 🔴 sqrt 를 안 쓴다 (D27). 거리는 비교에만 쓰이므로 제곱끼리 비교하면 된다 —
-            //    구슬이 수백 개면 프레임당 그만큼의 sqrt 가 사라진다.
-            distSqr = ((Vector2)transform.position - (Vector2)_player.position).sqrMagnitude;
-            radius  = _playerStats != null ? _playerStats.Final.PickupRadius : 2f;
-        }
-
-        if (PerfCounters.On)
-        {
-            PerfCounters.DropUpdateTicks += System.Diagnostics.Stopwatch.GetTimestamp() - _t0;
-            PerfCounters.DropUpdateCalls++;
-        }
+        // sqrt 를 쓰지 않는다 — 거리는 비교에만 쓰이므로 제곱끼리 비교하면 된다.
+        // 스탯도 캐시된 것을 쓴다 (Initialize 에서 한 번 잡는다).
+        float distSqr = ((Vector2)transform.position - (Vector2)_player.position).sqrMagnitude;
+        float radius  = _playerStats != null ? _playerStats.Final.PickupRadius : 2f;
 
         // 흡수 반경 이내 → 자동 이동. 자석에 걸렸으면 거리 조건 없이 무조건 이동.
         float pull = Mathf.Max(radius, magnetActivationRange);

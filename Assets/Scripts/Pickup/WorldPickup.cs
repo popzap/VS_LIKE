@@ -90,32 +90,9 @@ public class WorldPickup : MonoBehaviour
         var gm = GameManager.Instance;
         if (gm != null && gm.CurrentState == GameState.LevelUp) return;
 
-        // 🔬 D27 A/B 계측 (임시). ExpDrop 과 같은 구조다.
-        long _t0 = PerfCounters.On ? System.Diagnostics.Stopwatch.GetTimestamp() : 0L;
-
-        float distSqr;
-        float radius;
-
-        if (PerfCounters.SlowPath)
-        {
-            // 🔬 최적화 전 코드 경로 — 매 프레임 GetComponent + sqrt
-            float dist  = Vector2.Distance(transform.position, _player.position);
-            var   stats = _player.GetComponent<PlayerStats>();
-            distSqr = dist * dist;
-            radius  = stats != null ? stats.Final.PickupRadius : 2f;
-        }
-        else
-        {
-            // 🔴 sqrt 를 안 쓴다 (D27). 거리는 비교에만 쓰인다.
-            distSqr = ((Vector2)transform.position - (Vector2)_player.position).sqrMagnitude;
-            radius  = _playerStats != null ? _playerStats.Final.PickupRadius : 2f;
-        }
-
-        if (PerfCounters.On)
-        {
-            PerfCounters.DropUpdateTicks += System.Diagnostics.Stopwatch.GetTimestamp() - _t0;
-            PerfCounters.DropUpdateCalls++;
-        }
+        // sqrt 를 쓰지 않는다 — 거리는 비교에만 쓰인다. 스탯도 캐시된 것을 쓴다.
+        float distSqr = ((Vector2)transform.position - (Vector2)_player.position).sqrMagnitude;
+        float radius  = _playerStats != null ? _playerStats.Final.PickupRadius : 2f;
 
         if (distSqr < radius * radius)
             transform.position = Vector2.MoveTowards(
@@ -177,7 +154,7 @@ public class WorldPickup : MonoBehaviour
     {
         Vector2 center = _player != null ? (Vector2)_player.position : (Vector2)transform.position;
 
-        Collider2D[] hits = PerfCounters.OverlapCircleAll(center, bombRadius, LayerMask.GetMask("Enemy"));
+        Collider2D[] hits = Physics2D.OverlapCircleAll(center, bombRadius, LayerMask.GetMask("Enemy"));
         foreach (var h in hits)
         {
             var enemy = h.GetComponent<EnemyBase>();

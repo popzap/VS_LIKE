@@ -165,16 +165,6 @@ public class DevPanel : MonoBehaviour
             PlayerStats.Current?.GrantInvincibility(60f);
         GUILayout.EndHorizontal();
 
-        // 🔬 D27 임시 — 촬영 S2 (무리 분리 before/after) 용.
-        //    재컴파일 없이 한 세션에서 12칸 절단을 껐다 켤 수 있다.
-        GUILayout.BeginHorizontal();
-        bool old12 = EnemyBase.PerfNeighborLimit <= 12;
-        bool new12 = GUILayout.Toggle(old12, "  neighbour cap 12  (B8 = before)");
-        if (new12 != old12)
-            EnemyBase.PerfNeighborLimit = new12 ? 12 : EnemyBase.NeighborBufSize;
-        GUILayout.Label($"limit = {EnemyBase.PerfNeighborLimit}", GUILayout.Width(90f));
-        GUILayout.EndHorizontal();
-
         GUILayout.Space(6f);
     }
 
