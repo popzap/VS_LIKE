@@ -6,7 +6,7 @@
 > 기존의 「C# 스크립트는 완성 단계」라는 전제와 「요청 없이 코드 건드리지 말 것」 규칙이 **해제됨**.
 > 이제 게임 완성을 위해 C# 스크립트 신규 작성·수정이 허용된다.
 >
-> **최종 갱신:** 2026-09-03 (52차 — 구슬 원거리 회수 + B10, D29)
+> **최종 갱신:** 2026-09-03 (53차 — 메타 강화 화면: 재화 고리를 닫았다, D30)
 >
 > 🔀 **25차부터 이슈 번호가 `세션 접두어 + 번호` 다** — `D`(DEV) · `C`(CONTENT) · `B`(버그 공용).
 > 병렬 2세션 체제로 바뀌었기 때문이다 (D1). 과거 `I-1`~`I-61` 은 그대로 둔다.
@@ -2025,6 +2025,124 @@ Play 모드에서 Warrior 로 런을 시작하고 `Unity_RunCommand` 로 재료�
 > ⚠️ **건물 앞 `E` 실조작은 아직 미검증이다.** 위는 `EvolveClass` 를 직접 부른 것이고,
 > `FindAltarClassEvolution` 은 이미 검증된 `FindAltarEvolution` 과 같은 로직이지만
 > **실제로 터렛을 세우고 다가가서 눌러 본 적은 없다** → [`TODO.md`](TODO.md) §1
+
+---
+
+## 2-57. ✅ 메타 강화 화면 — **재화 고리를 닫았다** (D30, 2026-09-03 53차)
+
+**한 줄:** 메타 골드를 **쓸 데가 생겼다.** 죽어도 뭔가 남는다.
+
+> 전문 [`Parallel/DONE/D30.md`](Parallel/DONE/D30.md) · 근거 [`ROADMAP.md`](ROADMAP.md) §8 9번 · 값 요청 [`Parallel/REQ/CONTENT.md`](Parallel/REQ/CONTENT.md) 요청-22
+
+### 원인 / 배경 — 없던 것은 백엔드가 아니라 화면이었다
+
+`ROADMAP.md` §5 가 *"자료구조만 있고 게임에 안 붙어 있다"* 로 남겨 둔 자리다.
+읽어 보니 `MetaProgressionManager` 는 **이미 완성돼 있었다** — `PurchaseUpgrade` ·
+`GetStatBonus` · JSON 저장/로드까지. `PlayerStats.cs:228` 도 `GetStatBonus()` 를 **이미 부르고 있었다.**
+
+없던 건 셋이다: **애셋 0개**(`I-19` 함정에 막혀 있었다) · **화면**(`GameState.MetaScreen` 은
+enum 에만 있고 전환 코드 0개) · **진입점**(메인 메뉴에 버튼 없음).
+⇒ 메타 골드는 **벌기만 하고 쓸 데가 없었다.**
+
+### 변경한 파일
+
+| 파일 | 무엇 |
+|---|---|
+| `Assets/Scripts/Meta/UpgradeDefinition.cs` | 신규 — `MetaProgressionManager.cs:51` 에서 **분리**(`I-19`) |
+| `Assets/Scripts/UI/MetaScreenUI.cs` | 신규 — `GameStatePanel` 파생 |
+| `Assets/Scripts/UI/UpgradeCardUI.cs` | 신규 |
+| `Assets/Scripts/Meta/MetaProgressionManager.cs` | `Upgrades` 프로퍼티 + `GetStatBonus` null 안전 |
+| `Assets/Scripts/UI/MainMenuUI.cs` | `metaButton` + `OnMetaClicked` |
+| `Assets/Editor/BalanceImporter.cs` | `ImportUpgrades` · Export · 🔴 **`EnsureFolder` 버그 수정** |
+| `Assets/Game/Balance/Upgrades.csv` | 신규 · 7항목 (**값은 임시**) |
+| `Assets/Game/UpgradeData/*.asset` | 신규 7개 |
+| `Assets/Prefabs/Prefab_UpgradeCard.prefab` | 신규 |
+| `Assets/Scenes/SampleScene.unity` | `MetaScreenPanel` · `MetaButton` · `MetaScreenUI` 배선 |
+
+### 🔴 순서가 전부였다 — `I-19` 를 먼저 풀지 않으면 되돌릴 수 없다
+
+`UpgradeDefinition` 은 `MetaProgressionManager.cs` 안에 얹혀 있었다.
+그 상태로 `.asset` 을 만들면 `m_Script` 가 **`0` 으로 기록되고 재임포트로도 복구되지 않는다.**
+애셋이 0개였던 덕에 아직 아무도 안 다쳤을 뿐, **만드는 순간 터질 자리**였다.
+
+그래서 1단계가 파일 분리였다. 결과 — 7개 전부:
+
+```
+m_Script: {fileID: 11500000, guid: 03c86aaa1fa60f94f8d23dbdd777603d, type: 3}
+                                    ↑ UpgradeDefinition.cs 의 guid
+```
+
+**`0` 이 하나도 없다. 먼저 했기 때문이다.**
+
+### 🔴 새 폴더를 만드는 임포터에서만 터지는 버그를 밟았다
+
+첫 Import 뒤 `Assets/Game/` 에 **`UpgradeData 1` ~ `UpgradeData 6`** 이 생겼다.
+`EnsureFolder` 가 `AssetDatabase.IsValidFolder` 만 보는데,
+**`StartAssetEditing()` 구간에서는 AssetDatabase 가 갱신되지 않아 방금 만든 폴더를
+"없다"고 답한다.** 그래서 행마다 `CreateFolder` 가 다시 돌고 Unity 가 이름을 비켜 준다.
+
+🔑 **기존 폴더들은 전부 이미 디스크에 있어서 여태 안 드러났다** — 새 폴더를 처음 만드는
+임포터가 `Upgrades` 가 처음이었다. 디스크를 같이 보는 것으로 막았다:
+
+```csharp
+if (AssetDatabase.IsValidFolder(folder))  return;
+if (System.IO.Directory.Exists(folder))   return;   // 추가 (CreateFolder 는 즉시 반영한다)
+```
+
+### 값은 CSV 로 갔다 — 그리고 임포터가 오타를 잡는다
+
+`Costs`·`Bonus` 가 배열이라 인스펙터 예외를 둘까 했지만 `CsvTable.ArraySeparator`(`|`)와
+`CsvRow.Ints`/`Floats` 가 이미 있어 예외가 필요 없었다(사용자 판단).
+`MetaProgressionManager.ApplyStatKey` 는 모르는 `StatKey` 를 **조용히 무시**하므로
+(사도 효과가 없고 예외도 경고도 없다) 임포터에 `IsKnownStatKey` 검사를 넣어 `!` 를 찍게 했다.
+
+### 검증 로그 — 판정 6/6 PASS
+
+```
+[D30-RT] ① 화면: state=MetaScreen · panel.active=True · 카드 수=7 · timeScale=1
+[D30-RT] ② 구매: 성공=True · Lv 0→1 · Gold 3231→3111 (비용 120) · GetStatBonus().MaxHp 0→10
+[D30-RT] ③ 잔액 0 에서 구매 시도 = False (정상)
+[D30-RT] ④ StartRun 후 PlayerStats.Final.MaxHp = 140  (meta +10 포함)
+[D30-RT] ④ Lv2 구매 후 MaxHp 140 → 150
+[D30-RT] ⑤ MetaScreen → MainMenu 왕복 후 state=MainMenu · timeScale=1
+```
+
+**④ 가 이 작업의 전부다.** 강화를 사자 다음 런의 스탯이 실제로 올랐다 —
+클리어 보상 → `SettleRun` → `Currency` → **이 화면** → `GetStatBonus()` → `PlayerStats`.
+콘솔 에러·경고 **0**. 화면은 스크린샷으로 눈으로도 확인했다.
+
+> 🔴 **검증이 실제 세이브 파일을 쓴다.** `PurchaseUpgrade` 가 `Save()` 를 부르기 때문이다.
+> 시작 전에 `save.json` 을 백업하고 끝나고 되돌렸다(`Currency 1231` · 강화 레벨 0 복구 확인).
+> **검증이 사용자 데이터를 바꾸면 그것도 정리 대상이다** — 임시 스크립트와 같다.
+
+### 화면은 복제로 만들었다 (그리고 한 번 틀렸다)
+
+`Prefab_ShopCard` → `Prefab_UpgradeCard`, `MainMenuPanel` → `MetaScreenPanel`,
+`StartButton` → `MetaButton`. 폰트·색·앵커·`CanvasScaler` 를 그대로 물려받는 게 안전하다.
+
+🔴 **복제 버튼의 `onClick` 을 반드시 비운다** — `StartButton` 복제본은 `OnStartClicked` 를
+그대로 갖고 있어서, 안 지우면 **Upgrades 를 눌렀는데 런이 시작된다.**
+
+첫 캡처에서 카드 내용이 셀 밖으로 흘렀다. 셀을 250×220 으로 잡았는데 카드 원본이
+250×**440** 이었다 — `GridLayoutGroup` 은 카드 `RectTransform` 만 줄이고 자식은 위쪽 기준
+고정 오프셋이라 아래가 잘린다. 아이콘이 없어 위 공간이 비므로 **카드를 250×320 으로 압축**했다.
+
+> ⚠️ **UI 는 카메라 캡처로 못 본다.** Canvas 가 `ScreenSpaceOverlay` 라
+> `Unity_Camera_Capture` 는 씬 뷰만 찍는다. `ScreenCapture.CaptureScreenshot` 을 쓸 것.
+
+### 곁다리 — 직업 3종이 게임에 들어갔다 (요청-19 닫힘)
+
+Import 로그에 `Classes : 10` 이 나왔다. CONTENT 가 `8ab5551`(C28)로 `Classes.csv` 를
+이미 써 뒀고 **내 Import 가 그걸 애셋으로 만든 것**이다.
+`Demolitionist`·`Assassin`·`Summoner` 셋 다 `WalkFrames` 17줄(=16프레임+헤더) ·
+`Portrait` guid 각각 다름 — **`Warrior` 기준선과 동일**.
+`GameManager.classes` 도 **6개**가 됐다. **`C6` 6단계가 닫혔다.**
+
+### 안 한 것
+
+- **강화 수치 확정** — `Upgrades.csv` 값은 **임시**다(메타 수입 132G 만 근거). → 요청-22
+- **강화 아이콘 7장** — `Icon` 열이 비어 있다. `UpgradeCardUI` 가 null 이면 `Image` 를 꺼서 안 깨진다
+- **직업 해금 흐름** — `ClassSelectUI.IsUnlocked()` 가 아직 `UnlockedByDefault` 만 본다. 별건
 
 ---
 
@@ -5491,6 +5609,7 @@ Play 모드 — 한 세션에서 두 경로 전부:
 | **D27**<br>(B8·B9) | 이 프로젝트는 **성능을 한 번도 재 본 적이 없었다.** `ROADMAP.md` §6 에 *"`OverlapCircleAll` 이 할당한다"* 같은 **코드를 읽고 쓴 추측**만 있고 숫자가 없었다. 포트폴리오에도 *"만들었다"* 는 많은데 **"재고 고치고 다시 쟀다"** 가 없었다 | ✅ 해결 (2026-09-02 50차 → 2-54) — 부하 하네스를 만들어 **시나리오 A/B × 적 130/200/400/800 · 40회 이상** 측정. 🔑 **측정 전에 판정 기준을 `PERF.md` §1~§5 에 못박았다** — 재고 나서 기준을 정하면 유리한 숫자를 고르게 되기 때문이다. **가설 11개를 숫자로 죽였다**: 적↔적 충돌(매트릭스 `0x380` — **이미 꺼져 있었다**) · GC(**`GC.Collect = 0.000`**) · "적이 많으면 느리다"(**800마리 121 fps**) · 풀 `Instantiate`·사망 처리·데미지 팝업(각 4회 중 1회만 기준 초과) · **`OverlapCircleAll` 할당 8곳(프레임의 1.3 %)** · 투사체 `Update`(**1~3개뿐**) · `ExpDrop`(0.9 µs) · `DamagePopup`(1.6 µs) · **`Update()` 호출 단가(0.139 µs — 예측과 10배 차이)**. 🔴 **찾은 것 둘** — **`B8`**(이웃 12칸 무언 절단: 적 400에서 12~19 %, 800에서 58~71 %. `n` 히스토그램이 분포가 아니라 **벽**이다. **성능 우회책 안에 정합성 상한이 숨어 있었다**) · **적 겹침의 원인은 밀도**(800에서 85 %가 0.5유닛 안. 버퍼를 64로 키워도 84.6→85.1 % 로 그대로 ⇒ **절단은 증상이지 원인이 아니었다**). 고친 것: `NeighborBufSize` **12→64**(적 ≤400 절단 **0 %**) · `ExpDrop`/`WorldPickup` 의 씬 전체 순회·매 프레임 `GetComponent` 제거 · `DevPanel` 에 `Enemy Spawn` 신설. 🔴 **사전 등록 기준 5개 중 2개는 실패로 남겼다**(적 800에서 포화 0 미달 · 프레임 +5 % 초과) — 64 유지는 **판단이지 기준 통과가 아니다**. 🔴 **스스로 무너뜨린 결론 3개** — "렉이 없다"(A에서만 맞았다) · **`B9` 오진**(사용자 지적으로 `StageClearUI` 의 정상 정지임이 드러남) · "무기 렉의 범인은 사망 부산물"(근거였던 16 ms 가 **열화된 세션 한 번**의 값. 정상은 0.56~1.46 ms). **셋 다 그럴듯한 설명을 찾자마자 검증을 건너뛴 것이다.** 함정 11가지를 값과 함께 남겼다 — 특히 **품질 레벨을 올리면 vSync 가 따라 켜진다**(레벨별 저장) · **`Assets/Refresh` 는 재컴파일을 보장하지 않는다** · 🔴 **Unity 컴파일 에러가 `Error` 가 아니라 `Log` 타입으로 온다** · **세션이 다르면 같은 조건이 2배 흔들린다**. ⇒ 하네스가 매 실행 환경값을 직접 읽어 로그로 남기고 **`Version` 상수로 코드 반영을 조회**하게 했고, 그 가드가 **v8 코드로 v9 결과를 적을 뻔한 것을 막았다**. ✅ **계측 전량 제거**(심볼 소멸까지 조회 확인) · **`SampleScene.unity` 한 줄도 안 바뀜**(하네스를 저장하지 않고 메모리에만 뒀다). 곁가지로 **건물 앞 `E` 승급이 촬영(S1) 중 처음으로 실제 조작 경로 검증** — 외형 변화까지 확인, 반 년 열려 있던 `TODO §1` 항목이 닫혔다 |
 | **D28** | `C27` 이 상점·해금 가격을 두 예산에 맞춰 다시 잡아 CSV 에 **저장만** 해 뒀다. CSV 는 원본일 뿐 **Import 를 돌려야 게임이 본다** — 그리고 Import 는 에디터 조작이라 CONTENT 가 못 한다. 같이, `D27` 이 새로 확인한 **Unity MCP 함정 둘이 `CLAUDE.md` 에 안 들어가 있었다**(`PERF.md` 에만 있었다 — 매 세션이 읽는 건 `CLAUDE.md` 다) | ✅ 해결 (2026-09-03 51차 → 2-55) — Import 1회. `ItemData` **25개** 가격 `5~12→40~110` · 씬 오버라이드 5개(리롤 `3/1→25/15` · 레벨업 리롤 `1→10` · 해금 `30/15→150/75`). `CLAUDE.md` §4 에 함정 2행 신설. **C#·CSV·그림 변경 0** — 요청-20 §3 의 코드 2건은 *"알아만 둘 것"* 이라 안 건드렸다 | 판정 **5/5 PASS** — `Economy.csv 49/49` · `SceneWiring.csv 12/12` · `Items 28` · 실패 줄 0 · `Sword.ShopPrice 8→70` · 씬 `ShopManager 3→25 / 1→15`. 🔑 **⑤(`StageMapManager` 무변화)가 판정 하나를 공짜로 더 만들었다** — 오버라이드 0개는 *값이 같다* 와 ***임포터가 컴포넌트를 찾았다*** 를 동시에 뜻한다(못 찾았으면 `43/49` + `!`). ⇒ `weightShop` 튜닝 경로가 **부작용 없이** 증명됐다. ⚠️ 알게 된 것 둘 — 필드가 `shopPrice` 가 아니라 **`ShopPrice`**(소문자로 조회하면 NRE) · **값은 프리팹이 아니라 씬 인스턴스 오버라이드로 들어간다**(프리팹은 여전히 `3/1`). 🔴 품질 레벨 `0→5`(Ultra) 는 **사용자 판단으로 유지** — 대신 **Ultra 는 `vSyncCount: 1` 이라 에디터 플레이가 144 Hz 에 고정**된다(`PerfHarness` 가 지워져 꺼 주는 것도 없다) |
 | **D29**<br>(B10) | `D27` 이 남긴 결정 *"구슬에 수명 상한을 줄 것인가"* 에 `C28` 이 **"두지 않는다"** 로 답했다 — 얻는 게 0.5 ms(예산의 3 %)인데 잃는 게 **자석 픽업의 존재 이유**라 거래가 성립을 안 한다. 대신 `RecycleFarEnemies` 의 원칙(*지우면 경험치가 증발하니 옮겨서 다시 쓴다*)을 구슬에도 적용해 달라고 했다. **적에게는 그 규칙이 있고 구슬에는 없었다** | ✅ 해결 (2026-09-03 52차 → 2-56) — `WaveManager.RecycleFarExpDrops()` 를 `MaintainRoutine`(0.25초) 안 `RecycleFarEnemies()` 옆에 넣었다. 새 코루틴·새 상수 없이 `RecycleRadiusMult 1.9` 를 **적과 공유**한다. 🔴 **그 전에 `B10` 을 먼저 닫아야 했다** — `LevelUpManager` 에 **큐가 없어** 한 번의 `CollectXp` 로 3레벨이 오르면 패널이 덮어써져 **카드 2장이 조용히 사라진다**(정지가 아니라 손실이라 안 보였다). 합산 호출이 이걸 **기본 동작**으로 만들 참이었다. 씬 전체 순회를 새로 만들지 않으려 `ExpDrop.Active` 정적 목록을 뒀다(`PullAllToPlayer` 도 이걸 쓴다). **씬·프리팹·CSV·SO 변경 0** | 판정 **5/5 PASS** — 거리 사다리 `5·15·25·35·37·39·45·80` → 걷힌 것 `39·45·80` · 남은 것 `15·25·35·37` ⇒ **임계값이 정확히 38 임을 경계 양쪽으로 증명**(교훈 180 을 설계에 먼저 넣었다). `원거리 구슬 회수 3개 · XP +3` · `CurrentXp 4`(회수 3 + 자동흡수 1) · 콘솔 에러·경고 0. `B10` 은 `CollectXp(40)`→`Lv 1→4` 후 **`HidePanel` 3회를 다 써야** `Wave` 복귀(수정 전이면 1회). 🔑 **설계 도중 상호작용 하나를 더 잡았다** — 진화 제안 패널 중 레벨업이 들어오면 진화 카드 선택이 레벨업 빚으로 세어져 **대기 중인 레벨업이 사라진다**. `_panelIsForced` 로 갈랐다. ⚠️ **밸런스가 바뀐다** — 소실되던 구슬이 회수되므로 경험치 수입이 는다. 수치는 실플레이 로그를 보고 CONTENT 가 정한다 |
+| **D30** | `ROADMAP.md` §5 가 *"자료구조만 있고 게임에 안 붙어 있다"* 로 남겨 둔 자리. 메타 골드는 **벌기만 하고 쓸 데가 없었다** — 죽으면 아무것도 안 남는다. 백엔드(`PurchaseUpgrade`·`GetStatBonus`·저장/로드)는 이미 완성돼 있었고 `PlayerStats.cs:228` 도 이미 부르고 있었는데, **애셋 0개**(`UpgradeDefinition` 이 `MetaProgressionManager.cs:51` 안에 있어 `I-19` 함정) · **화면 없음** · **진입점 없음** 셋이 비어 있었다 | ✅ 해결 (2026-09-03 53차 → 2-57) — `UpgradeDefinition` 파일 분리(`I-19`) → `Upgrades.csv` + `ImportUpgrades` 신설 → 애셋 7개 → `MetaScreenUI`/`UpgradeCardUI` + `MetaScreenPanel`/`Prefab_UpgradeCard`(기존 것 복제) → 메인 메뉴 `Upgrades` 버튼. 값은 CSV 가 원본이라 인스펙터 예외를 두지 않았다(사용자 판단) | 판정 **6/6 PASS** — 카드 7장 · 구매 `Lv0→1`·`-120G` · 잔액 0 거절 · **`StartRun` 후 `MaxHp 140→150`(다음 런 반영)** · `Back` 복귀 `timeScale 1` · 콘솔 0. 🔑 **애셋 7개의 `m_Script` 가 전부 `UpgradeDefinition.cs` 의 guid** — 분리를 먼저 해서 `I-19` 를 피했다. 🔴 **새 폴더를 만드는 임포터에서만 터지는 `EnsureFolder` 버그를 밟았다** — `StartAssetEditing()` 안에서 `IsValidFolder` 가 방금 만든 폴더를 못 봐서 `UpgradeData 1`~`6` 이 생겼다. `Directory.Exists` 를 같이 보게 고쳤다(기존 폴더는 이미 디스크에 있어 여태 안 드러났다). ⚠️ 검증이 **실제 세이브를 쓴다**(`PurchaseUpgrade`→`Save`) — 백업 후 복구했다. ➕ 곁다리로 Import 가 `Classes : 10` 을 만들어 **직업 3종이 게임에 들어갔다**(`C6` 6단계 닫힘, `GameManager.classes` 6개) |
 
 ### 해결 상세
 
@@ -6263,6 +6382,30 @@ private void LateUpdate()
      남은 것이 `15·25·35·37` 이라 **경계가 37 과 39 사이 = 정확히 38** 임이 그 자리에서 나왔다.
      ⇒ 상수를 쓰는 판정은 **그 상수를 되읽어 낼 수 있게** 설계한다.
      교훈 180(*경계가 0 인 판정은 아무것도 증명하지 못한다*)의 실행판이다.
+
+188. 🔑 **"기능이 없다"의 절반은 배관이 아니라 화면이 없는 것이다** (D30).
+     메타 진행은 반 년간 "자료구조만 있고 안 붙어 있다"로 남아 있었다. 열어 보니
+     `PurchaseUpgrade`·`GetStatBonus`·저장/로드가 **전부 완성돼 있었고**
+     `PlayerStats` 도 **이미 그 보너스를 더하고 있었다.** 없던 건 애셋 7개와 패널 하나였다.
+     ⇒ 큰 항목을 착수하기 전에 **"정말 없는 게 뭔지" 먼저 읽는다.**
+     이번엔 그 덕에 코드를 거의 안 쓰고 끝났다.
+
+189. 🔴 **새 폴더를 처음 만드는 코드는 `AssetDatabase` 를 믿으면 안 된다** (D30).
+     `EnsureFolder` 가 `AssetDatabase.IsValidFolder` 만 봤는데,
+     `StartAssetEditing()` 구간에서는 AssetDatabase 가 갱신되지 않아
+     **방금 만든 폴더를 아직 "없다"고 답한다.** 행마다 `CreateFolder` 가 다시 돌아
+     `UpgradeData 1`~`UpgradeData 6` 이 줄줄이 생겼다.
+     🔑 **기존 임포터들은 폴더가 이미 있어서 이 버그를 여태 안 밟았다** —
+     같은 코드가 몇 달을 멀쩡히 돌았다는 게 그 코드가 옳다는 뜻은 아니다.
+     ⇒ 캐시 계층(AssetDatabase)과 실체(디스크)가 갈릴 수 있는 자리에서는 **둘 다 본다.**
+
+190. 🔴 **검증이 사용자 데이터를 바꾸면 그것도 정리 대상이다** (D30).
+     메타 강화 구매를 검증하려면 `PurchaseUpgrade` 를 불러야 하는데
+     그 안에 `Save()` 가 들어 있어 **실제 `save.json` 이 바뀐다.**
+     골드를 2,000 넣고 강화를 두 번 사면 그게 사용자의 진짜 저장에 남는다.
+     시작 전에 백업하고 끝나고 되돌렸다.
+     ⇒ "임시 스크립트와 씬 오브젝트를 반드시 지운다"(`CLAUDE.md` §4)에는
+     **검증이 건드린 영구 데이터**도 포함된다.
 
 **16~17 과정에서 함께 처리한 것**
 

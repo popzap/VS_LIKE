@@ -1,0 +1,55 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 74ae27f0940bc414f86b6c2b546dc0c3, type: 3}
+  m_Name: Summoner
+  m_EditorClassIdentifier: Assembly-CSharp::CharacterClassData
+  ClassName: Summoner
+  Description: Your summons do the fighting. Five weapon slots, but the thinnest
+    passives.
+  Tier: 1
+  StartingWeapon: {fileID: 11400000, guid: c9d8965d8ee809143b97e80b5c9f410b, type: 2}
+  StartingWeaponLevel: 1
+  BonusMaxHp: -10
+  BonusMoveSpeed: -0.2
+  BonusDamage: 0
+  BonusAttackSpeed: 0
+  BonusProjectileSize: 0
+  BonusPickupRadius: 0
+  BonusCritChance: 0
+  BonusArmor: 0
+  BonusXpGain: 0
+  BonusGoldGain: 0
+  BonusWeaponSlots: 5
+  BonusPassiveSlots: 3
+  BonusBuildingSlots: 3
+  Portrait: {fileID: 21300000, guid: 0cbc2c986f2e32241ba263da06684f3d, type: 3}
+  BodySprite: {fileID: 1885998853, guid: b7152ac6d1f186140be31b45f78865e0, type: 3}
+  WalkFrames:
+  - {fileID: 1885998853, guid: b7152ac6d1f186140be31b45f78865e0, type: 3}
+  - {fileID: 1846750161, guid: b7152ac6d1f186140be31b45f78865e0, type: 3}
+  - {fileID: 132163161, guid: b7152ac6d1f186140be31b45f78865e0, type: 3}
+  - {fileID: 988216697, guid: b7152ac6d1f186140be31b45f78865e0, type: 3}
+  - {fileID: 2088770848, guid: b7152ac6d1f186140be31b45f78865e0, type: 3}
+  - {fileID: 1825918066, guid: b7152ac6d1f186140be31b45f78865e0, type: 3}
+  - {fileID: -535130029, guid: b7152ac6d1f186140be31b45f78865e0, type: 3}
+  - {fileID: -302229649, guid: b7152ac6d1f186140be31b45f78865e0, type: 3}
+  - {fileID: 277422843, guid: b7152ac6d1f186140be31b45f78865e0, type: 3}
+  - {fileID: -88896621, guid: b7152ac6d1f186140be31b45f78865e0, type: 3}
+  - {fileID: 488971523, guid: b7152ac6d1f186140be31b45f78865e0, type: 3}
+  - {fileID: -407593525, guid: b7152ac6d1f186140be31b45f78865e0, type: 3}
+  - {fileID: 1930436439, guid: b7152ac6d1f186140be31b45f78865e0, type: 3}
+  - {fileID: 896427448, guid: b7152ac6d1f186140be31b45f78865e0, type: 3}
+  - {fileID: -891122637, guid: b7152ac6d1f186140be31b45f78865e0, type: 3}
+  - {fileID: 1080240506, guid: b7152ac6d1f186140be31b45f78865e0, type: 3}
+  ModelPrefab: {fileID: 0}
+  UnlockedByDefault: 1
+  UnlockCost: 30

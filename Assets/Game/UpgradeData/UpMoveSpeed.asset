@@ -1,0 +1,25 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 03c86aaa1fa60f94f8d23dbdd777603d, type: 3}
+  m_Name: UpMoveSpeed
+  m_EditorClassIdentifier: Assembly-CSharp::UpgradeDefinition
+  UpgradeId: move_speed
+  DisplayName: Swiftness
+  Description: Move faster on foot.
+  Icon: {fileID: 0}
+  MaxLevel: 3
+  Costs: 8c00000004010000c2010000
+  StatKey: MoveSpeed
+  Bonus:
+  - 0.2
+  - 0.4
+  - 0.7

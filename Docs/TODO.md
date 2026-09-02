@@ -1,6 +1,6 @@
 # VS_LIKE — 남은 작업 (Backlog)
 
-> **최종 갱신:** 2026-09-03 (52차 — 구슬 원거리 회수 + B10, D29)
+> **최종 갱신:** 2026-09-03 (53차 — 메타 강화 화면, D30)
 >
 > 🗺️ **문서를 찾을 때는 옵시디언 vault 를 쓴다** (D23, 45차).
 > `D:\obsidian_claude\UNITY_GAME\VS_LIKE` 가 **이 `Docs/` 폴더 그 자체**다(정션 — 사본이 아니다).
@@ -338,6 +338,24 @@ GC 할당은 눈에 띄지만 프레임 타임의 주범은 아니다 — **순�
       주울 때까지 영원히 남는다. 개당 0.9 µs 여도 1,000개면 0.9 ms 이고, 그 콜라이더들이
       `Physics2D.Simulate` 를 0.3 → 3.5 ms 로 올린다. **수를 줄이는 쪽이 순서다**
 - [x] ~~`DamagePopup` 측정~~ — **개당 1.6 µs · 프레임당 0.12~0.22 ms.** 압도적이지 않았다
+- [x] ~~**남은 후보 3종 코드 조사**~~ — ✅ **셋 다 범인이 아니다** (D29 곁일, 2026-09-03 · 코드 읽기만).
+      `EnemyProjectile.Update`(33~63개)는 벡터 덧셈 + `sqrMagnitude` 비교뿐이고 `GetComponent` 는
+      **명중 시에만** 부른다. `ProjectileBase.Update`(1~3개)·`WeaponBase.Update`(무기 3자루)는
+      타이머 감산이 전부다. `WeaponBase.FindNearestEnemy` 의 `OverlapCircleAll` 은 `D27` 이 이미
+      **프레임의 1.3 %** 로 쟀다. **개체 수 × 단가 어느 쪽으로도 71~81 %가 안 나온다**
+- [ ] 🔑 **그래서 범위가 크게 좁혀졌다 — `BehaviourUpdate` 에 적은 아예 없다** (2026-09-03)
+      `EnemyBase` 는 **`FixedUpdate`**(`:153`), `EnemyVisual` 은 **`LateUpdate`**(`:155`) 다.
+      ⇒ 적 800마리는 `BehaviourUpdate` 에 **한 줄도 기여하지 않는다.** 거기 남는 건
+      `ExpDrop`·`DamagePopup`·`WorldPickup`(`D27` 이 19~29 % 로 귀속) + **싱글턴 12개**
+      (`HUDManager`·`StageClearUI`·`ShopUI`·`PlayerController`·`PlayerStats`·`WaveManager`·`DevPanel` 등).
+      **다음에 볼 곳은 그 싱글턴들이다** — 개체가 1개씩이라 아무도 의심하지 않은 자리다
+- [ ] ⚠️ **다시 재기 전에 `D29` 를 반영해야 한다** (2026-09-03) — `D27` 이 센 `ExpDrop` **337~581개**는
+      하네스가 `kiting=true` 로 계속 도망친 결과다. **그 조건이 바로 38유닛 밖으로 구슬을 흘리는 조건**이라
+      `D29` 의 회수가 그 개체 수를 직접 깎는다. **71~81 % 라는 분모 자체가 바뀌었을 수 있다**
+      ⇒ 코드를 더 읽기보다 **한 번 다시 재는 게 싸다**
+- [ ] 🟡 **`ProjectileBase.cs:56` 이 매 프레임 `Vector2.Distance`(sqrt)를 쓴다** — `sqrMagnitude` 로 족하다.
+      `D27` 이 `ExpDrop` 에서 고친 바로 그 패턴인데 여기엔 안 옮겨졌다.
+      **개체가 1~3개라 성능이 아니라 위생 항목이다** (`SharedPool` 때와 같은 종류의 누락)
 - [ ] 🔴 **무기 렉의 원인은 아직 미확정이다** → [`PERF.md`](PERF.md) §8-8.
       `ExpDrop`+`Pickup`+`Popup` 을 다 합쳐도 `BehaviourUpdate` 의 **19~29 %** 뿐이고
       **나머지 71~81 %가 무엇인지 모른다.** 남은 후보: `EnemyProjectile`(33~63개) ·
@@ -427,12 +445,14 @@ T2 = Sentinel·Doomlord·Warden, T3 = Aegis. 이 한 열이 두 가지를 동시
 
 | 항목 | 현황 | 필요한 것 |
 |---|---|---|
-| `GameState.MetaScreen` | enum에만 존재. **전환하는 코드 0개** | 메타 강화 화면 UI + 메인 메뉴 진입 버튼 |
-| `UpgradeDefinition` | 클래스는 완성. **애셋 0개**, `upgrades` size = 0 | 강화 항목 SO 제작. `ApplyStatKey` 는 `XpGain`/`GoldGain` 까지 대응 완료 |
+| ~~`GameState.MetaScreen`~~ | ✅ **완료 (D30, 53차)** — `MetaScreenUI` + 메인 메뉴 `Upgrades` 버튼 | — |
+| ~~`UpgradeDefinition`~~ | ✅ **완료 (D30, 53차)** — `I-19` 분리 후 애셋 **7개**, `upgrades` size = 7. 값은 `Upgrades.csv` 가 원본 | ⚠️ **수치가 임시다** — CONTENT 요청-22 |
 | `UnlockCharacter` / `UnlockSkin` | API만 존재. 호출자 0개 | 캐릭터·스킨 데이터 + 해금 UI. 아니면 **삭제** |
 | 직업 해금 | `ClassSelectUI.IsUnlocked()` 가 `UnlockedByDefault` 만 본다 | `MetaProgressionManager.UnlockCharacter` 와 잇기 + 카드에서 골드로 해금하는 흐름 |
 
-> 위 4건은 전부 **새 UI/데이터 결정**이 필요해 범위에서 제외했다.
+> ~~위 4건은 전부 **새 UI/데이터 결정**이 필요해 범위에서 제외했다.~~
+> **위 둘은 D30(53차)에 닫혔다.** 남은 둘(`UnlockCharacter`/`UnlockSkin` · 직업 해금)은
+> 🔴 **이제 화면이 있으니 붙일 자리가 생겼다** — `MetaScreenUI` 에 탭을 하나 더 두면 된다.
 > 직업 카드의 잠금 오버레이(`LockedOverlay`)와 `UnlockCost` 열은 이미 만들어 뒀으니,
 > 해금 흐름을 붙일 때 `IsUnlocked()` 한 곳만 고치면 된다.
 

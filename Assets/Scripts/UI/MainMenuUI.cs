@@ -14,6 +14,8 @@ public class MainMenuUI : GameStatePanel
 
     [Header("버튼")]
     [SerializeField] private Button startButton;
+    [Tooltip("영구 강화 화면으로 간다 (D30). 재화 고리의 소비 쪽 입구다")]
+    [SerializeField] private Button metaButton;
     [SerializeField] private Button optionButton;
     [SerializeField] private Button quitButton;
 
@@ -29,6 +31,7 @@ public class MainMenuUI : GameStatePanel
         // GameManager.Start(실행 순서 -100)가 곧바로 MainMenu 상태를 방송하므로
         // 리스너 등록은 Start 가 아니라 Awake 에서 해야 한다.
         if (startButton)  startButton .onClick.AddListener(OnStartClicked);
+        if (metaButton)   metaButton  .onClick.AddListener(OnMetaClicked);
         if (optionButton) optionButton.onClick.AddListener(OnOptionClicked);
         if (quitButton)   quitButton  .onClick.AddListener(OnQuitClicked);
     }
@@ -72,6 +75,14 @@ public class MainMenuUI : GameStatePanel
             GameManager.Instance.ChangeState(GameState.ClassSelect);
         else
             GameManager.Instance.StartRun();
+    }
+
+    // 영구 강화 화면. 상태만 바꾸면 MetaScreenUI 가 GameStatePanel 로 알아서 뜬다.
+    private void OnMetaClicked()
+    {
+        Time.timeScale = 1f;
+        AudioManager.Play(SfxId.UiSelect);
+        GameManager.Instance.ChangeState(GameState.MetaScreen);
     }
 
     private void OnOptionClicked()

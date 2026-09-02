@@ -35,6 +35,7 @@ public static class BalanceImporter
     private const string ClassFolder    = "Assets/Game/ClassData";
     private const string EvolutionFolder= "Assets/Game/EvolutionData";
     private const string ClassEvoFolder = "Assets/Game/ClassEvolutionData";
+    private const string UpgradeFolder  = "Assets/Game/UpgradeData";
 
     // ════════════════════════════════════════════════════════════════
     //  Import
@@ -54,6 +55,7 @@ public static class BalanceImporter
             ImportBuildings(log);
             ImportPassives(log);
             ImportEnemies(log);
+            ImportUpgrades(log);
         }
         finally
         {
@@ -238,6 +240,65 @@ public static class BalanceImporter
             EditorUtility.SetDirty(a);
         }
         log.AppendLine($"  Passives  : {table.RowCount}");
+    }
+
+    // ── 메타 영구 강화 ───────────────────────────────────────────
+
+    /// <summary>
+    /// 메타 화면에서 파는 영구 강화 (D30).
+    ///
+    /// <para>🔴 <c>UpgradeId</c> 는 애셋 이름이 아니라 <b>세이브 키</b>다
+    /// (<c>SaveData.UpgradeLevels</c>). 바꾸면 저장된 레벨이 끊긴다.</para>
+    ///
+    /// <para>🔴 <c>StatKey</c> 오타는 <see cref="MetaProgressionManager"/> 의 <c>switch</c> 가
+    /// <b>조용히 무시</b>한다 — 강화를 사도 아무 일이 안 일어난다. 그래서 여기서 미리 검사해
+    /// 경고를 찍는다. 임포터가 잡아 주지 않으면 아무도 못 잡는다.</para>
+    /// </summary>
+    private static void ImportUpgrades(StringBuilder log)
+    {
+        var table = LoadCsv("Upgrades.csv", log);
+        if (table == null) return;
+
+        foreach (var row in table.Rows)
+        {
+            var id = CsvRow.Str(row, "Id");
+            if (string.IsNullOrEmpty(id)) continue;
+
+            var a = GetOrCreate<UpgradeDefinition>(UpgradeFolder, id);
+            a.UpgradeId   = CsvRow.Str(row, "UpgradeId", id);
+            a.DisplayName = CsvRow.Str(row, "DisplayName", id);
+            a.Description = CsvRow.Str(row, "Description", a.Description);
+            a.Icon        = LoadRef<Sprite>(row, "Icon", a.Icon);
+            a.MaxLevel    = CsvRow.Int  (row, "MaxLevel", a.MaxLevel);
+            a.StatKey     = CsvRow.Str  (row, "StatKey", a.StatKey);
+            a.Costs       = CsvRow.Ints  (row, "Costs", a.Costs);
+            a.Bonus       = CsvRow.Floats(row, "Bonus", a.Bonus);
+
+            if (!IsKnownStatKey(a.StatKey))
+                log.AppendLine($"  ! Upgrades.csv '{id}' 의 StatKey '{a.StatKey}' 를 모른다 — 사도 효과가 없다");
+
+            if (a.Costs == null || a.Costs.Length < a.MaxLevel)
+                log.AppendLine($"  ! Upgrades.csv '{id}' Costs 가 MaxLevel({a.MaxLevel}) 보다 짧다 — 마지막 값이 반복된다");
+            if (a.Bonus == null || a.Bonus.Length < a.MaxLevel)
+                log.AppendLine($"  ! Upgrades.csv '{id}' Bonus 가 MaxLevel({a.MaxLevel}) 보다 짧다 — 마지막 값이 반복된다");
+
+            EditorUtility.SetDirty(a);
+        }
+        log.AppendLine($"  Upgrades  : {table.RowCount}");
+    }
+
+    /// <summary><see cref="MetaProgressionManager"/> 의 <c>ApplyStatKey</c> 와 <b>같은 목록</b>이어야 한다.</summary>
+    private static bool IsKnownStatKey(string key)
+    {
+        switch (key)
+        {
+            case "MaxHp": case "MoveSpeed": case "Damage": case "AttackSpeed":
+            case "ProjectileSize": case "PickupRadius": case "CritChance":
+            case "CritMultiplier": case "Armor": case "XpGain": case "GoldGain":
+                return true;
+            default:
+                return false;
+        }
     }
 
     // ── 아이템 (무기/건물/패시브를 Id 로 참조) ─────────────────────
@@ -768,6 +829,13 @@ public static class BalanceImporter
                 E(Path(a.ModelPrefab)),
                 a.UnlockedByDefault ? 1 : 0, a.UnlockCost));
 
+        ExportRows("Upgrades.csv",
+            "Id,UpgradeId,DisplayName,Description,Icon,MaxLevel,StatKey,Costs,Bonus",
+            LoadAll<UpgradeDefinition>(UpgradeFolder), (a, id) => string.Join(",",
+                id, E(a.UpgradeId), E(a.DisplayName), E(a.Description), E(Path(a.Icon)),
+                a.MaxLevel, E(a.StatKey),
+                CsvTable.JoinArray(a.Costs), CsvTable.JoinArray(a.Bonus)));
+
         AssetDatabase.Refresh();
         Debug.Log($"[BalanceImporter] Export 완료 → {CsvFolder}");
     }
@@ -881,9 +949,24 @@ public static class BalanceImporter
         return i < name.Length && int.TryParse(name[i..], out var n) ? n : int.MaxValue;
     }
 
+    /// <summary>
+    /// 폴더가 없으면 만든다.
+    ///
+    /// <para>🔴 <c>AssetDatabase.IsValidFolder</c> 만으로는 부족하다 (D30).
+    /// <c>StartAssetEditing()</c> 구간에서는 AssetDatabase 가 갱신되지 않아
+    /// <b>방금 만든 폴더를 아직 "없다"고 답한다.</b> 그래서 행마다 <c>CreateFolder</c> 가 다시 돌고
+    /// Unity 가 이름을 비켜 <c>UpgradeData 1</c>, <c>UpgradeData 2</c> … 를 줄줄이 만든다.
+    /// 기존 폴더들은 이미 디스크에 있어서 이 버그가 여태 안 드러났다 —
+    /// <b>새 폴더를 처음 만드는 임포터에서만</b> 터진다.</para>
+    ///
+    /// <para>디스크를 같이 보는 것으로 막는다. <c>CreateFolder</c> 는 파일시스템에는
+    /// 즉시 반영하므로 <c>Directory.Exists</c> 는 정확하다.</para>
+    /// </summary>
     private static void EnsureFolder(string folder)
     {
-        if (AssetDatabase.IsValidFolder(folder)) return;
+        if (AssetDatabase.IsValidFolder(folder))             return;
+        if (System.IO.Directory.Exists(folder))              return;
+
         var parent = folder[..folder.LastIndexOf('/')];
         var leaf   = folder[(folder.LastIndexOf('/') + 1)..];
         EnsureFolder(parent);

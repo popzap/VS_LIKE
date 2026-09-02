@@ -2006,6 +2006,77 @@ CSV 를 다 쓰면 Import 를 요청해 줘 — 요청-20 의 가격 재산정 I
 
 ---
 
+## 요청-22 — 🔴 `Upgrades.csv` **7항목의 값**을 잡아 줘 (D30) · 메타 강화 화면이 생겼다
+
+> [`DONE/D30.md`](../DONE/D30.md). **화면은 다 됐다. 값만 임시다.**
+
+### 1. 무엇이 생겼나 — 재화 고리가 닫혔다
+
+메타 골드는 여태 **벌기만 하고 쓸 데가 없었다.** 이제 고리가 닫힌다:
+
+```
+스테이지 클리어 → SettleRun → MetaProgression.Currency
+   → [메인 메뉴 > Upgrades] 화면에서 소비 → GetStatBonus() → 다음 런 스탯
+```
+
+검증에서 `MaxHp 140 → 150` 으로 **실제로 다음 런에 반영되는 것**까지 확인했다.
+
+### 2. 🔴 네가 정할 것 — `Assets/Game/Balance/Upgrades.csv`
+
+**새 CSV 다.** 열은 내가 만들었고 **값은 네 것**이다. 지금 들어 있는 건 **전부 임시**다.
+
+| 열 | 뜻 |
+|---|---|
+| `Id` | 애셋 파일 이름 (`Assets/Game/UpgradeData/<Id>.asset`) |
+| 🔴 `UpgradeId` | **세이브 키다.** 애셋 이름이 아니라 이 값이 `save.json` 에 박힌다 — **바꾸면 그 항목의 저장된 레벨이 끊긴다** |
+| `DisplayName` | 카드에 뜨는 이름. **영문** (`CLAUDE.md` §3) |
+| `Icon` | 스프라이트 경로. 🔴 **지금 전부 비어 있다** — 카드가 글자만 나온다 |
+| `MaxLevel` | `Costs`·`Bonus` 원소 수와 맞출 것 |
+| 🔴 `StatKey` | `MaxHp` `MoveSpeed` `Damage` `AttackSpeed` `ProjectileSize` `PickupRadius` `CritChance` `CritMultiplier` `Armor` `XpGain` `GoldGain` **중 하나**. 오타는 게임이 **조용히 무시**한다(사도 효과 없음) — **임포터가 `!` 로 경고하게 해 뒀으니 Import 로그를 봐 줘** |
+| `Costs` | `\|` 구분. **0번 원소가 Lv0→1 비용** |
+| `Bonus` | `\|` 구분. 🔴 **0번 원소가 Lv1 의 값** — `Costs` 와 기준이 하나 어긋나 있다 |
+
+단위는 `Passives.csv` 와 같다 — `Damage`/`AttackSpeed`/`XpGain`/`GoldGain` 은 배율 가산,
+`MaxHp`/`Armor`/`PickupRadius` 는 절대값 가산, `AttackSpeed` 는 **음수가 빠르다**.
+
+### 3. 내가 넣은 임시값과 그 근거 (근거가 하나뿐이라 약하다)
+
+**메타 수입이 한 판 132G** 라는 것만 썼다 — 네가 요청-20 §4 에서 계산한 값이다.
+"3~4판에 한 칸"을 노려 첫 레벨을 `110~180G` 에 두고 레벨마다 대략 1.7배씩 올렸다.
+
+| `DisplayName` | `StatKey` | MaxLv | Lv1 비용 | Lv1 보너스 |
+|---|---|---:|---:|---:|
+| Vitality | `MaxHp` | 5 | 120 | +10 |
+| Power | `Damage` | 5 | 150 | +5 % |
+| Swiftness | `MoveSpeed` | 3 | 140 | +0.2 |
+| Toughness | `Armor` | 3 | 160 | +1 |
+| Magnetism | `PickupRadius` | 3 | 110 | +0.5 |
+| Insight | `XpGain` | 3 | 180 | +6 % |
+| Greed | `GoldGain` | 3 | 170 | +8 % |
+
+🔴 **여기에 없는 근거들** — 이건 네가 판단할 영역이다:
+
+- **몇 판 만에 다 채워야 하나.** 전부 사면 합계 **6,150G ≈ 47판**이다. 너무 길 수도 있다
+- **`Armor` +1 이 얼마나 센가.** 적 접촉 피해가 한 자릿수라 `Armor 3` 이면 체감이 클 수 있다
+- **`GoldGain` 은 런 골드를 늘린다** — 네가 요청-20 §5 에서 *"수입 ≈1,100G 대 지출 ≈400G,
+  배수구가 모자란다"* 고 했다. **Greed 를 사면 그 격차가 더 벌어진다.** 넣는 게 맞나?
+- **`MoveSpeed` 는 난이도를 통째로 낮춘다** — 카이팅이 이 게임의 주 생존 수단이다
+
+### 4. 🟡 아이콘 7장 (선택)
+
+`Icon` 열이 비어 있어 카드가 글자만 나온다. `UpgradeCardUI` 는 아이콘이 없으면
+`Image` 를 **꺼서** 흰 사각형이 안 남게 해 뒀으니 **없어도 안 깨진다.**
+넣고 싶으면 규격은 아이템 아이콘과 같다.
+
+### 5. 다 쓰면 Import 를 요청해 줘
+
+CSV 만 저장하고 [`REQ/DEV.md`](DEV.md) 로 넘기면 된다. Import 1회면 반영된다.
+
+> ℹ️ **Export 경로도 만들어 뒀다.** 누가 인스펙터에서 SO 를 잘못 고치면
+> `Game/Balance/Export ScriptableObjects -> CSV` 로 회수된다.
+
+---
+
 ## 요청에 반드시 적을 것
 
 - **무엇을** — 파일명 · 해상도 · CSV 열 이름까지

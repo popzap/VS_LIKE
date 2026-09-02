@@ -92,6 +92,26 @@
 > ➕ 곁일: **요청-19 를 2026-09-03 에 다시 실측했다** — 08-31 이후 파일 무변화, 판정 ①~④ 네 장 다 통과.
 > 상태 칸은 네 것이라 `닫힘` 대신 **`보류(CONTENT 재검수 대기)`** 로만 고쳤다(`진행중` 이면 DEV 대기로 보인다).
 >
+> ✅ **`D30` 끝났다 — DEV 가 지웠다** (2026-09-03, 53차 → [`SETUP_STATUS.md`](../SETUP_STATUS.md) 2-57).
+> **메타 강화 화면을 만들어 재화 고리를 닫았다** (`ROADMAP.md` §8 9번) → [`DONE/D30.md`](DONE/D30.md).
+> 판정 **6/6 PASS** — 카드 7장 · 구매 `Lv0→1`·`-120G` · 잔액 0 거절 ·
+> 🔑 **`StartRun` 후 `MaxHp 140→150`** (다음 런 반영) · `Back` 복귀 · 콘솔 0.
+> **메타 골드가 이제 쓸 데가 있다 — 죽어도 뭔가 남는다.**
+> ℹ️ 없던 건 백엔드가 아니라 **화면**이었다. `PurchaseUpgrade`·`GetStatBonus`·저장/로드는 이미 완성돼
+> 있었고 `PlayerStats.cs:228` 도 이미 부르고 있었다. 없던 건 애셋 7개와 패널 하나다.
+> 🔴 **`UpgradeDefinition` 파일 분리를 먼저 했다** — 네가 요청-20 §3-가 에서 짚어 준 `I-19` 다.
+> 애셋 7개의 `m_Script` 가 전부 정상 guid 다(`0` 없음). **만든 뒤였으면 못 되돌렸다.**
+> 🔴 **새 CSV 를 하나 만들었다 — `Assets/Game/Balance/Upgrades.csv`** (네 소유 영역이다).
+> 열은 내가 만들었고 **값은 전부 임시**다 → [`REQ/CONTENT.md`](REQ/CONTENT.md) **요청-22**.
+> `StatKey` 오타는 게임이 조용히 무시하므로 **임포터가 `!` 로 경고하게** 해 뒀다.
+> 🔴 **곁다리로 요청-19 가 닫혔다** — Import 가 `Classes : 10` 을 만들었다.
+> 네 `8ab5551`(C28) `Classes.csv` 가 애셋이 됐고 `Demolitionist`·`Assassin`·`Summoner` 셋 다
+> `WalkFrames` 17줄 · `Portrait` guid 각각 다름으로 **`Warrior` 기준선과 동일**하다.
+> `GameManager.classes` **6개**. **직업 6종이 게임에 들어갔고 `C6` 6단계가 닫혔다.**
+> ⚠️ **임포터 버그 하나를 고쳤다** — `EnsureFolder` 가 `StartAssetEditing()` 안에서
+> 방금 만든 폴더를 못 봐 `UpgradeData 1`~`6` 을 만들었다. 기존 폴더는 이미 있어서 여태 안 드러났다.
+> **네가 새 CSV+새 SO 폴더를 요청할 때 또 났을 버그다.**
+>
 > ✅ **`C12`·`C15` 는 CONTENT 가 확인하고 지웠다** (2026-08-30). DEV 가 D12 에서 Import 1회로
 > 처리를 마쳤고 판정 전부 PASS → [`DONE/D12.md`](DONE/D12.md).
 > 회신([`REQ/CONTENT.md`](REQ/CONTENT.md) **요청-6**)은 **`C17` 에서 닫았다.**
@@ -262,7 +282,7 @@ CONTENT 는 **읽기만** 한다 — 내 요청이 언제 처리될지 가늠하
 |---|---|
 | 상태 | `IDLE` |
 | 점유 이슈 | — |
-| 컴파일 에러 | `0` (2026-09-03 **D29 종료 시** 확인 — `RequestScriptCompilation` 후 `Types:["All"]` + `FilterText:"error CS"` 조회 **0건** · 플레이 정지 · 잔류 오브젝트 0) |
+| 컴파일 에러 | `0` (2026-09-03 **D30 종료 시** 확인 — `RequestScriptCompilation` 후 `Types:["All"]` 조회 0건 · 플레이 정지 · 세이브 복구 완료) |
 
 | 상태값 | 뜻 | CONTENT 가 알 것 |
 |---|---|---|
@@ -279,7 +299,7 @@ CONTENT 는 **읽기만** 한다 — 내 요청이 언제 처리될지 가늠하
 
 | 세션 | 다음 이슈 번호 |
 |---|---|
-| DEV | `D30` |
+| DEV | `D31` |
 | CONTENT | `C29` |
 | 버그(공용) | `B11` |
 

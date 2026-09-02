@@ -45,26 +45,9 @@ public class SerializableDictionary<TKey, TValue>
     }
 }
 
-// ────────────────────────────────────────────────────────────────────────────
-//  UpgradeDefinition  —  영구 업그레이드 항목 정의
-// ────────────────────────────────────────────────────────────────────────────
-[CreateAssetMenu(fileName = "UpgradeDef", menuName = "Game/UpgradeDefinition")]
-public class UpgradeDefinition : ScriptableObject
-{
-    public string UpgradeId;
-    public string DisplayName;
-    [TextArea] public string Description;
-    public Sprite Icon;
-    public int    MaxLevel     = 5;
-    public int[]  Costs;          // 레벨별 재화 비용
-
-    [Header("효과 (StatBlock에 더해짐)")]
-    public string StatKey;        // "MaxHp", "Damage", "MoveSpeed" 등
-    public float[]Bonus;          // 레벨별 보너스
-
-    public int  GetCost(int level) => Costs[Mathf.Clamp(level, 0, Costs.Length - 1)];
-    public float GetBonus(int level) => Bonus[Mathf.Clamp(level - 1, 0, Bonus.Length - 1)];
-}
+// 🔴 UpgradeDefinition 은 UpgradeDefinition.cs 로 옮겼다 (I-19, D30).
+//    ScriptableObject 클래스가 다른 파일에 얹혀 있으면 새 .asset 의 m_Script 가 0 으로
+//    기록되고 재임포트로도 복구되지 않는다. 여기로 되돌리지 말 것.
 
 // ────────────────────────────────────────────────────────────────────────────
 //  MetaProgressionManager  —  저장/로드, 해금, 영구 업그레이드
@@ -80,6 +63,12 @@ public class MetaProgressionManager : MonoBehaviour
 
     private SaveData _data = new();
     private string   SavePath => Path.Combine(Application.persistentDataPath, "save.json");
+
+    /// <summary>
+    /// 메타 화면이 그릴 강화 목록 (D30). 순서는 인스펙터 배열 순서 = <c>Upgrades.csv</c> 행 순서다.
+    /// <para>🔴 <c>null</c> 이 아니라 <b>빈 배열</b>을 돌려준다 — 화면이 매번 검사하지 않게.</para>
+    /// </summary>
+    public UpgradeDefinition[] Upgrades => upgrades != null ? upgrades : System.Array.Empty<UpgradeDefinition>();
 
     public int Currency   => _data.Currency;
     public int TotalRuns  => _data.TotalRuns;
@@ -137,8 +126,9 @@ public class MetaProgressionManager : MonoBehaviour
         // 보너스는 0 에서 시작해야 한다. new StatBlock() 은 기본 스탯값(MaxHp 100 …)을 갖고 있어서
         // PlayerStats 의 base + meta 합산이 전 스탯 2배가 된다.
         var bonus = StatBlock.Zero();
-        foreach (var def in upgrades)
+        foreach (var def in Upgrades)
         {
+            if (def == null) continue;
             int lv = GetUpgradeLevel(def.UpgradeId);
             if (lv == 0) continue;
             float val = def.GetBonus(lv);
