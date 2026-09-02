@@ -315,11 +315,17 @@ GC 할당은 눈에 띄지만 프레임 타임의 주범은 아니다 — **순�
   투사체는 **1~3개**뿐이고, 질량은 적이 죽으며 남기는
   `ExpDrop`(337~581) · `DamagePopup`(65~475) · `WorldPickup`(81~336) = **500~1,400개**다.
   이것들의 `Update()` 합이 `BehaviourUpdate` 의 **40~46 %** → [`PERF.md`](PERF.md) §7-H 결과 ⑥
-- [ ] 🔴 **`ExpDrop.Update()` 가 개체마다 매 프레임 `GetComponent<PlayerStats>()` 를 부른다** (`:49`).
-      구슬 554개면 프레임당 554회다. `stats` 는 안 바뀌는데 캐시가 없다. **`sqrt` 도 매 프레임**(`:48`)
-- [ ] 🔴 **`ExpDrop.Collect()`(`:68`) · `WorldPickup.Despawn()`(`:165`) 이 `FindFirstObjectByType<ObjectPool>()`
-      로 씬 전체를 훑는다.** 🔑 **`EnemyBase.cs:576` 이 같은 실수를 이미 고치고 주석까지 남겼는데
-      이 둘에는 그대로 남아 있다** — 한 곳에서 배운 걸 나머지에 안 옮겼다
+- [x] ~~`ExpDrop`·`WorldPickup` 의 매 프레임 `GetComponent` · `sqrt` · 씬 전체 순회~~ —
+      **고쳤다.** `EnemyBase.cs:598` 의 `SharedPool` 관용구를 그대로 옮겼다.
+      🔴 **다만 성능 개선이라고 주장하지 않는다** — 한 실행 안 A/B 로 단가 **0.944 → 0.843 µs (−11 %)**,
+      같은 경로 내 편차(44 %)보다 작아 **노이즈에 묻힌다** → [`PERF.md`](PERF.md) §8-7.
+      코드는 그 자체로 옳으니 유지한다
+- [ ] 🔴 **진짜 레버는 단가가 아니라 인스턴스 수다** — `ExpDrop`·`WorldPickup` 은 수명이 없어
+      주울 때까지 영원히 남는다. 개당 0.9 µs 여도 1,000개면 0.9 ms 이고, 그 콜라이더들이
+      `Physics2D.Simulate` 를 0.3 → 3.5 ms 로 올린다. **수를 줄이는 쪽이 순서다**
+- [ ] **`DamagePopup`(TextMeshPro)을 아직 안 쟀다** — `BehaviourUpdate` 16 ms 를
+      `ExpDrop` 으로 설명할 수 없다(개당 0.9 µs × 700 = 0.63 ms). 이 그룹 안에서
+      팝업이 압도적일 가능성이 남아 있다
 - [ ] **`ExpDrop`·`WorldPickup` 에 수명이 없다** — 주울 때까지 영원히 남는다.
       (`DamagePopup` 은 `_lifetime = 0.8f` 로 만료된다.) 상한을 줄지는 **설계 결정**이다 —
       구슬이 사라지면 경험치가 증발한다

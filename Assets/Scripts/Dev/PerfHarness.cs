@@ -30,7 +30,7 @@ public class PerfHarness : MonoBehaviour
     /// 실패하면 <b>옛 어셈블리가 그대로 남아</b> 타입 조회도 성공한다.
     /// 실제로 이번 세션에서 컴파일 에러가 난 채로 측정을 한 번 돌렸다.</para>
     /// </summary>
-    public const int Version = 10;
+    public const int Version = 11;
 
     [Header("적 구성")]
     [Tooltip("실제 웨이브와 같은 6종을 넣는다. 순서대로 돌아가며 소환된다")]
@@ -71,6 +71,12 @@ public class PerfHarness : MonoBehaviour
     [Tooltip("켜면 적의 SpriteRenderer 를 전부 끈다. 로직은 그대로 돌고 그림만 안 그려진다.\n" +
              "🔴 이걸 켠 것과 끈 것의 차이 = 적 렌더 비용. 샘플러 이름으로 못 잡아서 대조군으로 뺀다")]
     [SerializeField] private bool disableEnemyRenderers;
+
+    [Header("A/B — ExpDrop·WorldPickup 의 Update 단가")]
+    [Tooltip("켜면 홀수 시행은 최적화 전 경로, 짝수 시행은 최적화 후 경로로 돈다.\n" +
+             "🔴 한 실행 안에서 번갈아 재야 인스턴스 수가 같은 조건에서 단가만 비교된다 —\n" +
+             "다른 실행으로 비교했더니 BEFORE 966개 vs AFTER 306개로 조건이 달라져 무효였다")]
+    [SerializeField] private bool abDropPath;
 
     [Header("실행")]
     [SerializeField] private bool  autoRun = true;
@@ -194,6 +200,11 @@ public class PerfHarness : MonoBehaviour
         var fDeaths    = new int[sampleFrames];
         var fPopups    = new int[sampleFrames];
         long wqCount = 0, wqHits = 0, wqTicks = 0, wsTicks = 0;
+        // 🔬 A/B — 홀수 시행은 최적화 전 경로, 짝수 시행은 최적화 후 경로.
+        //    같은 실행 안에서 번갈아 재야 인스턴스 수가 같은 조건에서 단가만 비교된다.
+        if (abDropPath) PerfCounters.SlowPath = (trial % 2 == 1);
+        PerfCounters.ResetDropTrial();
+
         PerfCounters.ResetFrame();
         PerfCounters.On = true;
 
@@ -243,6 +254,17 @@ public class PerfHarness : MonoBehaviour
                   $"  after  | {CountUpdaters()}");
         Debug.Log($"[PERF-SPACING] n={enemyCount} trial={trial}  bufSize={EnemyBase.NeighborBufSize}\n" +
                   $"  {NearestNeighborStats()}");
+
+        if (abDropPath)
+        {
+            double tickUs = 1_000_000.0 / System.Diagnostics.Stopwatch.Frequency;
+            long calls = PerfCounters.DropUpdateCalls;
+            double us  = calls > 0 ? PerfCounters.DropUpdateTicks * tickUs / calls : 0;
+            Debug.Log($"[PERF-DROP-AB] n={enemyCount} trial={trial}  " +
+                      $"경로={(PerfCounters.SlowPath ? "최적화 전(GetComponent+sqrt)" : "최적화 후(캐시+sqrMagnitude)")}\n" +
+                      $"  Update 호출={calls}  단가={us:F3} µs/call  " +
+                      $"합={PerfCounters.DropUpdateTicks * tickUs / 1000.0:F1} ms");
+        }
 
         ReportSpikes(enemyCount, trial, frameMs, fPoolGets, fPoolMakes, fDeaths, fPopups);
         ReportWeaponQueries(enemyCount, trial, sampleFrames, wallSec, wqCount, wqHits, wqTicks, wsTicks);

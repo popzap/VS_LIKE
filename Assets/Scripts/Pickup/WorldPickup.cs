@@ -65,8 +65,9 @@ public class WorldPickup : MonoBehaviour
     [Tooltip("골드 픽업 금액. GoldGain 배율이 여기에 곱해진다")]
     [SerializeField] private int goldAmount = 15;
 
-    private Transform _player;
-    private bool      _collected;
+    private Transform   _player;
+    private PlayerStats _playerStats;   // 🔴 매 프레임 GetComponent 하지 않는다 (D27)
+    private bool        _collected;
 
     private void OnEnable()
     {
@@ -74,6 +75,9 @@ public class WorldPickup : MonoBehaviour
         _collected = false;
         var p = GameObject.FindGameObjectWithTag("Player");
         _player = p != null ? p.transform : null;
+
+        // 여기서 한 번만 잡는다. 켜질 때마다 다시 잡으므로 플레이어가 교체돼도 따라간다.
+        _playerStats = _player != null ? _player.GetComponent<PlayerStats>() : null;
     }
 
     private void Update()
@@ -86,16 +90,38 @@ public class WorldPickup : MonoBehaviour
         var gm = GameManager.Instance;
         if (gm != null && gm.CurrentState == GameState.LevelUp) return;
 
-        float dist = Vector2.Distance(transform.position, _player.position);
+        // 🔬 D27 A/B 계측 (임시). ExpDrop 과 같은 구조다.
+        long _t0 = PerfCounters.On ? System.Diagnostics.Stopwatch.GetTimestamp() : 0L;
 
-        var   stats  = _player.GetComponent<PlayerStats>();
-        float radius = stats != null ? stats.Final.PickupRadius : 2f;
+        float distSqr;
+        float radius;
 
-        if (dist < radius)
+        if (PerfCounters.SlowPath)
+        {
+            // 🔬 최적화 전 코드 경로 — 매 프레임 GetComponent + sqrt
+            float dist  = Vector2.Distance(transform.position, _player.position);
+            var   stats = _player.GetComponent<PlayerStats>();
+            distSqr = dist * dist;
+            radius  = stats != null ? stats.Final.PickupRadius : 2f;
+        }
+        else
+        {
+            // 🔴 sqrt 를 안 쓴다 (D27). 거리는 비교에만 쓰인다.
+            distSqr = ((Vector2)transform.position - (Vector2)_player.position).sqrMagnitude;
+            radius  = _playerStats != null ? _playerStats.Final.PickupRadius : 2f;
+        }
+
+        if (PerfCounters.On)
+        {
+            PerfCounters.DropUpdateTicks += System.Diagnostics.Stopwatch.GetTimestamp() - _t0;
+            PerfCounters.DropUpdateCalls++;
+        }
+
+        if (distSqr < radius * radius)
             transform.position = Vector2.MoveTowards(
                 transform.position, _player.position, moveSpeed * Time.deltaTime);
 
-        if (dist < touchRadius) Collect();
+        if (distSqr < touchRadius * touchRadius) Collect();
     }
 
     private void Collect()
@@ -162,8 +188,25 @@ public class WorldPickup : MonoBehaviour
 
     private void Despawn()
     {
-        var pool = FindFirstObjectByType<ObjectPool>();
-        if (pool != null) pool.Return(gameObject);
-        else              gameObject.SetActive(false);
+        // 🔴 씬 전체 순회를 하지 않는다 (D27). EnemyBase 가 같은 이유로 이미
+        //    캐시를 쓰고 있었는데(EnemyBase.cs:598 주석) 여기엔 안 옮겨져 있었다.
+        if (SharedPool != null) SharedPool.Return(gameObject);
+        else                    gameObject.SetActive(false);
+    }
+
+    // ── 오브젝트 풀 ──────────────────────────────────────────────
+    //
+    // 파괴된 오브젝트는 Unity 가 == null 을 true 로 만들어 주므로 씬을 다시 로드해도
+    // 알아서 다시 찾는다. (?. 는 그 판정을 못 한다 — I-24)
+
+    private static ObjectPool _sharedPool;
+
+    private static ObjectPool SharedPool
+    {
+        get
+        {
+            if (_sharedPool == null) _sharedPool = FindFirstObjectByType<ObjectPool>();
+            return _sharedPool;
+        }
     }
 }

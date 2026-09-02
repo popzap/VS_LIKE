@@ -44,6 +44,25 @@ public static class PerfCounters
     /// </summary>
     public static long WeaponScanTicks;
 
+    // ── ExpDrop / WorldPickup 의 Update 단가 (A/B) ──────────────
+
+    /// <summary>
+    /// 🔬 켜면 <c>ExpDrop</c>·<c>WorldPickup</c> 이 <b>최적화 전 코드 경로</b>로 돈다
+    /// (매 프레임 <c>GetComponent</c> + <c>Vector2.Distance</c>).
+    ///
+    /// <para>🔴 이게 필요한 이유: 최적화 전/후를 <b>다른 실행</b>으로 비교하면
+    /// 인스턴스 수가 달라져 비교가 오염된다. 실제로 한 번 그렇게 나왔다
+    /// (BEFORE 966개 vs AFTER 306개). 같은 실행 안에서 시행마다 경로만 뒤집으면
+    /// <b>인스턴스 수가 같은 조건</b>에서 단가만 비교할 수 있다.</para>
+    /// </summary>
+    public static bool SlowPath;
+
+    /// <summary><c>Update</c> 본문에 쓴 누적 시간 (Stopwatch 틱).</summary>
+    public static long DropUpdateTicks;
+
+    /// <summary><c>Update</c> 가 실제로 돈 횟수 (= 인스턴스 × 프레임).</summary>
+    public static long DropUpdateCalls;
+
     /// <summary>프레임마다 하네스가 부른다. 값을 읽어 간 뒤 0으로 되돌린다.</summary>
     public static void ResetFrame()
     {
@@ -56,6 +75,13 @@ public static class PerfCounters
         WeaponQueryHits  = 0;
         WeaponQueryTicks = 0;
         WeaponScanTicks  = 0;
+    }
+
+    /// <summary>A/B 누적치만 따로 초기화한다 (프레임마다가 아니라 시행마다).</summary>
+    public static void ResetDropTrial()
+    {
+        DropUpdateTicks = 0;
+        DropUpdateCalls = 0;
     }
 
     /// <summary>
