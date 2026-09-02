@@ -1,7 +1,6 @@
 # VS_LIKE — 남은 작업 (Backlog)
 
-> **최종 갱신:** 2026-09-02 (D27 1단계 — 적 다수 시 성능 조사. 🔴 **아직 안 끝난 작업이라
-> [`SETUP_STATUS.md`](SETUP_STATUS.md) 의 `n차` 절은 없다** — D27 이 닫힐 때 한꺼번에 적는다)
+> **최종 갱신:** 2026-09-02 (50차 — 성능 측정, D27 → [`SETUP_STATUS.md`](SETUP_STATUS.md) 2-54)
 >
 > 🗺️ **문서를 찾을 때는 옵시디언 vault 를 쓴다** (D23, 45차).
 > `D:\obsidian_claude\UNITY_GAME\VS_LIKE` 가 **이 `Docs/` 폴더 그 자체**다(정션 — 사본이 아니다).
