@@ -6,7 +6,7 @@
 > 기존의 「C# 스크립트는 완성 단계」라는 전제와 「요청 없이 코드 건드리지 말 것」 규칙이 **해제됨**.
 > 이제 게임 완성을 위해 C# 스크립트 신규 작성·수정이 허용된다.
 >
-> **최종 갱신:** 2026-09-03 (55차 — 직업 3종 배선 판정, D32)
+> **최종 갱신:** 2026-09-03 (56차 — 메타 강화 수치 확정 + 배선, D33)
 >
 > 🔀 **25차부터 이슈 번호가 `세션 접두어 + 번호` 다** — `D`(DEV) · `C`(CONTENT) · `B`(버그 공용).
 > 병렬 2세션 체제로 바뀌었기 때문이다 (D1). 과거 `I-1`~`I-61` 은 그대로 둔다.
@@ -2025,6 +2025,81 @@ Play 모드에서 Warrior 로 런을 시작하고 `Unity_RunCommand` 로 재료�
 > ⚠️ **건물 앞 `E` 실조작은 아직 미검증이다.** 위는 `EvolveClass` 를 직접 부른 것이고,
 > `FindAltarClassEvolution` 은 이미 검증된 `FindAltarEvolution` 과 같은 로직이지만
 > **실제로 터렛을 세우고 다가가서 눌러 본 적은 없다** → [`TODO.md`](TODO.md) §1
+
+---
+
+## 2-60. ✅ 메타 강화 수치 확정 — **씬 배열을 CSV 손에 넘겼다** (D33, 2026-09-03 56차)
+
+**한 줄:** `C29` 가 잡은 값 7항목을 넣고, `upgrades` 배열을 `SceneWiring.csv` 로 옮겼다. 판정 **6/6**.
+
+> 전문 [`Parallel/REQ/DEV.md`](Parallel/REQ/DEV.md) 요청-23 처리 결과 · [`BALANCE.md`](BALANCE.md) §3-5
+
+### 원인 / 배경 — 값만 넣어서는 반영이 안 됐다
+
+`D30` 이 만든 메타 화면의 수치는 임시였고, `C29` 가 근거를 갖고 다시 잡았다.
+그런데 **항목 구성이 바뀌었다** — `UpGoldGain`(Greed) 빼고 `UpCritMultiplier`(Precision) 신설.
+
+🔴 **`MetaProgressionManager.upgrades` 는 내가 `D30` 에서 씬에 손으로 꽂은 배열이었다.**
+임포터는 `.asset` 만 만들고 그 배열은 안 건드린다. 그대로 Import 하면
+Greed 애셋이 배열에 남아 **화면에 계속 뜨고**, Precision 은 만들어져도 **배열에 없어 안 뜬다.**
+
+⇒ `SceneWiring.csv` 에 줄을 하나 열어 **목록 자체를 CONTENT 손에 넘겼다.**
+
+### 변경한 파일
+
+| 파일 | 무엇 |
+|---|---|
+| `Assets/Game/Balance/SceneWiring.csv` | **`MetaProgressionManager,upgrades` 1줄 신설** (12→13행) |
+| `Assets/Game/Balance/Upgrades.csv` | `C29` 가 값 확정 (Greed 제거 · Precision 신설) |
+| `Assets/Game/UpgradeData/*.asset` | `UpCritMultiplier` 신설 + 값 반영 |
+| `Assets/Scenes/SampleScene.unity` | `upgrades` 배열 7칸 재배선 |
+
+🔴 **C# 변경 0.** 임포터가 이미 범용이라 코드를 안 건드렸다.
+
+### 🔑 임포터가 특별 취급 없이 받았다
+
+`ImportComponentFields`(`BalanceImporter.cs:697`)는 컴포넌트를 **타입 이름**으로,
+필드를 **`SerializedProperty` 이름**으로 찾고, `WriteProperty` 가 **ObjectReference 배열을 `|` 로 나눠 채운다.**
+`GameManager,classes` 와 **완전히 같은 경로**다.
+
+⇒ **앞으로 씬의 어떤 배열이든 CSV 한 줄로 CONTENT 손에 넘길 수 있다.**
+순서도 안전하다 — `ImportUpgrades` 는 1차(애셋 생성), `SceneWiring` 은 4차라
+`UpCritMultiplier.asset` 이 만들어진 뒤에 배선된다.
+
+### 검증 로그 — 판정 6/6 PASS
+
+```
+Upgrades  : 7                    · ! 줄 0건
+SceneWiring.csv : 13/13 적용     ← 12 → 13
+씬 배열: UpPickupRadius · UpMaxHp · UpDamage · UpXpGain · UpCritMultiplier · UpArmor · UpMoveSpeed
+가장 싼 칸 = Magnetism 60G
+Precision Lv1 구매 → 다음 런 Final.CritMultiplier 1.50 → 1.65
+```
+
+**⑤ 가 이번의 핵심이다.** `CritMultiplier` 는 처음 쓰인 `StatKey` 라
+`ApplyStatKey` 에 있는지가 관건이었다 — **오타였으면 조용히 0 이었을 자리**인데 정확히 1.65 였다.
+
+> 🔴 검증이 실제 `save.json` 을 쓴다(`PurchaseUpgrade` → `Save`). 백업 후 되돌렸다 — `D30` 과 같다.
+
+### 🔑 `C29` 의 정정 4건을 전부 받아들였다 — 내 근거가 얇았다
+
+| 내가 넣은 값 | `C29` 값 | 내가 못 본 것 |
+|---|---|---|
+| Greed(`GoldGain`) 포함 | **제외** | `GameManager.cs:380` — **`GrantMetaGold` 도 `GoldGain` 을 곱한다.** 메타 골드로 사서 메타 골드를 늘리는 되먹임이라 "안 사면 손해"가 된다 |
+| `Armor` 최대 +4 | **+2** | `PlayerStats.cs:316` 이 `Mathf.Max(1, raw - Armor)` — **정률이 아니라 정액 + 바닥 1.** +4 면 좀비까지 바닥값이라 비엘리트 접촉이 무의미해진다 |
+| `MoveSpeed` +0.7 | **+0.2** | `DESIGN_CLASSES.md` §7-B 가 레인저 기동을 `+0.6` 으로 못박았다. **한 직업이 돈 주고 사는 것을 모두가 공짜로 받으면 그 직업이 사라진다** |
+| 총 8,600G (65판) | **3,910G (30판)** | 마감이 2026-09-07 이고 보는 사람은 1~3판 한다 — **65판 곡선에서는 이 화면이 아예 안 보인다** |
+
+**내 근거는 "메타 수입 132G" 하나였고, `C29` 는 코드·기존 규칙·마감을 같이 봤다.**
+값을 정하는 일에서 근거의 **개수**가 아니라 **종류**가 갈랐다.
+
+### 안 한 것
+
+- **`UpGoldGain.asset` 삭제** — 배열에서만 빠지면 화면에 안 뜬다.
+  `RunCommand` 에서 `DeleteAsset` 은 금지돼 있기도 하다
+- **`PickupRadius` 가 구슬에 못 닿는 것** — 천장이 7 인데 `magnetActivationRange` 가 8 이다.
+  건드리면 자석 픽업 가치가 같이 움직이므로 `TUNING.md` §I-3 에 짝으로 둔 그대로 남긴다.
+  `C29` 가 **값을 안 고치고 설명 문구만 정직하게 바꾼 것**이 옳은 처리였다
 
 ---
 
@@ -5770,6 +5845,7 @@ Play 모드 — 한 세션에서 두 경로 전부:
 | **D30** | `ROADMAP.md` §5 가 *"자료구조만 있고 게임에 안 붙어 있다"* 로 남겨 둔 자리. 메타 골드는 **벌기만 하고 쓸 데가 없었다** — 죽으면 아무것도 안 남는다. 백엔드(`PurchaseUpgrade`·`GetStatBonus`·저장/로드)는 이미 완성돼 있었고 `PlayerStats.cs:228` 도 이미 부르고 있었는데, **애셋 0개**(`UpgradeDefinition` 이 `MetaProgressionManager.cs:51` 안에 있어 `I-19` 함정) · **화면 없음** · **진입점 없음** 셋이 비어 있었다 | ✅ 해결 (2026-09-03 53차 → 2-57) — `UpgradeDefinition` 파일 분리(`I-19`) → `Upgrades.csv` + `ImportUpgrades` 신설 → 애셋 7개 → `MetaScreenUI`/`UpgradeCardUI` + `MetaScreenPanel`/`Prefab_UpgradeCard`(기존 것 복제) → 메인 메뉴 `Upgrades` 버튼. 값은 CSV 가 원본이라 인스펙터 예외를 두지 않았다(사용자 판단) | 판정 **6/6 PASS** — 카드 7장 · 구매 `Lv0→1`·`-120G` · 잔액 0 거절 · **`StartRun` 후 `MaxHp 140→150`(다음 런 반영)** · `Back` 복귀 `timeScale 1` · 콘솔 0. 🔑 **애셋 7개의 `m_Script` 가 전부 `UpgradeDefinition.cs` 의 guid** — 분리를 먼저 해서 `I-19` 를 피했다. 🔴 **새 폴더를 만드는 임포터에서만 터지는 `EnsureFolder` 버그를 밟았다** — `StartAssetEditing()` 안에서 `IsValidFolder` 가 방금 만든 폴더를 못 봐서 `UpgradeData 1`~`6` 이 생겼다. `Directory.Exists` 를 같이 보게 고쳤다(기존 폴더는 이미 디스크에 있어 여태 안 드러났다). ⚠️ 검증이 **실제 세이브를 쓴다**(`PurchaseUpgrade`→`Save`) — 백업 후 복구했다. ➕ 곁다리로 Import 가 `Classes : 10` 을 만들어 **직업 3종이 게임에 들어갔다**(`C6` 6단계 닫힘, `GameManager.classes` 6개) |
 | **D31** | `ROADMAP.md` §2-5 — **보스가 큰 잡몹이다.** `Boss1` = `Ogre` + `BossHpMult 7` 이 전부고 AI 가 `Chaser` 라 잡몹과 같은 코드로 걸어왔다. HP 1540 을 깎는 동안 화면에 **아무 표시도 없어서** 보스전인 걸 알 수 있는 건 BGM 뿐이었다 | ✅ 해결 (2026-09-03 54차 → 2-58) — `BossPatternData`(단독 파일, I-19) + `Bosses.csv` + `ImportBosses` → `BossBrain`(페이즈·소환) · `BossSlam`(예고 원 → 폭발, **플레이어**를 친다) · `BossHealthBarUI`. 🔴 **보스 로직을 `EnemyBase.FixedUpdate` 에 안 넣었다** — 거기는 적 800마리가 매 물리프레임 도는 자리라 분기 하나가 **보스 없는 웨이브에서도 800번** 돈다. `EnemyBase` 는 **읽기 전용 접근자만** 열었다 (HP 를 쓰면 방어·사망 처리를 건너뛴다). `Enemies.csv`(33열)는 안 건드리고 `Bosses.csv` 가 `EnemyData.BossPattern` 을 되꽂는다 | 판정 **8/8 PASS** — 페이즈 `0.67→2` · `0.37→FINAL`(색까지 전환) · 소환 **Goblin 0→4** · 슬램 scale 6.40(=반경 3.2×2) · **명중 `HP 130→112`(20−방어2) / 예고 중 회피 시 `112` 그대로** · 처치 시 바 꺼짐 · 콘솔 0. 🔑 **⑦(예고 회피)이 핵심이다** — 예고 없이 터지면 패턴이 아니라 체력 깎기다. 맞는 경우와 피하는 경우를 **둘 다** 쟀다. 🔴 **검증 중 내 오독을 잡았다** — 잡몹 4→15 를 소환으로 봤는데 웨이브 자체 소환이었고, 내가 쓴 `ResolveSummon` 이 웨이브 목록에서만 찾게 해 **소환이 통째로 죽어 있었다**(내가 심은 경고가 잡았다). 참조를 임포터가 꽂게 고치고, 재검증은 **"Goblin 수"** 로 바꿔 오독이 불가능하게 했다 |
 | **D32** | `C28` 이 그림 통과 뒤 `Classes.csv` 3줄 + `SceneWiring.csv` 1줄을 쓰고 **Import 1회**를 요청했는데(요청-22) 그 요청이 **열린 채 남아 있었다.** Import 자체는 `D30`·`D31` 작업 중에 이미 돌아 있었지만 **CONTENT 의 판정 기준으로 확인한 적이 없었다** — 특히 ④(`Portrait`·`BodySprite`·`WalkSheet`)는 `LoadRef`·`LoadSpriteSheet` 가 **로그 없이 fallback** 하므로 Import 로그가 깨끗해도 빌 수 있다 | ✅ 해결 (2026-09-03 55차 → 2-59) — Import 재실행 후 판정 7개를 전부 다시 측정. **코드·애셋 변경 0** — 재실행이 `git status` 를 안 바꿨다(임포터가 멱등하다는 증거이기도 하다) | 판정 **7/7 PASS** — `Classes : 10` · `m_Script` 셋 다 `74ae27f0…`(=`CharacterClassData.cs`) · 🔴 **④ 그림 3필드 전부 채워짐**(YAML 에서 `{fileID: 0}` 여부로 직접 판정) · `WalkFrames` 16장 · 선택 화면 **6개**(전부 `Tier=1`, 승급 4종 제외, 캡처 확인) · 시작 무기 3종 정확 · **스탯이 §7-B 와 한 자리도 안 틀림** · 콘솔 0. 🟡 **내가 한 번 잘못 봤다** — 한 세션에서 `StartRun` 을 3회 불러 무기가 쌓이길래 버그로 의심했으나, 런 종료 경로가 전부 씬을 리로드해 `StartRun` 은 **씬 로드당 1회**뿐이다. 깨끗한 단일 런에서 무기 **정확히 1개**. **등재 안 했다** |
+| **D33** | `D30` 이 만든 메타 화면의 수치가 임시였고 `C29` 가 근거를 갖고 다시 잡았다. 그런데 **항목 구성이 바뀌었다**(Greed 제거 · Precision 신설) — `MetaProgressionManager.upgrades` 는 `D30` 이 **씬에 손으로 꽂은 배열**이라 임포터가 안 건드린다. 그대로 Import 하면 Greed 가 화면에 계속 뜨고 Precision 은 만들어져도 안 뜬다 | ✅ 해결 (2026-09-03 56차 → 2-60) — `SceneWiring.csv` 에 **`MetaProgressionManager,upgrades` 줄 신설**(12→13행)로 목록 자체를 CONTENT 손에 넘겼다. **C# 변경 0** — `ImportComponentFields` 가 이미 범용이라 컴포넌트를 타입 이름·필드를 `SerializedProperty` 이름으로 찾고 ObjectReference 배열을 `|` 로 채운다(`GameManager,classes` 와 같은 경로) | 판정 **6/6 PASS** — `Upgrades : 7` · `!` 0건 · `SceneWiring 13/13` · 씬 배열이 **지정 순서 그대로 재배선**(Greed 빠짐·Precision 들어감, 캡처 확인) · 가장 싼 칸 `60G` · 🔑 **새 `StatKey` `CritMultiplier` 가 `1.50 → 1.65` 로 실제 반영**(오타였으면 조용히 0 이었을 자리) · 콘솔 0. 🔑 **`C29` 의 정정 4건을 전부 받아들였다** — `GrantMetaGold` 도 `GoldGain` 을 곱한다(되먹임) · `Mathf.Max(1, raw-Armor)` 는 정액+바닥 · 메타가 레인저 기동(+0.6)을 넘으면 안 된다 · 총량 8,600→3,910(마감 기준). **내 근거는 하나였고 그쪽은 코드·규칙·마감을 같이 봤다** |
 
 ### 해결 상세
 
@@ -6590,6 +6666,24 @@ private void LateUpdate()
      하마터면 "슬램이 안 맞는다"는 버그를 만들어 낼 뻔했다.
      ⇒ 검증을 위해 켠 것(무적·치트·상한 해제)은 **판정 직전에 실제로 꺼졌는지 확인**한다.
      끄는 API 가 없으면 **환경을 새로 만든다** — 이번엔 플레이 모드를 다시 켰다.
+
+194. 🔑 **값을 정하는 일에서는 근거의 개수가 아니라 종류가 갈랐다** (D33 / C29).
+     내가 `Upgrades.csv` 임시값을 잡을 때 쓴 근거는 **"메타 수입이 한 판 132G"** 하나였다.
+     `C29` 는 같은 표를 **코드**(`GrantMetaGold` 도 `GoldGain` 을 곱한다 ·
+     `Mathf.Max(1, raw-Armor)` 는 정액+바닥) · **기존 규칙**(`DESIGN_CLASSES` §7-B 의 레인저 기동) ·
+     **마감**(포트폴리오라 보는 사람이 1~3판 한다) 셋으로 다시 잡았고, 내 값 4개를 정정했다.
+     ⇒ 수치를 제안할 때 **"내가 본 축이 몇 개인가"** 를 먼저 센다.
+     축이 하나면 그건 값이 아니라 **자리표시**다 — 그렇게 표시해서 넘긴다.
+
+195. 🔑 **손으로 꽂은 배열은 CSV 손에 넘길 수 있다 — 특별 취급이 필요 없었다** (D33).
+     `D30` 에서 `MetaProgressionManager.upgrades` 7칸을 씬에 직접 배선했다.
+     그러자 CONTENT 가 항목 구성을 바꿀 때 **임포터가 그 배열을 못 건드려** 값만 바뀌고
+     화면은 옛 목록 그대로가 될 참이었다.
+     확인해 보니 `ImportComponentFields` 는 컴포넌트를 **타입 이름**으로, 필드를
+     **`SerializedProperty` 이름**으로 찾고 ObjectReference 배열을 `|` 로 채운다 —
+     `GameManager,classes` 와 **완전히 같은 경로**라 코드를 한 줄도 안 고치고 CSV 한 줄로 끝났다.
+     ⇒ 씬에 손으로 꽂는 배열이 생기면 **그 자리에서 `SceneWiring.csv` 줄로 만들 수 있는지 본다.**
+     나중에 넘기면 "값은 CSV, 목록은 씬"이라는 **반쪽 상태**가 오래 남는다.
 
 **16~17 과정에서 함께 처리한 것**
 

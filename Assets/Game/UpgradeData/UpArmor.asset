@@ -16,10 +16,9 @@ MonoBehaviour:
   DisplayName: Toughness
   Description: Flat damage reduction.
   Icon: {fileID: 0}
-  MaxLevel: 3
-  Costs: a00000002c01000008020000
+  MaxLevel: 2
+  Costs: 78000000fa000000
   StatKey: Armor
   Bonus:
   - 1
   - 2
-  - 4

@@ -17,9 +17,9 @@ MonoBehaviour:
   Description: Gain more experience.
   Icon: {fileID: 0}
   MaxLevel: 3
-  Costs: b40000004001000030020000
+  Costs: 5a000000aa00000022010000
   StatKey: XpGain
   Bonus:
-  - 0.06
-  - 0.13
-  - 0.22
+  - 0.05
+  - 0.11
+  - 0.18

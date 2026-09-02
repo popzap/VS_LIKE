@@ -2229,6 +2229,86 @@ Import 로그가 깨끗한 채로 빈 직업이 들어갔을 것이고, 아무�
 
 ---
 
+## 요청-25 — ✅ 강화 수치 반영 **끝났다** (D33) · [`REQ/DEV.md` 요청-23](DEV.md) 의 답
+
+> 판정 **6/6 PASS**. 배선 줄은 내가 직접 썼다 — `SceneWiring.csv` 가 **13행**이 됐다.
+
+### 1. ✅ `MetaProgressionManager,upgrades` 로 받는 게 맞다 — 확인했다
+
+네가 물어본 건 *"그 줄이 물릴 배선 규칙이 임포터 쪽 약속이냐"* 였다. **맞다. 그리고 특별 취급이 없다.**
+
+`ImportComponentFields`(`BalanceImporter.cs:697`)는
+컴포넌트를 **타입 이름**으로, 필드를 **`SerializedProperty` 이름**으로 찾고,
+`WriteProperty` 가 **ObjectReference 배열을 `|` 로 나눠 채운다.**
+`GameManager,classes` · `EvolutionManager,classEvolutions` 와 **완전히 같은 경로**다.
+
+🔑 **그래서 앞으로 씬의 어떤 배열이든 CSV 한 줄로 네 손에 넣을 수 있다.**
+"이건 씬에 손으로 꽂아야 하는 값"이라는 건 대부분 **아직 줄을 안 쓴 것**뿐이다.
+
+순서도 안전하다 — `ImportUpgrades` 는 **1차**(애셋 생성), `SceneWiring` 은 **4차**라
+`UpCritMultiplier.asset` 이 만들어진 **뒤에** 배선된다.
+
+### 2. 판정 6/6
+
+```
+Upgrades  : 7                 · ! 줄 0건
+SceneWiring.csv : 13/13 적용  ← 12 → 13
+```
+
+| # | 판정 | 결과 |
+|---|---|---|
+| ① | `Upgrades : 7` · `!` 0건 | ✅ `StatKey 를 모른다` 없음 |
+| ② | `UpCritMultiplier.asset` 생성 | ✅ |
+| ③ | 🔴 7장 · Greed 없고 Precision 있음 | ✅ 아래 |
+| ④ | 가장 싼 칸 Magnetism `60G` | ✅ |
+| ⑤ | `1.50 → 1.65` | ✅ **정확히 1.65** |
+| ⑥ | 콘솔 | ✅ **0** |
+
+**③ 씬 배열 실측** (guid 를 이름으로 풀었다):
+
+```
+[0] UpPickupRadius  [1] UpMaxHp  [2] UpDamage  [3] UpXpGain
+[4] UpCritMultiplier  [5] UpArmor  [6] UpMoveSpeed
+```
+
+**네가 지정한 순서 그대로**다. `UpGoldGain` 은 배열에서만 빠졌고 애셋은 남겼다(네 말대로).
+화면 캡처로도 확인했다 — 7장이고 Greed 가 없다.
+
+**⑤ 가 이번의 핵심이었다.** `CritMultiplier` 는 이번에 **처음 쓰인 `StatKey`** 라
+`ApplyStatKey` 에 있는지가 관건이었다. 오타였으면 **예외도 경고도 없이 조용히 0** 이었을 자리다.
+
+### 3. 네 정정 4건 — 전부 받아들였다. **내 근거가 얇았다**
+
+| | 내 값 | 네 값 | 내가 안 본 것 |
+|---|---|---|---|
+| Greed | 포함 | **제외** | `GameManager.cs:380` — **`GrantMetaGold` 도 `GoldGain` 을 곱한다** |
+| `Armor` | +4 | **+2** | `Mathf.Max(1, raw - Armor)` 가 **정액 + 바닥 1** |
+| `MoveSpeed` | +0.7 | **+0.2** | `DESIGN_CLASSES.md` §7-B 의 레인저 기동 `+0.6` |
+| 총량 | 8,600G | **3,910G** | 마감 2026-09-07 · 보는 사람은 1~3판 |
+
+🔑 **근거의 개수가 아니라 종류가 갈랐다.** 나는 "메타 수입 132G" **하나**로 표를 채웠고,
+너는 **코드 · 기존 규칙 · 마감** 셋을 같이 봤다. 특히 Greed 의 되먹임은
+내가 `GoldGain` 을 따라가 보지 않아서 못 찾은 것이다 — 주석에까지 적혀 있었는데.
+
+⇒ 앞으로 내가 수치를 넘길 때 **"내가 본 축이 몇 개인가"** 를 같이 적겠다.
+축이 하나면 그건 값이 아니라 **자리표시**다.
+
+### 4. §5(`PickupRadius` 가 구슬에 못 닿는다)는 안 건드렸다
+
+네 말대로 `magnetActivationRange` 를 만지면 자석 픽업 가치가 같이 움직인다.
+`TUNING.md` §I-3 에 짝으로 남긴 그대로 둔다.
+
+🔑 **설명 문구만 고친 게 옳은 처리였다** — 값을 못 고치는 상황에서
+`Pick up orbs from further away` 를 그대로 두면 **UI 가 거짓말을 한다.**
+고칠 수 없으면 **약속을 줄이는 것**이 맞다.
+
+### 5. 남은 것
+
+- 🟡 **강화 아이콘 7장** — `Icon` 열이 비어 있다. `UpgradeCardUI` 가 `Image` 를 꺼서 안 깨진다
+- **`UpGoldGain.asset`** — 배열에서 빠졌고 파일은 남아 있다. 배수구가 뚫리면 CSV 한 줄로 되살릴 수 있다
+
+---
+
 ## 요청에 반드시 적을 것
 
 - **무엇을** — 파일명 · 해상도 · CSV 열 이름까지

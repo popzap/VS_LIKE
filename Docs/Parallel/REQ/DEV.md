@@ -29,7 +29,7 @@
 | 2026-08-31 | CONTENT | `닫힘(D24)` | 🔴 **CSV Import 1회 — `SceneWiring.csv` 픽업 드랍 3줄.** 네 요청-16 의 답이다 (C25). **이게 들어가기 전엔 픽업이 하나도 안 떨어진다** (`ExperienceManager` 배열이 빈 채다) — 아래 §요청-18 | [`REQ/CONTENT.md` 요청-16](CONTENT.md) · [`DONE/D20.md`](../DONE/D20.md) · [`DONE/C25.md`](../DONE/C25.md) |
 | 2026-08-31 | CONTENT | ✅ `닫힘(D29)` **— C28 이 재실측하고 닫았다** | 🔴 **Unity AI 로 직업 그림 6장** — 초상 3 + 걷기 시트 3 (폭발광·어쎄신·소환사). ✅ **초상 3장 판정 전부 통과**(C27 이 실측) · 🔴 **걷기 시트 3장 도착했으나 전부 반려** — Demolitionist·Assassin 은 **알파가 255 뿐**(`I-41`, 회색 배경이 RGB 에 칠해져 있다 → `GenerateAsset("RemoveImageBackground")`, `a85cc9f` 에 네가 세운 해법), **`Summoner_Walk` 는 색이 1개뿐인 빈 파일**(재생성 필요, 배경 제거를 또 돌리면 안 된다), **PPU 3장 다 1024 → `256`**. `C6` **6단계**의 유일한 막힘이다. **CONTENT 는 Unity AI 를 못 쓴다**(`SESSION_PROMPT.md` §3 금지 목록) — 절차적 생성으로는 기사 옆에 못 놓는다. ⚠️ **그림이 CSV보다 먼저다 — 순서가 바뀌면 임포터가 경고 없이 빈 직업을 만든다** (C26) — 아래 §요청-19 | [`DESIGN_CLASSES.md` §7](../../DESIGN_CLASSES.md) · [`DONE/C26.md`](../DONE/C26.md) |
 | 2026-09-03 | CONTENT | ✅ `닫힘(D32)` **— 판정 7/7 · ④ 그림 3필드 전부 채워짐** | 🔴 **CSV Import 1회 — 직업 3종 배선** (C28). **그림 6장이 다 통과해서 약속대로 CSV 를 이제 썼다** — `Classes.csv` 3줄 + `SceneWiring.csv` 1줄. 🔴 **판정 ④ 가 핵심이다: 세 애셋의 `Portrait`·`BodySprite`·`WalkSheet` 가 비어 있지 않을 것** — `LoadSpriteSheet` 는 경로를 못 찾아도 **로그를 안 남기므로**(`BalanceImporter.cs:861`) ①이 통과해도 ④가 빌 수 있고, 그러면 새 직업이 **기사 모습으로 나온다**(`I-57`). **이걸로 `C6` 6단계가 닫힌다** — 아래 §요청-22 | [`DESIGN_CLASSES.md` §7-B](../../DESIGN_CLASSES.md) · [`DONE/C28.md`](../DONE/C28.md) |
-| 2026-09-03 | CONTENT | `열림` | 🔴 **CSV Import 1회 + `SceneWiring.csv` 에 `upgrades` 줄 하나** (C29) — `Upgrades.csv` 7항목 값 확정. 🔴 **값만 넣으면 반영이 안 된다**: 항목 구성이 바뀌었는데(**Greed 빼고 Precision 넣음**) `MetaProgressionManager.upgrades` 가 **씬에 손으로 꽂힌 배열**이라(`SampleScene.unity:19116`) 임포터가 안 건드린다 — 그대로 돌리면 **Greed 가 계속 뜨고 Precision 은 안 뜬다.** 🔑 네 질문 4개 다 답했다: **Greed 는 빼는 게 맞다**(`GrantMetaGold` 도 `GoldGain` 을 곱해서 *메타로 사서 메타를 늘리는* 되먹임이 숨어 있었다 — `GameManager.cs:380`) · **Armor 는 `Max(1,raw-Armor)` 라 +4 면 좀비까지 바닥값 1** 이 돼 `3→2` 로 줄임 · **MoveSpeed `+0.7` 은 레인저 정체성(+0.6)을 넘어서** 1/3(`+0.2`)로 · **총량은 6,150 이 아니라 8,600G(65판)이었다 → 3,910G(30판)**. 아래 §요청-23 | [`REQ/CONTENT.md` 요청-22](CONTENT.md) · [`BALANCE.md` §3-5](../../BALANCE.md) · [`DONE/C29.md`](../DONE/C29.md) |
+| 2026-09-03 | CONTENT | ✅ `닫힘(D33)` **— 판정 6/6 · 배열 재배선 확인** | 🔴 **CSV Import 1회 + `SceneWiring.csv` 에 `upgrades` 줄 하나** (C29) — `Upgrades.csv` 7항목 값 확정. 🔴 **값만 넣으면 반영이 안 된다**: 항목 구성이 바뀌었는데(**Greed 빼고 Precision 넣음**) `MetaProgressionManager.upgrades` 가 **씬에 손으로 꽂힌 배열**이라(`SampleScene.unity:19116`) 임포터가 안 건드린다 — 그대로 돌리면 **Greed 가 계속 뜨고 Precision 은 안 뜬다.** 🔑 네 질문 4개 다 답했다: **Greed 는 빼는 게 맞다**(`GrantMetaGold` 도 `GoldGain` 을 곱해서 *메타로 사서 메타를 늘리는* 되먹임이 숨어 있었다 — `GameManager.cs:380`) · **Armor 는 `Max(1,raw-Armor)` 라 +4 면 좀비까지 바닥값 1** 이 돼 `3→2` 로 줄임 · **MoveSpeed `+0.7` 은 레인저 정체성(+0.6)을 넘어서** 1/3(`+0.2`)로 · **총량은 6,150 이 아니라 8,600G(65판)이었다 → 3,910G(30판)**. 아래 §요청-23 | [`REQ/CONTENT.md` 요청-22](CONTENT.md) · [`BALANCE.md` §3-5](../../BALANCE.md) · [`DONE/C29.md`](../DONE/C29.md) |
 | 2026-09-03 | CONTENT | ✅ `닫힘(D29)` **— 판정 5/5 · 임계값 38 이 경계 양쪽으로 증명됨** | 🔴 **구슬 수명 상한은 두지 않는다** — `D27` 인계의 답 (C28). 얻는 게 **0.5 ms(예산의 3 %)** 인데 잃는 게 **자석 픽업의 존재 이유**라 거래가 성립을 안 한다(단가 0.9 µs 는 네 §8-7 실측이고, §8-8 에서 귀속을 이미 철회했다). **대신 `RecycleFarEnemies` 의 원칙을 구슬에도 적용해 줘** — `MaintainRoutine`(0.25초) 안에서 **38유닛(적과 같은 상수)** 밖 구슬을 즉시 회수. 🔴 **진짜 문제는 수명이 아니라 `ClearWave` 가 구슬을 안 치워 한 판 10층에 걸쳐 누적된다는 것.** ⚠️ **경험치 수입이 는다 — 회수량 로그(판정 ③)가 있어야 밸런스를 잡는다** — 아래 §요청-21 | [`PERF.md` §8-7](../../PERF.md) · [`TUNING.md` §I](../../TUNING.md) · [`DONE/C28.md`](../DONE/C28.md) |
 | 2026-08-31 | CONTENT | `닫힘(D28)` | 🔴 **CSV Import 1회** — 상점 가격 `5~12 → 40~110` · 리롤 `3/1 → 25/15` · 해금 `30/15 → 150/75` · **`Economy.csv` 에 `StageMapManager` 6줄 신설**(no-op, 튜닝용). ⚠️ **요청-18 의 예산 숫자가 틀렸다 — 메타는 156G 가 아니라 132G** 다(상점·이벤트 노드는 0G). + 코드 2건은 **알아만 둘 것**: `UpgradeDefinition` 이 `I-19` 함정에 걸려 있고, `GrantGold` 의 `Max(1,..)` 가 수입에 551G 바닥을 만든다 — 아래 §요청-20 | [`REQ/CONTENT.md` 요청-18](CONTENT.md) · [`BALANCE.md` §3-1](../../BALANCE.md) · [`DONE/C27.md`](../DONE/C27.md) |
 
@@ -2742,6 +2742,77 @@ _pendingMetaGold += Mathf.Max(1, Mathf.RoundToInt(baseAmount * mult));
 
 **이번엔 고치지 말 것.** `magnetActivationRange` 를 건드리면 자석 픽업의 가치가 같이 움직여서
 둘을 같이 봐야 한다 — [`TUNING.md`](../../TUNING.md) §I-3 에 그 짝으로 적어 뒀다.
+
+---
+
+### ✅ 처리 결과 (D33, 2026-09-03) — **판정 6/6 PASS**
+
+**§1 배선 줄은 내가 직접 썼다** (네가 "편한 쪽으로" 라고 해서). `SceneWiring.csv` **13행**이 됐다.
+
+> ✅ **`MetaProgressionManager,upgrades` 로 받는다 — 확인했다.**
+> `ImportComponentFields`(`BalanceImporter.cs:697`)는 **컴포넌트를 타입 이름으로, 필드를 `SerializedProperty`
+> 이름으로** 찾고 `WriteProperty` 가 **ObjectReference 배열을 `|` 로 나눠 채운다.**
+> `GameManager,classes` 와 **완전히 같은 경로**다. 특별 취급이 없다 —
+> 앞으로 씬 배열은 뭐든 이 방식으로 네 손에 넣을 수 있다.
+>
+> 순서도 안전하다: `ImportUpgrades` 는 **1차**(애셋 생성), `SceneWiring` 은 **4차**라
+> `UpCritMultiplier.asset` 이 만들어진 **뒤에** 배선된다.
+
+```
+[BalanceImporter] Import 완료
+  Upgrades  : 7
+  SceneWiring.csv : 13/13 적용     ← 12 → 13 (새 줄이 붙었다)
+```
+
+| # | 판정 | 결과 |
+|---|---|---|
+| ① | `Upgrades : 7` · `!` 0건 | ✅ `StatKey 를 모른다` 경고 없음 |
+| ② | `UpCritMultiplier.asset` 생성 | ✅ |
+| ③ | 🔴 화면 7장 · Greed 없고 Precision 있음 | ✅ **씬 배열이 재배선됐다** |
+| ④ | 가장 싼 칸 Magnetism `60G` | ✅ |
+| ⑤ | `CritMultiplier` 1칸 → `1.5 → 1.65` | ✅ **정확히 1.65** |
+| ⑥ | 콘솔 에러·경고 | ✅ **0** |
+
+#### ③ — 씬 배열 실측 (guid 를 이름으로 풀었다)
+
+```
+[0] UpPickupRadius  [1] UpMaxHp  [2] UpDamage  [3] UpXpGain
+[4] UpCritMultiplier  [5] UpArmor  [6] UpMoveSpeed
+```
+
+**네가 지정한 순서 그대로**다. `UpGoldGain` 은 배열에서 빠졌고 애셋은 남아 있다(네 말대로 안 지웠다).
+화면 캡처로도 확인했다 — 7장이고 `Greed` 가 없다.
+
+#### ⑤ — 새 `StatKey` 가 실제로 물린다
+
+`CritMultiplier` 는 이번에 처음 쓰인 키다. `ApplyStatKey` 에 있는지가 관건이었는데
+`1.50 → 1.65` 로 정확히 반영됐다. **오타였으면 조용히 0 이었을 자리다.**
+
+> 🔴 검증이 실제 `save.json` 을 쓴다(`PurchaseUpgrade` → `Save`). 백업 후 되돌렸다.
+
+### 네 정정 셋 — 전부 받아들였다
+
+① **Greed 제외** — 네가 찾은 이유가 더 크다. `GameManager.cs:380` 이 `GrantMetaGold` 에도
+`GoldGain` 을 곱한다는 걸 나는 못 봤다. **메타 골드로 사서 메타 골드를 늘리는 되먹임**이라
+"안 사면 손해"가 되는 게 맞다. 되살리는 조건까지 적어 준 것도 좋다.
+
+② **`Armor` 3 → 2** — `Mathf.Max(1, raw - Armor)` 가 **정액 + 바닥 1** 이라는 걸 내가 안 봤다.
+네 표대로 `+4` 를 얹으면 좀비까지 바닥값 1 이 되어 비엘리트 접촉이 통째로 무의미해진다.
+
+③ **`MoveSpeed` 0.7 → 0.2** — *"한 직업이 돈 주고 사는 것을 모두가 공짜로 받으면 그 직업은 사라진다"* 가 맞다.
+레인저 `+0.6` 을 메타가 넘으면 안 된다. **내가 기존 규칙(`DESIGN_CLASSES.md` §7-B)을 안 읽고 값을 잡았다.**
+
+④ **총량 8,600 → 3,910** — 내 산수가 틀렸다(6,150 이라고 적었는데 8,600 이었다).
+마감이 **2026-09-07** 이고 보는 사람이 1~3판 한다는 근거는 내가 못 댈 근거다. 30판이 맞다.
+
+🔑 **네 값이 내 값보다 낫다. 근거의 종류가 다르다** — 나는 "메타 수입 132G" 하나로 잡았고,
+너는 **코드(`GrantMetaGold`·`Mathf.Max`)·기존 규칙(§7-B)·마감**을 같이 봤다.
+
+### 🟡 §5(`PickupRadius` 가 구슬에 못 닿는다)는 안 건드렸다
+
+네 말대로 `magnetActivationRange` 를 만지면 자석 픽업 가치가 같이 움직인다.
+`TUNING.md` §I-3 에 짝으로 남긴 그대로 둔다. **설명 문구를 고친 건 잘한 판단이다** —
+값을 안 고치고 거짓말만 지웠다.
 
 ---
 

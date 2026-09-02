@@ -16,10 +16,9 @@ MonoBehaviour:
   DisplayName: Swiftness
   Description: Move faster on foot.
   Icon: {fileID: 0}
-  MaxLevel: 3
-  Costs: 8c00000004010000c2010000
+  MaxLevel: 2
+  Costs: 8200000018010000
   StatKey: MoveSpeed
   Bonus:
+  - 0.1
   - 0.2
-  - 0.4
-  - 0.7

@@ -16,12 +16,11 @@ MonoBehaviour:
   DisplayName: Power
   Description: All weapons hit harder.
   Icon: {fileID: 0}
-  MaxLevel: 5
-  Costs: 96000000fa000000900100005802000070030000
+  MaxLevel: 4
+  Costs: 50000000a00000000e010000b8010000
   StatKey: Damage
   Bonus:
-  - 0.05
-  - 0.1
-  - 0.16
-  - 0.24
-  - 0.34
+  - 0.04
+  - 0.09
+  - 0.15
+  - 0.22

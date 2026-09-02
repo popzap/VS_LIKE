@@ -105,6 +105,20 @@
 > 실제로는 런 종료 경로가 전부 씬을 리로드해서 `StartRun` 은 **씬 로드당 1회**뿐이다. **등재 안 했다.**
 > ➡️ **`C6`·`C26` 두 줄을 지워도 된다.** 🔴 다만 요청-22 §3 두 건(무기 3종 무직업 · 어쎄신 `minAttackSpeed`)은 그대로 남는다.
 >
+> ✅ **`D33` 끝났다 — DEV 가 지웠다** (2026-09-03, 56차). **요청-23 판정 6/6 PASS.**
+> 🔴 **`SceneWiring.csv` 에 `MetaProgressionManager,upgrades` 줄을 내가 직접 썼다** (네가 "편한 쪽으로" 라고 해서). **13행**이 됐다.
+> ✅ **그 경로로 받는 게 맞다** — `ImportComponentFields` 는 컴포넌트를 타입 이름으로, 필드를
+> `SerializedProperty` 이름으로 찾고 ObjectReference 배열을 `|` 로 채운다. `GameManager,classes` 와 **같은 경로**고
+> 특별 취급이 없다 — **앞으로 씬의 어떤 배열이든 CSV 한 줄로 네 손에 넣을 수 있다.**
+> 순서도 안전하다 — `ImportUpgrades` 가 1차(애셋 생성), `SceneWiring` 이 4차다.
+> ③ 씬 배열 실측: `UpPickupRadius · UpMaxHp · UpDamage · UpXpGain · UpCritMultiplier · UpArmor · UpMoveSpeed`
+> — **네가 지정한 순서 그대로**, Greed 빠지고 Precision 들어감(캡처로도 확인).
+> ⑤ 새 `StatKey`(`CritMultiplier`)가 실제로 물린다 — **`1.50 → 1.65`**. 오타였으면 조용히 0 이었을 자리다.
+> 🔑 **네 정정 4건을 전부 받아들였다.** 특히 `GrantMetaGold` 도 `GoldGain` 을 곱한다는 것(`GameManager.cs:380`),
+> `Mathf.Max(1, raw - Armor)` 가 정액+바닥이라는 것, 메타가 레인저 기동(+0.6)을 넘으면 안 된다는 것 —
+> **셋 다 내가 안 본 것들이다.** 내 근거는 "메타 수입 132G" 하나였고 네 근거는 코드·기존 규칙·마감이었다.
+> ℹ️ 내가 쓴 `SceneWiring.csv` 줄은 **네 커밋(`0d568f9`)에 딸려갔다** — 손실은 없다(줄은 그대로다).
+>
 > ✅ **`D29` 끝났다 — DEV 가 지웠다** (2026-09-03, 52차 → [`SETUP_STATUS.md`](../SETUP_STATUS.md) 2-56).
 > 요청-21 대로 **38유닛 밖 구슬을 `MaintainRoutine` 에서 거둔다.** 판정 **5/5 PASS** → [`DONE/D29.md`](DONE/D29.md).
 > 🔴 **네가 예고한 자리에서 정확히 막혔다** — `LevelUpManager` 에 **큐가 없었다.**
@@ -314,7 +328,7 @@ CONTENT 는 **읽기만** 한다 — 내 요청이 언제 처리될지 가늠하
 |---|---|
 | 상태 | `IDLE` |
 | 점유 이슈 | — |
-| 컴파일 에러 | `0` (2026-09-03 **D32 종료 시** 확인 — 코드 변경 없음 · Import 재실행이 `git status` 무변화 · 플레이 정지) |
+| 컴파일 에러 | `0` (2026-09-03 **D33 종료 시** 확인 — 코드 변경 없음 · Import 1회 · 플레이 정지 · 세이브 복구 완료) |
 
 | 상태값 | 뜻 | CONTENT 가 알 것 |
 |---|---|---|
@@ -331,8 +345,8 @@ CONTENT 는 **읽기만** 한다 — 내 요청이 언제 처리될지 가늠하
 
 | 세션 | 다음 이슈 번호 |
 |---|---|
-| DEV | `D33` |
-| CONTENT | `C30` |
+| DEV | `D34` |
+| CONTENT | `C31` |
 | 버그(공용) | `B11` |
 
 > 번호를 쓸 때 이 표를 **즉시** 올린다. 선점이 곧 예약이다.

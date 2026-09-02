@@ -14,12 +14,11 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::UpgradeDefinition
   UpgradeId: pickup_radius
   DisplayName: Magnetism
-  Description: Pick up orbs from further away.
+  Description: Draw chests and power-ups in from further away.
   Icon: {fileID: 0}
-  MaxLevel: 3
-  Costs: 6e000000be00000040010000
+  MaxLevel: 2
+  Costs: 3c00000082000000
   StatKey: PickupRadius
   Bonus:
   - 0.5
-  - 1.1
-  - 1.8
+  - 1
