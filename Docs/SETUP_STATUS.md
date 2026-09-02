@@ -6,7 +6,7 @@
 > 기존의 「C# 스크립트는 완성 단계」라는 전제와 「요청 없이 코드 건드리지 말 것」 규칙이 **해제됨**.
 > 이제 게임 완성을 위해 C# 스크립트 신규 작성·수정이 허용된다.
 >
-> **최종 갱신:** 2026-09-03 (54차 — 보스 패턴: 큰 잡몹에서 벗어났다, D31)
+> **최종 갱신:** 2026-09-03 (55차 — 직업 3종 배선 판정, D32)
 >
 > 🔀 **25차부터 이슈 번호가 `세션 접두어 + 번호` 다** — `D`(DEV) · `C`(CONTENT) · `B`(버그 공용).
 > 병렬 2세션 체제로 바뀌었기 때문이다 (D1). 과거 `I-1`~`I-61` 은 그대로 둔다.
@@ -2025,6 +2025,67 @@ Play 모드에서 Warrior 로 런을 시작하고 `Unity_RunCommand` 로 재료�
 > ⚠️ **건물 앞 `E` 실조작은 아직 미검증이다.** 위는 `EvolveClass` 를 직접 부른 것이고,
 > `FindAltarClassEvolution` 은 이미 검증된 `FindAltarEvolution` 과 같은 로직이지만
 > **실제로 터렛을 세우고 다가가서 눌러 본 적은 없다** → [`TODO.md`](TODO.md) §1
+
+---
+
+## 2-59. ✅ 직업 3종 배선 판정 — **이미 돌아 있던 것을 기준으로 다시 쟀다** (D32, 2026-09-03 55차)
+
+**한 줄:** 요청-22 판정 **7/7 PASS**. `C6` 6단계가 닫혔다.
+
+> 전문 [`Parallel/REQ/DEV.md`](Parallel/REQ/DEV.md) 요청-22 처리 결과 · [`DESIGN_CLASSES.md`](DESIGN_CLASSES.md) §7-B
+
+### 원인 / 배경 — 요청이 열린 채 남아 있었다
+
+`C28` 이 그림 6장 통과를 확인하고 `Classes.csv` 3줄 + `SceneWiring.csv` 1줄을 쓴 뒤
+**Import 1회**를 요청했다(요청-22). 그런데 그 Import 는 **`D30`·`D31` 작업 중에 이미 돌아 있었다** —
+같은 메뉴를 여러 번 실행했기 때문이다. **다만 CONTENT 의 판정 기준으로 확인한 적이 없었다.**
+
+오늘 다시 Import 를 돌렸더니 **`git status` 가 깨끗했다.** 바뀔 게 없었다는 뜻이고,
+동시에 **임포터가 멱등하다**는 증거이기도 하다.
+
+### 검증 로그 — 판정 7/7 PASS
+
+| # | 판정 | 결과 |
+|---|---|---|
+| ① | `Classes.csv` 실패 줄 0 · `SceneWiring` 12/12 | ✅ `Classes : 10` |
+| ② | 새 애셋 3개 | ✅ |
+| ③ | `m_Script` 가 `0` 이 아닐 것 (`I-19`) | ✅ 셋 다 `74ae27f0…` = `CharacterClassData.cs` |
+| ④ | 🔴 `Portrait`·`BodySprite`·`WalkSheet` 셋 다 채워짐 | ✅ **3종 모두** · `WalkFrames` 16장 |
+| ⑤ | 선택 화면 6개 · 승급 4종 제외 | ✅ 전부 `Tier=1` · 캡처 확인 |
+| ⑥ | 시작 무기가 실제로 나온다 | ✅ 아래 |
+| ⑦ | 콘솔 에러·경고 | ✅ 0 |
+
+```
+Demolitionist | Bomb         → AoeWeapon(Weapon_Aoe)          | HP 110 이속 3.5 공속 1.15 치명 0.05 방어  1
+Assassin      | Shuriken     → ProjectileWeapon(Weapon_Sword) | HP  70 이속 4.3 공속 0.75 치명 0.20 방어 -1
+Summoner      | SummonDragon → SummonWeapon(Weapon_SummonDragon)| HP  90 이속 3.8 공속 1.00 치명 0.05 방어  0
+```
+
+**스탯이 `DESIGN_CLASSES.md` §7-B 확정본과 한 자리도 안 틀린다.**
+
+### 🔴 ④ 는 값이 아니라 **YAML 을 직접 읽어** 판정했다
+
+`BalanceImporter.cs:848·861` 의 `LoadRef`·`LoadSpriteSheet` 는 경로를 못 찾아도
+**로그를 안 남기고 기본값으로 넘어간다.** ①(Import 로그 깨끗)이 통과해도 ④가 빌 수 있고,
+그러면 새 직업이 **기사 모습으로 나온다**(`I-57`). 그래서 애셋 YAML 에서 `{fileID: 0}` 여부로 봤다.
+CONTENT 가 *"CSV 를 그림보다 먼저 쓰지 않겠다"* 고 버틴 이유가 정확히 이 자리다.
+
+### 🟡 내가 한 번 잘못 봤다 — 무기 누적
+
+한 플레이 세션에서 `StartRun()` 을 세 번 연달아 불러 3종을 한꺼번에 보려 했더니
+무기가 **1 → 2 → 3개로 쌓였다.** 버그로 의심했는데 아니었다 —
+런이 끝나는 모든 경로(`RunEndUI` 의 Retry·Main Menu)가 `GameManager.ReloadScene` 으로
+**씬을 다시 로드**하므로 실제 게임에서 `StartRun` 은 **씬 로드당 한 번**뿐이다.
+깨끗한 단일 런으로 다시 재니 무기가 **정확히 1개**였다. **버그로 등재하지 않았다.**
+
+> ℹ️ 곁가지 둘 — **프리팹 이름이 헷갈린다**(`Weapon_Sword` 가 Shuriken 용, Sword 는 `Weapon_Melee`).
+> 배선은 맞고 이름만 옛것이 남았다. 그리고 카드의 `Attack Speed` 부호 반전은
+> **의도된 것**이다(`ClassSelectUI.cs:180` 주석 — 쿨다운 배율이라 음수가 빠름).
+
+### 안 한 것
+
+- **요청-22 §3 두 건** — `Gun`·`Toxin`·`SummonOctopus` 에 시작 직업이 없는 것(알고 남긴 구멍)과
+  어쎄신이 `minAttackSpeed` 하한을 물리는 것. 둘 다 CONTENT 가 *"알아만 둘 것"* 으로 넘겼다
 
 ---
 
@@ -5708,6 +5769,7 @@ Play 모드 — 한 세션에서 두 경로 전부:
 | **D29**<br>(B10) | `D27` 이 남긴 결정 *"구슬에 수명 상한을 줄 것인가"* 에 `C28` 이 **"두지 않는다"** 로 답했다 — 얻는 게 0.5 ms(예산의 3 %)인데 잃는 게 **자석 픽업의 존재 이유**라 거래가 성립을 안 한다. 대신 `RecycleFarEnemies` 의 원칙(*지우면 경험치가 증발하니 옮겨서 다시 쓴다*)을 구슬에도 적용해 달라고 했다. **적에게는 그 규칙이 있고 구슬에는 없었다** | ✅ 해결 (2026-09-03 52차 → 2-56) — `WaveManager.RecycleFarExpDrops()` 를 `MaintainRoutine`(0.25초) 안 `RecycleFarEnemies()` 옆에 넣었다. 새 코루틴·새 상수 없이 `RecycleRadiusMult 1.9` 를 **적과 공유**한다. 🔴 **그 전에 `B10` 을 먼저 닫아야 했다** — `LevelUpManager` 에 **큐가 없어** 한 번의 `CollectXp` 로 3레벨이 오르면 패널이 덮어써져 **카드 2장이 조용히 사라진다**(정지가 아니라 손실이라 안 보였다). 합산 호출이 이걸 **기본 동작**으로 만들 참이었다. 씬 전체 순회를 새로 만들지 않으려 `ExpDrop.Active` 정적 목록을 뒀다(`PullAllToPlayer` 도 이걸 쓴다). **씬·프리팹·CSV·SO 변경 0** | 판정 **5/5 PASS** — 거리 사다리 `5·15·25·35·37·39·45·80` → 걷힌 것 `39·45·80` · 남은 것 `15·25·35·37` ⇒ **임계값이 정확히 38 임을 경계 양쪽으로 증명**(교훈 180 을 설계에 먼저 넣었다). `원거리 구슬 회수 3개 · XP +3` · `CurrentXp 4`(회수 3 + 자동흡수 1) · 콘솔 에러·경고 0. `B10` 은 `CollectXp(40)`→`Lv 1→4` 후 **`HidePanel` 3회를 다 써야** `Wave` 복귀(수정 전이면 1회). 🔑 **설계 도중 상호작용 하나를 더 잡았다** — 진화 제안 패널 중 레벨업이 들어오면 진화 카드 선택이 레벨업 빚으로 세어져 **대기 중인 레벨업이 사라진다**. `_panelIsForced` 로 갈랐다. ⚠️ **밸런스가 바뀐다** — 소실되던 구슬이 회수되므로 경험치 수입이 는다. 수치는 실플레이 로그를 보고 CONTENT 가 정한다 |
 | **D30** | `ROADMAP.md` §5 가 *"자료구조만 있고 게임에 안 붙어 있다"* 로 남겨 둔 자리. 메타 골드는 **벌기만 하고 쓸 데가 없었다** — 죽으면 아무것도 안 남는다. 백엔드(`PurchaseUpgrade`·`GetStatBonus`·저장/로드)는 이미 완성돼 있었고 `PlayerStats.cs:228` 도 이미 부르고 있었는데, **애셋 0개**(`UpgradeDefinition` 이 `MetaProgressionManager.cs:51` 안에 있어 `I-19` 함정) · **화면 없음** · **진입점 없음** 셋이 비어 있었다 | ✅ 해결 (2026-09-03 53차 → 2-57) — `UpgradeDefinition` 파일 분리(`I-19`) → `Upgrades.csv` + `ImportUpgrades` 신설 → 애셋 7개 → `MetaScreenUI`/`UpgradeCardUI` + `MetaScreenPanel`/`Prefab_UpgradeCard`(기존 것 복제) → 메인 메뉴 `Upgrades` 버튼. 값은 CSV 가 원본이라 인스펙터 예외를 두지 않았다(사용자 판단) | 판정 **6/6 PASS** — 카드 7장 · 구매 `Lv0→1`·`-120G` · 잔액 0 거절 · **`StartRun` 후 `MaxHp 140→150`(다음 런 반영)** · `Back` 복귀 `timeScale 1` · 콘솔 0. 🔑 **애셋 7개의 `m_Script` 가 전부 `UpgradeDefinition.cs` 의 guid** — 분리를 먼저 해서 `I-19` 를 피했다. 🔴 **새 폴더를 만드는 임포터에서만 터지는 `EnsureFolder` 버그를 밟았다** — `StartAssetEditing()` 안에서 `IsValidFolder` 가 방금 만든 폴더를 못 봐서 `UpgradeData 1`~`6` 이 생겼다. `Directory.Exists` 를 같이 보게 고쳤다(기존 폴더는 이미 디스크에 있어 여태 안 드러났다). ⚠️ 검증이 **실제 세이브를 쓴다**(`PurchaseUpgrade`→`Save`) — 백업 후 복구했다. ➕ 곁다리로 Import 가 `Classes : 10` 을 만들어 **직업 3종이 게임에 들어갔다**(`C6` 6단계 닫힘, `GameManager.classes` 6개) |
 | **D31** | `ROADMAP.md` §2-5 — **보스가 큰 잡몹이다.** `Boss1` = `Ogre` + `BossHpMult 7` 이 전부고 AI 가 `Chaser` 라 잡몹과 같은 코드로 걸어왔다. HP 1540 을 깎는 동안 화면에 **아무 표시도 없어서** 보스전인 걸 알 수 있는 건 BGM 뿐이었다 | ✅ 해결 (2026-09-03 54차 → 2-58) — `BossPatternData`(단독 파일, I-19) + `Bosses.csv` + `ImportBosses` → `BossBrain`(페이즈·소환) · `BossSlam`(예고 원 → 폭발, **플레이어**를 친다) · `BossHealthBarUI`. 🔴 **보스 로직을 `EnemyBase.FixedUpdate` 에 안 넣었다** — 거기는 적 800마리가 매 물리프레임 도는 자리라 분기 하나가 **보스 없는 웨이브에서도 800번** 돈다. `EnemyBase` 는 **읽기 전용 접근자만** 열었다 (HP 를 쓰면 방어·사망 처리를 건너뛴다). `Enemies.csv`(33열)는 안 건드리고 `Bosses.csv` 가 `EnemyData.BossPattern` 을 되꽂는다 | 판정 **8/8 PASS** — 페이즈 `0.67→2` · `0.37→FINAL`(색까지 전환) · 소환 **Goblin 0→4** · 슬램 scale 6.40(=반경 3.2×2) · **명중 `HP 130→112`(20−방어2) / 예고 중 회피 시 `112` 그대로** · 처치 시 바 꺼짐 · 콘솔 0. 🔑 **⑦(예고 회피)이 핵심이다** — 예고 없이 터지면 패턴이 아니라 체력 깎기다. 맞는 경우와 피하는 경우를 **둘 다** 쟀다. 🔴 **검증 중 내 오독을 잡았다** — 잡몹 4→15 를 소환으로 봤는데 웨이브 자체 소환이었고, 내가 쓴 `ResolveSummon` 이 웨이브 목록에서만 찾게 해 **소환이 통째로 죽어 있었다**(내가 심은 경고가 잡았다). 참조를 임포터가 꽂게 고치고, 재검증은 **"Goblin 수"** 로 바꿔 오독이 불가능하게 했다 |
+| **D32** | `C28` 이 그림 통과 뒤 `Classes.csv` 3줄 + `SceneWiring.csv` 1줄을 쓰고 **Import 1회**를 요청했는데(요청-22) 그 요청이 **열린 채 남아 있었다.** Import 자체는 `D30`·`D31` 작업 중에 이미 돌아 있었지만 **CONTENT 의 판정 기준으로 확인한 적이 없었다** — 특히 ④(`Portrait`·`BodySprite`·`WalkSheet`)는 `LoadRef`·`LoadSpriteSheet` 가 **로그 없이 fallback** 하므로 Import 로그가 깨끗해도 빌 수 있다 | ✅ 해결 (2026-09-03 55차 → 2-59) — Import 재실행 후 판정 7개를 전부 다시 측정. **코드·애셋 변경 0** — 재실행이 `git status` 를 안 바꿨다(임포터가 멱등하다는 증거이기도 하다) | 판정 **7/7 PASS** — `Classes : 10` · `m_Script` 셋 다 `74ae27f0…`(=`CharacterClassData.cs`) · 🔴 **④ 그림 3필드 전부 채워짐**(YAML 에서 `{fileID: 0}` 여부로 직접 판정) · `WalkFrames` 16장 · 선택 화면 **6개**(전부 `Tier=1`, 승급 4종 제외, 캡처 확인) · 시작 무기 3종 정확 · **스탯이 §7-B 와 한 자리도 안 틀림** · 콘솔 0. 🟡 **내가 한 번 잘못 봤다** — 한 세션에서 `StartRun` 을 3회 불러 무기가 쌓이길래 버그로 의심했으나, 런 종료 경로가 전부 씬을 리로드해 `StartRun` 은 **씬 로드당 1회**뿐이다. 깨끗한 단일 런에서 무기 **정확히 1개**. **등재 안 했다** |
 
 ### 해결 상세
 
