@@ -1,4 +1,4 @@
-# Upgrades.csv — 메타 화면의 영구 강화 항목 원본 (D30 신설).
+# Upgrades.csv — 메타 화면의 영구 강화 항목 원본 (D30 신설 · C29 가 값을 잡았다).
 # 이 값들은 런을 넘어 유지된다. 메타 골드(= 스테이지 클리어 보상)로만 산다.
 #
 # 🔴 열 규칙
@@ -6,26 +6,51 @@
 #   UpgradeId   : 🔴 세이브 키다. 애셋 이름이 아니라 이 값이 save.json 에 박힌다.
 #                 한 번 배포한 뒤 바꾸면 그 항목의 저장된 레벨이 통째로 끊긴다
 #   DisplayName : UI 문자열이므로 영문 (CLAUDE.md §3)
-#   Icon        : 스프라이트 경로. 🔴 지금은 전부 비어 있다 — 아이콘이 없으면 카드가 글자만 나온다
+#   Icon        : 스프라이트 경로. 지금은 비어 있다 — UpgradeCardUI 가 Image 를 꺼서 안 깨진다
 #   StatKey     : MetaProgressionManager.ApplyStatKey 가 아는 문자열이어야 한다.
 #                 🔴 오타는 예외도 경고도 없이 조용히 무시된다. 쓸 수 있는 값은
 #                 MaxHp MoveSpeed Damage AttackSpeed ProjectileSize PickupRadius
 #                 CritChance CritMultiplier Armor XpGain GoldGain
 #   Costs       : '|' 구분. 0번 원소가 Lv0→1 비용
-#   Bonus       : '|' 구분. 🔴 0번 원소가 Lv1 의 값이다 — Costs 와 기준이 하나 어긋나 있다
+#   Bonus       : '|' 구분. 🔴 0번 원소가 Lv1 의 값이고 "그 레벨의 누적 총합"이다.
+#                 증분이 아니다 — Lv3 이면 Bonus[2] 하나만 적용된다
 #                 (GetCost 는 level, GetBonus 는 level-1 로 색인한다)
 #   MaxLevel    : Costs·Bonus 원소 수와 맞출 것
 #
 # 단위는 Passives.csv 와 같다 — Damage/AttackSpeed/XpGain/GoldGain 은 배율 가산,
 # MaxHp/Armor/PickupRadius 는 절대값 가산, AttackSpeed 는 음수가 빠르다.
 #
-# 🔴 값은 임시다 (D30). 메타 수입이 한 판 132G 라는 것만 근거로 잡았다 —
-#    "3~4판에 한 칸" 을 노렸다. 실제 수치는 CONTENT 가 정한다 (REQ/CONTENT.md 요청-22).
+# ── 값의 근거 (C29) — 상세는 Docs/BALANCE.md §3-5 ─────────────────
+#
+# 총량 3,910G ≈ 완주 30판. 메타 수입은 한 판 132G 다 (BALANCE.md §3-1).
+#   가장 싼 칸이 60G 인 것은 의도다 — 첫 판에 죽어도(50~80G) 뭔가 하나는 산다.
+#   화면이 있는데 아무것도 못 사고 나가면 그 화면은 없는 것과 같다.
+#
+# 🔴 상한을 정한 두 규칙 (숫자를 만지기 전에 이걸 먼저 읽을 것)
+#   1. 메타 강화는 어떤 직업의 정체성 수치도 넘지 않는다.
+#      Swiftness 가 +0.2 인 것은 레인저의 +0.6 때문이다 — 레인저의 1/3 이다.
+#      어쎄신조차 +0.3(레인저의 절반)으로 묶여 있다 (DESIGN_CLASSES.md §7-B).
+#      전 직업이 공짜로 받는 값이 한 직업의 정체성을 지우면 안 된다.
+#   2. Armor 는 Max(1, raw - Armor) 라 상한이 아니라 '문턱'을 만든다.
+#      적 접촉 피해가 6~25 인데 인런 패시브만으로 이미 +7 까지 간다.
+#      메타로 +4 를 더 주면 Slime(6)·Goblin(8)·Wolf(10)·Zombie(12)가 전부 바닥값 1 이 된다.
+#      그래서 +2 에서 끊었다 — "한 대 더 버틴다" 까지가 메타의 몫이다.
+#
+# ⚠️ Greed(GoldGain)는 뺐다. 카드 설명이 못 지키는 약속이었다 —
+#    런 골드는 수입 1,177G 대 지출 400G 라 이미 남아돌고 런 끝에 소멸한다.
+#    게다가 GrantMetaGold 도 GoldGain 배율을 곱해서(GameManager.cs:380)
+#    "메타 골드로 사서 메타 골드를 늘리는" 되먹임이 숨어 있었다. 되살리는 조건은
+#    TUNING.md §H 의 런 골드 배수구가 먼저 뚫리는 것이다.
+#
+# 🔴 Magnetism 의 설명을 고쳤다. PickupRadius 는 경험치 구슬에 영향을 못 준다 —
+#    ExpDrop 이 Max(radius, 8) 을 쓰는데(ExpDrop.cs:110) 이 스탯의 천장이
+#    base 2 + 패시브 4 + 메타 1 = 7 이라 8 에 닿지 못한다. 실제로 늘어나는 건
+#    상자·자석 같은 WorldPickup 의 회수 범위뿐이다.
 Id,UpgradeId,DisplayName,Description,Icon,MaxLevel,StatKey,Costs,Bonus
-UpMaxHp,max_hp,Vitality,Start every run with more health.,,5,MaxHp,120|200|320|480|700,10|20|35|55|80
-UpDamage,damage,Power,All weapons hit harder.,,5,Damage,150|250|400|600|880,0.05|0.10|0.16|0.24|0.34
-UpMoveSpeed,move_speed,Swiftness,Move faster on foot.,,3,MoveSpeed,140|260|450,0.2|0.4|0.7
-UpArmor,armor,Toughness,Flat damage reduction.,,3,Armor,160|300|520,1|2|4
-UpPickupRadius,pickup_radius,Magnetism,Pick up orbs from further away.,,3,PickupRadius,110|190|320,0.5|1.1|1.8
-UpXpGain,xp_gain,Insight,Gain more experience.,,3,XpGain,180|320|560,0.06|0.13|0.22
-UpGoldGain,gold_gain,Greed,Enemies drop more run gold.,,3,GoldGain,170|300|520,0.08|0.17|0.28
+UpPickupRadius,pickup_radius,Magnetism,Draw chests and power-ups in from further away.,,2,PickupRadius,60|130,0.5|1
+UpMaxHp,max_hp,Vitality,Start every run with more health.,,4,MaxHp,70|140|240|400,15|35|60|90
+UpDamage,damage,Power,All weapons hit harder.,,4,Damage,80|160|270|440,0.04|0.09|0.15|0.22
+UpXpGain,xp_gain,Insight,Gain more experience.,,3,XpGain,90|170|290,0.05|0.11|0.18
+UpCritMultiplier,crit_multi,Precision,Critical hits land for more.,,3,CritMultiplier,100|180|310,0.15|0.35|0.6
+UpArmor,armor,Toughness,Flat damage reduction.,,2,Armor,120|250,1|2
+UpMoveSpeed,move_speed,Swiftness,Move faster on foot.,,2,MoveSpeed,130|280,0.1|0.2

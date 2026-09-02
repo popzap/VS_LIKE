@@ -1226,16 +1226,83 @@ Normal1 하나만 완주해도 216 XP → **약 Lv6**. 초반 레벨업이 매�
 |---|---|---|
 | 캐릭터 해금 | **150G** | `Economy.csv` `MetaProgressionManager,characterUnlockCost` |
 | 스킨 해금 | **75G** | `Economy.csv` `MetaProgressionManager,skinUnlockCost` |
-| 영구 강화(`UpgradeDefinition`) | **애셋 0개** — 미구현 | 아래 참조 |
+| 영구 강화 7종 | **총 3,910G** | ✅ `Upgrades.csv` (D30 신설 · C29 가 값 확정) |
 
-> 🔴 **영구 강화는 "수치를 조정할" 대상이 아니라 아직 "만들" 대상이다.** 그리고 만들기 전에
-> **코드를 먼저 갈라야 한다** — `UpgradeDefinition` 은 자기 파일이 없고
-> `MetaProgressionManager.cs:51` 안에 선언돼 있다. `CLAUDE.md` §3 / `I-19` 가 정확히 이 경우다:
-> 이 상태로 `.asset` 을 만들면 `m_Script` 가 `0` 으로 기록되고 **재임포트로도 복구되지 않는다.**
-> ⇒ 순서는 **파일 분리(코드) → `.asset` 생성 → `Costs` 값** 이고, 앞의 둘은 DEV 몫이다.
+> ✅ **`D30` 이 재화 고리를 닫았다.** 예전에 여기 적혀 있던 *"영구 강화는 애셋 0개, `I-19` 함정에 걸려 있다"* 는
+> 해소됐다 — `UpgradeDefinition` 이 자기 파일로 갈라졌고 `Upgrades.csv` 파이프라인이 생겼다.
 
-> 참고: `UpgradeDefinition.Costs` 는 `int[]` 필드라 **CSV 파이프라인에 안 들어와 있다.**
-> 강화 항목이 실제로 생기면 `Upgrades.csv` 를 새로 파는 편이 인스펙터로 관리하는 것보다 낫다.
+#### 영구 강화 7종 — 총 3,910G ≈ **완주 30판**
+
+| DisplayName | `StatKey` | MaxLv | Lv1 비용 | 최종 보너스 | 합계 |
+|---|---|---:|---:|---:|---:|
+| Magnetism | `PickupRadius` | 2 | **60** | +1.0 | 190 |
+| Vitality | `MaxHp` | 4 | 70 | +90 | 850 |
+| Power | `Damage` | 4 | 80 | +22 % | 950 |
+| Insight | `XpGain` | 3 | 90 | +18 % | 550 |
+| Precision | `CritMultiplier` | 3 | 100 | +0.6 | 590 |
+| Toughness | `Armor` | 2 | 120 | **+2** | 370 |
+| Swiftness | `MoveSpeed` | 2 | 130 | **+0.2** | 410 |
+
+> ⚠️ `Bonus` 는 **증분이 아니라 그 레벨의 누적 총합**이다. Lv3 이면 `Bonus[2]` **하나만** 적용된다
+> (`GetCost` 는 `level`, `GetBonus` 는 `level-1` 로 색인한다 — 기준이 하나 어긋나 있다).
+
+**가장 싼 칸이 60G 인 것은 의도다.** 완주하면 132G, 중간에 죽어도 50~80G 가 들어오므로
+**첫 판이 끝나면 뭐라도 하나는 산다.** 화면이 있는데 아무것도 못 사고 나가면 그 화면은 없는 것과 같다.
+
+#### 🔴 상한을 정한 두 규칙 — 숫자를 만지기 전에 이걸 먼저 읽을 것
+
+**규칙 1 — 메타 강화는 어떤 직업의 정체성 수치도 넘지 않는다.**
+
+`Swiftness` 가 `+0.2` 인 이유는 레인저가 `+0.6` 이기 때문이다. 어쎄신조차 `+0.3`(레인저의 절반)으로
+묶여 있고, `DESIGN_CLASSES.md` §7-B 가 그 이유를 *"기동은 레인저 것이고 어쎄신 것이 아니다"* 라고 적었다.
+🔑 **한 직업이 돈 주고 사는 것을 모두가 공짜로 받으면 그 직업은 사라진다.**
+메타는 전 직업이 받으므로 클래스보다 **더** 보수적이어야 한다 — 그래서 레인저의 1/3 이다.
+
+**규칙 2 — `Armor` 는 상한이 아니라 '문턱'을 만든다.**
+
+`PlayerStats.cs:316` 이 `Mathf.Max(1, raw - Final.Armor)` 다. **정률이 아니라 정액 + 바닥 1.**
+
+| Armor | Slime 6 | Goblin 8 | Wolf 10 | Zombie 12 | Demon 20 | Ogre 25 |
+|---:|---:|---:|---:|---:|---:|---:|
+| 0 | 6 | 8 | 10 | 12 | 20 | 25 |
+| **2** *(메타 상한)* | 4 | 6 | 8 | 10 | 18 | 23 |
+| 9 (전사 +2 · 패시브 +7) | 1 | 1 | 1 | 3 | 11 | 16 |
+| 13 (거기 + 메타 +4) | **1** | **1** | **1** | **1** | 7 | 12 |
+
+인런 `Armor` 패시브만으로 이미 **+7** 까지 간다. 메타로 `+4` 를 더 주면 **좀비까지 바닥값 1** 이 되어
+비엘리트 접촉 피해가 통째로 무의미해진다. **`+2` 는 "한 대 더 버틴다"** 지 문턱을 넘지 않는다.
+
+#### ⚠️ Greed(`GoldGain`)를 뺀 이유 — 그리고 되살리는 조건
+
+카드 설명(`Enemies drop more run gold`)이 **경제가 못 지키는 약속**이었다.
+런 골드는 수입 **1,177G** 대 지출 **400G** 라 이미 남아돌고 **런 끝에 전부 소멸**한다(§3-1).
+산 만큼 더 버려진다.
+
+🔴 **그리고 숨은 되먹임이 있었다.** `GrantMetaGold` **도** `GoldGain` 을 곱한다:
+
+```csharp
+// GameManager.cs:380 — 주석에도 "GoldGain 배율은 런 골드와 똑같이 적용된다" 고 적혀 있다
+float mult = PlayerStats.Current != null ? PlayerStats.Current.Final.GoldGain : 1f;
+_pendingMetaGold += Mathf.Max(1, Mathf.RoundToInt(baseAmount * mult));
+```
+
+⇒ **메타 골드로 사서 메타 골드를 늘린다.** Lv3(+28 %)이면 132G → 169G/판이라
+7칸 중 **유일하게 자기 값을 갚는 칸**이 되고, 그러면 "항상 먼저 사거나 안 사면 손해"라는
+**선택지 아닌 선택지**가 된다.
+
+🟢 **되살리는 조건:** [`TUNING.md`](TUNING.md) §H 의 런 골드 배수구(`weightShop` 0.15 → 0.28 ·
+`shopSlotCount` 3 → 4)가 먼저 뚫리면 그때 Greed 는 정직한 물건이 된다.
+`GoldGain` 스탯 자체는 인런 패시브(Lv5 **+100 %**)로 게임에 그대로 있다.
+
+#### 🟡 `PickupRadius` 는 경험치 구슬에 닿지 못한다
+
+`ExpDrop.cs:110` 이 `pull = Mathf.Max(radius, magnetActivationRange = 8)` 인데
+이 스탯의 천장은 **base 2 + 패시브 4 + 메타 1 = 7** 이라 **8 에 영원히 못 닿는다.**
+실제로 늘어나는 것은 `WorldPickup`(상자·자석)의 회수 범위뿐이고, 그건 의도된 설계다
+(`WorldPickup.cs:27` — *"상자는 일부러 가지러 가는 목표물이어야 한다"*).
+
+⇒ Magnetism 의 설명을 그에 맞게 고쳤다. 문턱을 낮출지는 자석 픽업의 가치와 **같이 봐야 해서**
+[`TUNING.md`](TUNING.md) §I-3 에 짝으로 적어 뒀다.
 
 ---
 

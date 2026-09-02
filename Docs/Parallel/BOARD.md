@@ -28,14 +28,19 @@
 | 세션 | 이슈 | 만지는 경로 | 시작 | 상태 |
 |---|---|---|---|---|
 | DEV | `D22` | `Docs/DESIGN_EVENTS.md`(신설) · `Docs/ROADMAP.md` | 2026-08-31 | 🅿️ **보류(사용자)** — "이벤트 관련은 나중에". 문서는 **다 썼다** (`E1 함정방` 상세 + `E2`~`E6` 자리표). 🔴 **코드 변경 0.** 재개 조건 = **§7 결정 6건.** ROADMAP §0·§7 에 "이벤트 노드가 비어 있다" 갭 등재 완료 |
-| CONTENT | `C6` | `Docs/DESIGN_CLASSES.md`(신설) · 이후 `Assets/Game/Balance/*.csv` · `_Incoming/` | 2026-08-30 | `진행중` — 직업 6종 컨셉 재편 + 신규 무기 6종 설계 (사용자 지시). **1~5단계 전부 닫힘.** 남은 건 6단계뿐 → `C26` |
-| CONTENT | `C26` | `Docs/DESIGN_CLASSES.md` · `Docs/TUNING.md` · **이후** `Assets/Game/Balance/{Classes,SceneWiring}.csv` | 2026-08-31 | **`대기(REQ→DEV)`** — **C6 6단계: 직업 3종**(폭발광·어쎄신·소환사). 값은 **전부 확정**([`DESIGN_CLASSES.md`](../DESIGN_CLASSES.md) §7-B) · ✅ **그림 6장 전부 통과 — 요청-19 닫힘(D29).** C28 이 재실측했다. 🔴 **약속대로 그림이 들어온 뒤에 CSV 를 썼다** — `Classes.csv` 3줄 + `SceneWiring.csv` 1줄. **Import 1회만 남았다** → [`REQ/DEV.md`](REQ/DEV.md) **요청-22**. 이게 끝나면 `C6`·`C26` 두 줄을 지운다 |
 | CONTENT | `C27` | `Assets/Game/Balance/{Items,Economy}.csv` · `Docs/BALANCE.md` · `Docs/TUNING.md` · `REQ/DEV.md` | 2026-08-31 | `대기(REQ→DEV)` — 가격 재산정 **끝**([`REQ/CONTENT.md`](REQ/CONTENT.md) 요청-18). 상점 `5~12→40~110` · 리롤 `3/1→25/15` · 해금 `30/15→150/75`. 🔴 **요청-18 의 전제 셋이 틀렸다** — 메타는 156G 가 아니라 **132G**(상점·이벤트 노드는 클리어 보상 0) · 해금 비용은 이미 `Economy.csv` 에 있었다 · `UpgradeDefinition` 은 **애셋 0개 + `I-19` 함정**. ✅ **요청-20 닫힘(D28) — 판정 5/5 PASS.** `Sword 8→70` · 씬 `ShopManager 3→25/1→15` · 해금 `30/15→150/75` · `Economy 49/49` · [`DONE/C27.md`](DONE/C27.md).<br>➕ 곁일: **요청-19 납품물 검수** — 초상 3장 ✅ / **걷기 시트 3장 🔴 반려**(알파 255 = `I-41` · `Summoner_Walk` 는 빈 파일 · PPU 1024→256). 해법은 `a85cc9f` 의 `RemoveImageBackground` — **에디터 명령이라 DEV 만 할 수 있다** |
 
 | CONTENT | `C28` | `Docs/BALANCE.md` · `Docs/TUNING.md` · `REQ/DEV.md` | 2026-09-03 | `대기(REQ→DEV)` — **`D27` 성능 인계 반영.** 🔴 **구슬 수명 상한은 두지 않는다** — 얻는 게 **0.5 ms(예산 3 %)** 인데 잃는 게 **자석 픽업의 존재 이유**다(단가 0.9 µs 는 `PERF.md` §8-7 실측이고 §8-8 에서 귀속이 이미 철회됐다). 🔑 **물어본 축이 틀렸다 — 진짜 성장 축은 `ClearWave` 가 구슬을 안 치워 한 판 10층에 누적된다는 것.** 답은 `RecycleFarEnemies` 주석에 이미 있었다(*"지우면 경험치가 증발하니 옮겨서 다시 쓴다"*) → **같은 38유닛 기준을 구슬에도** → ✅ **요청-21 닫힘(D29) — 판정 5/5.** 임계값 **38** 이 경계 양쪽(`37` 남음 / `39` 걷힘)으로 증명됐고, 🔴 **내가 예고한 자리에서 실제로 막혔다** — `LevelUpManager` 에 큐가 없어 합산 회수가 카드를 삼킬 뻔했다(`B10`, 먼저 고침). ➕ 곁일 3건: **요청-19 재실측 후 닫음** · **`C6` 6단계 CSV 작성 → 요청-22** · `TUNING.md` §G vSync 함정 등재. ✅ `MaxAlive` **400 천장**을 [`BALANCE.md`](../BALANCE.md) 에 규칙으로 등재(**CSV 는 안 바꿈** — 현재 130, 여유 3배) · ✅ 겹침 3상수를 [`TUNING.md`](../TUNING.md) **§I** 로 신설하며 실측값 2개를 **판정 기준으로** 박음 · [`DONE/C28.md`](DONE/C28.md) |
 
+| CONTENT | `C29` | `Assets/Game/Balance/Upgrades.csv` · `Docs/BALANCE.md` · `Docs/TUNING.md` · `REQ/DEV.md` | 2026-09-03 | `대기(REQ→DEV)` — **영구 강화 7종 값 확정** ([`REQ/CONTENT.md`](REQ/CONTENT.md) 요청-22). 총 **3,910G ≈ 완주 30판** (DEV 임시값은 6,150 이 아니라 실제 **8,600G · 65판**이었다). 🔴 **Greed 를 뺐다** — 카드 설명이 못 지키는 약속인 데다 `GrantMetaGold` 도 `GoldGain` 을 곱해서(`GameManager.cs:380`) **메타로 사서 메타를 늘리는 되먹임**이 숨어 있었다. 대신 **Precision(`CritMultiplier`)** 신설 — 어떤 직업·패시브도 안 건드리는 유일한 축이다. `Armor` 3→2(`Max(1,raw−Armor)` 라 +4 면 좀비까지 바닥값 1) · `MoveSpeed` +0.7→**+0.2**(레인저 정체성 +0.6 의 1/3). 🔴 **Import 만으로는 반영 안 됨** — `upgrades` 배열이 씬에 손으로 꽂혀 있어 `SceneWiring.csv` 줄이 필요하다 → [`REQ/DEV.md`](REQ/DEV.md) **요청-23** · [`DONE/C29.md`](DONE/C29.md) |
+
 > 상태값: `진행중` · `대기(REQ→DEV)` · `검증대기` · `막힘(B1)`
 > 끝나면 **자기 줄을 지운다.**
+>
+> ✅ **`C6`·`C26` 끝났다 — CONTENT 가 지웠다** (2026-09-03). **6단계(직업 3종)까지 전부 닫혔다.**
+> `D32` 가 Import 로 배선을 끝냈고 판정 **7/7 PASS** — 세 애셋의 `WalkFrames` 가 **16개**로 기존 7종과 같다(C29 실측).
+> 🔑 **8월 31일부터 "그림이 먼저"라며 CSV 를 안 쓰고 버틴 게 이걸 지켰다** — 순서를 뒤집었으면
+> 임포터가 **경고 없이** 빈 직업 3개를 만들고 새 직업이 기사 모습으로 나왔을 것이다(`I-57` 이 실제로 그랬다).
 >
 > ✅ **`D27` 끝났다 — DEV 가 지웠다** (2026-09-02, 50차 → [`SETUP_STATUS.md`](../SETUP_STATUS.md) 2-54).
 > **성능을 처음으로 쟀다** — 시나리오 A/B × 적 130~800 · 40회 이상 → [`PERF.md`](../PERF.md)(신설).
