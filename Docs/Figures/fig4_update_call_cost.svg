@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="700" height="420" viewBox="0 0 700 420" font-family="system-ui, -apple-system, 'Segoe UI', 'Malgun Gothic', sans-serif">
+<title>Update() 호출 단가</title>
+<rect width="700" height="420" fill="#ffffff"/>
+<text x="78" y="34" font-size="19" fill="#1a1a1a" text-anchor="start" font-weight="600">Update() 호출 자체는 얼마인가</text>
+<text x="78" y="58" font-size="13" fill="#8a8a8a" text-anchor="start" font-weight="400">본문이 «완전히 비어 있는» 컴포넌트를 N개 세우고 BehaviourUpdate 를 쟀다.</text>
+<text x="78" y="76" font-size="13" fill="#8a8a8a" text-anchor="start" font-weight="400">기울기가 곧 호출 단가다.</text>
+<line x1="78" y1="358.0" x2="490" y2="358.0" stroke="#e2e2e2"/>
+<text x="70" y="362.0" font-size="11" fill="#8a8a8a" text-anchor="end" font-weight="400">0.0</text>
+<line x1="78" y1="284.1" x2="490" y2="284.1" stroke="#e2e2e2"/>
+<text x="70" y="288.1111111111111" font-size="11" fill="#8a8a8a" text-anchor="end" font-weight="400">0.1</text>
+<line x1="78" y1="210.2" x2="490" y2="210.2" stroke="#e2e2e2"/>
+<text x="70" y="214.22222222222223" font-size="11" fill="#8a8a8a" text-anchor="end" font-weight="400">0.2</text>
+<line x1="78" y1="136.3" x2="490" y2="136.3" stroke="#e2e2e2"/>
+<text x="70" y="140.33333333333331" font-size="11" fill="#8a8a8a" text-anchor="end" font-weight="400">0.3</text>
+<text x="78.0" y="376" font-size="11" fill="#8a8a8a" text-anchor="middle" font-weight="400">0</text>
+<text x="171.63636363636363" y="376" font-size="11" fill="#8a8a8a" text-anchor="middle" font-weight="400">500</text>
+<text x="265.27272727272725" y="376" font-size="11" fill="#8a8a8a" text-anchor="middle" font-weight="400">1,000</text>
+<text x="358.9090909090909" y="376" font-size="11" fill="#8a8a8a" text-anchor="middle" font-weight="400">1,500</text>
+<text x="452.54545454545456" y="376" font-size="11" fill="#8a8a8a" text-anchor="middle" font-weight="400">2,000</text>
+<line x1="78.0" y1="326.2" x2="452.5" y2="120.8" stroke="#8a8a8a" stroke-width="1.4" stroke-dasharray="5 4"/>
+<circle cx="78.0" cy="326.2" r="5.5" fill="#3a6ea5"/>
+<text x="88.0" y="318.22777777777776" font-size="11" fill="#1a1a1a" text-anchor="start" font-weight="400">0.043</text>
+<circle cx="171.6" cy="273.8" r="5.5" fill="#3a6ea5"/>
+<text x="181.63636363636363" y="265.76666666666665" font-size="11" fill="#1a1a1a" text-anchor="start" font-weight="400">0.114</text>
+<circle cx="265.3" cy="219.8" r="5.5" fill="#3a6ea5"/>
+<text x="275.27272727272725" y="211.82777777777775" font-size="11" fill="#1a1a1a" text-anchor="start" font-weight="400">0.187</text>
+<circle cx="452.5" cy="120.8" r="5.5" fill="#3a6ea5"/>
+<text x="462.54545454545456" y="112.81666666666666" font-size="11" fill="#1a1a1a" text-anchor="start" font-weight="400">0.321</text>
+<line x1="78" y1="358" x2="490" y2="358" stroke="#1a1a1a"/>
+<line x1="78" y1="92" x2="78" y2="358" stroke="#1a1a1a"/>
+<text x="284.0" y="406" font-size="13" fill="#1a1a1a" text-anchor="middle" font-weight="400">빈 Update() 를 가진 객체 수</text>
+<text x="514" y="102" font-size="12" fill="#8a8a8a" text-anchor="start" font-weight="400">기울기</text>
+<text x="514" y="128" font-size="22" fill="#2f7d5d" text-anchor="start" font-weight="700">0.139 µs</text>
+<text x="514" y="146" font-size="11" fill="#8a8a8a" text-anchor="start" font-weight="400">호출 하나당</text>
+<text x="514" y="184" font-size="12" fill="#8a8a8a" text-anchor="start" font-weight="400">내 예측</text>
+<text x="514" y="206" font-size="16" fill="#d94f2b" text-anchor="start" font-weight="600">1 ~ 11 µs</text>
+<text x="514" y="224" font-size="11" fill="#d94f2b" text-anchor="start" font-weight="400">🔴 10배 이상 틀렸다</text>
+<text x="514" y="260" font-size="11" fill="#8a8a8a" text-anchor="start" font-weight="400">객체 2,000개에서</text>
+<text x="514" y="276" font-size="11" fill="#1a1a1a" text-anchor="start" font-weight="400">0.28 ms —</text>
+<text x="514" y="292" font-size="11" fill="#1a1a1a" text-anchor="start" font-weight="400">60 fps 예산의 1.7 %</text>
+<text x="514" y="316" font-size="11" fill="#8a8a8a" text-anchor="start" font-weight="400">«수천 개면 문제»라는</text>
+<text x="514" y="332" font-size="11" fill="#8a8a8a" text-anchor="start" font-weight="400">일반론의 기준은</text>
+<text x="514" y="348" font-size="11" fill="#8a8a8a" text-anchor="start" font-weight="400">이 규모보다 훨씬 크다.</text>
+</svg>

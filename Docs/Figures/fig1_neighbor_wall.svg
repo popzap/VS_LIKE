@@ -1,0 +1,109 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="460" viewBox="0 0 900 460" font-family="system-ui, -apple-system, 'Segoe UI', 'Malgun Gothic', sans-serif">
+<title>이웃 수 분포 — 12칸 버퍼가 만든 벽</title>
+<rect width="900" height="460" fill="#ffffff"/>
+<text x="70" y="34" font-size="19" fill="#1a1a1a" text-anchor="start" font-weight="600">이웃 수 분포 — 버퍼 12칸이 만든 «벽»</text>
+<text x="70" y="58" font-size="13" fill="#8a8a8a" text-anchor="start" font-weight="400">적 800마리 · 시나리오 A · 분리 질의 110,348회. 12 이상이 전부 12로 접혔다.</text>
+<line x1="70" y1="390.0" x2="860" y2="390.0" stroke="#e2e2e2"/>
+<text x="62" y="394.0" font-size="10" fill="#8a8a8a" text-anchor="end" font-weight="400">1</text>
+<line x1="70" y1="328.4" x2="860" y2="328.4" stroke="#e2e2e2"/>
+<text x="62" y="332.359374913477" font-size="10" fill="#8a8a8a" text-anchor="end" font-weight="400">10</text>
+<line x1="70" y1="266.7" x2="860" y2="266.7" stroke="#e2e2e2"/>
+<text x="62" y="270.718749826954" font-size="10" fill="#8a8a8a" text-anchor="end" font-weight="400">100</text>
+<line x1="70" y1="205.1" x2="860" y2="205.1" stroke="#e2e2e2"/>
+<text x="62" y="209.07812474043098" font-size="10" fill="#8a8a8a" text-anchor="end" font-weight="400">1,000</text>
+<line x1="70" y1="143.4" x2="860" y2="143.4" stroke="#e2e2e2"/>
+<text x="62" y="147.43749965390802" font-size="10" fill="#8a8a8a" text-anchor="end" font-weight="400">10,000</text>
+<rect x="82.2" y="203.0" width="10.5" height="187.0" fill="#2f7d5d" opacity="0.30"/>
+<rect x="94.3" y="188.3" width="10.5" height="201.7" fill="#2f7d5d" opacity="0.30"/>
+<rect x="106.5" y="183.8" width="10.5" height="206.2" fill="#2f7d5d" opacity="0.30"/>
+<rect x="118.6" y="179.4" width="10.5" height="210.6" fill="#2f7d5d" opacity="0.30"/>
+<rect x="130.8" y="176.1" width="10.5" height="213.9" fill="#2f7d5d" opacity="0.30"/>
+<rect x="142.9" y="170.4" width="10.5" height="219.6" fill="#2f7d5d" opacity="0.30"/>
+<rect x="155.1" y="167.6" width="10.5" height="222.4" fill="#2f7d5d" opacity="0.30"/>
+<rect x="167.2" y="165.8" width="10.5" height="224.2" fill="#2f7d5d" opacity="0.30"/>
+<rect x="179.4" y="163.8" width="10.5" height="226.2" fill="#2f7d5d" opacity="0.30"/>
+<rect x="191.5" y="162.2" width="10.5" height="227.8" fill="#2f7d5d" opacity="0.30"/>
+<rect x="203.7" y="162.5" width="10.5" height="227.5" fill="#2f7d5d" opacity="0.30"/>
+<rect x="215.8" y="161.3" width="10.5" height="228.7" fill="#2f7d5d" opacity="0.30"/>
+<rect x="228.0" y="161.9" width="10.5" height="228.1" fill="#2f7d5d" opacity="0.30"/>
+<rect x="240.2" y="162.6" width="10.5" height="227.4" fill="#2f7d5d" opacity="0.30"/>
+<rect x="252.3" y="165.4" width="10.5" height="224.6" fill="#2f7d5d" opacity="0.30"/>
+<rect x="264.5" y="166.6" width="10.5" height="223.4" fill="#2f7d5d" opacity="0.30"/>
+<rect x="276.6" y="167.8" width="10.5" height="222.2" fill="#2f7d5d" opacity="0.30"/>
+<rect x="288.8" y="169.6" width="10.5" height="220.4" fill="#2f7d5d" opacity="0.30"/>
+<rect x="300.9" y="171.4" width="10.5" height="218.6" fill="#2f7d5d" opacity="0.30"/>
+<rect x="313.1" y="172.7" width="10.5" height="217.3" fill="#2f7d5d" opacity="0.30"/>
+<rect x="325.2" y="173.4" width="10.5" height="216.6" fill="#2f7d5d" opacity="0.30"/>
+<rect x="337.4" y="174.1" width="10.5" height="215.9" fill="#2f7d5d" opacity="0.30"/>
+<rect x="349.5" y="175.6" width="10.5" height="214.4" fill="#2f7d5d" opacity="0.30"/>
+<rect x="361.7" y="176.6" width="10.5" height="213.4" fill="#2f7d5d" opacity="0.30"/>
+<rect x="373.8" y="175.9" width="10.5" height="214.1" fill="#2f7d5d" opacity="0.30"/>
+<rect x="386.0" y="176.4" width="10.5" height="213.6" fill="#2f7d5d" opacity="0.30"/>
+<rect x="398.2" y="176.4" width="10.5" height="213.6" fill="#2f7d5d" opacity="0.30"/>
+<rect x="410.3" y="176.6" width="10.5" height="213.4" fill="#2f7d5d" opacity="0.30"/>
+<rect x="422.5" y="177.9" width="10.5" height="212.1" fill="#2f7d5d" opacity="0.30"/>
+<rect x="434.6" y="178.5" width="10.5" height="211.5" fill="#2f7d5d" opacity="0.30"/>
+<rect x="446.8" y="181.1" width="10.5" height="208.9" fill="#2f7d5d" opacity="0.30"/>
+<rect x="458.9" y="183.5" width="10.5" height="206.5" fill="#2f7d5d" opacity="0.30"/>
+<rect x="471.1" y="184.9" width="10.5" height="205.1" fill="#2f7d5d" opacity="0.30"/>
+<rect x="483.2" y="186.6" width="10.5" height="203.4" fill="#2f7d5d" opacity="0.30"/>
+<rect x="495.4" y="188.6" width="10.5" height="201.4" fill="#2f7d5d" opacity="0.30"/>
+<rect x="507.5" y="190.8" width="10.5" height="199.2" fill="#2f7d5d" opacity="0.30"/>
+<rect x="519.7" y="192.6" width="10.5" height="197.4" fill="#2f7d5d" opacity="0.30"/>
+<rect x="531.8" y="194.0" width="10.5" height="196.0" fill="#2f7d5d" opacity="0.30"/>
+<rect x="544.0" y="195.8" width="10.5" height="194.2" fill="#2f7d5d" opacity="0.30"/>
+<rect x="556.2" y="199.2" width="10.5" height="190.8" fill="#2f7d5d" opacity="0.30"/>
+<rect x="568.3" y="200.8" width="10.5" height="189.2" fill="#2f7d5d" opacity="0.30"/>
+<rect x="580.5" y="203.2" width="10.5" height="186.8" fill="#2f7d5d" opacity="0.30"/>
+<rect x="592.6" y="206.5" width="10.5" height="183.5" fill="#2f7d5d" opacity="0.30"/>
+<rect x="604.8" y="208.1" width="10.5" height="181.9" fill="#2f7d5d" opacity="0.30"/>
+<rect x="616.9" y="211.7" width="10.5" height="178.3" fill="#2f7d5d" opacity="0.30"/>
+<rect x="629.1" y="216.2" width="10.5" height="173.8" fill="#2f7d5d" opacity="0.30"/>
+<rect x="641.2" y="216.7" width="10.5" height="173.3" fill="#2f7d5d" opacity="0.30"/>
+<rect x="653.4" y="219.9" width="10.5" height="170.1" fill="#2f7d5d" opacity="0.30"/>
+<rect x="665.5" y="224.5" width="10.5" height="165.5" fill="#2f7d5d" opacity="0.30"/>
+<rect x="677.7" y="226.7" width="10.5" height="163.3" fill="#2f7d5d" opacity="0.30"/>
+<rect x="689.8" y="230.7" width="10.5" height="159.3" fill="#2f7d5d" opacity="0.30"/>
+<rect x="702.0" y="235.3" width="10.5" height="154.7" fill="#2f7d5d" opacity="0.30"/>
+<rect x="714.2" y="236.9" width="10.5" height="153.1" fill="#2f7d5d" opacity="0.30"/>
+<rect x="726.3" y="242.0" width="10.5" height="148.0" fill="#2f7d5d" opacity="0.30"/>
+<rect x="738.5" y="242.1" width="10.5" height="147.9" fill="#2f7d5d" opacity="0.30"/>
+<rect x="750.6" y="250.0" width="10.5" height="140.0" fill="#2f7d5d" opacity="0.30"/>
+<rect x="762.8" y="251.0" width="10.5" height="139.0" fill="#2f7d5d" opacity="0.30"/>
+<rect x="774.9" y="254.8" width="10.5" height="135.2" fill="#2f7d5d" opacity="0.30"/>
+<rect x="787.1" y="252.5" width="10.5" height="137.5" fill="#2f7d5d" opacity="0.30"/>
+<rect x="799.2" y="257.9" width="10.5" height="132.1" fill="#2f7d5d" opacity="0.30"/>
+<rect x="811.4" y="255.7" width="10.5" height="134.3" fill="#2f7d5d" opacity="0.30"/>
+<rect x="823.5" y="257.7" width="10.5" height="132.3" fill="#2f7d5d" opacity="0.30"/>
+<rect x="835.7" y="258.7" width="10.5" height="131.3" fill="#2f7d5d" opacity="0.30"/>
+<rect x="847.8" y="181.9" width="10.5" height="208.1" fill="#2f7d5d" opacity="0.30"/>
+<rect x="82.2" y="206.5" width="10.5" height="183.5" fill="#3a6ea5"/>
+<rect x="94.3" y="188.5" width="10.5" height="201.5" fill="#3a6ea5"/>
+<rect x="106.5" y="182.7" width="10.5" height="207.3" fill="#3a6ea5"/>
+<rect x="118.6" y="184.4" width="10.5" height="205.6" fill="#3a6ea5"/>
+<rect x="130.8" y="180.3" width="10.5" height="209.7" fill="#3a6ea5"/>
+<rect x="142.9" y="173.4" width="10.5" height="216.6" fill="#3a6ea5"/>
+<rect x="155.1" y="172.3" width="10.5" height="217.7" fill="#3a6ea5"/>
+<rect x="167.2" y="171.5" width="10.5" height="218.5" fill="#3a6ea5"/>
+<rect x="179.4" y="170.9" width="10.5" height="219.1" fill="#3a6ea5"/>
+<rect x="191.5" y="170.2" width="10.5" height="219.8" fill="#3a6ea5"/>
+<rect x="203.7" y="169.4" width="10.5" height="220.6" fill="#3a6ea5"/>
+<rect x="215.8" y="88.0" width="10.5" height="302.0" fill="#d94f2b"/>
+<line x1="70" y1="390" x2="860" y2="390" stroke="#1a1a1a"/>
+<text x="87.38000000000001" y="408" font-size="11" fill="#8a8a8a" text-anchor="middle" font-weight="400">1</text>
+<text x="221.07230769230767" y="408" font-size="11" fill="#8a8a8a" text-anchor="middle" font-weight="400">12</text>
+<text x="318.30307692307696" y="408" font-size="11" fill="#8a8a8a" text-anchor="middle" font-weight="400">20</text>
+<text x="439.84153846153845" y="408" font-size="11" fill="#8a8a8a" text-anchor="middle" font-weight="400">30</text>
+<text x="561.38" y="408" font-size="11" fill="#8a8a8a" text-anchor="middle" font-weight="400">40</text>
+<text x="682.9184615384614" y="408" font-size="11" fill="#8a8a8a" text-anchor="middle" font-weight="400">50</text>
+<text x="853.0723076923076" y="408" font-size="11" fill="#8a8a8a" text-anchor="middle" font-weight="400">64</text>
+<text x="465.0" y="444" font-size="13" fill="#1a1a1a" text-anchor="middle" font-weight="400">한 번의 질의가 받은 이웃 수  n</text>
+<text transform="rotate(-90 18 239.0)" x="18" y="239.0" font-size="12" fill="#8a8a8a" text-anchor="middle" font-weight="400">도수 (로그)</text>
+<line x1="221.07230769230767" y1="78.0" x2="341.0723076923077" y2="110" stroke="#d94f2b" stroke-width="1.2"/>
+<text x="347.0723076923077" y="114" font-size="13" fill="#d94f2b" text-anchor="start" font-weight="600">79,317 — 11번 칸의 21배</text>
+<text x="347.0723076923077" y="132" font-size="11" fill="#8a8a8a" text-anchor="start" font-weight="400">자연스러운 분포라면 12는 11보다 작아야 한다</text>
+<rect x="70" y="62" width="11" height="11" fill="#3a6ea5"/>
+<text x="87" y="72" font-size="12" fill="#1a1a1a" text-anchor="start" font-weight="400">버퍼 12 (수정 전)</text>
+<rect x="220" y="62" width="11" height="11" fill="#2f7d5d" opacity="0.30"/>
+<text x="237" y="72" font-size="12" fill="#1a1a1a" text-anchor="start" font-weight="400">버퍼 64 (수정 후) — 진짜 분포</text>
+</svg>

@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="860" height="330" viewBox="0 0 860 330" font-family="system-ui, -apple-system, 'Segoe UI', 'Malgun Gothic', sans-serif">
+<title>프레임 구간 분해</title>
+<rect width="860" height="330" fill="#ffffff"/>
+<text x="70" y="34" font-size="19" fill="#1a1a1a" text-anchor="start" font-weight="600">13 ms 프레임은 어디로 가는가</text>
+<text x="70" y="58" font-size="13" fill="#8a8a8a" text-anchor="start" font-weight="400">적 800마리 · 시나리오 A · 렌더러 ON · p50 13.035 ms · 에디터 플레이 모드</text>
+<text x="70" y="80" font-size="13" fill="#d94f2b" text-anchor="start" font-weight="400">🔴 스크립트 중에서는 «무리 분리»가 가장 크다 — 적 렌더보다도 크다.</text>
+<rect x="70.0" y="110" width="141.0" height="46" fill="#d94f2b"/>
+<text x="140.51208285385502" y="138" font-size="13" fill="#ffffff" text-anchor="middle" font-weight="600">19%</text>
+<rect x="211.0" y="110" width="100.1" height="46" fill="#3a6ea5"/>
+<text x="261.08170310701956" y="138" font-size="13" fill="#ffffff" text-anchor="middle" font-weight="600">13%</text>
+<rect x="311.1" y="110" width="64.2" height="46" fill="#3a6ea5"/>
+<text x="343.2163406214039" y="138" font-size="13" fill="#ffffff" text-anchor="middle" font-weight="600">9%</text>
+<rect x="375.3" y="110" width="30.1" height="46" fill="#3a6ea5"/>
+<rect x="405.4" y="110" width="14.1" height="46" fill="#3a6ea5"/>
+<rect x="419.5" y="110" width="117.5" height="46" fill="#8a8a8a"/>
+<text x="478.3141542002302" y="138" font-size="13" fill="#ffffff" text-anchor="middle" font-weight="600">16%</text>
+<rect x="537.1" y="110" width="282.9" height="46" fill="#8a8a8a"/>
+<text x="678.5443037974684" y="138" font-size="13" fill="#ffffff" text-anchor="middle" font-weight="600">38%</text>
+<rect x="70.0" y="180" width="11" height="11" fill="#d94f2b"/>
+<text x="88.0" y="190" font-size="12" fill="#1a1a1a" text-anchor="start" font-weight="400">무리 분리 (질의+누산)</text>
+<text x="385.0" y="190" font-size="12" fill="#8a8a8a" text-anchor="end" font-weight="400">2.451 ms</text>
+<rect x="445.0" y="180" width="11" height="11" fill="#3a6ea5"/>
+<text x="463.0" y="190" font-size="12" fill="#1a1a1a" text-anchor="start" font-weight="400">적 렌더 (대조군 분리)</text>
+<text x="760.0" y="190" font-size="12" fill="#8a8a8a" text-anchor="end" font-weight="400">1.740 ms</text>
+<rect x="70.0" y="204" width="11" height="11" fill="#3a6ea5"/>
+<text x="88.0" y="214" font-size="12" fill="#1a1a1a" text-anchor="start" font-weight="400">LateUpdate (EnemyVisual)</text>
+<text x="385.0" y="214" font-size="12" fill="#8a8a8a" text-anchor="end" font-weight="400">1.115 ms</text>
+<rect x="445.0" y="204" width="11" height="11" fill="#3a6ea5"/>
+<text x="463.0" y="214" font-size="12" fill="#1a1a1a" text-anchor="start" font-weight="400">Physics2D.Simulate</text>
+<text x="760.0" y="214" font-size="12" fill="#8a8a8a" text-anchor="end" font-weight="400">0.524 ms</text>
+<rect x="70.0" y="228" width="11" height="11" fill="#3a6ea5"/>
+<text x="88.0" y="238" font-size="12" fill="#1a1a1a" text-anchor="start" font-weight="400">BehaviourUpdate</text>
+<text x="385.0" y="238" font-size="12" fill="#8a8a8a" text-anchor="end" font-weight="400">0.245 ms</text>
+<rect x="445.0" y="228" width="11" height="11" fill="#8a8a8a"/>
+<text x="463.0" y="238" font-size="12" fill="#1a1a1a" text-anchor="start" font-weight="400">PlayerLoop 내 나머지</text>
+<text x="760.0" y="238" font-size="12" fill="#8a8a8a" text-anchor="end" font-weight="400">2.043 ms</text>
+<rect x="70.0" y="252" width="11" height="11" fill="#8a8a8a"/>
+<text x="88.0" y="262" font-size="12" fill="#1a1a1a" text-anchor="start" font-weight="400">PlayerLoop 바깥 (에디터)</text>
+<text x="385.0" y="262" font-size="12" fill="#8a8a8a" text-anchor="end" font-weight="400">4.917 ms</text>
+<text x="70" y="302" font-size="12" fill="#1a1a1a" text-anchor="start" font-weight="400">Physics2D.Simulate 은 4 % 뿐이다 — Rigidbody2D 800개가 문제가 아니라 «우리가 부르는 질의»가 문제다.</text>
+<text x="70" y="322" font-size="12" fill="#8a8a8a" text-anchor="start" font-weight="400">38 %는 PlayerLoop 바깥, 즉 에디터 비용이다. 빌드에는 거의 없으므로 실제로는 나머지 비중이 더 커진다.</text>
+</svg>
