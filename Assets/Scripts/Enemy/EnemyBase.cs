@@ -20,6 +20,28 @@ public class EnemyBase : MonoBehaviour
     public bool IsElite { get; protected set; }
     public bool IsBoss  { get; protected set; }
 
+    // ── 밖에서 읽는 상태 (D31) ───────────────────────────────────
+    //
+    // 보스 HP 바와 BossBrain 이 본다. 🔴 읽기 전용으로만 연다 —
+    // 밖에서 HP 를 쓰면 TakeDamage 의 방어·사망 처리를 통째로 건너뛰게 된다.
+
+    public float HpNow      => CurrentHp;
+    public float HpMax      => MaxHp;
+    public float HpFraction => MaxHp > 0f ? Mathf.Clamp01(CurrentHp / MaxHp) : 0f;
+    public bool  Dead       => IsDead;
+
+    /// <summary>보스 이름표에 쓴다. <c>EnemyData</c> 를 통째로 넘기지 않으려는 것이다.</summary>
+    public string DisplayName => Data != null ? Data.EnemyName : name;
+
+    // ── 페이즈 속도 배수 (D31) ───────────────────────────────────
+    //
+    // 슬로우와 곱해서 쓴다. 슬로우는 "일시적으로 느려짐", 이건 "이 페이즈 동안 빨라짐"이라
+    // 성격이 다르므로 한 변수에 합치지 않는다 (D25 의 교훈 181 과 같은 이유다).
+    private float _phaseSpeedMult = 1f;
+
+    /// <summary>보스 페이즈에 따른 영구 속도 배수. 1 이 기본이다.</summary>
+    public void SetSpeedMultiplier(float mult) => _phaseSpeedMult = Mathf.Max(0.05f, mult);
+
     protected Rigidbody2D Rb;
     protected Transform   PlayerTransform;
     protected EnemyVisual Visual;
@@ -31,7 +53,7 @@ public class EnemyBase : MonoBehaviour
     private float _slowUntil;       // 이 시각을 넘기면 저절로 풀린다
 
     /// <summary>이동 속도에 슬로우를 반영한 값. 원본 <see cref="MoveSpeed"/> 는 건드리지 않는다.</summary>
-    protected float CurrentSpeed => MoveSpeed * (Time.time <= _slowUntil ? _slowMult : 1f);
+    protected float CurrentSpeed => MoveSpeed * (Time.time <= _slowUntil ? _slowMult : 1f) * _phaseSpeedMult;
 
     /// <param name="mult">속도 배율(0~1).</param>
     /// <param name="duration">이번에 걸어 줄 지속 시간(초).</param>
@@ -51,6 +73,7 @@ public class EnemyBase : MonoBehaviour
         IsElite = isElite;
         IsBoss  = isBoss;
         IsDead  = false;
+        _phaseSpeedMult = 1f;   // 🔴 풀 재사용 — 안 지우면 이전 보스의 페이즈 배수가 잡몹에 남는다
         Rb      = GetComponent<Rigidbody2D>();
         Visual  = GetComponent<EnemyVisual>();
 

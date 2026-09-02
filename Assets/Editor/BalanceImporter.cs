@@ -36,6 +36,7 @@ public static class BalanceImporter
     private const string EvolutionFolder= "Assets/Game/EvolutionData";
     private const string ClassEvoFolder = "Assets/Game/ClassEvolutionData";
     private const string UpgradeFolder  = "Assets/Game/UpgradeData";
+    private const string BossFolder     = "Assets/Game/BossPatternData";
 
     // ════════════════════════════════════════════════════════════════
     //  Import
@@ -72,6 +73,7 @@ public static class BalanceImporter
             ImportItems(log);
             ImportWaves(log);
             ImportClasses(log);
+            ImportBosses(log);
         }
         finally
         {
@@ -285,6 +287,70 @@ public static class BalanceImporter
             EditorUtility.SetDirty(a);
         }
         log.AppendLine($"  Upgrades  : {table.RowCount}");
+    }
+
+    // ── 보스 패턴 ────────────────────────────────────────────────
+
+    /// <summary>
+    /// 보스의 페이즈·기술 파라미터 (D31).
+    ///
+    /// <para>🔴 <b><c>Enemies.csv</c> 를 건드리지 않는다.</b> 여기서 <c>EnemyId</c> 로 찾아
+    /// <c>EnemyData.BossPattern</c> 을 직접 채운다. 그 표는 이미 33열이라 더 넓히지 않았고,
+    /// 보스 패턴이 붙는 적은 6종 중 하나뿐이라 열을 늘리면 대부분이 빈칸이 된다.</para>
+    ///
+    /// <para>⚠️ 그래서 <c>Enemies.csv</c> 에는 <c>BossPattern</c> 열이 <b>없다</b> —
+    /// Export 로 내보내도 안 나온다. 복원은 이 표가 한다.</para>
+    /// </summary>
+    private static void ImportBosses(StringBuilder log)
+    {
+        var table = LoadCsv("Bosses.csv", log);
+        if (table == null) return;
+
+        foreach (var row in table.Rows)
+        {
+            var id = CsvRow.Str(row, "Id");
+            if (string.IsNullOrEmpty(id)) continue;
+
+            var a = GetOrCreate<BossPatternData>(BossFolder, id);
+            a.EnemyId             = CsvRow.Str   (row, "EnemyId", a.EnemyId);
+            a.PhaseThresholds     = CsvRow.Floats(row, "PhaseThresholds", a.PhaseThresholds);
+            a.PhaseSpeedMult      = CsvRow.Floats(row, "PhaseSpeedMult",  a.PhaseSpeedMult);
+            a.SlamWindup          = CsvRow.Float (row, "SlamWindup",  a.SlamWindup);
+            a.SlamRadius          = CsvRow.Float (row, "SlamRadius",  a.SlamRadius);
+            a.SlamDamage          = CsvRow.Float (row, "SlamDamage",  a.SlamDamage);
+            a.SlamCooldown        = CsvRow.Floats(row, "SlamCooldown", a.SlamCooldown);
+            a.SummonEnemyId       = CsvRow.Str   (row, "SummonEnemyId", a.SummonEnemyId);
+            a.SummonCount         = CsvRow.Ints  (row, "SummonCount",  a.SummonCount);
+            a.SummonCooldown      = CsvRow.Floats(row, "SummonCooldown", a.SummonCooldown);
+            a.SummonRadius        = CsvRow.Float (row, "SummonRadius", a.SummonRadius);
+            a.EntryShakeMagnitude = CsvRow.Float (row, "EntryShakeMagnitude", a.EntryShakeMagnitude);
+            a.EntryShakeDuration  = CsvRow.Float (row, "EntryShakeDuration",  a.EntryShakeDuration);
+
+            // 🔴 예고가 0 이면 피할 수 없는 공격이 된다. 값으로 만들 수 있는 실수라 여기서 잡는다.
+            if (a.SlamWindup <= 0f)
+                log.AppendLine($"  ! Bosses.csv '{id}' SlamWindup 이 {a.SlamWindup} 다 — 예고 없는 광역기는 피할 수 없다");
+
+            // 내림차순이 아니면 PhaseOf 가 엉뚱한 페이즈를 답한다.
+            for (int i = 1; i < (a.PhaseThresholds?.Length ?? 0); i++)
+                if (a.PhaseThresholds[i] >= a.PhaseThresholds[i - 1])
+                    log.AppendLine($"  ! Bosses.csv '{id}' PhaseThresholds 가 내림차순이 아니다 ({a.PhaseThresholds[i - 1]} → {a.PhaseThresholds[i]})");
+
+            // EnemyData 에 되꽂는다. 여기가 이 표의 존재 이유다.
+            var enemy = LoadById<EnemyData>(EnemyFolder, a.EnemyId, id, "EnemyData", log);
+            if (enemy != null)
+            {
+                enemy.BossPattern = a;
+                EditorUtility.SetDirty(enemy);
+            }
+
+            // 🔴 소환 대상은 참조로 꽂아 둔다. 런타임에 Id 로 찾을 방법이 없다.
+            a.SummonEnemy = string.IsNullOrEmpty(a.SummonEnemyId)
+                          ? null
+                          : LoadById<EnemyData>(EnemyFolder, a.SummonEnemyId, id, "EnemyData(소환)", log);
+
+            EditorUtility.SetDirty(a);
+        }
+        log.AppendLine($"  Bosses    : {table.RowCount}");
     }
 
     /// <summary><see cref="MetaProgressionManager"/> 의 <c>ApplyStatKey</c> 와 <b>같은 목록</b>이어야 한다.</summary>
@@ -828,6 +894,16 @@ public static class BalanceImporter
                 E(a.WalkFrames != null && a.WalkFrames.Length > 0 ? Path(a.WalkFrames[0]) : ""),
                 E(Path(a.ModelPrefab)),
                 a.UnlockedByDefault ? 1 : 0, a.UnlockCost));
+
+        ExportRows("Bosses.csv",
+            "Id,EnemyId,PhaseThresholds,PhaseSpeedMult,SlamWindup,SlamRadius,SlamDamage,SlamCooldown," +
+            "SummonEnemyId,SummonCount,SummonCooldown,SummonRadius,EntryShakeMagnitude,EntryShakeDuration",
+            LoadAll<BossPatternData>(BossFolder), (a, id) => string.Join(",",
+                id, E(a.EnemyId),
+                CsvTable.JoinArray(a.PhaseThresholds), CsvTable.JoinArray(a.PhaseSpeedMult),
+                N(a.SlamWindup), N(a.SlamRadius), N(a.SlamDamage), CsvTable.JoinArray(a.SlamCooldown),
+                E(a.SummonEnemyId), CsvTable.JoinArray(a.SummonCount), CsvTable.JoinArray(a.SummonCooldown),
+                N(a.SummonRadius), N(a.EntryShakeMagnitude), N(a.EntryShakeDuration)));
 
         ExportRows("Upgrades.csv",
             "Id,UpgradeId,DisplayName,Description,Icon,MaxLevel,StatKey,Costs,Bonus",

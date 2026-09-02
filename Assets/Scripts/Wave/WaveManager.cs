@@ -16,6 +16,9 @@ public class WaveManager : MonoBehaviour
     [SerializeField] private ObjectPool  enemyPool;
     [SerializeField] private Transform   playerTransform;
 
+    [Tooltip("보스 내려찍기의 예고+폭발 프리팹 (D31). 비어 있으면 내려찍기만 조용히 안 나간다")]
+    [SerializeField] private GameObject  bossSlamPrefab;
+
     // ── 런타임 상태 ──────────────────────────────────────────────
     private StageNode   _currentNode;
     private WaveData    _currentWaveData;
@@ -61,6 +64,14 @@ public class WaveManager : MonoBehaviour
     // ── 이벤트 ───────────────────────────────────────────────────
     public System.Action<float> OnTimerUpdated;   // 남은 시간
     public System.Action<int>   OnKillCountUpdated;
+
+    /// <summary>
+    /// 보스가 등장했다 (D31). 보스 HP 바가 구독한다.
+    ///
+    /// <para>HP 바가 <c>FindObjectsByType&lt;EnemyBase&gt;</c> 로 보스를 찾아다니지 않게
+    /// <b>등장하는 쪽이 알려 준다.</b> 보스는 한 판에 한 번 나오므로 이벤트 하나면 충분하다.</para>
+    /// </summary>
+    public System.Action<EnemyBase, BossBrain> OnBossSpawned;
 
     // ── Public API ───────────────────────────────────────────────
 
@@ -208,10 +219,12 @@ public class WaveManager : MonoBehaviour
             while (_waveActive && _waveElapsed < data.BossTime) yield return null;
             if (!_waveActive) yield break;
             while (_wavePaused) yield return null;
-            SpawnEnemy(data.BossOverride, isBoss: true);
+            var boss = SpawnEnemy(data.BossOverride, isBoss: true);
 
             // 등장 직후 1회. 처치음이 아니다 — 보스가 죽을 때는 EnemyDieElite 가 운다.
             AudioManager.Play(SfxId.BossAppear);
+
+            AttachBossBrain(boss, data.BossOverride);
         }
     }
 
@@ -337,12 +350,67 @@ public class WaveManager : MonoBehaviour
         if (_waveActive) ClearWave();
     }
 
-    private void SpawnEnemy(EnemyData data, bool isElite = false, bool isBoss = false)
+    private EnemyBase SpawnEnemy(EnemyData data, bool isElite = false, bool isBoss = false)
     {
         Vector2 spawnPos = GetSpawnPosition();
         var go = enemyPool.Get(data.Prefab, spawnPos, Quaternion.identity);
         var enemy = go.GetComponent<EnemyBase>();
         enemy.Initialize(data, isElite, isBoss);
+        _alive.Add(enemy);
+        return enemy;
+    }
+
+    /// <summary>
+    /// 보스에게 <see cref="BossBrain"/> 을 붙인다 (D31).
+    ///
+    /// <para>🔴 <c>GetComponent</c> 결과에 <c>??</c> 를 쓰지 않는다 — Unity 의 "가짜 null" 이라
+    /// 동작하지 않는다 (<c>CLAUDE.md</c> §3). 보스 프리팹은 풀에서 재사용되므로
+    /// <b>이미 붙어 있을 수 있다.</b></para>
+    ///
+    /// <para>패턴이 없으면(<c>BossPattern == null</c>) 아무것도 안 한다 —
+    /// 그 보스는 예전처럼 <b>HP 만 큰 잡몹</b>으로 남는다. 조용히 실패하지 않게 경고를 남긴다.</para>
+    /// </summary>
+    private void AttachBossBrain(EnemyBase boss, EnemyData data)
+    {
+        if (boss == null) return;
+
+        if (data.BossPattern == null)
+        {
+            Debug.LogWarning($"[WaveManager] '{data.name}' 에 BossPattern 이 없다 — 패턴 없는 보스로 나온다. " +
+                             "Bosses.csv 에 행이 있는지, Import 를 돌렸는지 확인할 것 (D31)");
+            return;
+        }
+
+        var brain = boss.GetComponent<BossBrain>();
+        if (brain == null) brain = boss.gameObject.AddComponent<BossBrain>();
+
+        // 🔴 소환 대상은 BossPatternData 가 참조로 들고 있다 (Bosses.csv 의 SummonEnemyId 를
+        //    임포터가 꽂아 둔다). 예전에는 이번 웨이브 소환 목록에서 이름으로 뒤졌는데,
+        //    그러면 그 웨이브에 없는 적은 못 불러서 소환이 통째로 안 돌았다 (D31 에서 실측).
+        var summon = data.BossPattern.SummonEnemy;
+        if (summon == null && !string.IsNullOrEmpty(data.BossPattern.SummonEnemyId))
+            Debug.LogWarning($"[WaveManager] 보스 소환 대상 '{data.BossPattern.SummonEnemyId}' 참조가 비어 있다 — " +
+                             "Bosses.csv 의 SummonEnemyId 가 EnemyData Id 와 맞는지 확인하고 Import 를 다시 돌릴 것 (D31)");
+
+        brain.Initialize(data.BossPattern, enemyPool, bossSlamPrefab, summon);
+        OnBossSpawned?.Invoke(boss, brain);
+    }
+
+    /// <summary>
+    /// 보스가 부른 잡몹을 놓는다 (D31).
+    ///
+    /// <para>🔴 <see cref="SpawnEnemy"/> 와 달리 <b>소환 반경을 무시하고 지정 좌표에 놓는다</b> —
+    /// 보스 옆에서 나와야 "불러냈다"로 보인다. 대신 <c>_alive</c> 에는 똑같이 넣어
+    /// 상한·재배치·처치 판정이 그대로 걸리게 한다.</para>
+    /// </summary>
+    public void SpawnMinion(EnemyData data, Vector2 at)
+    {
+        if (data == null || data.Prefab == null || enemyPool == null) return;
+        if (_alive.Count >= _currentWaveData.MaxAlive) return;   // 상한은 보스도 못 넘는다
+
+        var go = enemyPool.Get(data.Prefab, at, Quaternion.identity);
+        var enemy = go.GetComponent<EnemyBase>();
+        enemy.Initialize(data);
         _alive.Add(enemy);
     }
 

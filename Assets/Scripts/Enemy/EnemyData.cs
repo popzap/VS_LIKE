@@ -77,6 +77,16 @@ public class EnemyData : ScriptableObject
     public int   EliteXpMult      = 3;
 
     [Header("보스 배율")]
+    /// <summary>
+    /// 보스로 나올 때 쓸 페이즈·기술 파라미터 (D31). <c>null</c> 이면 <b>패턴 없는 큰 잡몹</b>이다.
+    ///
+    /// <para>🔴 <c>Enemies.csv</c> 에는 이 열이 <b>없다.</b> <c>Bosses.csv</c> 의 <c>EnemyId</c> 가
+    /// 여기를 되꽂는다 — 보스가 6종 중 하나뿐이라 열을 늘리면 대부분이 빈칸이 되기 때문이다.
+    /// ⚠️ 그래서 <c>Export ScriptableObjects -> CSV</c> 로 내보내도 이 값은 안 나온다.
+    /// 복원은 <c>Bosses.csv</c> 가 한다.</para>
+    /// </summary>
+    public BossPatternData BossPattern;
+
     public float BossHpMult       = 10f;
     public float BossDamageMult   = 2.5f;
     public float BossSpeedMult    = 0.8f;

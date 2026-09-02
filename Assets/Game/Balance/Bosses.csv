@@ -1,0 +1,19 @@
+# Bosses.csv — 보스의 페이즈·기술 파라미터 원본 (D31 신설).
+#
+# 이 표가 없으면 보스는 그냥 HP 10배짜리 잡몹이다. 여기 한 줄이 있어야
+# WaveManager 가 BossBrain 을 붙이고 페이즈·내려찍기·소환이 돈다.
+#
+# 🔴 열 규칙
+#   Id              : 애셋 파일 이름 (Assets/Game/BossPatternData/<Id>.asset)
+#   EnemyId         : 이 패턴을 쓸 EnemyData 의 Id. 🔴 임포터가 이 값으로
+#                     EnemyData.BossPattern 을 채운다 — Enemies.csv 는 안 건드린다
+#   PhaseThresholds : '|' 구분. HP 비율. 🔴 내림차순. 0.7|0.4 면 페이즈가 3개다
+#   Phase* / Slam*Cooldown / Summon*  : '|' 구분, 페이즈 인덱스로 읽는다([0]=1페이즈).
+#                     🔴 길이가 페이즈 수보다 짧으면 마지막 값을 계속 쓴다(예외 안 난다)
+#   SlamWindup      : 🔴 예고 시간. 이만큼은 피할 수 있어야 한다. 0 이면 피할 수 없는 공격이다
+#   SlamRadius      : 월드 유닛. 참고로 카메라 세로 반경이 6 이다
+#
+# 🔴 값은 임시다 (D31). 플레이해 보고 CONTENT 가 정한다 (REQ/CONTENT.md 요청-23).
+#    지금 근거는 하나뿐이다 — Boss1 웨이브가 240초짜리이고 보스 HP 가 2200 이다.
+Id,EnemyId,PhaseThresholds,PhaseSpeedMult,SlamWindup,SlamRadius,SlamDamage,SlamCooldown,SummonEnemyId,SummonCount,SummonCooldown,SummonRadius,EntryShakeMagnitude,EntryShakeDuration
+BossOgre,Ogre,0.7|0.4,1|1.15|1.35,0.9,3.2,22,5|3.8|2.6,Goblin,3|4|6,12|9|7,3.5,0.55,0.7

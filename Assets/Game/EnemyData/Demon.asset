@@ -56,6 +56,7 @@ MonoBehaviour:
   EliteDamageMult: 1.4
   EliteSpeedMult: 1.15
   EliteXpMult: 3
+  BossPattern: {fileID: 0}
   BossHpMult: 8
   BossDamageMult: 2.2
   BossSpeedMult: 0.85
