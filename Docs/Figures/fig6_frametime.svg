@@ -1,0 +1,85 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="470" viewBox="0 0 900 470" font-family="system-ui, -apple-system, 'Segoe UI', 'Malgun Gothic', sans-serif">
+<title>프레임 타임 — 적 수별 · 무기 유무</title>
+<rect width="900" height="470" fill="#ffffff"/>
+<text x="50" y="34" font-size="19" fill="#1a1a1a" text-anchor="start" font-weight="600">프레임 타임은 언제 무너지는가</text>
+<text x="50" y="58" font-size="13" fill="#d94f2b" text-anchor="start" font-weight="400">🔴 영상으로는 잘 안 보인다 — 중앙값은 멀쩡하고 «꼬리»만 터지기 때문이다. 그래서 분포로 보여 준다.</text>
+<text x="62" y="92" font-size="13" fill="#1a1a1a" text-anchor="start" font-weight="600">적만 (무기 없음) · 버퍼 64</text>
+<text x="62" y="110" font-size="11" fill="#8a8a8a" text-anchor="start" font-weight="400">같은 조건의 실행만 모았다</text>
+<line x1="62" y1="368.0" x2="412" y2="368.0" stroke="#e2e2e2"/>
+<line x1="62" y1="284.5" x2="412" y2="284.5" stroke="#e2e2e2"/>
+<line x1="62" y1="201.5" x2="412" y2="201.5" stroke="#e2e2e2"/>
+<line x1="62" y1="118.0" x2="412" y2="118.0" stroke="#e2e2e2"/>
+<line x1="62" y1="284.5" x2="412" y2="284.5" stroke="#2f7d5d" stroke-dasharray="4 4" stroke-width="1.2"/>
+<text x="410" y="279.5" font-size="10" fill="#2f7d5d" text-anchor="end" font-weight="400">60 fps</text>
+<line x1="62" y1="201.5" x2="412" y2="201.5" stroke="#d94f2b" stroke-dasharray="4 4" stroke-width="1.2"/>
+<text x="410" y="196.50000000000003" font-size="10" fill="#d94f2b" text-anchor="end" font-weight="400">30 fps</text>
+<text x="54" y="372.0" font-size="10" fill="#8a8a8a" text-anchor="end" font-weight="400">0</text>
+<text x="54" y="322.0" font-size="10" fill="#8a8a8a" text-anchor="end" font-weight="400">10</text>
+<text x="54" y="272.0" font-size="10" fill="#8a8a8a" text-anchor="end" font-weight="400">20</text>
+<text x="54" y="222.0" font-size="10" fill="#8a8a8a" text-anchor="end" font-weight="400">30</text>
+<text x="54" y="172.0" font-size="10" fill="#8a8a8a" text-anchor="end" font-weight="400">40</text>
+<text x="54" y="122.0" font-size="10" fill="#8a8a8a" text-anchor="end" font-weight="400">50</text>
+<text x="54" y="78" font-size="10" fill="#8a8a8a" text-anchor="end" font-weight="400">ms</text>
+<line x1="120.3" y1="345.2" x2="120.3" y2="322.7" stroke="#8a8a8a" stroke-width="10" opacity="0.35"/>
+<circle cx="120.3" cy="322.7" r="3" fill="#8a8a8a"/>
+<circle cx="120.3" cy="332.9" r="4" fill="#3a6ea5"/>
+<circle cx="120.3" cy="345.2" r="6" fill="#1a1a1a"/>
+<text x="132.33333333333334" y="349.25" font-size="11" fill="#1a1a1a" text-anchor="start" font-weight="400">4.5</text>
+<text x="120.33333333333334" y="388" font-size="12" fill="#1a1a1a" text-anchor="middle" font-weight="600">적 130</text>
+<text x="120.33333333333334" y="405" font-size="10" fill="#2f7d5d" text-anchor="middle" font-weight="400">실제 상한</text>
+<line x1="237.0" y1="340.4" x2="237.0" y2="312.0" stroke="#8a8a8a" stroke-width="10" opacity="0.35"/>
+<circle cx="237.0" cy="312.0" r="3" fill="#8a8a8a"/>
+<circle cx="237.0" cy="322.9" r="4" fill="#3a6ea5"/>
+<circle cx="237.0" cy="340.4" r="6" fill="#1a1a1a"/>
+<text x="249.0" y="344.4" font-size="11" fill="#1a1a1a" text-anchor="start" font-weight="400">5.5</text>
+<text x="237.0" y="388" font-size="12" fill="#1a1a1a" text-anchor="middle" font-weight="600">적 400</text>
+<line x1="353.7" y1="258.9" x2="353.7" y2="149.4" stroke="#8a8a8a" stroke-width="10" opacity="0.35"/>
+<circle cx="353.7" cy="149.4" r="3" fill="#8a8a8a"/>
+<circle cx="353.7" cy="175.2" r="4" fill="#3a6ea5"/>
+<circle cx="353.7" cy="258.9" r="6" fill="#1a1a1a"/>
+<text x="365.6666666666667" y="262.95" font-size="11" fill="#1a1a1a" text-anchor="start" font-weight="400">21.8</text>
+<text x="353.6666666666667" y="388" font-size="12" fill="#1a1a1a" text-anchor="middle" font-weight="600">적 800</text>
+<text x="353.6666666666667" y="405" font-size="10" fill="#8a8a8a" text-anchor="middle" font-weight="400">게임에 없는 조건</text>
+<line x1="62" y1="368" x2="412" y2="368" stroke="#1a1a1a"/>
+<text x="62" y="434" font-size="12" fill="#1a1a1a" text-anchor="start" font-weight="400">실제 게임 상한(130)에서 p99 가 9 ms 다 — 60 fps 예산의 절반이다.</text>
+<text x="62" y="452" font-size="12" fill="#8a8a8a" text-anchor="start" font-weight="400">800은 Waves.csv 어디에도 없다. 거기서만 무너진다.</text>
+<text x="520" y="92" font-size="13" fill="#1a1a1a" text-anchor="start" font-weight="600">적 800 · 무기 유무 (연속 실행 짝 비교)</text>
+<text x="520" y="110" font-size="11" fill="#8a8a8a" text-anchor="start" font-weight="400">같은 세션에서 scenarioB 만 뒤집었다</text>
+<line x1="520" y1="368.0" x2="850" y2="368.0" stroke="#e2e2e2"/>
+<text x="512" y="372.0" font-size="10" fill="#8a8a8a" text-anchor="end" font-weight="400">0</text>
+<line x1="520" y1="305.5" x2="850" y2="305.5" stroke="#e2e2e2"/>
+<text x="512" y="309.5" font-size="10" fill="#8a8a8a" text-anchor="end" font-weight="400">40</text>
+<line x1="520" y1="243.0" x2="850" y2="243.0" stroke="#e2e2e2"/>
+<text x="512" y="247.0" font-size="10" fill="#8a8a8a" text-anchor="end" font-weight="400">80</text>
+<line x1="520" y1="180.5" x2="850" y2="180.5" stroke="#e2e2e2"/>
+<text x="512" y="184.5" font-size="10" fill="#8a8a8a" text-anchor="end" font-weight="400">120</text>
+<line x1="520" y1="118.0" x2="850" y2="118.0" stroke="#e2e2e2"/>
+<text x="512" y="122.0" font-size="10" fill="#8a8a8a" text-anchor="end" font-weight="400">160</text>
+<line x1="520" y1="341.9" x2="850" y2="341.9" stroke="#2f7d5d" stroke-dasharray="4 4"/>
+<text x="848" y="336.90625" font-size="10" fill="#2f7d5d" text-anchor="end" font-weight="400">60 fps</text>
+<rect x="538.1" y="356.7" width="21.4" height="11.3" fill="#3a6ea5"/>
+<rect x="620.6" y="345.6" width="21.4" height="22.4" fill="#3a6ea5"/>
+<rect x="703.1" y="342.4" width="21.4" height="25.6" fill="#3a6ea5"/>
+<text x="713.875" y="336.421875" font-size="10" fill="#3a6ea5" text-anchor="middle" font-weight="600">16</text>
+<rect x="785.6" y="314.4" width="21.4" height="53.6" fill="#3a6ea5"/>
+<text x="796.375" y="308.40625" font-size="10" fill="#3a6ea5" text-anchor="middle" font-weight="600">34</text>
+<rect x="562.9" y="339.8" width="21.4" height="28.2" fill="#d94f2b"/>
+<text x="573.625" y="333.78125" font-size="10" fill="#d94f2b" text-anchor="middle" font-weight="600">18</text>
+<rect x="645.4" y="307.8" width="21.4" height="60.2" fill="#d94f2b"/>
+<text x="656.125" y="301.8125" font-size="10" fill="#d94f2b" text-anchor="middle" font-weight="600">39</text>
+<rect x="727.9" y="276.4" width="21.4" height="91.6" fill="#d94f2b"/>
+<text x="738.625" y="270.390625" font-size="10" fill="#d94f2b" text-anchor="middle" font-weight="600">59</text>
+<rect x="810.4" y="128.3" width="21.4" height="239.7" fill="#d94f2b"/>
+<text x="821.125" y="122.34375" font-size="10" fill="#d94f2b" text-anchor="middle" font-weight="600">153</text>
+<text x="561.25" y="388" font-size="12" fill="#1a1a1a" text-anchor="middle" font-weight="400">p50</text>
+<text x="643.75" y="388" font-size="12" fill="#1a1a1a" text-anchor="middle" font-weight="400">p95</text>
+<text x="726.25" y="388" font-size="12" fill="#1a1a1a" text-anchor="middle" font-weight="400">p99</text>
+<text x="808.75" y="388" font-size="12" fill="#1a1a1a" text-anchor="middle" font-weight="400">max</text>
+<line x1="520" y1="368" x2="850" y2="368" stroke="#1a1a1a"/>
+<rect x="520" y="406" width="11" height="11" fill="#3a6ea5"/>
+<text x="537" y="416" font-size="11" fill="#1a1a1a" text-anchor="start" font-weight="400">무기 없음</text>
+<rect x="630" y="406" width="11" height="11" fill="#d94f2b"/>
+<text x="647" y="416" font-size="11" fill="#1a1a1a" text-anchor="start" font-weight="400">무기 있음</text>
+<text x="520" y="440" font-size="12" fill="#1a1a1a" text-anchor="start" font-weight="400">p50 은 2.5배인데 max 는 4.5배다 —</text>
+<text x="520" y="458" font-size="12" fill="#d94f2b" text-anchor="start" font-weight="600">«평균이 아니라 꼬리»가 무너진다.</text>
+</svg>

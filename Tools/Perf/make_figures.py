@@ -79,6 +79,20 @@ FRAME_TOTAL = 13.035
 DUMMY = [(0, 0.043), (500, 0.114), (1000, 0.187), (2000, 0.321)]
 DUMMY_SLOPE_US = 0.139
 
+# §8-4 — 적 수별 프레임 타임 (시나리오 A · 버퍼 64 · v10 · warmup300/sample600)
+#         🔴 조건이 완전히 같은 실행들만 모았다. 섞으면 비교가 무효다.
+FRAME_BY_COUNT = [  # (적 수, p50, p95, p99)
+    (130, 4.55,  7.02,  9.06),
+    (400, 5.52,  9.01, 11.20),
+    (800, 21.81, 38.57, 43.72),
+]
+
+# §7-H 결과 ③ — 무기 없음/있음, 적 800, 연속 실행 짝 비교 (v6 · 버퍼 12 시점)
+AB_800 = [  # (이름, p50, p95, p99, max, 색)
+    ("무기 없음", 7.25,  14.33, 16.37, 34.30, BLUE),
+    ("무기 있음", 18.06, 38.52, 58.63, 153.38, HI),
+]
+
 # §0-1 — 죽인 가설
 HYPOTHESES = [
     ("적↔적 트리거 충돌",        "매트릭스에서 이미 꺼져 있었다"),
@@ -385,10 +399,102 @@ def fig_hypotheses():
     return s
 
 
+# ══════════════════════════════════════════════════════════════════
+# 그림 6 — 프레임 타임 (촬영 S3 을 대체한다)
+# ══════════════════════════════════════════════════════════════════
+def fig_frametime():
+    W, H = 900, 470
+    s = head(W, H, "프레임 타임 — 적 수별 · 무기 유무")
+
+    s += txt(50, 34, "프레임 타임은 언제 무너지는가", 19, INK, weight="600")
+    s += txt(50, 58, "🔴 영상으로는 잘 안 보인다 — 중앙값은 멀쩡하고 «꼬리»만 터지기 때문이다. 그래서 분포로 보여 준다.",
+             13, HI)
+
+    # ── 왼쪽: 적 수별 (시나리오 A) ──────────────────────────────
+    L, T, pw, ph = 62, 118, 350, 250
+    ymax = 50.0
+    def Y(v): return T + ph - min(v, ymax) / ymax * ph
+
+    s += txt(L, T - 26, "적만 (무기 없음) · 버퍼 64", 13, INK, weight="600")
+    s += txt(L, T - 8, "같은 조건의 실행만 모았다", 11, MUTE)
+
+    for gv in [0, 16.7, 33.3, 50]:
+        s += f'<line x1="{L}" y1="{Y(gv):.1f}" x2="{L+pw}" y2="{Y(gv):.1f}" stroke="{GRID}"/>\n'
+    for gv, lab, col in [(16.7, "60 fps", OK), (33.3, "30 fps", HI)]:
+        s += (f'<line x1="{L}" y1="{Y(gv):.1f}" x2="{L+pw}" y2="{Y(gv):.1f}" '
+              f'stroke="{col}" stroke-dasharray="4 4" stroke-width="1.2"/>\n')
+        s += txt(L + pw - 2, Y(gv) - 5, lab, 10, col, "end")
+    for gv in [0, 10, 20, 30, 40, 50]:
+        s += txt(L - 8, Y(gv) + 4, str(gv), 10, MUTE, "end")
+    s += txt(L - 8, T - 40, "ms", 10, MUTE, "end")
+
+    gw = pw / len(FRAME_BY_COUNT)
+    for i, (cnt, p50, p95, p99) in enumerate(FRAME_BY_COUNT):
+        cx = L + gw * (i + 0.5)
+        # p50~p99 세로 막대
+        s += (f'<line x1="{cx:.1f}" y1="{Y(p50):.1f}" x2="{cx:.1f}" y2="{Y(p99):.1f}" '
+              f'stroke="{MUTE}" stroke-width="10" opacity="0.35"/>\n')
+        for v, c, r in [(p99, MUTE, 3), (p95, BLUE, 4)]:
+            s += f'<circle cx="{cx:.1f}" cy="{Y(v):.1f}" r="{r}" fill="{c}"/>\n'
+        s += f'<circle cx="{cx:.1f}" cy="{Y(p50):.1f}" r="6" fill="{INK}"/>\n'
+        s += txt(cx + 12, Y(p50) + 4, f"{p50:.1f}", 11, INK)
+        s += txt(cx, T + ph + 20, f"적 {cnt}", 12, INK, "middle", "600")
+        if cnt == 130:
+            s += txt(cx, T + ph + 37, "실제 상한", 10, OK, "middle")
+        if cnt == 800:
+            s += txt(cx, T + ph + 37, "게임에 없는 조건", 10, MUTE, "middle")
+    s += f'<line x1="{L}" y1="{T+ph}" x2="{L+pw}" y2="{T+ph}" stroke="{INK}"/>\n'
+
+    s += txt(L, T + ph + 66, "실제 게임 상한(130)에서 p99 가 9 ms 다 — 60 fps 예산의 절반이다.",
+             12, INK)
+    s += txt(L, T + ph + 84, "800은 Waves.csv 어디에도 없다. 거기서만 무너진다.", 12, MUTE)
+
+    # ── 오른쪽: 무기 유무 (적 800, 연속 실행) ────────────────────
+    L2 = 520
+    pw2 = 330
+    s += txt(L2, T - 26, "적 800 · 무기 유무 (연속 실행 짝 비교)", 13, INK, weight="600")
+    s += txt(L2, T - 8, "같은 세션에서 scenarioB 만 뒤집었다", 11, MUTE)
+
+    ymax2 = 160.0
+    def Y2(v): return T + ph - min(v, ymax2) / ymax2 * ph
+    for gv in [0, 40, 80, 120, 160]:
+        s += f'<line x1="{L2}" y1="{Y2(gv):.1f}" x2="{L2+pw2}" y2="{Y2(gv):.1f}" stroke="{GRID}"/>\n'
+        s += txt(L2 - 8, Y2(gv) + 4, str(gv), 10, MUTE, "end")
+    s += (f'<line x1="{L2}" y1="{Y2(16.7):.1f}" x2="{L2+pw2}" y2="{Y2(16.7):.1f}" '
+          f'stroke="{OK}" stroke-dasharray="4 4"/>\n')
+    s += txt(L2 + pw2 - 2, Y2(16.7) - 5, "60 fps", 10, OK, "end")
+
+    labels = ["p50", "p95", "p99", "max"]
+    band = pw2 / 4
+    for gi, (name, *vals) in enumerate([(a[0], a[1], a[2], a[3], a[4]) for a in AB_800]):
+        col = AB_800[gi][5]
+        for vi in range(4):
+            x = L2 + band * vi + (band * 0.22 if gi == 0 else band * 0.52)
+            v = vals[vi]
+            h = T + ph - Y2(v)
+            s += (f'<rect x="{x:.1f}" y="{Y2(v):.1f}" width="{band*0.26:.1f}" '
+                  f'height="{h:.1f}" fill="{col}"/>\n')
+            if vi >= 2 or gi == 1:
+                s += txt(x + band * 0.13, Y2(v) - 6, f"{v:.0f}", 10, col, "middle", "600")
+    for vi, lab in enumerate(labels):
+        s += txt(L2 + band * (vi + 0.5), T + ph + 20, lab, 12, INK, "middle")
+    s += f'<line x1="{L2}" y1="{T+ph}" x2="{L2+pw2}" y2="{T+ph}" stroke="{INK}"/>\n'
+
+    s += f'<rect x="{L2}" y="{T+ph+38}" width="11" height="11" fill="{BLUE}"/>\n'
+    s += txt(L2 + 17, T + ph + 48, "무기 없음", 11, INK)
+    s += f'<rect x="{L2+110}" y="{T+ph+38}" width="11" height="11" fill="{HI}"/>\n'
+    s += txt(L2 + 127, T + ph + 48, "무기 있음", 11, INK)
+
+    s += txt(L2, T + ph + 72, "p50 은 2.5배인데 max 는 4.5배다 —", 12, INK)
+    s += txt(L2, T + ph + 90, "«평균이 아니라 꼬리»가 무너진다.", 12, HI, weight="600")
+    return s
+
+
 if __name__ == "__main__":
     save("fig1_neighbor_wall.svg", fig_wall())
     save("fig2_truncation.svg",    fig_truncation())
     save("fig3_frame_breakdown.svg", fig_breakdown())
     save("fig4_update_call_cost.svg", fig_update_cost())
     save("fig5_hypotheses.svg",    fig_hypotheses())
+    save("fig6_frametime.svg",     fig_frametime())
     print("\nDocs/Figures/ 에 SVG 5장. PDF 조판에 벡터로 그대로 넣으면 된다.")
