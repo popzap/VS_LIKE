@@ -30,7 +30,7 @@ public class PerfHarness : MonoBehaviour
     /// 실패하면 <b>옛 어셈블리가 그대로 남아</b> 타입 조회도 성공한다.
     /// 실제로 이번 세션에서 컴파일 에러가 난 채로 측정을 한 번 돌렸다.</para>
     /// </summary>
-    public const int Version = 9;
+    public const int Version = 10;
 
     [Header("적 구성")]
     [Tooltip("실제 웨이브와 같은 6종을 넣는다. 순서대로 돌아가며 소환된다")]
@@ -241,6 +241,8 @@ public class PerfHarness : MonoBehaviour
         Debug.Log($"[PERF-UPDATERS] n={enemyCount} trial={trial}\n" +
                   $"  before | {updatersBefore}\n" +
                   $"  after  | {CountUpdaters()}");
+        Debug.Log($"[PERF-SPACING] n={enemyCount} trial={trial}  bufSize={EnemyBase.NeighborBufSize}\n" +
+                  $"  {NearestNeighborStats()}");
 
         ReportSpikes(enemyCount, trial, frameMs, fPoolGets, fPoolMakes, fDeaths, fPopups);
         ReportWeaponQueries(enemyCount, trial, sampleFrames, wallSec, wqCount, wqHits, wqTicks, wsTicks);
@@ -369,6 +371,46 @@ public class PerfHarness : MonoBehaviour
         gm.ChangeState(GameState.Wave);
         Time.timeScale = 1f;
         return true;
+    }
+
+    /// <summary>
+    /// 🔬 D27 — 살아있는 적들의 <b>평균 최근접 거리</b>. `B8` 수정의 성공 조건 2번이다.
+    ///
+    /// <para>무리 분리가 실제로 세졌는지는 "덜 겹쳐 보인다"가 아니라 <b>이 숫자</b>로 판정한다.
+    /// 분리가 제대로 돌면 적들이 서로 더 떨어져 있으므로 값이 <b>커진다.</b></para>
+    ///
+    /// <para>O(n²) 이라 적 800이면 64만 번이다. 🔴 <b>표본 구간 밖에서 한 번만</b> 부른다.</para>
+    /// </summary>
+    private static string NearestNeighborStats()
+    {
+        var pos = new List<Vector2>(1024);
+        foreach (var e in FindObjectsByType<EnemyBase>(FindObjectsSortMode.None))
+            if (e.gameObject.activeInHierarchy) pos.Add(e.transform.position);
+
+        int n = pos.Count;
+        if (n < 2) return $"적={n} (측정 불가)";
+
+        double sum = 0;
+        float  min = float.MaxValue;
+        int    under05 = 0;          // 0.5 유닛 안에 붙어 있는 개체 수 = 뭉침의 직접 지표
+
+        for (int i = 0; i < n; i++)
+        {
+            float bestSqr = float.MaxValue;
+            for (int j = 0; j < n; j++)
+            {
+                if (i == j) continue;
+                float d = (pos[i] - pos[j]).sqrMagnitude;
+                if (d < bestSqr) bestSqr = d;
+            }
+            float best = Mathf.Sqrt(bestSqr);
+            sum += best;
+            if (best < min) min = best;
+            if (best < 0.5f) under05++;
+        }
+
+        return $"적={n}  평균최근접={sum / n:F4}  최소={min:F4}  " +
+               $"0.5유닛내={under05} ({100.0 * under05 / n:F1} %)";
     }
 
     /// <summary>

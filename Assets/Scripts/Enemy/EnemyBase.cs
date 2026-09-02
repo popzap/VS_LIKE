@@ -208,8 +208,31 @@ public class EnemyBase : MonoBehaviour
     private const float SeparationWeight     = 0.9f;
     private const int   SeparationEveryNSteps = 4;
 
-    /// <summary>이웃 버퍼 크기. 🔴 이 값이 곧 <b>분리 계산에 반영되는 이웃 수의 상한</b>이다 (B8).</summary>
-    public  const  int NeighborBufSize = 12;
+    /// <summary>
+    /// 이웃 버퍼 크기. 🔴 이 값이 곧 <b>분리 계산에 반영되는 이웃 수의 상한</b>이다 (B8).
+    ///
+    /// <para><b>12 → 64 (D27, 2026-09-02).</b> 12 는 "이웃을 몇 마리까지 볼지"를 정한 값이 아니라
+    /// <b>배열을 몇 칸으로 할지</b>를 정한 값이 우연히 판정 규칙이 된 것이었다.
+    /// 적 800 기준 질의의 <b>71 %</b> 가 이 상한에 걸려 이웃을 잘라 먹고 있었다
+    /// (실측 → <c>Docs/PERF.md</c> §7-C).</para>
+    ///
+    /// <para><b>64 로 정한 근거는 실측이다</b> (짝 대조군, `Docs/PERF.md` §8):</para>
+    /// <list type="bullet">
+    /// <item>적 <b>130</b>(`Waves.csv` 의 실제 `MaxAlive` 상한): 절단 <b>0.9 % → 0 %</b>,
+    ///       분리 비용 1.2~1.3 % → 1.0~1.1 % (차이 없음)</item>
+    /// <item>적 <b>400</b>(상한의 3배): 절단 <b>21 % → 0 %</b>,
+    ///       분리 비용 7.3~7.4 % → 6.6~7.0 % (차이 없음)</item>
+    /// <item>적 <b>800</b>(게임에 없는 조건): 절단 71 % → 1.8 % 이지만
+    ///       분리 비용 26~28 % → <b>39~43 %</b> 로 확실히 비싸진다</item>
+    /// </list>
+    ///
+    /// <para>🔴 <b>측정 전에 못박은 성공 조건("적 800에서 프레임 +5 % 이내")은 실패했다.</b>
+    /// 그래도 64 를 택한 것은 <b>판단</b>이지 기준 통과가 아니다 — 근거는 800 이 게임에 존재하지
+    /// 않는 조건이고, 실제로 나오는 모든 구간에서는 비용 차이가 측정 노이즈 안이기 때문이다.</para>
+    ///
+    /// <para>⚠️ <c>MaxAlive</c> 를 <b>400 이상</b>으로 올리면 이 값을 다시 판단해야 한다.</para>
+    /// </summary>
+    public  const  int NeighborBufSize = 64;
 
     private static readonly Collider2D[] NeighborBuf = new Collider2D[NeighborBufSize];
     private static ContactFilter2D _enemyFilter;
