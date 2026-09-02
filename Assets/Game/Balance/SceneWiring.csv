@@ -8,7 +8,7 @@ LevelUpManager,allItems,Assets/Game/ItemData/Sword.asset|Assets/Game/ItemData/Bo
 WaveManager,normalWaves,Assets/Game/WaveData/Normal1.asset|Assets/Game/WaveData/Normal2.asset|Assets/Game/WaveData/Normal3.asset,노말 스테이지에서 무작위로 하나 선택
 WaveManager,eliteWaves,Assets/Game/WaveData/Elite1.asset|Assets/Game/WaveData/Elite2.asset,엘리트 스테이지에서 무작위로 하나 선택
 WaveManager,bossWave,Assets/Game/WaveData/Boss1.asset,보스 스테이지 고정
-GameManager,classes,Assets/Game/ClassData/Warrior.asset|Assets/Game/ClassData/Ranger.asset|Assets/Game/ClassData/Mage.asset,직업 목록. 여기 없는 직업은 선택 화면에 뜨지 않는다
+GameManager,classes,Assets/Game/ClassData/Warrior.asset|Assets/Game/ClassData/Ranger.asset|Assets/Game/ClassData/Mage.asset|Assets/Game/ClassData/Demolitionist.asset|Assets/Game/ClassData/Assassin.asset|Assets/Game/ClassData/Summoner.asset,직업 목록. 여기 없는 직업은 선택 화면에 뜨지 않는다
 BuildingManager,placementBlockLayer,Building,이 레이어와 겹치면 설치를 막는다. 레이어 "이름"을 | 로 나열
 ExperienceManager,chestPrefab,Assets/Prefabs/Pickup_Chest.prefab,엘리트/보스가 확정으로 떨구는 보물상자
 ExperienceManager,pickupPrefabs,Assets/Prefabs/Pickup_Gold.prefab|Assets/Prefabs/HealPickup.prefab|Assets/Prefabs/Pickup_Haste.prefab|Assets/Prefabs/Pickup_Bomb.prefab|Assets/Prefabs/Pickup_Magnet.prefab|Assets/Prefabs/Pickup_Invincible.prefab,잡몹 드랍표. pickupChances 와 같은 순서·같은 길이여야 한다. 순서 Gold/Heal/Haste/Bomb/Magnet/Invincible
