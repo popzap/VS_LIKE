@@ -288,7 +288,7 @@ public class GameManager : MonoBehaviour
 
         if (clearedNode.StageType == StageType.Boss)
         {
-            MetaProgression.RegisterRunResult(WaveManager.TotalKillCount);
+            MetaProgression.RegisterRunResult(WaveManager.TotalKillCount, WaveManager.TotalElapsedTime);
             SettleRun();
             MetaProgression.Save();
             ChangeState(GameState.Victory);
@@ -305,7 +305,7 @@ public class GameManager : MonoBehaviour
     /// <summary>플레이어 사망 시 PlayerStats에서 호출.</summary>
     public void OnPlayerDied()
     {
-        MetaProgression.RegisterRunResult(WaveManager.TotalKillCount);
+        MetaProgression.RegisterRunResult(WaveManager.TotalKillCount, WaveManager.TotalElapsedTime);
         SettleRun();
         MetaProgression.Save();
         ChangeState(GameState.GameOver);

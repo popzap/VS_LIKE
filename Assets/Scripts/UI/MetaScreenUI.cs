@@ -25,6 +25,9 @@ public class MetaScreenUI : GameStatePanel
     [SerializeField] private TextMeshProUGUI currencyText;
     [SerializeField] private TextMeshProUGUI emptyHintText;   // 항목이 하나도 없을 때
 
+    [Tooltip("누적 통계 한 줄 (D36). SaveData 에 이미 쌓이는데 볼 곳이 없었다")]
+    [SerializeField] private TextMeshProUGUI statsText;
+
     [Header("버튼")]
     [SerializeField] private Button backButton;
 
@@ -63,7 +66,7 @@ public class MetaScreenUI : GameStatePanel
             emptyHintText.gameObject.SetActive(empty);
             if (empty) emptyHintText.text = "No upgrades available.";
         }
-        if (empty) { RefreshCurrency(0); return; }
+        if (empty) { RefreshCurrency(0); RefreshStats(); return; }
 
         if (_cards.Count == 0 && cardPrefab != null && cardContent != null)
         {
@@ -95,11 +98,47 @@ public class MetaScreenUI : GameStatePanel
         }
 
         RefreshCurrency(gold);
+        RefreshStats();
     }
 
     private void RefreshCurrency(int gold)
     {
         if (currencyText != null) currencyText.text = $"{gold} G";
+    }
+
+    /// <summary>
+    /// 누적 통계 한 줄 (D36).
+    ///
+    /// <para>`SaveData.TotalRuns`·`TotalKills` 는 <b>예전부터 쌓이고 있었는데 보여주는 곳이 없었다</b>
+    /// (`ROADMAP.md` §3-3). 새 화면을 만드는 대신 이미 있는 메타 화면에 한 줄로 붙인다 —
+    /// 화면을 하나 더 만들면 그만큼 더 안 보게 된다.</para>
+    ///
+    /// <para>🔴 문자열은 <b>영문 + 숫자</b>만 쓴다. 폰트가 Static 115자라
+    /// 문자표에 없는 글자는 빈칸으로 나온다 (I-60).</para>
+    /// </summary>
+    private void RefreshStats()
+    {
+        if (statsText == null) return;
+
+        var meta = GameManager.Instance != null ? GameManager.Instance.MetaProgression : null;
+        if (meta == null) { statsText.text = string.Empty; return; }
+
+        int   runs  = meta.TotalRuns;
+        int   kills = meta.TotalKills;
+        float secs  = meta.TotalPlaySeconds;
+
+        // 판수가 0 이면 나눗셈이 아니라 표시를 바꾼다 — "0 / RUN" 은 정보가 아니다.
+        string avg = runs > 0 ? $"{kills / runs}" : "-";
+
+        int h = (int)(secs / 3600f);
+        int m = (int)((secs % 3600f) / 60f);
+        string played = h > 0 ? $"{h}h {m:00}m" : $"{m}m";
+
+        statsText.text =
+            $"<color=#8A8F98>RUNS</color> {runs}   " +
+            $"<color=#8A8F98>KILLS</color> {kills:N0}   " +
+            $"<color=#8A8F98>AVG</color> {avg}/run   " +
+            $"<color=#8A8F98>TIME</color> {played}";
     }
 
     // ── 버튼 핸들러 ──────────────────────────────────────────

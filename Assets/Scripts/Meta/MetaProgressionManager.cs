@@ -13,6 +13,14 @@ public class SaveData
     public int    TotalRuns            = 0;
     public int    TotalKills           = 0;
 
+    /// <summary>
+    /// 누적 전투 시간(초). 통계 화면이 쓴다 (D36).
+    ///
+    /// <para>ℹ️ 기존 세이브에는 이 필드가 없지만 <c>JsonUtility</c> 는 없는 필드를
+    /// 기본값(0)으로 읽으므로 <b>예전 세이브가 깨지지 않는다.</b> 옛 판수만큼은 0 으로 시작한다.</para>
+    /// </summary>
+    public float  TotalPlaySeconds     = 0f;
+
     // 영구 스탯 강화 레벨 (키: 스탯명)
     public SerializableDictionary<string, int> UpgradeLevels = new();
 
@@ -71,14 +79,16 @@ public class MetaProgressionManager : MonoBehaviour
     public UpgradeDefinition[] Upgrades => upgrades != null ? upgrades : System.Array.Empty<UpgradeDefinition>();
 
     public int Currency   => _data.Currency;
-    public int TotalRuns  => _data.TotalRuns;
-    public int TotalKills => _data.TotalKills;
+    public int   TotalRuns        => _data.TotalRuns;
+    public int   TotalKills       => _data.TotalKills;
+    public float TotalPlaySeconds => _data.TotalPlaySeconds;
 
     /// <summary>런이 끝날 때(사망/승리) 누적 통계를 갱신한다. Save() 는 호출자가 한다.</summary>
-    public void RegisterRunResult(int kills)
+    public void RegisterRunResult(int kills, float seconds = 0f)
     {
         _data.TotalRuns++;
         _data.TotalKills += kills;
+        _data.TotalPlaySeconds += Mathf.Max(0f, seconds);
     }
 
     // ── 재화 ────────────────────────────────────────────────────
