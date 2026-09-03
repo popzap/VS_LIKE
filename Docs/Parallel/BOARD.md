@@ -30,6 +30,7 @@
 | DEV | `D22` | `Docs/DESIGN_EVENTS.md`(신설) · `Docs/ROADMAP.md` | 2026-08-31 | 🅿️ **보류(사용자)** — "이벤트 관련은 나중에". 문서는 **다 썼다** (`E1 함정방` 상세 + `E2`~`E6` 자리표). 🔴 **코드 변경 0.** 재개 조건 = **§7 결정 6건.** ROADMAP §0·§7 에 "이벤트 노드가 비어 있다" 갭 등재 완료 |
 | DEV | `D38` | `Docs/**` (문서만) | 2026-09-04 | `완료` — **`C32` 순서를 받았다** (사용자 결정 A). 요청-27(보스 그림)을 **보류로 내리고** `요청-28` 로 회신 — `DESIGN_ART.md` §6 의 1~5번은 **CONTENT 가 만들고 DEV 는 배선만**. 🔴 §7 정리 후보 3개를 guid 로 실측: **셋 다 참조가 있다.** 특히 `Exp_Orb.gif` 는 `ExpDrop.cs` 가 안 덮어쓰므로 **지우면 구슬이 안 보인다** |
 | DEV | `D39` | `Assets/Scripts/Building/BuildingManager.cs` · `Assets/Scripts/UI/HUDManager.cs` · `Docs/Parallel/BUGS.md` · `Docs/{TODO,SETUP_STATUS}.md` | 2026-09-04 | `완료` — **`B3` 닫음 (C안)**. 대기열을 **신규 구간 + 증설 구간**으로 나눴다. 🔑 원안의 "맨 앞에 넣는다"는 **나중 해금이 먼저 해금을 추월**해서 안 썼다 — **신규 구간의 끝**에 넣는다. 판정 2/2 PASS (재현 절차 + `LockBuilding` 장부) |
+| DEV | `D40` | `Assets/Game/Sprites/{Projectiles,UI}/*.meta` · `Assets/Prefabs/*.prefab` · `Assets/Scenes/SampleScene.unity` · `Docs/**` | 2026-09-04 | `완료` — **요청-25 (C33)**: 그림 5장 임포트 + 탄환 2종 교체 + **9-slice 배선 49곳**. 판정 **6/6**. 🔑 `spriteBorder` 만으로는 안 됐다 — 38×38 버튼에 20+20px 테두리라 `pixelsPerUnitMultiplier` 규칙을 세웠다. 🟡 CONTENT 의 `50px` 전제 정정(실측 41px). 🔴 곁일로 `B11`(상점 대사 한글 빈칸) 발견·등재 |
 
 
 
@@ -427,9 +428,9 @@ CONTENT 는 **읽기만** 한다 — 내 요청이 언제 처리될지 가늠하
 
 | 세션 | 다음 이슈 번호 |
 |---|---|
-| DEV | `D40` |
+| DEV | `D41` |
 | CONTENT | `C36` |
-| 버그(공용) | `B11` |
+| 버그(공용) | `B12` |
 
 > 번호를 쓸 때 이 표를 **즉시** 올린다. 선점이 곧 예약이다.
 > ℹ️ 과거 이력의 `I-1`~`I-61` 은 그대로 둔다. 새 번호만 접두어 방식이다.

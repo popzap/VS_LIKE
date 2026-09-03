@@ -25,6 +25,7 @@
 
 | **B9** | 2026-09-02 | DEV(D27 측정 중) | **DEV** | ~~게임이 `state=Wave` 인데 `timeScale=0` 으로 영구히 얼어붙는다~~ 🔴 **오진이었다.** 실제로는 `StageClearUI` 가 Continue 를 기다리며 정상적으로 멈춘 상태였다 (사용자 지적, 2026-09-02) | `✘ 철회(오진) — 잠재 결함 관찰만 남긴다` |
 | **B10** | 2026-09-03 | DEV(D29 착수 중) | **DEV** | **레벨이 한 번에 여러 번 오르면 카드를 1장만 받는다.** `ExperienceManager.CollectXp:145` 의 `while` 이 레벨마다 `TriggerLevelUp()` 을 부르는데 `LevelUpManager.ShowLevelUpPanel:53` 에 **큐가 없어** 패널이 덮어써진다. 나머지 레벨의 카드가 **조용히 사라진다** | `수정됨(D29)` |
+| **B11** | 2026-09-04 | DEV(D40 검증 중) | **DEV** | **상점 NPC 대사 5줄이 전부 빈칸(□)으로 나온다.** 코드 기본값은 영문인데 `[SerializeField] npcDialogues` 라 **씬에 직렬화된 옛 한글 값이 코드를 덮는다.** `B4`(D5 에서 씬 6곳 영문화)가 **이 배열을 놓쳤다** | `열림 — 사용자 판단 대기` |
 
 > 상태값: `열림` · `확인중` · `수정됨(D3)` · `재현안됨` · `보류(사유)`
 > **줄을 지우지 않는다.** 닫혀도 그대로 둔다 — 재발했을 때 근거가 된다.
@@ -372,6 +373,61 @@ Village 재해금 후 Z 순서 = Farm > Bombard > Village > Turret   (기대값�
 ```
 
 콘솔 Error·Warning **0건**.
+
+---
+
+## B11 — 상점 NPC 대사가 전부 빈칸으로 나온다 (`B4` 가 놓친 자리)
+
+**증상:** 상점을 열면 오른쪽 `MERCHANT` 칸의 대사 3줄이 **전부 `□`** 다.
+콘솔에 TMP 경고가 **25건** 찍힌다.
+
+```
+The character with Unicode value 좋 was not found in the [Pretendard SDF]
+font asset or any potential fallbacks. It was replaced by Unicode character □
+in text object [NpcDialogueText].
+```
+
+**재현 절차:** 상점 노드에 들어간다(또는 `ShopManager.OpenShop`). 오른쪽 패널을 본다.
+
+**🔴 원인 (실측 확정, 2026-09-04) — 코드는 이미 영문이다. 씬이 코드를 덮고 있다.**
+
+`ShopUI.cs:47` 의 **코드 기본값은 영문**이다:
+
+```csharp
+[SerializeField] private string[] npcDialogues = new[]
+{
+    "Only the finest goods here.
+Nothing you fancy?
+I can reroll the lot.",
+    ...
+};
+```
+
+그런데 `[SerializeField]` 라서 **씬에 저장된 값이 이깁니다.** 씬을 실측하니 5줄이 전부 한글이었다:
+
+```
+[0] 🔴 한글 | 좋은 물건만 골라왔지. / 마음에 드는 게 없으면 / 리롤도 해드릴 수 있어…
+[1] 🔴 한글 | 오늘 특가! 빨리 사지 않으면 / 다음 손님이 가져가지.
+[2] 🔴 한글 | 뭔가 찾고 있나? 내가 도와줄 수 있어. / 물론 공짜는 아니지만.
+[3] 🔴 한글 | 강한 적들이 기다리고 있다네. / 준비를 단단히 하게나.
+[4] 🔴 한글 | 제거 비용은 저렴해. 짐은 가볍게 / 다니는 게 좋다고 생각하거든.
+```
+
+폰트는 `I-60` 이후 `Pretendard SDF` = **Static · 115자**(ASCII + 기호)라 **한글 글리프가 없다.**
+
+> 🔑 **`B4` 와 같은 병이고, `B4` 가 이 자리를 놓쳤다.**
+> `B4` 는 *"씬에 한글이 남아 있다"* 로 진단하고 `D5`(28차)에서 **씬 6곳**을 영문화해 닫았는데,
+> 그 6곳은 전부 **`TextMeshProUGUI.text`** 였다. 이건 **`string[]` 배열 필드**라
+> 텍스트 컴포넌트를 훑는 방식으로는 안 잡힌다.
+>
+> ⚠️ **그래서 이 자리는 지금도 더 있을 수 있다.** 닫을 때 `text` 뿐 아니라
+> **모든 `string`/`string[]` 직렬화 필드**를 한글 코드포인트(U+AC00~U+D7A3)로 훑어야 한다.
+
+**고치는 법 (아직 안 했다):** 씬의 `ShopUI.npcDialogues` 5칸을 코드 기본값과 같은 영문으로 덮는다.
+코드는 손댈 필요가 없다. 🔴 **씬 파일이라 DEV 몫**이다.
+
+> `CLAUDE.md` §1 *"작업 중 새 문제를 발견했을 때 — 임의로 고치지 말고 먼저 적고 사용자에게 알린다"*
+> 에 따라 **등재만 하고 손대지 않았다.** `D40`(프레임 배선)은 이것과 무관하게 검증이 끝난다.
 
 ---
 

@@ -633,8 +633,8 @@ _currentWaveData = node.StageType switch
 
 | 순서 | 무엇 | DEV 가 할 일 | 주의 |
 |---|---|---|---|
-| 1 | 탄환 2종 | `Proj_Bullet`·`Proj_EnemyBolt` 의 `m_Sprite` 교체 | 🔴 **둘이 지금 같은 `Bullet.png` 를 쓴다** — 내 탄과 적 탄이 구분이 안 된다 |
-| 2 | 9-slice 프레임 3종 | **`spriteBorder` 설정** + `Image.type = Sliced` | 🔴 `spriteBorder` 없이 넣으면 **모서리가 늘어난다.** 테두리 px 를 CONTENT 에 요청해 뒀다 |
+| ~~1~~ | ~~탄환 2종~~ | ✅ **끝 (D40)** — `PlayerBullet`·`EnemyBolt` 교체. 청록 예광탄 vs 붉은 가시구슬로 갈렸다 | 🟡 크기가 0.41 → 0.5 유닛(+22 %). 명중 판정은 스프라이트와 무관해 **게임플레이 변화 0** |
+| ~~2~~ | ~~9-slice 프레임 3종~~ | ✅ **끝 (D40)** — 씬 38곳 + 프리팹 11곳. `spriteBorder` 40/28/20 실측 확인 | 🔑 작은 버튼은 `pixelsPerUnitMultiplier` 로 테두리를 줄여야 했다(38×38 에 20px 테두리) |
 | 3 | 메타 강화 아이콘 | `Upgrades.csv` 의 `Icon` 열 → **Import 1회** | 열은 `D33` 에 이미 있다 |
 | 4 | 승급 이펙트 | `EvolutionManager.EvolveClass` 에 호출 1줄 + 프리팹 | |
 | 5 | 적 사망 파티클 | `EnemyBase.PlayDeathImpact` 근처 배선 | |
