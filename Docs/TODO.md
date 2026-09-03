@@ -596,7 +596,7 @@ _currentWaveData = node.StageType switch
 | 이펙트 | ~~피격~~(I-26 플래시) · ~~사망~~(I-44 스케일 팝) 완료 | ~~폭발~~ 은 11차에 16프레임 스프라이트로 해결 (I-40). 남은 건 파티클 계열 → §4 |
 | **치명타를 연출에 못 쓴다** | `WeaponBase.CalculateDamage()` 가 치명타를 **내부에서 굴리고 결과를 버린다** (`:60-66`). 밖에서는 그 타격이 치명타였는지 알 수 없다 | 그래서 I-44 의 히트스톱을 "치명타"가 아니라 **엘리트/보스 처치**에 걸었다. 치명타 팝업 색·전용 연출을 넣으려면 `ProjectileBase`/`AoeProjectile` 까지 플래그를 배관해야 한다 — 별도 작업 |
 
-### 🔴 보스 전용 그림이 없다 — 잡몹과 같은 스프라이트를 쓴다 (D37, 2026-09-03)
+### 🅿️ 보스 전용 그림이 없다 — **보류** (D37 → D38 에 내림, 2026-09-04)
 
 `D31`·`D34` 로 보스는 **패턴을 갖게 됐는데**(페이즈 3 · 예고 광역기 · 소환 · HP 바)
 **생김새가 그대로다.**
@@ -610,12 +610,48 @@ _currentWaveData = node.StageType switch
 🔑 **그림이 없어서가 아니라 "무엇을 그릴지"가 정해진 적이 없다.**
 `ROADMAP` §7 이 보스를 `1 → 3` 으로 늘리자고 적어 뒀지만 **어떤 보스인지는 아무 데도 없다.**
 
-- [ ] **컨셉·아트 디렉션·판정 기준** — CONTENT 에 요청했다 → [`Parallel/REQ/CONTENT.md`](Parallel/REQ/CONTENT.md) **요청-27**
-- [ ] **생성·임포트·슬라이스** — DEV 몫이다 (**Unity AI 는 DEV 만** 쓸 수 있다 · `SESSION_PROMPT.md` §3)
+🅿️ **보류다.** `요청-27` 을 CONTENT 에 냈지만, 그쪽 [`DESIGN_ART.md`](DESIGN_ART.md) §6 이
+보스 그림을 **7순위**로 두고 *"층별 난이도 기능이 먼저다"* 라고 답했다. 사용자가 그 순서를 택했다.
+재개 조건은 **§3 결정 4(층별 난이도)** 또는 `DESIGN_ART.md` §6 의 1~6번 완료.
+
+<details>
+<summary>재개할 때 할 일 (접어 둠)</summary>
+
+- [ ] **컨셉·아트 디렉션·판정 기준** — [`Parallel/REQ/CONTENT.md`](Parallel/REQ/CONTENT.md) **요청-27** (보류 상태로 보존)
+- [ ] **생성·임포트·슬라이스** — DEV 몫 (**Unity AI 는 DEV 만** 쓸 수 있다 · `SESSION_PROMPT.md` §3)
 - [ ] **`Bosses.csv` 행 추가** — 보스를 3체로 늘리면 그 표도 같이 는다. 값은 CONTENT
 
 > 🔴 **그림이 CSV 보다 먼저다.** `BalanceImporter.cs:848·861` 이 경로를 못 찾아도
 > **로그 없이 fallback** 하므로, 순서를 뒤집으면 **경고 없이 잡몹 그림이 박힌다** (`D26` 의 교훈).
+
+</details>
+
+### 🎨 아트 — CONTENT 가 만들고 **DEV 는 배선만** 한다 (D38, 2026-09-04)
+
+순서는 CONTENT 의 [`DESIGN_ART.md`](DESIGN_ART.md) §6 을 그대로 받았다. 회신은 **요청-28**.
+**아직 `_Incoming/` 에 아무것도 안 왔다** — 오는 대로 아래를 처리한다.
+
+| 순서 | 무엇 | DEV 가 할 일 | 주의 |
+|---|---|---|---|
+| 1 | 탄환 2종 | `Proj_Bullet`·`Proj_EnemyBolt` 의 `m_Sprite` 교체 | 🔴 **둘이 지금 같은 `Bullet.png` 를 쓴다** — 내 탄과 적 탄이 구분이 안 된다 |
+| 2 | 9-slice 프레임 3종 | **`spriteBorder` 설정** + `Image.type = Sliced` | 🔴 `spriteBorder` 없이 넣으면 **모서리가 늘어난다.** 테두리 px 를 CONTENT 에 요청해 뒀다 |
+| 3 | 메타 강화 아이콘 | `Upgrades.csv` 의 `Icon` 열 → **Import 1회** | 열은 `D33` 에 이미 있다 |
+| 4 | 승급 이펙트 | `EvolutionManager.EvolveClass` 에 호출 1줄 + 프리팹 | |
+| 5 | 적 사망 파티클 | `EnemyBase.PlayDeathImpact` 근처 배선 | |
+| 6 | 상점 주인 · 메뉴 배경 | 🔴 **DEV 가 Unity AI 로 뽑는다** | 규격·디렉션을 요청-28 로 요청해 뒀다 |
+
+#### 🔴 `DESIGN_ART.md` §7 "정리 대상" — 실측했다. 하나는 지우면 안 된다
+
+CONTENT 가 *"아무 데도 안 쓰인다"* 고 적은 3개를 guid 로 실측한 결과 **셋 다 참조가 있었다.**
+
+| 파일 | guid 참조 | 런타임에 덮어써지나 | 판정 |
+|---|---|---|---|
+| `ICON/goblin.png` | `Enemy_Goblin.prefab` | ✅ `EnemyBase.cs:124` 가 `Data.Sprite` 로 덮어쓴다 | 🟡 화면엔 안 보이지만 **지우면 프리팹에 missing 참조**가 남는다 |
+| `ICON/Exp_Orb.gif` | `ExpDrop_Small.prefab` | 🔴 **아니다** (`ExpDrop.cs` 에 `sprite` 대입 0건) | 🔴 **지우면 경험치 구슬이 통째로 안 보인다** |
+| `ICON/Bullet.png` | 투사체 **2곳** | 아니다 | 🟡 위 1번이 끝난 **뒤에만** |
+
+> 🔑 **"참조가 없다"와 "화면에 안 보인다"는 다른 판정이다.** 앞은 guid 로, 뒤는 코드로 봐야 한다.
+> CONTENT 가 *"지우기 전에 참조를 확인하라"* 는 단서를 스스로 달아 둬서 이게 잡혔다.
 
 ### ⚠️ 남은 애니메이션 — 공격 / 사망 / 적 외 오브젝트
 
