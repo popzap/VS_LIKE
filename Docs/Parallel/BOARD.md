@@ -10,7 +10,7 @@
 | 세션 | 접두어 | 하는 일 | 소유 경로 (쓰기 가능) |
 |---|---|---|---|
 | **DEV** | `D` | 개발·뼈대. 코드 · 씬 배선 · **Unity 에디터 전담** · 실플레이 검증 | `Assets/Scripts/**` · `Assets/Editor/` · `Assets/Scenes/` · `Assets/Prefabs/` · `Assets/GameObjects/` · `Assets/Game/*Data/` (SO) · `Assets/Settings/` · `ProjectSettings/` · `Docs/DESIGN_EVENTS.md` |
-| **CONTENT** | `C` | 코드 외적. 그림 · 소리 · 애니메이션 소스 · 수치 · 문서 | `_Incoming/` · `Assets/Game/{Sprites,ICON,Tiles,Materials,Shaders,Audio}` · `Assets/Game/Balance/*.csv` · `Assets/Fonts/` · `Tools/Art/` · `Tools/Audio/` · `Docs/BALANCE.md` · `Docs/TUNING.md` · `Docs/DESIGN_CLASSES.md` |
+| **CONTENT** | `C` | 코드 외적. 그림 · 소리 · 애니메이션 소스 · 수치 · 문서 | `_Incoming/` · `Assets/Game/{Sprites,ICON,Tiles,Materials,Shaders,Audio}` · `Assets/Game/Balance/*.csv` · `Assets/Fonts/` · `Tools/Art/` · `Tools/Audio/` · `Docs/BALANCE.md` · `Docs/TUNING.md` · `Docs/DESIGN_CLASSES.md` · `Docs/DESIGN_ART.md` |
 
 **소유하지 않은 경로는 읽기만 한다.** 고쳐야 하면 `REQ/<대상>.md` 에 요청을 남긴다.
 
@@ -41,6 +41,8 @@
 > §I-3 `D35` 의 `ExpDrop 0` 은 **구슬이 생길 조건이 아니었던 것**이라 `D29` 의 증거가 아니다 ·
 > §D 안내 문구 외곽선 0.22 / 그림자 (0.6,−0.6) — 🔴 **원본 머티리얼은 텍스트 75개가 공유하므로 손대지 말 것**.
 >
+| CONTENT | `C32` | `Docs/DESIGN_ART.md`(신설) · `Docs/TUNING.md` | 2026-09-04 | `진행중` — **그림·연출 공백 분석**(사용자 지시). 🔴 **실측: 씬의 `Image` 60개 중 59개가 스프라이트 없이 단색이다.** 기능은 다 도는데 **색칠된 사각형으로** 돈다. 🔑 **캐릭터(적·직업·아이콘 76장)는 다 있고 캐릭터가 아닌 것이 거의 없다** — Unity AI 로 뽑기 쉬운 것만 채워졌고 **도형·판때기·이펙트가 통째로 비었는데, 그게 내가 절차적으로 만들 수 있는 것들**이다. 🔴 1순위는 취향이 아니라 판독성이다 — **`Proj_Bullet` 과 `Proj_EnemyBolt` 가 같은 스프라이트**(`ICON/Bullet.png`, 50px)를 쓴다. ⚠️ **`Docs/DESIGN_ART.md` 를 §0 소유 표에 추가했다** (`DESIGN_CLASSES.md` 와 같은 성격의 CONTENT 문서) · [`DESIGN_ART.md`](../DESIGN_ART.md) |
+
 > 상태값: `진행중` · `대기(REQ→DEV)` · `검증대기` · `막힘(B1)`
 > 끝나면 **자기 줄을 지운다.**
 >
@@ -421,7 +423,7 @@ CONTENT 는 **읽기만** 한다 — 내 요청이 언제 처리될지 가늠하
 | 세션 | 다음 이슈 번호 |
 |---|---|
 | DEV | `D38` |
-| CONTENT | `C32` |
+| CONTENT | `C33` |
 | 버그(공용) | `B11` |
 
 > 번호를 쓸 때 이 표를 **즉시** 올린다. 선점이 곧 예약이다.
