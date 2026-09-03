@@ -15,7 +15,7 @@ MonoBehaviour:
   UpgradeId: crit_multi
   DisplayName: Precision
   Description: Critical hits land for more.
-  Icon: {fileID: 0}
+  Icon: {fileID: 21300000, guid: f6597ef55c28eaf499968df4ea961db6, type: 3}
   MaxLevel: 3
   Costs: 64000000b400000036010000
   StatKey: CritMultiplier

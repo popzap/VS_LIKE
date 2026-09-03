@@ -15,7 +15,7 @@ MonoBehaviour:
   UpgradeId: armor
   DisplayName: Toughness
   Description: Flat damage reduction.
-  Icon: {fileID: 0}
+  Icon: {fileID: 21300000, guid: 542e60acf0c49ec4a8aecd2354c06be0, type: 3}
   MaxLevel: 2
   Costs: 78000000fa000000
   StatKey: Armor

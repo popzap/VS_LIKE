@@ -37,6 +37,11 @@ public class EvolutionManager : MonoBehaviour
     [Tooltip("건물에서 이 거리 안에 있어야 E 로 최종 진화를 할 수 있다. 건물 설치 간격(1.2)보다 넉넉해야 한다.")]
     [SerializeField] private float altarRadius = 2.2f;
 
+    [Header("연출")]
+    [Tooltip("승급 순간 플레이어 자리에 뜨는 파동(Fx_Promote). "
+           + "SceneWiring.csv 의 EvolutionManager,promoteEffect 로 배선한다.")]
+    [SerializeField] private GameObject promoteEffect;
+
     // 이번 런에서 이미 완성한 레시피. 결과 아이템을 상점에서 팔아 버려도 다시 만들 수는 없다.
     private readonly HashSet<EvolutionData> _completed = new();
 
@@ -310,7 +315,24 @@ public class EvolutionManager : MonoBehaviour
         ps.EvolveClass(evo.ResultClass);
 
         AudioManager.Play(SfxId.LevelUp);
+        PlayPromoteFx(ps.transform.position);
         Debug.Log($"[EvolutionManager] 직업 승급 — {evo.EvolutionName} → {evo.ResultClass.ClassName}");
         return true;
+    }
+
+    /// <summary>
+    /// 승급 파동. <b>이 게임에서 가장 큰 성취인데 D41 전까지 연출이 0 이었다</b> —
+    /// 보스 등장에는 화면 흔들림이, 엘리트 처치에는 히트스톱이 있는데 승급만 조용했다(C34).
+    ///
+    /// <para>🔴 <c>?.</c> 를 쓰지 않는다 — 미할당 직렬화 필드는 C# 기준 null 이 아니라
+    /// "가짜 null" 이라 <c>?.</c> 가 그냥 통과시키고 <c>UnassignedReferenceException</c> 이
+    /// 호출 사슬 밖으로 새어 나간다 (I-24). 여기서 새면 <b>승급 자체가 실패한 것처럼 보인다.</b></para>
+    ///
+    /// <para>흔들림 세기·파동 크기는 <see cref="PulseFx"/> 프리팹이 들고 있다 → TUNING.md</para>
+    /// </summary>
+    private void PlayPromoteFx(Vector3 at)
+    {
+        if (promoteEffect == null) return;
+        Instantiate(promoteEffect, at, Quaternion.identity);
     }
 }

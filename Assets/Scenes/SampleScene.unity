@@ -18033,6 +18033,7 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 6dcff189fae37f7468f1e0cc7df7c4ab, type: 2}
   - {fileID: 11400000, guid: 8d0701fd0e204eb4c9ec91f2c2d72137, type: 2}
   altarRadius: 2.2
+  promoteEffect: {fileID: 1169142809547007888, guid: cf36263f13c7265419e8e7f72cbb4a77, type: 3}
 --- !u!1 &2103583617
 GameObject:
   m_ObjectHideFlags: 0
@@ -19948,6 +19949,10 @@ PrefabInstance:
       propertyPath: currencyText
       value: 
       objectReference: {fileID: 47053062}
+    - target: {fileID: 2251716248795094775, guid: dd984b45809b1964d8196ddc77259acd, type: 3}
+      propertyPath: levelUpEffect
+      value: 
+      objectReference: {fileID: 5379715089338360255, guid: a567db65e01b50e4eb435a9fb5b02d7a, type: 3}
     - target: {fileID: 2251716248795094775, guid: dd984b45809b1964d8196ddc77259acd, type: 3}
       propertyPath: optionsButton
       value: 

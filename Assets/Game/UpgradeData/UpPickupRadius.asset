@@ -15,7 +15,7 @@ MonoBehaviour:
   UpgradeId: pickup_radius
   DisplayName: Magnetism
   Description: Draw chests and power-ups in from further away.
-  Icon: {fileID: 0}
+  Icon: {fileID: 21300000, guid: 03e9a37fbf631bb4c8659614432eb968, type: 3}
   MaxLevel: 2
   Costs: 3c00000082000000
   StatKey: PickupRadius

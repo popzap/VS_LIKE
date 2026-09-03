@@ -15,7 +15,7 @@ MonoBehaviour:
   UpgradeId: move_speed
   DisplayName: Swiftness
   Description: Move faster on foot.
-  Icon: {fileID: 0}
+  Icon: {fileID: 21300000, guid: 0f7e686ea60af264485d0d29801e48b7, type: 3}
   MaxLevel: 2
   Costs: 8200000018010000
   StatKey: MoveSpeed

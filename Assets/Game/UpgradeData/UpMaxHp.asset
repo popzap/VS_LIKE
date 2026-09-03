@@ -15,7 +15,7 @@ MonoBehaviour:
   UpgradeId: max_hp
   DisplayName: Vitality
   Description: Start every run with more health.
-  Icon: {fileID: 0}
+  Icon: {fileID: 21300000, guid: f9384af5de3c7cb43ac46b5f76edc2b0, type: 3}
   MaxLevel: 4
   Costs: 460000008c000000f000000090010000
   StatKey: MaxHp

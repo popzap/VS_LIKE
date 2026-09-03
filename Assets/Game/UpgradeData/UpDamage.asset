@@ -15,7 +15,7 @@ MonoBehaviour:
   UpgradeId: damage
   DisplayName: Power
   Description: All weapons hit harder.
-  Icon: {fileID: 0}
+  Icon: {fileID: 21300000, guid: ec5bf356a90a3a946bc9b7f8c67c882a, type: 3}
   MaxLevel: 4
   Costs: 50000000a00000000e010000b8010000
   StatKey: Damage

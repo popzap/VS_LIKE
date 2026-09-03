@@ -17,3 +17,5 @@ ExperienceManager,pickupChances,0.025|0.015|0.01|0.007|0.006|0.004,위 순서대
 ExperienceManager,healPickupAmount,30,드랍 힐의 회복량. 기본 최대체력 100 기준 30%. 식당 Output(15/25/40/60/85)보다 크면 건물 투자가 손해로 보인다 → TUNING.md
 EvolutionManager,allEvolutions,Assets/Game/EvolutionData/Excalibur.asset|Assets/Game/EvolutionData/Windforce.asset|Assets/Game/EvolutionData/Devastator.asset,무기 진화 레시피 전체. 결과 아이템은 LevelUpManager,allItems 에 넣지 말 것
 EvolutionManager,classEvolutions,Assets/Game/ClassEvolutionData/Sentinel.asset|Assets/Game/ClassEvolutionData/Doomlord.asset|Assets/Game/ClassEvolutionData/Warden.asset|Assets/Game/ClassEvolutionData/Aegis.asset,직업 승급 레시피 전체. 결과 직업은 GameManager,classes 에 넣지 말 것
+HUDManager,levelUpEffect,Assets/Prefabs/Fx_LevelUp.prefab,레벨업 순간 플레이어 자리에 뜨는 청록 파동 (D41). 흔들림 없음 — 레벨업은 자주 난다
+EvolutionManager,promoteEffect,Assets/Prefabs/Fx_Promote.prefab,승급 순간의 금색 파동 (D41). 승급은 이 게임에서 가장 큰 성취인데 연출이 0 이었다
