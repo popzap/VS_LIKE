@@ -147,7 +147,14 @@ public class WaveManager : MonoBehaviour
         OnKillCountUpdated?.Invoke(_killCount);
         StageClearUI.Instance?.AddKill();
 
-        if (_currentWaveData.UseKillClear && _killCount >= _currentWaveData.KillTarget)
+        // 🔴 웨이브가 안 도는 중에도 적이 죽을 수 있다 (B5).
+        //    _currentWaveData 는 StartWave 에서만 채워지므로 첫 웨이브 전에는 null 이고,
+        //    여기서 NRE 가 나면 그게 Die() 를 통째로 걷어찬다 —
+        //    사망 연출·소리·시체 정리가 전부 건너뛰어져 **시체가 살아 있는 채로 남는다.**
+        //    광역기에서는 더 나쁘다: OverlapCircleAll 루프 밖으로 예외가 나가
+        //    **같은 반경 안의 나머지 적이 피해를 아예 안 받는다** (D20 에서 실제로 봤다).
+        if (_currentWaveData != null && _currentWaveData.UseKillClear
+            && _killCount >= _currentWaveData.KillTarget)
             ClearWave();
     }
 
@@ -406,6 +413,10 @@ public class WaveManager : MonoBehaviour
     public void SpawnMinion(EnemyData data, Vector2 at)
     {
         if (data == null || data.Prefab == null || enemyPool == null) return;
+
+        // 🔴 OnEnemyKilled 와 같은 이유로 null 을 본다 (B5). 이건 공개 API 라
+        //    웨이브 밖에서 불릴 수 있고, 그때 NRE 가 나면 부르는 쪽(BossBrain)이 끊긴다.
+        if (_currentWaveData == null) return;
         if (_alive.Count >= _currentWaveData.MaxAlive) return;   // 상한은 보스도 못 넘는다
 
         var go = enemyPool.Get(data.Prefab, at, Quaternion.identity);
