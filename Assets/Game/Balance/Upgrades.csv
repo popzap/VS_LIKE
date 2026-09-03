@@ -6,7 +6,11 @@
 #   UpgradeId   : 🔴 세이브 키다. 애셋 이름이 아니라 이 값이 save.json 에 박힌다.
 #                 한 번 배포한 뒤 바꾸면 그 항목의 저장된 레벨이 통째로 끊긴다
 #   DisplayName : UI 문자열이므로 영문 (CLAUDE.md §3)
-#   Icon        : 스프라이트 경로. 지금은 비어 있다 — UpgradeCardUI 가 Image 를 꺼서 안 깨진다
+#   Icon        : 스프라이트 경로. C34 에서 7행 다 채웠다.
+#                 🔴 6장은 Passives/ 의 기존 아이콘을 **그대로 재사용**한다 — 강화 7종 중
+#                 6종이 패시브와 같은 스탯이라 다른 그림을 쓰면 오히려 헷갈린다.
+#                 CritMultiplier.png 만 새로 그렸다 (C34). 패시브는 없지만 "스탯 아이콘"이라
+#                 같은 폴더에 뒀다 — 나중에 CritMultiplier 패시브가 생기면 그대로 쓴다.
 #   StatKey     : MetaProgressionManager.ApplyStatKey 가 아는 문자열이어야 한다.
 #                 🔴 오타는 예외도 경고도 없이 조용히 무시된다. 쓸 수 있는 값은
 #                 MaxHp MoveSpeed Damage AttackSpeed ProjectileSize PickupRadius
@@ -47,10 +51,10 @@
 #    base 2 + 패시브 4 + 메타 1 = 7 이라 8 에 닿지 못한다. 실제로 늘어나는 건
 #    상자·자석 같은 WorldPickup 의 회수 범위뿐이다.
 Id,UpgradeId,DisplayName,Description,Icon,MaxLevel,StatKey,Costs,Bonus
-UpPickupRadius,pickup_radius,Magnetism,Draw chests and power-ups in from further away.,,2,PickupRadius,60|130,0.5|1
-UpMaxHp,max_hp,Vitality,Start every run with more health.,,4,MaxHp,70|140|240|400,15|35|60|90
-UpDamage,damage,Power,All weapons hit harder.,,4,Damage,80|160|270|440,0.04|0.09|0.15|0.22
-UpXpGain,xp_gain,Insight,Gain more experience.,,3,XpGain,90|170|290,0.05|0.11|0.18
-UpCritMultiplier,crit_multi,Precision,Critical hits land for more.,,3,CritMultiplier,100|180|310,0.15|0.35|0.6
-UpArmor,armor,Toughness,Flat damage reduction.,,2,Armor,120|250,1|2
-UpMoveSpeed,move_speed,Swiftness,Move faster on foot.,,2,MoveSpeed,130|280,0.1|0.2
+UpPickupRadius,pickup_radius,Magnetism,Draw chests and power-ups in from further away.,Assets/Game/Sprites/Passives/PickupRadius.png,2,PickupRadius,60|130,0.5|1
+UpMaxHp,max_hp,Vitality,Start every run with more health.,Assets/Game/Sprites/Passives/MaxHp.png,4,MaxHp,70|140|240|400,15|35|60|90
+UpDamage,damage,Power,All weapons hit harder.,Assets/Game/Sprites/Passives/Damage.png,4,Damage,80|160|270|440,0.04|0.09|0.15|0.22
+UpXpGain,xp_gain,Insight,Gain more experience.,Assets/Game/Sprites/Passives/XpGain.png,3,XpGain,90|170|290,0.05|0.11|0.18
+UpCritMultiplier,crit_multi,Precision,Critical hits land for more.,Assets/Game/Sprites/Passives/CritMultiplier.png,3,CritMultiplier,100|180|310,0.15|0.35|0.6
+UpArmor,armor,Toughness,Flat damage reduction.,Assets/Game/Sprites/Passives/Armor.png,2,Armor,120|250,1|2
+UpMoveSpeed,move_speed,Swiftness,Move faster on foot.,Assets/Game/Sprites/Passives/MoveSpeed.png,2,MoveSpeed,130|280,0.1|0.2
