@@ -5,8 +5,14 @@ using UnityEngine;
 //  BuildingManager  —  건물 해금 / 설치 대기열 / 배치
 // ────────────────────────────────────────────────────────────────────────────
 /// <summary>
-/// 건물은 <b>고르지 않는다</b>. 아이템으로 얻으면 설치 대기열(FIFO)에 쌓이고,
-/// Z 키를 누르면 <b>가장 먼저 얻은 것부터</b> 플레이어 옆에 바로 세워진다.
+/// 건물은 <b>고르지 않는다</b>. 아이템으로 얻으면 설치 대기열에 쌓이고,
+/// Z 키를 누르면 대기열 맨 앞의 것이 플레이어 옆에 바로 세워진다.
+///
+/// <para><b>대기열은 두 구간이다</b> (B3, C안). 앞쪽은 <b>처음 해금된 건물</b>,
+/// 뒤쪽은 <b>레벨업으로 늘어난 증설분</b>. 레벨업 카드가 "Village 획득"이라고 말했으면
+/// 다음 <c>Z</c> 는 반드시 Village 를 준다 — 그 약속을 조작이 지키게 하는 게 이 구분의 전부다.
+/// 구간 안에서는 <b>얻은 순서(FIFO)</b> 그대로라, 나중에 해금한 것이 먼저 해금한 것을
+/// 추월하지 않는다.</para>
 ///
 /// <para>예전에는 마우스 커서로 위치를 고르는 배치 모드였지만
 /// <c>SelectBuildingForPlacement()</c> 를 부르는 곳이 아무 데도 없어서
@@ -14,6 +20,10 @@ using UnityEngine;
 /// </summary>
 public class BuildingManager : MonoBehaviour
 {
+    // 🔴 컴파일 반영 확인용 (D27). `Assets/Refresh` 는 재컴파일을 보장하지 않으므로
+    //    콘솔이 아니라 이 값을 조회해서 새 코드가 로드됐는지 판정한다.
+    public const int Version = 2;   // 2 = B3 C안 (신규/증설 두 구간)
+
     [Header("배치 설정")]
     [Tooltip("여기 걸린 콜라이더가 있으면 그 자리에는 세우지 않는다. 최소한 Building 레이어는 넣어야 겹쳐 쌓이지 않는다.")]
     [SerializeField] private LayerMask  placementBlockLayer;
@@ -27,8 +37,13 @@ public class BuildingManager : MonoBehaviour
     private readonly Dictionary<BuildingData, int> _unlockedBuildings = new();
     // 배치된 건물 (data → instances)
     private readonly Dictionary<BuildingData, List<BuildingBase>> _placedBuildings = new();
-    // 설치 대기열 — 획득 순서 그대로. 맨 앞이 가장 먼저 얻은 것.
+    // 설치 대기열. 앞쪽 _freshCount 개가 "처음 해금된 것", 그 뒤가 "레벨업 증설분".
+    // 두 구간 각각은 획득 순서 그대로다.
     private readonly List<BuildingData> _pendingQueue = new();
+
+    // 🔴 _pendingQueue 를 건드리는 모든 경로가 이 값을 같이 맞춰야 한다.
+    //    지금은 PlaceNext(맨 앞 제거) · LockBuilding(임의 제거) · ResetRunState 뿐이다.
+    private int _freshCount;
 
     public int          PendingCount => _pendingQueue.Count;
     public BuildingData NextPending  => _pendingQueue.Count > 0 ? _pendingQueue[0] : null;
@@ -47,7 +62,13 @@ public class BuildingManager : MonoBehaviour
         // "가질 수 있는 수 - (이미 세운 수 + 대기 중인 수)" 만큼만 대기열에 넣는다.
         int allowed = data.GetMaxCount(level);
         for (int owned = PlacedCount(data) + PendingCountOf(data); owned < allowed; owned++)
-            _pendingQueue.Add(data);
+        {
+            // B3 — 처음 해금된 것은 신규 구간의 끝에, 레벨업 증설분은 대기열 맨 뒤에.
+            // 🔑 "맨 앞(index 0)" 이 아니라 "신규 구간의 끝" 인 이유: 맨 앞에 넣으면
+            //    나중에 해금한 건물이 아직 못 세운 먼저 해금한 건물을 추월한다.
+            if (alreadyOwned) _pendingQueue.Add(data);
+            else              _pendingQueue.Insert(_freshCount++, data);
+        }
     }
 
     private void UpgradePlacedBuildings(BuildingData data, int level)
@@ -79,7 +100,7 @@ public class BuildingManager : MonoBehaviour
         var data = _pendingQueue[0];
         if (data == null || !_unlockedBuildings.TryGetValue(data, out int level) || data.Prefab == null)
         {
-            _pendingQueue.RemoveAt(0);   // 망가진 항목은 버린다
+            RemoveFront();   // 망가진 항목은 버린다
             return false;
         }
 
@@ -90,7 +111,7 @@ public class BuildingManager : MonoBehaviour
         if (building == null)
         {
             buildingPool.Return(go);
-            _pendingQueue.RemoveAt(0);
+            RemoveFront();
             return false;
         }
 
@@ -98,12 +119,22 @@ public class BuildingManager : MonoBehaviour
 
         if (!_placedBuildings.ContainsKey(data)) _placedBuildings[data] = new List<BuildingBase>();
         _placedBuildings[data].Add(building);
-        _pendingQueue.RemoveAt(0);
+        RemoveFront();
 
         // 실제로 설치된 경로에서만 울린다. 위의 실패 반환들은 소리가 나면 안 된다 —
         // 자리를 못 찾아 실패한 것과 설치된 것을 소리로 구분할 수 있어야 한다.
         AudioManager.Play(SfxId.BuildingPlace);
         return true;
+    }
+
+    /// <summary>
+    /// 대기열 맨 앞을 버리면서 신규 구간 길이도 같이 줄인다.
+    /// <c>RemoveAt(0)</c> 를 직접 부르면 <see cref="_freshCount"/> 가 어긋난다.
+    /// </summary>
+    private void RemoveFront()
+    {
+        _pendingQueue.RemoveAt(0);
+        if (_freshCount > 0) _freshCount--;
     }
 
     /// <summary>플레이어를 중심으로 동심원을 돌며 빈 자리를 찾는다.</summary>
@@ -161,6 +192,7 @@ public class BuildingManager : MonoBehaviour
         ClearAllBuildings();
         _unlockedBuildings.Clear();
         _pendingQueue.Clear();
+        _freshCount = 0;
     }
 
     public void ClearAllBuildings()
@@ -185,7 +217,13 @@ public class BuildingManager : MonoBehaviour
             _placedBuildings.Remove(data);
         }
 
+        // 신규 구간 안에서 몇 개가 지워지는지 먼저 세고 빼야 _freshCount 가 안 어긋난다.
+        int removedFresh = 0;
+        for (int i = 0; i < _freshCount && i < _pendingQueue.Count; i++)
+            if (_pendingQueue[i] == data) removedFresh++;
+
         _pendingQueue.RemoveAll(d => d == data);
+        _freshCount = Mathf.Max(0, _freshCount - removedFresh);
         _unlockedBuildings.Remove(data);
     }
 }

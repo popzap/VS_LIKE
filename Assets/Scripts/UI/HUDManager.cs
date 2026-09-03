@@ -181,9 +181,16 @@ public class HUDManager : MonoBehaviour
     private int          _lastPendingCount = -1;
 
     /// <summary>
-    /// 다음에 `Z` 로 나갈 건물을 알린다. 대기열은 FIFO 라 <b>가장 먼저 얻은 것</b>이 먼저 나가는데,
-    /// 건물은 레벨이 오를 때마다 <c>MaxCount</c> 가 늘어 대기열에 조용히 더 쌓인다.
-    /// 그래서 새 건물을 얻어도 밀린 예전 건물이 먼저 나온다 — 동작은 맞지만 알 방법이 없었다.
+    /// 다음에 `Z` 로 나갈 건물을 알린다.
+    ///
+    /// <para>원래 대기열이 순수 FIFO 라, 레벨업으로 조용히 쌓인 예전 건물이
+    /// 새로 얻은 건물보다 먼저 나왔다(B3). 이 표시는 그 <b>B안</b>이었다 —
+    /// 순서는 그대로 두고 무엇이 나올지 보이게만 했다.
+    /// 순서 자체는 나중에 <b>C안</b>으로 고쳤다(<see cref="BuildingManager"/> 참고):
+    /// 처음 해금된 것이 증설분보다 먼저 나온다.</para>
+    ///
+    /// <para>그래도 이 표시는 남긴다. 대기열이 여러 개일 때 <b>다음에 무엇이 나오는지</b>는
+    /// 여전히 알 수 없기 때문이다.</para>
     /// </summary>
     private void RefreshBuildPrompt(GameManager gm)
     {

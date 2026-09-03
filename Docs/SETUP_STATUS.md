@@ -6,7 +6,7 @@
 > 기존의 「C# 스크립트는 완성 단계」라는 전제와 「요청 없이 코드 건드리지 말 것」 규칙이 **해제됨**.
 > 이제 게임 완성을 위해 C# 스크립트 신규 작성·수정이 허용된다.
 >
-> **최종 갱신:** 2026-09-04 (61차 — CONTENT 아트 순서 수용 + 정리 후보 참조 실측, D38)
+> **최종 갱신:** 2026-09-04 (62차 — B3 건물 대기열 순서, D39)
 >
 > 🔀 **25차부터 이슈 번호가 `세션 접두어 + 번호` 다** — `D`(DEV) · `C`(CONTENT) · `B`(버그 공용).
 > 병렬 2세션 체제로 바뀌었기 때문이다 (D1). 과거 `I-1`~`I-61` 은 그대로 둔다.
@@ -2025,6 +2025,90 @@ Play 모드에서 Warrior 로 런을 시작하고 `Unity_RunCommand` 로 재료�
 > ⚠️ **건물 앞 `E` 실조작은 아직 미검증이다.** 위는 `EvolveClass` 를 직접 부른 것이고,
 > `FindAltarClassEvolution` 은 이미 검증된 `FindAltarEvolution` 과 같은 로직이지만
 > **실제로 터렛을 세우고 다가가서 눌러 본 적은 없다** → [`TODO.md`](TODO.md) §1
+
+---
+
+## 2-66. ✅ `B3` 를 닫았다 — **"맨 앞에 넣는다"가 답이 아니었다** (D39, 2026-09-04 62차)
+
+**한 줄:** 건물 설치 대기열을 **신규/증설 두 구간**으로 나눠, 새로 얻은 건물이 먼저 나오게 했다.
+
+> `Parallel/BUGS.md` `B3` · 사용자 지시 2026-09-04 (`D2` 의 B안 위에 **C안**을 얹는다)
+
+### 원인 — 버그가 아니라 설계였다
+
+`BuildingManager.UnlockBuilding` 은 이렇게 돌고 있었다:
+
+```csharp
+int allowed = data.GetMaxCount(level);
+for (int owned = PlacedCount(data) + PendingCountOf(data); owned < allowed; owned++)
+    _pendingQueue.Add(data);          // ← 언제나 맨 뒤
+```
+
+`GetMaxCount` 는 **레벨에 따라 커진다.** Turret 을 레벨업 카드로 찍으면 그 순간
+대기열에 Turret 이 **말없이 더 쌓인다.** 그 뒤 Village 를 얻으면 맨 뒤에 붙고,
+`PlaceNext` 는 `_pendingQueue[0]` 부터 꺼내므로 밀린 Turret 이 먼저 나온다.
+
+⇒ 예외도 null 도 아니다. **레벨업 카드가 "Village 획득"이라고 한 약속을 조작이 안 지킨** 것이다.
+
+### 🔑 원안(C)을 그대로 쓰지 않았다
+
+`BUGS.md` 의 C안은 *"새로 해금된 건물은 큐 맨 앞에 넣는다"* 였다. 그대로 넣으면 구멍이 생긴다 —
+Village 를 얻고 아직 못 세운 상태에서 Farm 을 얻으면 **Farm 이 Village 를 추월한다.**
+약속을 하나 지키려다 다른 약속을 깬다.
+
+그래서 **"맨 앞"이 아니라 "신규 구간의 끝"** 에 넣는다:
+
+| 구간 | 무엇 | 코드 |
+|---|---|---|
+| 앞 `_freshCount` 개 | **처음 해금된 건물** | `_pendingQueue.Insert(_freshCount++, data)` |
+| 그 뒤 | **레벨업 증설분** | `_pendingQueue.Add(data)` |
+
+구간 **안에서는 FIFO 가 유지**되므로 신규끼리도 얻은 순서를 지킨다.
+규칙 한 줄로 설명된다 — **"처음 얻은 건물이 먼저. 레벨업으로 늘어난 몫은 그 뒤."**
+
+### 🔴 `_freshCount` 는 장부다 — 큐를 만지는 모든 경로가 같이 맞춰야 한다
+
+이게 이 작업에서 제일 깨지기 쉬운 부분이라 경로를 전부 세었다.
+
+| 경로 | 무엇을 하나 | 대응 |
+|---|---|---|
+| `PlaceNext` | 맨 앞 제거 (**3곳**: 정상 설치 · 망가진 항목 · `BuildingBase` 없음) | `RemoveFront()` 헬퍼로 **통일**. `RemoveAt(0)` 직접 호출 금지 |
+| `LockBuilding` | 상점에서 건물 제거 — **임의 위치** `RemoveAll` | 신규 구간(`0.._freshCount`) 안에서 몇 개가 빠지는지 **먼저 세고** 뺀다 |
+| `ResetRunState` | 런 시작 | `_freshCount = 0` |
+
+### 바꾼 파일
+
+| 파일 | 무엇 |
+|---|---|
+| `Assets/Scripts/Building/BuildingManager.cs` | `_freshCount` 필드 · `UnlockBuilding` 분기 · `RemoveFront()` 헬퍼 · `LockBuilding` 보정 · `ResetRunState` · 클래스 주석 · `public const int Version = 2` |
+| `Assets/Scripts/UI/HUDManager.cs` | `RefreshBuildPrompt` 주석이 **옛 동작을 현재형으로 설명**하고 있었다. B안/C안 관계로 다시 씀 (표시는 그대로 남긴다 — 대기가 여럿일 때 다음 것은 여전히 안 보인다) |
+
+### 검증 — 리포트의 재현 절차 그대로 (플레이 모드)
+
+```
+1. Turret 해금       → NextPending=Turret      → Z 설치됨
+2. Restaurant 해금   → NextPending=Restaurant  → Z 설치됨
+3. Turret Lv2 · Restaurant Lv2 (증설) → 대기 1개, 맨 앞=Turret
+4. Village 해금      → NextPending=Village     ← 🔑 여기서 뒤집힌다
+5. Farm 도 해금      → NextPending=Village     ← 추월하지 않는다
+6. Z 순서 = Village > Farm > Turret
+```
+
+🔑 **3번이 대조군이다.** Village 를 얻기 **직전** 맨 앞이 `Turret` 이었고 4번에서 `Village` 로
+바뀌었다 — 구버전이면 4번이 `Turret` 으로 찍힌다. 즉 이 시험은 **아무 값이나 통과시키지 않는다**
+(`D34` 에서 배운 것: 통과만 하는 시험은 시험이 아니다).
+
+`LockBuilding` 장부는 따로 시험했다:
+
+```
+신규3(Village,Farm,Bombard) + 증설1(Turret) → 맨 앞=Village (대기 4)
+상점에서 Village 제거                        → 맨 앞=Farm    (대기 3)
+Village 재해금 후 Z 순서 = Farm > Bombard > Village > Turret   (기대값 일치)
+```
+
+- 컴파일: `error CS` **0건**, `BuildingManager.Version = 2` 조회로 **새 코드 로드 확인**(D27 절차)
+- 런타임: 콘솔 Error·Warning **0건**
+- 임시 오브젝트·스크립트 없음 (`RunCommand` 로만 검증)
 
 ---
 
@@ -6250,6 +6334,7 @@ Play 모드 — 한 세션에서 두 경로 전부:
 | **D36** | `ROADMAP` 5단계(게임패드 · 없는 화면 · 콘텐츠 볼륨) 중 무엇을 할지 사용자가 정했다 — **조작 안내는 새 화면 대신 기존 문구 가독성만**, **통계는 작업**, 이벤트는 제안만, **게임패드는 스킵**. `[Z] Build`·`[E] PROMOTE` 는 조건부 표시가 이미 돼 있었지만 **외곽선·그림자가 0 이라 어두운 타일 위에서 안 보였고**, `TotalRuns`/`TotalKills` 는 쌓이는데 **볼 곳이 없었다** | ✅ 해결 (2026-09-03 59차 → 2-63) — 전용 머티리얼 `Pretendard SDF - Prompt.mat` 파생(외곽선 0.22 · 그림자 · 크기 26→32/30→36)을 **두 문구에만** 물렸다(공유 머티리얼을 고치면 텍스트 75개가 전부 바뀐다). 통계는 새 화면 대신 **메타 화면 하단 한 줄** — 화면을 더 만들면 그만큼 더 안 보게 된다. ➕ `SaveData.TotalPlaySeconds` 신설(`WaveManager.TotalElapsedTime` 이 쌓이는데 저장이 안 됐다) | 판정 — 문구는 캡처로 확인(**전용 머티리얼 2개 · 나머지 75개 그대로**), 통계는 실제 세이브값 `RUNS 25 KILLS 8,885 AVG 355/run` 표시, 콘솔 0. 🔴 **두 번 틀리고 캡처로 잡았다** — ① 머티리얼 복제 후 `ShaderUtilities.UpdateShaderRatios` 를 안 불러 **글자가 통짜 덩어리로 렌더**됐다 ② `StatsText` 를 top 앵커로 만들어 **카드 위에 겹쳤다**(그 패널은 center 앵커를 쓴다) |
 | **D37** | 이벤트는 배관만 뚫려 있고 **안이 비어 있었다**(`ROADMAP` §7). `EventManager` 는 58줄 스텁이라 `XpBonus`·`CurrencyBonus`·`TriggerRandomWave` 셋뿐이었고 제목·설명이 **`Debug.Log` 로만** 나가 **플레이어가 무슨 일이 났는지 못 봤다.** `WaveManager` 에 `StageType.Event` 분기도 없어 **전투형이 존재할 수 없었다** | ✅ 해결 (2026-09-03 60차 → 2-64) — 선행 2건(**이벤트 UI** · **Event 웨이브 분기**)을 먼저 놓고 **E7 `Exchange`**(런 골드 → 메타 골드 3:1) · **E9 `Field Promotion`**(다음 전투 동안 제단 없이 승급) · **E11 `Minefield`**(바닥에 예고 원)를 넣었다. 🔑 **E11 은 새 시스템을 안 만들고 `BossSlam`(D31·D34)을 재활용** — 이벤트가 다른 건 규칙이지 부품이 아니다. `Events.csv` 5→8종, 임포터가 `Kind` 오타와 빈 `DeclineLabel` 을 경고한다 | 판정 **3/3 PASS** — E7 `런 137→17 · 메타 1231→1271(+40)`(상한 40 이 정확히 걸림) · E9 `False→True` · E11 지뢰 3개 `scale 4.0`(반경 2.0) 캡처 확인 · 거절 버튼이 선택형에서만 보임 · 콘솔 0. 🔴 **E9 에서 진짜 결함을 잡았다** — 해제를 `AdvanceToNext` 에 뒀는데 `FinishEvent` 가 그 함수를 불러 **켜지자마자 꺼졌다.** 원인은 코드가 아니라 *"이번 층"* 이라는 **애매한 정의**였다(이벤트 노드 자체가 그 층의 내용물이라 효과가 쓰일 시간이 없다) ⇒ **"다음 전투 동안"** 으로 다시 정의하고 `ClearWave` 로 옮겼다. 🟡 `Events.csv` 를 다시 쓰며 CONTENT 의 `Cursed Offering` 행을 실수로 지웠다가 되살렸다 |
 | **D38** | 내가 `요청-27` 로 **보스 전용 그림**을 요청한 직후, CONTENT 의 [`DESIGN_ART.md`](DESIGN_ART.md)(`C32`)가 올라와 **정반대 순서**를 냈다 — 보스 그림은 **7순위(보류)**, 이유는 *"층별 난이도 기능이 먼저다"*. 그리고 §7 이 애셋 3개를 *"아무 데도 안 쓰인다"* 며 정리 후보로 올렸다 | ✅ 해결 (2026-09-04 61차 → 2-65) — 사용자가 CONTENT 순서를 택했다. `요청-27` 을 **보류로 내리고**(원문은 접어서 보존) `요청-28` 로 순서를 수용, 1~5번은 **CONTENT 가 만들고 DEV 는 배선만** 한다. 🔴 **§7 정리 후보 3개를 guid 로 실측한 결과 셋 다 참조가 있었다** — 특히 `Exp_Orb.gif` 는 `ExpDrop.cs` 에 `sprite` 대입이 **0건**이라 **지웠으면 경험치 구슬이 통째로 안 보일 뻔했다** | 실측 로그 — `goblin.png`(guid `588cf3bf`) → `Enemy_Goblin.prefab` 1곳 · `Exp_Orb.gif`(`985386b2`) → `ExpDrop_Small.prefab` 1곳 · `Bullet.png`(`1f4e1489`) → `Proj_Bullet` + `Proj_EnemyBolt` **2곳**. 코드 대조 — `EnemyBase.cs:124` 는 덮어쓰고 `ExpDrop.cs` 는 안 덮어쓴다. **문서만 바꿨고 코드·씬은 안 건드렸다** |
+| **D39** | `B3` — Turret·Restaurant 가 설치된 상태에서 **Village 를 얻고 `Z` 를 눌러도 Turret 이 먼저 나왔다.** `D2` 에서 B안(HUD 표시)만 넣어 두고 **큐 순서는 그대로** 둔 채 `보류` 로 열려 있었다 | ✅ 해결 (2026-09-04 62차 → 2-66) — **C안**: 대기열을 **신규 구간 + 증설 구간**으로 나눈다. 처음 해금은 `Insert(_freshCount++)`, 레벨업 증설분은 `Add()`. 🔑 **원안의 "맨 앞(index 0)"은 안 썼다** — 그러면 나중에 해금한 게 먼저 해금한 것을 **추월**한다. `_freshCount` 는 장부라 `PlaceNext`(`RemoveFront()` 로 통일) · `LockBuilding`(임의 위치 제거) · `ResetRunState` 가 전부 같이 맞춘다 | 판정 **2/2 PASS** — 리포트 재현 절차 그대로: 3번에서 맨 앞이 `Turret`, 4번 Village 해금 직후 `Village` 로 **뒤집혔다**(구버전이면 `Turret`). 5번 Farm 추가에도 맨 앞은 `Village` — **추월 없음**. 최종 `Village > Farm > Turret`. `LockBuilding` 장부 별도 시험도 기대값과 일치. 콘솔 Error·Warning **0건** |
 
 ### 해결 상세
 
@@ -7160,6 +7245,19 @@ private void LateUpdate()
      `Image` 60개 중 **59개가 단색**이다. 그리고 그 인물·몬스터를 채운 게 **나 자신**이라
      (`D26`·`D31`·`D32`) 나는 **제일 잘 채워진 칸을 한 번 더 채우자고** 한 셈이었다.
      ⇒ 다음 할 일을 고를 때는 **내가 잘하는 것**이 아니라 **세어 본 공백**에서 고른다.
+
+206. 🔴 **적어 둔 선택지를 그대로 구현하면 안 된다 — 다시 검사한다** (D39 · B3).
+     `BUGS.md` 에 C안을 *"새로 해금된 건물은 큐 맨 앞에 넣는다"* 라고 내가 적어 뒀는데,
+     막상 짜려고 보니 **Village 를 못 세운 채 Farm 을 얻으면 Farm 이 Village 를 추월**했다.
+     약속 하나를 지키려다 다른 약속을 깬다. **"맨 앞"이 아니라 "신규 구간의 끝"** 이 답이었다.
+     ⇒ 며칠 전의 내가 한 줄로 적어 둔 안은 **요약이지 설계가 아니다.**
+
+207. 🔴 **인덱스를 세는 필드를 두면 그 배열을 만지는 경로를 전부 센다** (D39).
+     `_freshCount` 는 `_pendingQueue` 앞쪽 몇 개가 "신규"인지를 세는 장부다.
+     큐를 건드리는 곳이 `PlaceNext`(**3곳**) · `LockBuilding`(임의 위치) · `ResetRunState`
+     로 흩어져 있어서, 하나만 빠뜨려도 **조용히 어긋난다**(예외가 안 난다).
+     ⇒ 맨 앞 제거는 `RemoveFront()` 헬퍼로 **통일**하고, 임의 위치 제거는
+     **빠지는 개수를 먼저 세고** 뺐다. 그리고 `LockBuilding` 경로를 **따로 시험했다.**
 
 **16~17 과정에서 함께 처리한 것**
 

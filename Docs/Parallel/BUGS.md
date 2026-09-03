@@ -15,7 +15,7 @@
 |---|---|---|---|---|---|
 | **B1** | 2026-08-30 | 사용자(실플레이) | **DEV** (사용자 결정 2026-08-30) | 엘리트 외곽선이 실루엣과 어긋난다. **원인 둘** — ① 기준 크기 512 하드코딩(주범) ② 옆 프레임 알파 번짐 | `수정됨(D15)` |
 | **B2** | 2026-08-30 | 사용자(실플레이) | **CONTENT** | **원인 확정** — Goblin·Slime 걷기 시트가 깨졌다. 16칸 중 12칸이 프레임이 아니라 **작은 캐릭터 9~16마리 뭉치** | `수정됨(C1/D4)` |
-| **B3** | 2026-08-30 | 사용자(실플레이) | **DEV** | Turret·Restaurant 가 설치된 상태에서 Village 를 얻고 `Z` 를 누르면 **Village 가 아니라 Turret·Restaurant 가 한 번 더 설치된다** | `보류(B안 적용 D2 — 표시만 넣었고 큐 순서는 그대로)` |
+| **B3** | 2026-08-30 | 사용자(실플레이) | **DEV** | Turret·Restaurant 가 설치된 상태에서 Village 를 얻고 `Z` 를 누르면 **Village 가 아니라 Turret·Restaurant 가 한 번 더 설치된다** | ✅ `수정됨 (D39 — C안: 대기열을 신규/증설 두 구간으로)` |
 | **B4** | 2026-08-30 | CONTENT | **DEV** | 일시정지·옵션창 글자 6곳이 **빈칸으로 나온다.** 씬에 한글이 남아 있는데 폰트가 Static 115자라 한글이 없다 | `수정됨(D5)` |
 | **B5** | 2026-08-30 | DEV(D9 검증 중) | **DEV** | **웨이브 밖에서 적이 죽으면 `WaveManager.OnEnemyKilled` 가 NRE 를 던진다** (`_currentWaveData` 가 null). 지금 게임 경로로는 안 난다. 🔴 **2026-08-31 증상 추가 — 광역기가 첫 사망자에서 통째로 멈춘다(D20)** | `수정됨(D35)` |
 | **B6** | 2026-08-30 | DEV(D14 검증 중) | **DEV** | **Dev 패널로 무기 레벨을 내리면 무기가 사라질 수 있다.** `무기 슬롯 꽉 참` 경고 3회 — `CanAcquire` 가 된다고 한 걸 `AddOrUpgradeWeapon` 이 거절한다 | `수정됨(D18)` |
@@ -328,13 +328,50 @@ for (int owned = PlacedCount(data) + PendingCountOf(data); owned < allowed; owne
 
 HUD 에 `[Z] Build: Turret  (+3 queued)` 를 띄운다. 상세·검증 로그는 [`DONE/D2.md`](DONE/D2.md).
 
-🔴 **줄을 `수정됨` 이 아니라 `보류` 로 둔 이유:** 표시가 붙었을 뿐 **큐 순서는 그대로**다.
-"Village 를 얻었는데 Turret 이 나온다"는 여전히 일어난다 — 다만 이제 **일어나기 전에 보인다.**
-실플레이에서 그래도 헷갈리면 A·C·D 를 다시 본다.
+🔴 **줄을 `수정됨` 이 아니라 `보류` 로 뒀었다.** 표시가 붙었을 뿐 **큐 순서는 그대로**였다 —
+"Village 를 얻었는데 Turret 이 나온다"가 여전히 일어났다. 다만 **일어나기 전에 보였다.**
 
-> 🔑 **B 를 먼저 넣고 실제로 헷갈리는지 다시 보는 게 안전하다.** 지금 이 버그의 실체는
-> "잘못 설치된다"가 아니라 **"무엇이 설치될지 모른다"** 이기 때문이다.
-> A·C 는 큐 순서를 바꾸는 일이라 밸런스(건물 채수)에 영향이 간다.
+### ✅ C안 적용 — D39 (2026-09-04) · **닫음**
+
+사용자 지시로 순서까지 고쳤다. **대기열을 두 구간으로 나눈다.**
+
+| 구간 | 무엇 | 넣는 곳 |
+|---|---|---|
+| 앞 | **처음 해금된 건물** | `_pendingQueue.Insert(_freshCount++, data)` |
+| 뒤 | **레벨업 증설분**(`MaxCount` 증가분) | `_pendingQueue.Add(data)` |
+
+🔑 **원안의 "큐 맨 앞에 넣는다"는 그대로 쓰지 않았다.** `index 0` 에 넣으면
+**나중에 해금한 건물이 아직 못 세운 먼저 해금한 건물을 추월한다.**
+그래서 "맨 앞"이 아니라 **신규 구간의 끝**(`_freshCount`)에 넣는다 — 구간 안에서는 FIFO 가 유지된다.
+
+🔴 **`_freshCount` 는 장부다.** `_pendingQueue` 를 건드리는 경로가 전부 같이 맞춰야 한다 —
+`PlaceNext`(맨 앞 제거 → `RemoveFront()` 헬퍼로 통일) · `LockBuilding`(상점 제거, 임의 위치라
+신규 구간 안에서 몇 개가 빠지는지 먼저 센다) · `ResetRunState`(0 으로).
+
+**검증 (플레이 모드, 2026-09-04)** — 버그 리포트의 재현 절차 그대로.
+
+```
+1. Turret 해금      → NextPending=Turret   → Z 설치됨
+2. Restaurant 해금  → NextPending=Restaurant → Z 설치됨
+3. Turret Lv2 · Restaurant Lv2 (증설)  → 대기 1개, 맨 앞=Turret
+4. Village 해금     → NextPending=Village   ← 🔑 여기서 뒤집힌다
+5. Farm 도 해금     → NextPending=Village   ← 추월하지 않는다
+6. Z 순서 = Village > Farm > Turret
+```
+
+🔑 **3번이 이 검증의 대조군이다.** Village 를 얻기 직전 맨 앞이 **`Turret`** 이었고,
+4번에서 **`Village`** 로 바뀌었다. 구버전이면 4번이 `Turret` 으로 찍힌다 —
+즉 이 시험은 **아무 값이나 통과시키지 않는다** (`D34` 의 교훈).
+
+`LockBuilding` 장부도 따로 시험했다:
+
+```
+신규3(Village,Farm,Bombard) + 증설1(Turret)  → 맨 앞=Village (대기 4)
+상점에서 Village 제거                        → 맨 앞=Farm    (대기 3)
+Village 재해금 후 Z 순서 = Farm > Bombard > Village > Turret   (기대값과 일치)
+```
+
+콘솔 Error·Warning **0건**.
 
 ---
 
