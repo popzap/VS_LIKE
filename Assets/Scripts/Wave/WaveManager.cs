@@ -13,6 +13,9 @@ public class WaveManager : MonoBehaviour
     [SerializeField] private WaveData[]  normalWaves;   // 노말 웨이브 풀
     [SerializeField] private WaveData[]  eliteWaves;
     [SerializeField] private WaveData    bossWave;
+
+    [Tooltip("이벤트 전투용 웨이브 (D37). 비어 있으면 노말로 떨어진다")]
+    [SerializeField] private WaveData[]  eventWaves;
     [SerializeField] private ObjectPool  enemyPool;
     [SerializeField] private Transform   playerTransform;
 
@@ -89,10 +92,15 @@ public class WaveManager : MonoBehaviour
         // 스테이지 결과창용 스냅샷 (웨이브 시작 직전 스탯/재화 기록)
         StageClearUI.Instance?.TakeSnapshot();
 
+        // 🔴 Event 분기가 없으면 이벤트 전투가 노말로 떨어진다 (D37).
+        //    eventWaves 가 비어 있으면 노말로 되돌아간다 — 조용히 안 도는 것보다 낫다.
         _currentWaveData = node.StageType switch
         {
             StageType.Elite => eliteWaves[Random.Range(0, eliteWaves.Length)],
             StageType.Boss  => bossWave,
+            StageType.Event => eventWaves != null && eventWaves.Length > 0
+                                 ? eventWaves[Random.Range(0, eventWaves.Length)]
+                                 : normalWaves[Random.Range(0, normalWaves.Length)],
             _               => normalWaves[Random.Range(0, normalWaves.Length)]
         };
 
@@ -403,6 +411,57 @@ public class WaveManager : MonoBehaviour
         OnBossSpawned?.Invoke(boss, brain);
     }
 
+    // ── E11 지뢰밭 (D37) ─────────────────────────────────────────
+
+    private Coroutine _mineRoutine;
+
+    /// <summary>
+    /// 바닥에 예고 원을 계속 깐다 (E11).
+    ///
+    /// <para>🔑 <b>새 시스템을 만들지 않았다.</b> 보스 내려찍기(<see cref="BossSlam"/>, D31)를
+    /// 그대로 쓴다 — 예고 → 폭발 → 풀 반환이 이미 검증된 코드다(D34 판정 ③).
+    /// 이벤트가 다른 건 <b>규칙</b>이지 <b>부품</b>이 아니다.</para>
+    ///
+    /// <para>피해·반경·예고 시간은 보스 값(<c>BossPatternData</c>)을 쓰지 않고
+    /// <b>여기서 약하게 고정</b>한다 — 이건 보스전이 아니라 "설 자리가 주는" 웨이브다.</para>
+    /// </summary>
+    public void BeginMinefield(int count, float interval, float spread)
+    {
+        if (bossSlamPrefab == null)
+        {
+            Debug.LogWarning("[WaveManager] bossSlamPrefab 이 없어 지뢰밭이 안 돈다 (D37)");
+            return;
+        }
+        if (_mineRoutine != null) StopCoroutine(_mineRoutine);
+        _mineRoutine = StartCoroutine(MinefieldRoutine(count, interval, spread));
+    }
+
+    private IEnumerator MinefieldRoutine(int count, float interval, float spread)
+    {
+        var wait = new WaitForSeconds(Mathf.Max(0.5f, interval));
+
+        // 첫 무리까지 한 박자 준다 — 시작하자마자 발밑에서 터지면 예고를 볼 새가 없다.
+        yield return new WaitForSeconds(1.5f);
+
+        while (_waveActive)
+        {
+            while (_wavePaused) yield return null;
+            if (playerTransform == null) { yield return wait; continue; }
+
+            Vector2 p = playerTransform.position;
+            for (int i = 0; i < Mathf.Max(1, count); i++)
+            {
+                Vector2 at = p + Random.insideUnitCircle * Mathf.Max(1f, spread);
+                var go = enemyPool.Get(bossSlamPrefab, at, Quaternion.identity);
+                var slam = go.GetComponent<BossSlam>();
+                // 보스보다 약하게 — 반경 2.0 · 피해 12 · 예고 1.3초(보스 1.15 보다 관대하다).
+                if (slam != null) slam.Initialize(12f, 2.0f, 1.3f, enemyPool);
+            }
+            yield return wait;
+        }
+        _mineRoutine = null;
+    }
+
     /// <summary>
     /// 보스가 부른 잡몹을 놓는다 (D31).
     ///
@@ -434,6 +493,13 @@ public class WaveManager : MonoBehaviour
 
     private void ClearWave()
     {
+        // 🔴 이벤트의 전투 한정 효과는 여기서 끝난다 (D37 · E9).
+        //    처음엔 StageMapManager.AdvanceToNext 에 뒀는데, EventManager.FinishEvent 가
+        //    바로 그 함수를 부르는 바람에 **켜자마자 꺼졌다.** "이번 층" 이라는 말이 애매했던 것이다 —
+        //    이벤트 노드 자체가 그 층의 내용물이라 효과가 쓰일 층이 남지 않는다.
+        //    ⇒ "다음 전투 동안" 으로 다시 정의했다. 이 웨이브가 끝나면 꺼진다.
+        EventManager.Instance?.ClearLayerEffects();
+
         if (!_waveActive) return;
         _waveActive = false;
 

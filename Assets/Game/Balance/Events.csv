@@ -1,9 +1,27 @@
-# Events.csv — 이벤트 스테이지에서 무작위로 하나 뽑혀 실행된다. (씬의 EventManager 에 직접 기록됨)
-# TriggerRandomWave=1 이면 보상을 준 뒤 노말 웨이브가 하나 시작된다. 0 이면 곧바로 다음 노드로 넘어간다.
-# Title/Description 은 UI 및 로그에 그대로 나오므로 영문 유지.
-Title,Description,XpBonus,CurrencyBonus,TriggerRandomWave
-Abandoned Cache,You find a supply crate left behind by a fallen adventurer.,0,12,0
-Ancient Shrine,Touching the shrine floods you with forgotten knowledge.,40,0,0
-Wandering Merchant,A merchant pays well for the trophies you carry.,0,20,0
-Ambush,The path was a trap. Enemies close in from every side.,0,0,1
-Cursed Offering,The altar grants power but wakes what slept beneath it.,60,10,1
+# Events.csv — 스테이지 이벤트 원본.
+#
+# 🔴 Kind 가 이벤트의 갈래다 (D37). EventManager.EventKind 와 **이름이 같아야** 한다.
+#    모르는 값은 조용히 Reward 로 떨어진다 — 오타를 게임이 안 잡아 준다.
+#
+#   Reward         : 예전 동작. XpBonus·CurrencyBonus 를 주고 끝난다
+#                    (TriggerRandomWave 가 1 이면 전투로 이어진다)
+#   Exchange       : E7 — 런 골드를 메타 골드로. ExchangeRate:1, ExchangeCap 상한
+#   FieldPromotion : E9 — 이번 층 동안 제단 없이 승급 가능
+#   Minefield      : E11 — 바닥에 예고 원이 계속 깔리는 전투
+#
+# 🔴 AcceptLabel / DeclineLabel
+#    DeclineLabel 을 **비우면 거절 버튼이 아예 안 뜬다.** "고를 게 없는 이벤트"에
+#    빈 버튼을 남기면 눌러도 되는 줄 안다.
+#    UI 문자열이므로 **영문**으로 쓴다 (CLAUDE.md §3 · 폰트가 Static 115자다)
+#
+# 🔴 값은 임시다 (D37). E7 의 환율 3:1 은 "메타 수입 한 판 132G"(BALANCE.md §3-1) 대비
+#    한 번에 최대 40 = 약 0.3판치를 노린 것이다. 실제 수치는 CONTENT 가 정한다.
+Title,Description,Kind,XpBonus,CurrencyBonus,TriggerRandomWave,AcceptLabel,DeclineLabel,ExchangeRate,ExchangeCap,MineCount,MineInterval,MineSpread
+Abandoned Cache,You find a supply crate left behind by a fallen adventurer.,Reward,0,12,0,Take it,,3,40,3,2.6,7
+Ancient Shrine,Touching the shrine floods you with forgotten knowledge.,Reward,40,0,0,Touch it,,3,40,3,2.6,7
+Wandering Merchant,A merchant pays well for the trophies you carry.,Reward,0,20,0,Trade,,3,40,3,2.6,7
+Ambush,The path was a trap. Enemies close in from every side.,Reward,0,0,1,Fight,,3,40,3,2.6,7
+Cursed Offering,The altar grants power but wakes what slept beneath it.,Reward,60,10,1,Accept the curse,Walk away,3,40,3,2.6,7
+Exchange,A courier offers to carry your coin home. He takes a cut.,Exchange,0,0,0,Exchange,Keep my gold,3,40,3,2.6,7
+Field Promotion,An old captain watches you fight. He does not need an altar to name a rank.,FieldPromotion,0,0,0,Accept the rank,Decline,3,40,3,2.6,7
+Minefield,The ground here remembers an older war. It still goes off.,Minefield,0,0,0,Cross it,,3,40,3,2.0,7

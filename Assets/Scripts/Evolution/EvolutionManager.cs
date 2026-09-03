@@ -178,6 +178,13 @@ public class EvolutionManager : MonoBehaviour
     /// </summary>
     public EvolutionData FindAltarEvolution(Vector2 origin)
     {
+        // E9 — 무기 최종 진화도 같이 풀어 준다. 둘 다 "건물 앞에서 E" 라는 같은 조작이다.
+        if (FieldPromotion)
+        {
+            foreach (var evo in GetReadyEvolutions())
+                if (evo.IsFinalEvolution) return evo;
+        }
+
         var bm = GameManager.Instance != null ? GameManager.Instance.BuildingMgr : null;
         if (bm == null) return null;
 
@@ -259,8 +266,24 @@ public class EvolutionManager : MonoBehaviour
     }
 
     /// <summary><paramref name="origin"/> 근처 건물에서 가능한 승급. 없으면 null.</summary>
+    /// <summary>
+    /// E9 야전 승급이 켜져 있으면 <b>제단 조건을 통째로 건너뛴다</b> (D37).
+    ///
+    /// <para>승급은 이 게임의 유일한 설계 차별점인데 <b>"건물 앞에서 E"</b> 를 모르면 못 쓴다.
+    /// 이 이벤트는 그 조작을 한 번 강제로 알려 주는 장치다 — <b>다음 전투가 끝나면</b> 꺼진다.</para>
+    /// </summary>
+    private static bool FieldPromotion =>
+        EventManager.Instance != null && EventManager.Instance.FieldPromotionActive;
+
     public ClassEvolutionData FindAltarClassEvolution(Vector2 origin)
     {
+        // E9 — 제단이 없어도 준비된 승급 하나를 그대로 내준다.
+        if (FieldPromotion)
+        {
+            var ready = GetReadyClassEvolutions();
+            if (ready.Count > 0) return ready[0];
+        }
+
         var bm = GameManager.Instance != null ? GameManager.Instance.BuildingMgr : null;
         if (bm == null) return null;
 

@@ -680,6 +680,31 @@ public static class BalanceImporter
             el.FindPropertyRelative("XpBonus").intValue              = CsvRow.Int(row, "XpBonus");
             el.FindPropertyRelative("CurrencyBonus").intValue        = CsvRow.Int(row, "CurrencyBonus");
             el.FindPropertyRelative("TriggerRandomWave").boolValue   = CsvRow.Bool(row, "TriggerRandomWave");
+
+            // ── 갈래 (D37) ──
+            // 🔴 모르는 문자열은 조용히 Reward 로 떨어진다. 오타를 게임이 못 잡으므로 여기서 경고한다.
+            var kindStr = CsvRow.Str(row, "Kind", "Reward");
+            if (!System.Enum.TryParse<EventManager.EventKind>(kindStr, out var kind))
+            {
+                log.AppendLine($"  ! Events.csv '{CsvRow.Str(row, "Title")}' 의 Kind '{kindStr}' 를 모른다 — Reward 로 처리한다");
+                kind = EventManager.EventKind.Reward;
+            }
+            el.FindPropertyRelative("Kind").enumValueIndex = (int)kind;
+
+            el.FindPropertyRelative("AcceptLabel").stringValue   = CsvRow.Str(row, "AcceptLabel");
+            el.FindPropertyRelative("DeclineLabel").stringValue  = CsvRow.Str(row, "DeclineLabel");
+
+            el.FindPropertyRelative("ExchangeRate").intValue   = CsvRow.Int  (row, "ExchangeRate", 3);
+            el.FindPropertyRelative("ExchangeCap").intValue    = CsvRow.Int  (row, "ExchangeCap", 40);
+            el.FindPropertyRelative("MineCount").intValue      = CsvRow.Int  (row, "MineCount", 3);
+            el.FindPropertyRelative("MineInterval").floatValue = CsvRow.Float(row, "MineInterval", 2.6f);
+            el.FindPropertyRelative("MineSpread").floatValue   = CsvRow.Float(row, "MineSpread", 7f);
+
+            // 선택형인데 거절 문구가 없으면 선택이 아니다 — 값으로 만들 수 있는 실수라 잡는다.
+            if (kind != EventManager.EventKind.Reward
+                && string.IsNullOrEmpty(CsvRow.Str(row, "DeclineLabel"))
+                && kind != EventManager.EventKind.Minefield)
+                log.AppendLine($"  ! Events.csv '{CsvRow.Str(row, "Title")}' 는 {kind} 인데 DeclineLabel 이 비었다 — 거절 버튼이 안 뜬다");
         }
 
         so.ApplyModifiedPropertiesWithoutUndo();
