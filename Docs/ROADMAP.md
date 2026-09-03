@@ -203,8 +203,17 @@ HUD 하단에 `EvolutionPromptUI` 가 "지금 누를 수 있다 / 상자에서 �
 값은 `Assets/Game/Balance/Bosses.csv` 가 원본이다 (→ [`BALANCE.md`](BALANCE.md)).
 ⚠️ **수치는 임시다** — 근거가 하나뿐이다(웨이브 240초 · 보스 HP 1540).
 
-🔴 **남은 것: 보스가 아직 `Ogre` 다.** 전용 그림과 예고 원 전용 스프라이트가 없다
-(지금은 `ToxinField` 를 붉게 틴트해 쓴다).
+🔴 **남은 것: 보스가 아직 `Ogre` 다** — 잡몹과 **같은 스프라이트**를 쓴다
+(`Assets/Game/Sprites/Enemies/Ogre.png`, 프리팹도 적 6종이 공유하는 `Enemy_Goblin.prefab`).
+차별은 **크기 2배 + 빨간 외곽선**(I-26) 뿐이라, 플레이어가 보는 건 **"조금 큰 오우거"** 다.
+
+> 🔑 **이건 그림이 없어서가 아니라 "무엇을 그릴지"가 정해진 적이 없어서다.**
+> §7 이 보스를 `1 → 3` 으로 늘리자고 적어 뒀지만 **어떤 보스인지는 아무 문서에도 없다.**
+> ⇒ 컨셉·아트 디렉션·판정 기준을 CONTENT 에 요청했다
+> ([`Parallel/REQ/CONTENT.md`](Parallel/REQ/CONTENT.md) **요청-27**).
+> **Unity AI 생성은 DEV 만 할 수 있으므로**(`SESSION_PROMPT.md` §3) 뽑는 것은 DEV 가 한다.
+
+✅ 예고 원 전용 스프라이트는 `C30` 이 만들었다 (`BossSlamRing.png`, D34).
 
 ### 2-6. ~~직업이 시작 시점의 고정 선택이다~~ — ✅ **해결 (I-56, 19차)**
 
