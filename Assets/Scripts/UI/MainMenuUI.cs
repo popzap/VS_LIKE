@@ -18,9 +18,11 @@ public class MainMenuUI : GameStatePanel
     [SerializeField] private Button metaButton;
     [SerializeField] private Button optionButton;
     [SerializeField] private Button quitButton;
+    [SerializeField] private Button creditsButton;
 
     [Header("옵션 서브 패널 (PauseMenuUI 와 공유)")]
     [SerializeField] private GameObject optionSubPanel;
+    [SerializeField] private GameObject creditsPanel;
 
     protected override bool IsVisibleIn(GameState state) => state == GameState.MainMenu;
 
@@ -34,6 +36,7 @@ public class MainMenuUI : GameStatePanel
         if (metaButton)   metaButton  .onClick.AddListener(OnMetaClicked);
         if (optionButton) optionButton.onClick.AddListener(OnOptionClicked);
         if (quitButton)   quitButton  .onClick.AddListener(OnQuitClicked);
+        if (creditsButton) creditsButton.onClick.AddListener(OnCreditsClicked);
     }
 
     protected override void OnShown(GameState state)
@@ -83,6 +86,12 @@ public class MainMenuUI : GameStatePanel
         Time.timeScale = 1f;
         AudioManager.Play(SfxId.UiSelect);
         GameManager.Instance.ChangeState(GameState.MetaScreen);
+    }
+
+    private void OnCreditsClicked()
+    {
+        // 🔴 ?. 를 쓰지 않는다 — 미할당 직렬화 필드는 "가짜 null" 이다 (I-24).
+        if (creditsPanel != null) creditsPanel.SetActive(true);
     }
 
     private void OnOptionClicked()

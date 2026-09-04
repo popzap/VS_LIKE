@@ -71,6 +71,11 @@ public class GameManager : MonoBehaviour
         // 씬을 다시 로드하면 매니저 전체가 새로 생성되어 런타임 상태가 완전히 초기화된다.
         if (Instance != null && Instance != this) { Destroy(gameObject); return; }
         Instance = this;
+
+        // 🔴 저장된 화면 설정은 여기서 적용한다 (D47).
+        //    OptionPanel 은 "열려야" Start 가 도는데, 해상도·품질은 게임이 켜지자마자 먹어야 한다.
+        //    AudioManager 가 볼륨을 다루는 방식과 같다.
+        DisplaySettings.ApplySaved();
     }
 
     private void Start()
