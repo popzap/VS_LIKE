@@ -31,6 +31,17 @@ public class GroundTiler : MonoBehaviour
     [Tooltip("같은 배치를 다시 보고 싶으면 이 값을 고정해 둔다. 바꾸면 지형이 통째로 달라진다.")]
     [SerializeField] private int seed = 1337;
 
+    // ── 층별 테마 (ROADMAP §7 · D49) ────────────────────────────
+    [Header("층별 테마 — 값은 Economy.csv 가 덮는다")]
+    [Tooltip("층이 깊어질수록 바닥이 달라진다. 🔴 그러려면 위 tiles 배열이 "
+           + "\"얕은 층에 어울리는 것 → 깊은 층에 어울리는 것\" 순서여야 한다 — "
+           + "깊어질수록 그 순서의 가중치를 뒤집어 가기 때문이다. "
+           + "지금은 Grass(40) … Flagstone(1) 로 그렇게 정렬돼 있다.")]
+    [SerializeField] private bool depthTheme = true;
+
+    [Tooltip("가중치가 완전히 뒤집히는 층 번호(0부터). 맵이 10층이면 9.")]
+    [Min(1)] [SerializeField] private int deepestLayer = 9;
+
     private Tilemap    _map;
     private Camera     _cam;
     private TileBase[] _buffer;
@@ -40,24 +51,49 @@ public class GroundTiler : MonoBehaviour
     private Vector3Int _origin;
     private bool       _hasOrigin;
 
+    // 지금 가중치 표가 어느 층 기준으로 만들어졌나. -1 = 아직 안 만듦.
+    private int _builtLayer = -1;
+
+    // 🔴 컴파일 반영 확인용 (D27).
+    public const int Version = 2;   // 2 = 층별 테마 (D49)
+
     private void Awake()
     {
         _map = GetComponent<Tilemap>();
-        BuildWeightTable();
+        BuildWeightTable(LayerScaling.Layer);
     }
 
-    private void BuildWeightTable()
+    /// <summary>
+    /// 층 <paramref name="layer"/> 기준의 누적 가중치 표를 만든다.
+    ///
+    /// <para>🔑 <b>새 데이터를 만들지 않았다.</b> <see cref="tiles"/> 가 이미
+    /// <b>얕은 것 → 깊은 것</b> 순서로 정렬돼 있으므로(Grass 40 … Flagstone 1),
+    /// 깊어질수록 그 가중치 배열을 <b>제 순서의 역순 쪽으로 보간</b>하면
+    /// 풀밭이 돌바닥으로 바뀐다. 타일 10종을 그대로 쓴다.</para>
+    ///
+    /// <para>🔴 <b>0층에서는 예전과 완전히 같아야 한다</b> — <c>t = 0</c> 이면
+    /// 보간이 원래 가중치를 그대로 돌려준다. 이게 이 변경의 대조군이다.</para>
+    /// </summary>
+    private void BuildWeightTable(int layer)
     {
         if (tiles == null || tiles.Length == 0) return;
 
-        _cumulative  = new float[tiles.Length];
+        float t = 0f;
+        if (depthTheme && deepestLayer > 0)
+            t = Mathf.Clamp01((float)Mathf.Max(0, layer) / deepestLayer);
+
+        int n = tiles.Length;
+        _cumulative  = new float[n];
         _totalWeight = 0f;
-        for (int i = 0; i < tiles.Length; i++)
+        for (int i = 0; i < n; i++)
         {
             // 비중이 0 이하로 들어와도 뽑히지 않게만 하고 넘어간다.
-            _totalWeight += Mathf.Max(0f, tiles[i].Weight);
+            float shallow = Mathf.Max(0f, tiles[i].Weight);
+            float deep    = Mathf.Max(0f, tiles[n - 1 - i].Weight);
+            _totalWeight += Mathf.Lerp(shallow, deep, t);
             _cumulative[i] = _totalWeight;
         }
+        _builtLayer = layer;
     }
 
     private void LateUpdate()
@@ -69,6 +105,14 @@ public class GroundTiler : MonoBehaviour
             if (_cam == null) return;
         }
         if (_totalWeight <= 0f) return;
+
+        // 층이 바뀌었으면 가중치를 다시 만들고 화면을 통째로 다시 깐다.
+        // _hasOrigin 을 지우지 않으면 카메라가 한 칸 움직일 때까지 옛 바닥이 남는다.
+        if (_builtLayer != LayerScaling.Layer)
+        {
+            BuildWeightTable(LayerScaling.Layer);
+            _hasOrigin = false;
+        }
 
         EnsureBuffer();
 
