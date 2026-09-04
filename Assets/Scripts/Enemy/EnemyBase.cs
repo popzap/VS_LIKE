@@ -44,9 +44,20 @@ public class EnemyBase : MonoBehaviour
     /// <summary>보스 페이즈에 따른 영구 속도 배수. 1 이 기본이다.</summary>
     public void SetSpeedMultiplier(float mult) => _phaseSpeedMult = Mathf.Max(0.05f, mult);
 
+    // 🔴 컴파일 반영 확인용 (D27). Assets/Refresh 는 재컴파일을 보장하지 않는다.
+    public const int Version = 2;   // 2 = 행동 3종 추가 (D51)
+
     protected Rigidbody2D Rb;
     protected Transform   PlayerTransform;
     protected EnemyVisual Visual;
+
+    /// <summary>
+    /// 플레이어의 <c>Rigidbody2D</c>. <see cref="EnemyAI.Blocker"/> 만 쓴다 —
+    /// 플레이어가 <b>어디로 가고 있는지</b>를 알아야 앞을 막을 수 있다.
+    /// <para>🔴 미할당 Unity Object 필드가 아니라 <c>GetComponent</c> 결과라
+    /// 여기서는 <c>== null</c> 검사가 진짜 null 검사다 (I-24 의 "가짜 null" 이 아니다).</para>
+    /// </summary>
+    private Rigidbody2D _playerRb;
 
     // ── 슬로우 ───────────────────────────────────────────────────
     // 독 장판처럼 "매 틱 다시 걸어 주는" 방식이다. 안 걸어 주면 _slowUntil 이 지나
@@ -80,6 +91,7 @@ public class EnemyBase : MonoBehaviour
         Visual  = GetComponent<EnemyVisual>();
 
         PlayerTransform = GameObject.FindGameObjectWithTag("Player")?.transform;
+        _playerRb       = PlayerTransform != null ? PlayerTransform.GetComponent<Rigidbody2D>() : null;
 
         float hpMult     = isBoss ? data.BossHpMult     : isElite ? data.EliteHpMult     : 1f;
         float dmgMult    = isBoss ? data.BossDamageMult : isElite ? data.EliteDamageMult  : 1f;
@@ -115,6 +127,11 @@ public class EnemyBase : MonoBehaviour
         _strafeDir    = Random.value < 0.5f ? -1f : 1f;
         _separation   = Vector2.zero;
         _sepCountdown = Random.Range(1, SeparationEveryNSteps + 1);
+        _neighborCount = 0;
+
+        // 🔴 도는 방향을 개체마다 다르게 준다. 전부 같은 쪽으로 돌면
+        //    측면 접근이 아니라 "다 같이 시계방향으로 도는 띠"가 된다.
+        _flankDir     = Random.value < 0.5f ? -1f : 1f;
 
         OnInitialized();
     }
@@ -195,6 +212,9 @@ public class EnemyBase : MonoBehaviour
         {
             case EnemyAI.Ranged:  TickRanged();  break;
             case EnemyAI.Charger: TickCharger(); break;
+            case EnemyAI.Flanker: TickFlanker(); break;
+            case EnemyAI.Swarmer: TickSwarmer(); break;
+            case EnemyAI.Blocker: TickBlocker(); break;
             default:              MoveTowardsPlayer(); break;
         }
     }
@@ -269,6 +289,18 @@ public class EnemyBase : MonoBehaviour
     private Vector2 _separation;
     private int     _sepCountdown;
 
+    /// <summary>
+    /// 마지막으로 잰 이웃 수(자신 제외). <see cref="EnemyAI.Swarmer"/> 가 쓴다.
+    ///
+    /// <para>🔑 <b>새 질의를 추가하지 않았다.</b> 분리 조향이 이미 4스텝마다
+    /// <c>OverlapCircle</c> 을 돌고 있으므로 그 결과를 세기만 한다.
+    /// 적 800 기준 이 질의가 프레임의 19 % 였다(<c>PERF.md</c> §7) — 하나 더 놓을 자리가 없다.</para>
+    ///
+    /// <para>⚠️ 상한은 <see cref="NeighborBufSize"/>(64) 다. 그보다 빽빽해도 64 로 보인다.
+    /// <c>SwarmFullCount</c> 가 6 이라 실용상 문제가 없다.</para>
+    /// </summary>
+    private int _neighborCount;
+
     /// <summary>가려는 방향에 이웃 회피를 섞는다.</summary>
     protected Vector2 Steer(Vector2 desired)
     {
@@ -281,7 +313,7 @@ public class EnemyBase : MonoBehaviour
     {
         // 매 물리 프레임 전부 재면 적 100마리 x 50Hz = 초당 5000번 질의다.
         // 개체마다 다른 위상으로 4스텝에 한 번만 다시 재고 그 사이에는 값을 재사용한다.
-        if (--_sepCountdown > 0) return _separation;
+        if (--_sepCountdown > 0) return _separation;   // _neighborCount 도 같이 재사용된다
         _sepCountdown = SeparationEveryNSteps;
 
         if (!_enemyFilterReady)
@@ -297,11 +329,13 @@ public class EnemyBase : MonoBehaviour
 
         int n = Physics2D.OverlapCircle(pos, r, _enemyFilter, NeighborBuf);
 
-        Vector2 sum = Vector2.zero;
+        Vector2 sum   = Vector2.zero;
+        int     others = 0;
         for (int i = 0; i < n; i++)
         {
             var c = NeighborBuf[i];
             if (c == null || c.transform == transform) continue;
+            others++;
 
             Vector2 away = pos - (Vector2)c.transform.position;
             float   d    = away.magnitude;
@@ -312,7 +346,8 @@ public class EnemyBase : MonoBehaviour
             sum += away / (d * d);   // 가까울수록 강하게
         }
 
-        _separation = Vector2.ClampMagnitude(sum, 1f);
+        _neighborCount = others;
+        _separation    = Vector2.ClampMagnitude(sum, 1f);
         return _separation;
     }
 
@@ -430,6 +465,98 @@ public class EnemyBase : MonoBehaviour
                     _chargeCd    = Data.ChargeCooldown;
                 }
                 break;
+        }
+    }
+
+    // ── 측면 접근 (AI = Flanker) ─────────────────────────────────
+    //
+    // 문제: Chaser 는 전원이 플레이어를 향해 같은 직선으로 온다. 그래서 무기 앞에
+    // 줄을 서고, 플레이어는 한 방향만 보면 된다. 분리 조향이 겹침은 풀어 주지만
+    // **오는 방향**은 여전히 하나다.
+    //
+    // 대신 가려는 방향에 **접선 성분**을 섞는다. 멀 때는 옆으로 크게 돌고,
+    // 가까워질수록 그 성분이 줄어 결국 직진으로 수렴한다.
+    // 🔴 수렴이 없으면 영원히 원만 그린다 — 그건 적이 아니라 장식이다.
+
+    private float _flankDir;   // +1 / -1. 개체마다 도는 쪽을 다르게
+
+    protected virtual void TickFlanker()
+    {
+        Vector2 toPlayer = ToPlayer();
+        float   dist     = toPlayer.magnitude;
+        if (dist < 0.0001f) { MoveTowardsPlayer(); return; }
+
+        Vector2 straight = toPlayer / dist;
+
+        // 가까울수록 0 에 수렴한다. FlankCloseRange 안에서는 완전히 직진.
+        float close = Mathf.Max(0.01f, Data.FlankCloseRange);
+        float arc   = Mathf.Clamp01(Data.FlankArcWeight) * Mathf.Clamp01((dist - close) / close);
+
+        Vector2 tangent = Vector2.Perpendicular(straight) * _flankDir;
+        Vector2 desired = (straight + tangent * arc).normalized;
+
+        Rb.linearVelocity = Steer(desired) * CurrentSpeed;
+    }
+
+    // ── 무리 가속 (AI = Swarmer) ─────────────────────────────────
+    //
+    // 혼자 오는 슬라임은 아무 일도 아니고, 서른 마리가 같은 속도로 오는 것도
+    // 결국 "한 마리 x 30" 이다. 이웃 수를 속도로 바꾸면 **뭉치는 것 자체가 위협**이 된다.
+    // 플레이어에게 생기는 선택: 무리를 갈라 놓을 것인가, 통째로 지울 것인가.
+
+    protected virtual void TickSwarmer()
+    {
+        // 🔴 Steer 를 먼저 부른다 — 이웃 수는 그 안에서 갱신된다.
+        //    순서를 바꾸면 스폰 직후 첫 4스텝 동안 항상 "혼자"로 읽힌다.
+        Vector2 dir = Steer(ToPlayer().normalized);
+
+        int   full = Mathf.Max(1, Data.SwarmFullCount);
+        float t    = Mathf.Clamp01((float)_neighborCount / full);
+        float mult = Mathf.Lerp(Data.SwarmSoloMult, Data.SwarmPackMult, t);
+
+        Rb.linearVelocity = dir * (CurrentSpeed * Mathf.Max(0.05f, mult));
+    }
+
+    /// <summary>지금 이 적이 세고 있는 이웃 수. 검증용으로만 연다.</summary>
+    public int NeighborCountNow => _neighborCount;
+
+    // ── 길목 차단 (AI = Blocker) ─────────────────────────────────
+    //
+    // 🔑 이 행동은 **느린 적을 위한 것**이다.
+    //    Ogre 는 이동 1.2, 플레이어는 3.5~4.6 이다 — 추격이 성립하지 않는다.
+    //    쫓아가는 한 Ogre 는 화면에 있어도 없는 것과 같다.
+    //    그래서 쫓지 않고 플레이어가 **가려는 곳**으로 질러가 막아선다.
+    //    (D48 에서 보스 실루엣을 정한 것과 같은 근거다 — 못 쫓아오면 버티고 서야 한다)
+    //
+    // ⚠️ 플레이어가 멈춰 있으면 예측 지점 = 현재 위치라 그냥 Chaser 가 된다. 의도한 것이다.
+
+    protected virtual void TickBlocker()
+    {
+        Vector2 toPlayer = ToPlayer();
+
+        // 코앞에서까지 앞을 재면 플레이어를 지나쳐 헛돈다.
+        if (toPlayer.magnitude <= Mathf.Max(0.5f, Data.BlockHoldRange) || _playerRb == null)
+        {
+            MoveTowardsPlayer();
+            return;
+        }
+
+        Vector2 lead    = _playerRb.linearVelocity * Mathf.Max(0f, Data.BlockLeadTime);
+        Vector2 aim     = (Vector2)PlayerTransform.position + lead;
+        Vector2 desired = (aim - (Vector2)transform.position).normalized;
+
+        Rb.linearVelocity = Steer(desired) * CurrentSpeed;
+    }
+
+    /// <summary>이 적이 지금 노리는 지점. 검증용으로만 연다.</summary>
+    public Vector2 AimPointNow
+    {
+        get
+        {
+            if (Data == null || PlayerTransform == null) return Vector2.zero;
+            if (Data.AI != EnemyAI.Blocker || _playerRb == null) return PlayerTransform.position;
+            return (Vector2)PlayerTransform.position
+                 + _playerRb.linearVelocity * Mathf.Max(0f, Data.BlockLeadTime);
         }
     }
 

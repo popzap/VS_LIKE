@@ -139,6 +139,15 @@ public static class BalanceImporter
             a.ChargeRecover   = CsvRow.Float(row, "ChargeRecover",   a.ChargeRecover);
             a.ChargeCooldown  = CsvRow.Float(row, "ChargeCooldown",  a.ChargeCooldown);
 
+            // D51 — 열이 없으면 SO 의 기존 값을 그대로 둔다(CsvRow 의 기본 동작).
+            a.FlankArcWeight  = CsvRow.Float(row, "FlankArcWeight",  a.FlankArcWeight);
+            a.FlankCloseRange = CsvRow.Float(row, "FlankCloseRange", a.FlankCloseRange);
+            a.SwarmSoloMult   = CsvRow.Float(row, "SwarmSoloMult",   a.SwarmSoloMult);
+            a.SwarmPackMult   = CsvRow.Float(row, "SwarmPackMult",   a.SwarmPackMult);
+            a.SwarmFullCount  = CsvRow.Int  (row, "SwarmFullCount",  a.SwarmFullCount);
+            a.BlockLeadTime   = CsvRow.Float(row, "BlockLeadTime",   a.BlockLeadTime);
+            a.BlockHoldRange  = CsvRow.Float(row, "BlockHoldRange",  a.BlockHoldRange);
+
             a.EliteHpMult     = CsvRow.Float(row, "EliteHpMult",     a.EliteHpMult);
             a.EliteDamageMult = CsvRow.Float(row, "EliteDamageMult", a.EliteDamageMult);
             a.EliteSpeedMult  = CsvRow.Float(row, "EliteSpeedMult",  a.EliteSpeedMult);
@@ -845,6 +854,8 @@ public static class BalanceImporter
             "Id,EnemyName,Prefab,Sprite,WalkSheet,Tint,SizeScale,MaxHp,MoveSpeed,ContactDamage,Armor,XpDrop,CurrencyDrop," +
             "AI,ProjectilePrefab,PreferredRange,AttackCooldown,ProjectileSpeed,ProjectileDamage," +
             "ChargeRange,ChargeWindup,ChargeSpeedMult,ChargeDuration,ChargeRecover,ChargeCooldown," +
+            "FlankArcWeight,FlankCloseRange,SwarmSoloMult,SwarmPackMult,SwarmFullCount," +
+            "BlockLeadTime,BlockHoldRange," +
             "EliteHpMult,EliteDamageMult,EliteSpeedMult,EliteXpMult,BossHpMult,BossDamageMult,BossSpeedMult,BossXpMult",
             LoadAll<EnemyData>(EnemyFolder), (a, id) => string.Join(",",
                 id, E(a.EnemyName), E(Path(a.Prefab)), E(Path(a.Sprite)),
@@ -855,6 +866,9 @@ public static class BalanceImporter
                 N(a.ProjectileSpeed), N(a.ProjectileDamage),
                 N(a.ChargeRange), N(a.ChargeWindup), N(a.ChargeSpeedMult),
                 N(a.ChargeDuration), N(a.ChargeRecover), N(a.ChargeCooldown),
+                N(a.FlankArcWeight), N(a.FlankCloseRange),
+                N(a.SwarmSoloMult), N(a.SwarmPackMult), a.SwarmFullCount,
+                N(a.BlockLeadTime), N(a.BlockHoldRange),
                 N(a.EliteHpMult), N(a.EliteDamageMult), N(a.EliteSpeedMult), a.EliteXpMult,
                 N(a.BossHpMult), N(a.BossDamageMult), N(a.BossSpeedMult), a.BossXpMult));
 

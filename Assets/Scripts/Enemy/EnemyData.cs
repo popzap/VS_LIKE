@@ -17,7 +17,20 @@ public enum EnemyAI
     /// <summary>일정 거리를 유지하며 투사체를 쏜다.</summary>
     Ranged,
     /// <summary>멈춰서 조준(예고) → 고속 돌진 → 경직.</summary>
-    Charger
+    Charger,
+
+    // ── D51 ─────────────────────────────────────────────────
+    // 🔴 <b>새 값은 반드시 뒤에 붙인다.</b> 이 enum 은 EnemyData.asset 에 **정수**로
+    //    직렬화돼 있다 — 중간에 끼워 넣으면 기존 적의 행동이 조용히 바뀐다.
+
+    /// <summary>정면으로 안 온다. 멀 때는 옆으로 돌아 들어오고 가까워지면 직진으로 수렴한다.</summary>
+    Flanker,
+
+    /// <summary>이웃이 많을수록 빨라진다. 혼자 남으면 주춤한다.</summary>
+    Swarmer,
+
+    /// <summary>쫓지 않는다. 플레이어가 <b>가려는 곳</b> 앞으로 질러가 막아선다.</summary>
+    Blocker
 }
 
 [CreateAssetMenu(fileName = "EnemyData", menuName = "Game/EnemyData")]
@@ -65,6 +78,36 @@ public class EnemyData : ScriptableObject
     [Tooltip("돌진 후 경직. 플레이어의 반격 기회다")]
     public float ChargeRecover   = 0.6f;
     public float ChargeCooldown  = 3f;
+
+    [Header("측면 접근 (AI = Flanker)")]
+    [Tooltip("접선 성분의 세기. 0 이면 Chaser 와 같고, 1 이면 거의 원을 그리며 돈다. " +
+             "🔴 1 을 넘기면 영영 안 다가온다 — 코드가 1 로 묶는다")]
+    public float FlankArcWeight  = 0.85f;
+
+    [Tooltip("이 거리 안에 들어오면 돌기를 그만두고 직진한다. " +
+             "0 이면 끝까지 돌기만 해서 절대 안 닿는다")]
+    public float FlankCloseRange = 3.5f;
+
+    [Header("무리 가속 (AI = Swarmer)")]
+    [Tooltip("주변에 아무도 없을 때의 속도 배율. 1 보다 작아야 '혼자면 주춤한다'가 된다")]
+    public float SwarmSoloMult  = 0.6f;
+
+    [Tooltip("무리가 꽉 찼을 때의 속도 배율")]
+    public float SwarmPackMult  = 1.35f;
+
+    [Tooltip("이 이웃 수에서 SwarmPackMult 에 도달한다. " +
+             "🔴 이웃은 분리 조향이 이미 세고 있는 값을 그대로 쓴다(추가 질의 0)")]
+    public int   SwarmFullCount = 6;
+
+    [Header("길목 차단 (AI = Blocker)")]
+    [Tooltip("플레이어의 몇 초 뒤 위치를 노리나. 0 이면 그냥 Chaser 다. " +
+             "🔑 이 행동은 '느려서 절대 못 쫓아오는 적'을 위한 것이다 — " +
+             "Ogre 1.2 vs 플레이어 3.5~4.6 이라 추격은 성립하지 않는다")]
+    public float BlockLeadTime  = 1.8f;
+
+    [Tooltip("이 거리 안에 들어오면 예측을 그만두고 직진한다. " +
+             "코앞에서까지 앞을 재면 플레이어를 두고 헛돈다")]
+    public float BlockHoldRange = 2.5f;
 
     [Header("경험치 / 보상")]
     public int   XpDrop       = 3;

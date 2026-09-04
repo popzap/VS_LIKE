@@ -38,7 +38,7 @@ MonoBehaviour:
   MoveSpeed: 2.2
   ContactDamage: 8
   Armor: 0
-  AI: 0
+  AI: 3
   ProjectilePrefab: {fileID: 0}
   PreferredRange: 7
   AttackCooldown: 2.5
@@ -50,6 +50,13 @@ MonoBehaviour:
   ChargeDuration: 0.4
   ChargeRecover: 0.6
   ChargeCooldown: 3
+  FlankArcWeight: 0.85
+  FlankCloseRange: 3.5
+  SwarmSoloMult: 0.6
+  SwarmPackMult: 1.35
+  SwarmFullCount: 6
+  BlockLeadTime: 1.8
+  BlockHoldRange: 2.5
   XpDrop: 3
   CurrencyDrop: 1
   EliteHpMult: 2.5
