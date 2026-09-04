@@ -31,6 +31,7 @@
 | DEV | `D38` | `Docs/**` (문서만) | 2026-09-04 | `완료` — **`C32` 순서를 받았다** (사용자 결정 A). 요청-27(보스 그림)을 **보류로 내리고** `요청-28` 로 회신 — `DESIGN_ART.md` §6 의 1~5번은 **CONTENT 가 만들고 DEV 는 배선만**. 🔴 §7 정리 후보 3개를 guid 로 실측: **셋 다 참조가 있다.** 특히 `Exp_Orb.gif` 는 `ExpDrop.cs` 가 안 덮어쓰므로 **지우면 구슬이 안 보인다** |
 | DEV | `D39` | `Assets/Scripts/Building/BuildingManager.cs` · `Assets/Scripts/UI/HUDManager.cs` · `Docs/Parallel/BUGS.md` · `Docs/{TODO,SETUP_STATUS}.md` | 2026-09-04 | `완료` — **`B3` 닫음 (C안)**. 대기열을 **신규 구간 + 증설 구간**으로 나눴다. 🔑 원안의 "맨 앞에 넣는다"는 **나중 해금이 먼저 해금을 추월**해서 안 썼다 — **신규 구간의 끝**에 넣는다. 판정 2/2 PASS (재현 절차 + `LockBuilding` 장부) |
 | DEV | `D40` | `Assets/Game/Sprites/{Projectiles,UI}/*.meta` · `Assets/Prefabs/*.prefab` · `Assets/Scenes/SampleScene.unity` · `Docs/**` | 2026-09-04 | `완료` — **요청-25 (C33)**: 그림 5장 임포트 + 탄환 2종 교체 + **9-slice 배선 49곳**. 판정 **6/6**. 🔑 `spriteBorder` 만으로는 안 됐다 — 38×38 버튼에 20+20px 테두리라 `pixelsPerUnitMultiplier` 규칙을 세웠다. 🟡 CONTENT 의 `50px` 전제 정정(실측 41px). 🔴 곁일로 `B11`(상점 대사 한글 빈칸) 발견·등재 |
+| DEV | `D53` | `Docs/**` | 2026-09-04 | `대기` — **CONTENT 요청-29 (C37) 검증.** 타일 재틴트가 층0↔층9 밝기 차 **≥ 0.04** 를 실제로 내는지 **캡처로** 잰다 (CONTENT 는 계산으로 0.0443 을 냈다 — 방식이 다르므로 어긋나면 조명·카메라 쪽이다) |
 
 
 
@@ -444,7 +445,7 @@ CONTENT 는 **읽기만** 한다 — 내 요청이 언제 처리될지 가늠하
 
 | 세션 | 다음 이슈 번호 |
 |---|---|
-| DEV | `D52` |
+| DEV | `D54` |
 | DEV | `D41` | `Assets/Scripts/Fx/PulseFx.cs` · `Assets/Prefabs/Fx_{Promote,LevelUp}.prefab` · `Assets/Scripts/Evolution/EvolutionManager.cs` · `Assets/Game/Balance/SceneWiring.csv` · `Assets/Scenes/SampleScene.unity` · `Docs/**` | 2026-09-04 | `완료` — **요청-26 (C34)**: 메타 아이콘 **7/7** + 승급·레벨업 파동. 🔴 **검증 중 내 결함을 잡았다** — 이 연출이 뜨는 두 순간이 **둘 다 `timeScale = 0`** 이라 `Time.deltaTime` 이면 **얼어붙은 링이 화면에 붙어 있다**. `unscaledDeltaTime` 으로 고침. 🟡 **판정 ⑤ 보류** — 레벨업 파동은 뜨지만 `ScreenSpaceOverlay` 패널이 덮어 **안 보인다** → `TODO.md` 결정 3안. 🟡 고아 애셋 `UpGoldGain.asset` 발견 |
 | DEV | `D42` | `Assets/Game/Sprites/UI/{ShopKeeper,MainMenuBG}.png` · `Assets/Scenes/SampleScene.unity` · `Docs/**` | 2026-09-04 | `완료` — **요청-27 (C35)**: Unity AI 그림 2장. 판정 **7/7** (알파 0 · 배경 밝기 **0.150** · 세로 점유 **86.1 %**). **코드 0줄.** 🔴 **`I-41` 가짜 투명이 또 났다** — 프롬프트에 명시해도 알파가 전부 255 였다. 🔴 CONTENT 의 *"형제 순서 0"* 지시를 일부러 안 따랐다 — 그 자리 `DimBG` 가 **알파 1.00 불투명**이라 배경이 가린다. 🟡 `pivot` 이 위쪽이라 배치를 한 번 틀렸다 |
 | DEV | `D43` | `Assets/Scripts/{UI/HUDManager,LevelUp/LevelUpManager}.cs` · `Assets/GameObjects/UI Canvas.prefab` · `Assets/Scenes/SampleScene.unity` · `Docs/**` | 2026-09-04 | `완료` — 사용자 결정 2건. ① **`B11` 닫음** — 씬 **과 프리팹 원본** 둘 다 영문화. 🔴 씬만 고쳤으면 오버라이드라 **부활했다**. 전수 조사(씬 263 · 프리팹 69) 한글 **0건**, 스캐너에 **대조군**을 넣어 배열까지 보는 걸 증명했다 ② **레벨업 파동 A안** — 패널 닫힘 시점으로 옮김. 판정 3/3 |
@@ -456,6 +457,7 @@ CONTENT 는 **읽기만** 한다 — 내 요청이 언제 처리될지 가늠하
 | DEV | `D49` | `Assets/Scripts/Stage/GroundTiler.cs` · `Assets/Game/Balance/Economy.csv` · `Docs/**` | 2026-09-04 | 🟡 `절반` — **층별 바닥 테마** (`ROADMAP` §7). 🔑 새 애셋 0 — `tiles` 가 이미 얕은 것→깊은 것 순서라 **가중치를 역순으로 보간**했다. 0층 대조군 `Grass 38.4 %`(예전과 같다) · 9층 `Flagstone 38.6 %`. 🔴 **그런데 화면은 1.4 % 만 달라진다**(밝기 0.1510→0.1447) — 타일 10종이 서로 너무 비슷하다. 판정 기준과 함께 CONTENT 에 넘김 → 요청-37 |
 | DEV | `D50` | `Assets/Scripts/Wave/{WaveData,WaveManager}.cs` · `Assets/Scripts/Fx/PulseFx.cs` · `Assets/Editor/BalanceImporter.cs` · `Assets/Prefabs/Fx_Burrow.prefab`(신규) · `Assets/Game/Balance/{Economy,SceneWiring,Waves}.csv` · `Assets/Scenes/SampleScene.unity` · `Docs/**` | 2026-09-04 | `완료` — **적 출현 패턴 4종**(사용자 요구). 흩뿌리기·**원으로 조이기**·**부대**·**땅굴**. 🔑 `Waves.csv` 에 **열을 안 늘렸다** — 맨 뒤 **`~패턴` 접미사**로 넣고 `Scatter` 는 안 쓴다 ⇒ 기존 행 바이트 동일. 판정 **7/7** (Ring 45.0~45.0도 · Squad 각도 폭 9.4도 · Burrow 예고 4/적 0 · 거리 3.43~5.55 · **배선 끊으면 20.0** 대조군). 🔴 **`D41`↔`D46` 사이를 가로지르는 결함** — `PulseFx` 는 unscaled 인데 땅굴 대기는 scaled 라 TAB 저배속에서 **예고가 2.5초 먼저 사라진다**. `useUnscaledTime` 신설. 🟡 계수 7개는 사람이 해 봐야 안다 → 요청-38 |
 | DEV | `D51` | `Assets/Scripts/Enemy/{EnemyData,EnemyBase}.cs` · `Assets/Editor/BalanceImporter.cs` · `Assets/Game/Balance/Enemies.csv` · `Assets/Game/EnemyData/*.asset` · `Docs/**` | 2026-09-04 | `완료` — **행동 분화**(사용자 요구의 나머지 반쪽). 적 7종 중 **5종이 `Chaser` 하나**였다. `Flanker`(Goblin) · `Swarmer`(Slime) · `Blocker`(Ogre) 추가, Zombie 는 **대조군으로 유지**. 🔑 컨셉을 수치에서 끌어냈다 — Ogre 1.2 vs 플레이어 3.5~4.6 이라 **추격이 성립하지 않는다**. 🔑 새 프리팹 0 · **새 물리 질의 0**. 🔴 enum 은 정수 직렬화라 **뒤에만 붙였다**(보존을 판정에 넣었다). 판정 **8/8**. 🔴 **시험에서 세 번 헛짚었고 세 번 다 대조군이 잡았다** — 이미 도착한 적을 쟀고, `timeScale 0.0002` 로는 `FixedUpdate` 가 안 돌았고, 두 무리를 겹쳐 놓아 난수 방향을 쟀다. 🟡 계수 7개는 사람이 해 봐야 안다 → 요청-39 |
+| DEV | `D52` | `Assets/Scenes/SampleScene.unity` · `Docs/**` | 2026-09-04 | `완료` — **요청-30 (C38) Import 1회.** 코드 0줄 · 씬 **2줄**. 🔑 Import **전** 값을 먼저 읽어 대조군을 만들었다. 판정 **7/7** — 바뀐 둘(0.14 / 320) · **유지된 셋이 안 움직였다** · 9층 Elite2 **294**(천장 320 아래). 🔴 **`WaveManager.prefab` 이 필드보다 오래됐다** — 오버라이드가 없으면 C# 기본값으로 떨어져 **"Import 했는지"를 파일로 판정할 수 없다** → `TODO.md`. 🟡 CONTENT 예측 293 vs 실제 294(`RoundToInt`) → 요청-40 |
 | CONTENT | `C39` |
 | 버그(공용) | `B12` |
 

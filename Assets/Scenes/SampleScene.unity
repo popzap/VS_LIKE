@@ -23269,9 +23269,17 @@ PrefabInstance:
       value: 
       objectReference: {fileID: 5671240443907944735, guid: 5f686867ca37b1346923c8883c553681, type: 3}
     - target: {fileID: 5897929191394594014, guid: 3dec23194ba32e048855858b514f07fe, type: 3}
+      propertyPath: maxAliveCeiling
+      value: 320
+      objectReference: {fileID: 0}
+    - target: {fileID: 5897929191394594014, guid: 3dec23194ba32e048855858b514f07fe, type: 3}
       propertyPath: playerTransform
       value: 
       objectReference: {fileID: 4505039495625385280}
+    - target: {fileID: 5897929191394594014, guid: 3dec23194ba32e048855858b514f07fe, type: 3}
+      propertyPath: layerSpawnGrowth
+      value: 0.14
+      objectReference: {fileID: 0}
     - target: {fileID: 5897929191394594014, guid: 3dec23194ba32e048855858b514f07fe, type: 3}
       propertyPath: burrowTelegraphPrefab
       value: 
