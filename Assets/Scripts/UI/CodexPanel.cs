@@ -30,7 +30,7 @@ using UnityEngine.UI;
 public class CodexPanel : MonoBehaviour
 {
     // 🔴 컴파일 반영 확인용 (D27).
-    public const int Version = 5;   // 5 = 본문 자동 축소 (D56)
+    public const int Version = 6;   // 6 = 우측 상단 X + ESC (D57)
 
     public enum Tab { Weapons, Items, Evolution, Classes, Enemies }
 
@@ -58,6 +58,8 @@ public class CodexPanel : MonoBehaviour
 
     [Header("기타")]
     [SerializeField] private TextMeshProUGUI progressText;
+
+    [Tooltip("우측 상단 X (D57). 하단 CLOSE 를 빼서 격자·상세 공간을 넓혔다. ESC 로도 닫힌다")]
     [SerializeField] private Button          closeButton;
 
     /// <summary>미발견 표시. 사용자 요구 그대로 물음표 세 개다.</summary>
@@ -145,6 +147,23 @@ public class CodexPanel : MonoBehaviour
     }
 
     public void Close() => gameObject.SetActive(false);
+
+    /// <summary>
+    /// ESC 로도 닫는다 (D57).
+    ///
+    /// <para>🔵 <see cref="PauseMenuUI"/> 도 ESC 를 읽지만 그쪽은
+    /// <c>CanPause</c> 가 <see cref="GameState.Wave"/> 일 때만 참이라 부딪히지 않는다 —
+    /// 도감은 메인 메뉴에서 연다. 🔴 <b>도감을 전투 중에 열 수 있게 만들면 이 전제가 깨진다</b>:
+    /// 같은 프레임에 도감이 닫히고 일시정지가 열린다.</para>
+    ///
+    /// <para><c>unscaledTime</c> 을 쓰는 <c>Update</c> 가 아니라 입력이라
+    /// <c>timeScale</c> 과 무관하게 동작한다.</para>
+    /// </summary>
+    private void Update()
+    {
+        var kb = UnityEngine.InputSystem.Keyboard.current;
+        if (kb != null && kb.escapeKey.wasPressedThisFrame) Close();
+    }
 
     // ── 탭 ──────────────────────────────────────────────────────
 
