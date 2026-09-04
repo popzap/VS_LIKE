@@ -666,7 +666,7 @@ _currentWaveData = node.StageType switch
 | ~~3~~ | ~~메타 강화 아이콘~~ | ✅ **끝 (D41)** — 7/7 물렸다. 애셋 필드를 직접 읽어 확인 | 🟡 CSV 에 없는 고아 애셋 `UpGoldGain.asset` 발견 (깨진 건 아님) |
 | ~~4~~ | ~~승급 이펙트~~ | ✅ **끝 (D41)** — `Fx_Promote`/`Fx_LevelUp` + `PulseFx` + `SceneWiring` 2줄 | 🔴 `timeScale = 0` 에서 얼어붙던 것을 `unscaledDeltaTime` 으로 고쳤다 |
 | 5 | 적 사망 파티클 | `EnemyBase.PlayDeathImpact` 근처 배선 | |
-| 6 | 상점 주인 · 메뉴 배경 | 🔴 **DEV 가 Unity AI 로 뽑는다** | 규격·디렉션을 요청-28 로 요청해 뒀다 |
+| ~~6~~ | ~~상점 주인 · 메뉴 배경~~ | ✅ **끝 (D42)** — Unity AI 2장. 판정 **7/7** | 🔴 `I-41` 가짜 투명이 또 났다(프롬프트에 명시해도 안 통한다). 🟡 주인 발밑에 흙무더기가 붙어 나왔다 — CONTENT 판단 대기 |
 
 #### 🔴 `DESIGN_ART.md` §7 "정리 대상" — 실측했다. 하나는 지우면 안 된다
 

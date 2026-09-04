@@ -428,8 +428,9 @@ CONTENT 는 **읽기만** 한다 — 내 요청이 언제 처리될지 가늠하
 
 | 세션 | 다음 이슈 번호 |
 |---|---|
-| DEV | `D42` |
+| DEV | `D43` |
 | DEV | `D41` | `Assets/Scripts/Fx/PulseFx.cs` · `Assets/Prefabs/Fx_{Promote,LevelUp}.prefab` · `Assets/Scripts/Evolution/EvolutionManager.cs` · `Assets/Game/Balance/SceneWiring.csv` · `Assets/Scenes/SampleScene.unity` · `Docs/**` | 2026-09-04 | `완료` — **요청-26 (C34)**: 메타 아이콘 **7/7** + 승급·레벨업 파동. 🔴 **검증 중 내 결함을 잡았다** — 이 연출이 뜨는 두 순간이 **둘 다 `timeScale = 0`** 이라 `Time.deltaTime` 이면 **얼어붙은 링이 화면에 붙어 있다**. `unscaledDeltaTime` 으로 고침. 🟡 **판정 ⑤ 보류** — 레벨업 파동은 뜨지만 `ScreenSpaceOverlay` 패널이 덮어 **안 보인다** → `TODO.md` 결정 3안. 🟡 고아 애셋 `UpGoldGain.asset` 발견 |
+| DEV | `D42` | `Assets/Game/Sprites/UI/{ShopKeeper,MainMenuBG}.png` · `Assets/Scenes/SampleScene.unity` · `Docs/**` | 2026-09-04 | `완료` — **요청-27 (C35)**: Unity AI 그림 2장. 판정 **7/7** (알파 0 · 배경 밝기 **0.150** · 세로 점유 **86.1 %**). **코드 0줄.** 🔴 **`I-41` 가짜 투명이 또 났다** — 프롬프트에 명시해도 알파가 전부 255 였다. 🔴 CONTENT 의 *"형제 순서 0"* 지시를 일부러 안 따랐다 — 그 자리 `DimBG` 가 **알파 1.00 불투명**이라 배경이 가린다. 🟡 `pivot` 이 위쪽이라 배치를 한 번 틀렸다 |
 | CONTENT | `C36` |
 | 버그(공용) | `B12` |
 
