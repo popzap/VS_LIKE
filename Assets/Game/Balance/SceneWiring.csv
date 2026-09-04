@@ -19,3 +19,4 @@ EvolutionManager,allEvolutions,Assets/Game/EvolutionData/Excalibur.asset|Assets/
 EvolutionManager,classEvolutions,Assets/Game/ClassEvolutionData/Sentinel.asset|Assets/Game/ClassEvolutionData/Doomlord.asset|Assets/Game/ClassEvolutionData/Warden.asset|Assets/Game/ClassEvolutionData/Aegis.asset,직업 승급 레시피 전체. 결과 직업은 GameManager,classes 에 넣지 말 것
 HUDManager,levelUpEffect,Assets/Prefabs/Fx_LevelUp.prefab,레벨업 순간 플레이어 자리에 뜨는 청록 파동 (D41). 흔들림 없음 — 레벨업은 자주 난다
 EvolutionManager,promoteEffect,Assets/Prefabs/Fx_Promote.prefab,승급 순간의 금색 파동 (D41). 승급은 이 게임에서 가장 큰 성취인데 연출이 0 이었다
+WaveManager,burrowTelegraphPrefab,Assets/Prefabs/Fx_Burrow.prefab,Burrow 출현 예고 (D50). 🔴 비어 있으면 예고 없이 솟는 대신 소환 반경까지 밀어낸다

@@ -558,6 +558,21 @@ public static class BalanceImporter
             var part = chunk.Trim();
             if (part.Length == 0) continue;
 
+            // 출현 패턴 '~Ring' — 맨 끝에 붙으므로 제일 먼저 뗀다 (D50).
+            // 없으면 Scatter 라 기존 줄은 한 글자도 안 고쳐도 그대로 돈다.
+            var pattern = SpawnPattern.Scatter;
+            int tilde = part.IndexOf('~');
+            if (tilde >= 0)
+            {
+                string pname = part[(tilde + 1)..].Trim();
+                part = part[..tilde];
+                if (!System.Enum.TryParse(pname, true, out pattern))
+                {
+                    pattern = SpawnPattern.Scatter;
+                    log.AppendLine($"  ! Waves.csv '{waveId}' 의 출현 패턴 '{pname}' 을 모르겠다 — Scatter 로 둔다");
+                }
+            }
+
             // 시간창 ':시작-종료' — '@' 보다 먼저 떼야 한다 (뒤쪽에 붙기 때문)
             float start = 0f, end = 0f;
             int colon = part.IndexOf(':');
@@ -600,7 +615,8 @@ public static class BalanceImporter
                 Count         = count,
                 SpawnInterval = interval,
                 StartTime     = start,
-                EndTime       = end
+                EndTime       = end,
+                Pattern       = pattern
             });
         }
         return list;
@@ -952,7 +968,8 @@ public static class BalanceImporter
             string window = (s.StartTime > 0f || s.EndTime > 0f)
                           ? $":{N(s.StartTime)}-{N(s.EndTime)}"
                           : "";
-            parts.Add($"{s.Enemy.name}*{s.Count}@{N(s.SpawnInterval)}{window}");
+            string pat = s.Pattern != SpawnPattern.Scatter ? $"~{s.Pattern}" : "";
+            parts.Add($"{s.Enemy.name}*{s.Count}@{N(s.SpawnInterval)}{window}{pat}");
         }
         return string.Join(CsvTable.ArraySeparator.ToString(), parts);
     }

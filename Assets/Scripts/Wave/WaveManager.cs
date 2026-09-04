@@ -39,6 +39,35 @@ public class WaveManager : MonoBehaviour
            + "적 400 이상에서는 그 값을 다시 판단해야 한다(B8) — 그 선 아래로 묶어 둔다.")]
     [SerializeField] private int maxAliveCeiling = 300;
 
+    // ── 출현 패턴 (D50) ──────────────────────────────────────────
+    // 🔴 수치는 Economy.csv 의 WaveManager 행이 들고 있다.
+    [Header("출현 패턴 — 값은 Economy.csv 가 덮는다")]
+    [Tooltip("Ring: 한 번에 원 위에 놓는 마리수. 이 수만큼 뿌리고 쉬었다가 다음 무리를 놓는다.")]
+    [Min(2)] [SerializeField] private int ringBatch = 8;
+
+    [Tooltip("Squad: 대형의 가로 칸 수. 6 이면 6열로 줄을 맞춘다.")]
+    [Min(1)] [SerializeField] private int squadColumns = 4;
+
+    [Tooltip("Squad: 대형 안에서 옆 적과의 간격(월드 유닛). 너무 좁으면 서로 밀어내며 흩어진다.")]
+    [SerializeField] private float squadSpacing = 1.1f;
+
+    [Tooltip("Burrow: 플레이어로부터 이만큼 떨어진 곳에서 솟는다(최소). "
+           + "🔴 너무 가까우면 예고를 봐도 못 피한다.")]
+    [SerializeField] private float burrowMinDistance = 3f;
+
+    [Tooltip("Burrow: 솟는 거리(최대). 소환 반경보다 훨씬 안쪽이라 '발밑에서 나온다'는 느낌이 난다.")]
+    [SerializeField] private float burrowMaxDistance = 6f;
+
+    [Tooltip("Burrow: 예고가 떠 있는 시간. 🔴 0 이면 피할 수 없는 기습이 된다 — 최소 0.35 로 묶는다.")]
+    [SerializeField] private float burrowWindup = 0.85f;
+
+    [Tooltip("Burrow: 한 번에 몇 군데서 솟는가.")]
+    [Min(1)] [SerializeField] private int burrowBatch = 4;
+
+    [Tooltip("Burrow 예고 표시(Fx_Burrow). SceneWiring.csv 의 WaveManager,burrowTelegraphPrefab 로 배선한다. "
+           + "🔴 비어 있으면 예고 없이 솟는다 — 그건 난이도가 아니라 사고다.")]
+    [SerializeField] private GameObject burrowTelegraphPrefab;
+
     // ── 런타임 상태 ──────────────────────────────────────────────
     private StageNode   _currentNode;
     private WaveData    _currentWaveData;
@@ -201,13 +230,26 @@ public class WaveManager : MonoBehaviour
         float interval = Mathf.Max(0.05f, entry.SpawnInterval);
         int   count    = LayerScaling.ScaleCount(entry.Count);
 
+        // 출현 패턴 (D50). Scatter 가 예전 동작이고 나머지는 그 위에 얹었다.
+        switch (entry.Pattern)
+        {
+            case SpawnPattern.Ring:   yield return RingRoutine   (entry, count, interval); break;
+            case SpawnPattern.Squad:  yield return SquadRoutine  (entry, count, interval); break;
+            case SpawnPattern.Burrow: yield return BurrowRoutine (entry, count, interval); break;
+            default:                  yield return ScatterRoutine(entry, count, interval); break;
+        }
+    }
+
+    /// <summary>시간창을 넘겼나. 넘겼으면 남은 마리수는 버린다 — 그게 난이도 곡선의 핵심이다.</summary>
+    private bool EntryExpired(WaveSpawnEntry entry)
+        => !_waveActive || (entry.EndTime > 0f && _waveElapsed >= entry.EndTime);
+
+    /// <summary>흩뿌리기 — 원 위 무작위, 한 마리씩. <b>D50 이전의 동작 그대로다.</b></summary>
+    private IEnumerator ScatterRoutine(WaveSpawnEntry entry, int count, float interval)
+    {
         for (int i = 0; i < count; i++)
         {
-            if (!_waveActive) yield break;
-
-            // 시간창을 넘겼으면 남은 마리수는 버린다. 이게 난이도 곡선의 핵심이다 —
-            // 초반 잡몹은 중반에 끊기고 후반 강적으로 교대한다.
-            if (entry.EndTime > 0f && _waveElapsed >= entry.EndTime) yield break;
+            if (EntryExpired(entry)) yield break;
 
             yield return WaitForSpawnSlot();
             if (!_waveActive) yield break;
@@ -215,6 +257,130 @@ public class WaveManager : MonoBehaviour
             SpawnEnemy(entry.Enemy);
             yield return new WaitForSeconds(interval);
         }
+    }
+
+    /// <summary>
+    /// 포위 — 원 위에 <b>고르게 한꺼번에</b> 놓는다.
+    ///
+    /// <para>🔑 조여오는 것은 따로 만들지 않았다. 적은 이미 플레이어를 향해 걸어오므로
+    /// <b>고르게 둘러싸 놓기만 하면</b> 저절로 좁혀 온다. 흩뿌리기와 다른 건
+    /// "사방에서 하나씩"이 아니라 <b>"한꺼번에 빙 둘러선다"</b>는 것이다.</para>
+    /// </summary>
+    private IEnumerator RingRoutine(WaveSpawnEntry entry, int count, float interval)
+    {
+        int spawned = 0;
+        while (spawned < count)
+        {
+            if (EntryExpired(entry)) yield break;
+
+            int n = Mathf.Min(Mathf.Max(2, ringBatch), count - spawned);
+
+            // 시작 각도를 무작위로 돌린다 — 안 그러면 매번 같은 자리에서 나온다.
+            float baseAngle = Random.value * Mathf.PI * 2f;
+            for (int i = 0; i < n; i++)
+            {
+                yield return WaitForSpawnSlot();
+                if (!_waveActive) yield break;
+
+                float a = baseAngle + (i / (float)n) * Mathf.PI * 2f;
+                SpawnEnemyAt(entry.Enemy, RadiusPoint(a));
+                spawned++;
+            }
+
+            // 한 마리씩 낼 때와 총 속도를 맞춘다 — 무리로 낸다고 더 빨라지면 그건 난이도 변경이다.
+            yield return new WaitForSeconds(interval * n);
+        }
+    }
+
+    /// <summary>부대 — 한 방향에서 대형(줄 x 칸)을 이뤄 뭉쳐 온다.</summary>
+    private IEnumerator SquadRoutine(WaveSpawnEntry entry, int count, float interval)
+    {
+        int cols = Mathf.Max(1, squadColumns);
+        int spawned = 0;
+        while (spawned < count)
+        {
+            if (EntryExpired(entry)) yield break;
+
+            int n = Mathf.Min(cols * Mathf.Max(1, ringBatch / cols + 1), count - spawned);
+
+            float a       = Random.value * Mathf.PI * 2f;
+            Vector2 dir   = new Vector2(Mathf.Cos(a), Mathf.Sin(a));
+            Vector2 right = new Vector2(dir.y, -dir.x);
+            Vector2 head  = RadiusPoint(a);
+
+            for (int i = 0; i < n; i++)
+            {
+                yield return WaitForSpawnSlot();
+                if (!_waveActive) yield break;
+
+                int col = i % cols;
+                int row = i / cols;
+                // 가운데 정렬 — 안 하면 대형이 한쪽으로 쏠린다.
+                Vector2 offset = right * ((col - (cols - 1) * 0.5f) * squadSpacing)
+                               + dir   * (row * squadSpacing);
+                SpawnEnemyAt(entry.Enemy, head + offset);
+                spawned++;
+            }
+
+            yield return new WaitForSeconds(interval * n);
+        }
+    }
+
+    /// <summary>
+    /// 땅굴 — 플레이어 <b>가까이</b>에서 솟아오른다.
+    ///
+    /// <para>🔴 <b>예고가 이 패턴의 전부다.</b> 소환 반경(20) 밖이 아니라 3~6 유닛 앞에서 나오므로
+    /// 예고 없이 솟으면 "피할 수 없는 기습"이 된다 — <see cref="BossSlam"/> 이 세운 규칙과 같다.
+    /// 그래서 표시가 안 배선돼 있으면 <b>거리를 소환 반경까지 밀어낸다</b>(= 그냥 흩뿌리기).</para>
+    /// </summary>
+    private IEnumerator BurrowRoutine(WaveSpawnEntry entry, int count, float interval)
+    {
+        int spawned = 0;
+        while (spawned < count)
+        {
+            if (EntryExpired(entry)) yield break;
+
+            int n = Mathf.Min(Mathf.Max(1, burrowBatch), count - spawned);
+            var spots = new Vector2[n];
+
+            bool hasTelegraph = burrowTelegraphPrefab != null;   // 🔴 ?. 금지 (I-24)
+            for (int i = 0; i < n; i++)
+            {
+                spots[i] = BurrowPoint(hasTelegraph);
+                if (hasTelegraph) Instantiate(burrowTelegraphPrefab, spots[i], Quaternion.identity);
+            }
+
+            // 예고를 보고 비킬 시간. 표시가 없으면 기다릴 이유도 없다(멀리서 나오므로).
+            if (hasTelegraph) yield return new WaitForSeconds(Mathf.Max(0.35f, burrowWindup));
+            if (!_waveActive) yield break;
+
+            for (int i = 0; i < n; i++)
+            {
+                yield return WaitForSpawnSlot();
+                if (!_waveActive) yield break;
+                SpawnEnemyAt(entry.Enemy, spots[i]);
+                spawned++;
+            }
+
+            yield return new WaitForSeconds(interval * n);
+        }
+    }
+
+    /// <summary>소환 반경 위의 한 점. 플레이어가 없으면 원점 기준으로 둔다.</summary>
+    private Vector2 RadiusPoint(float angle)
+    {
+        Vector2 c = playerTransform != null ? (Vector2)playerTransform.position : Vector2.zero;
+        return c + new Vector2(Mathf.Cos(angle), Mathf.Sin(angle)) * _currentWaveData.SpawnRadius;
+    }
+
+    /// <summary>땅굴이 솟을 자리. 표시가 없으면 안전하게 소환 반경까지 밀어낸다.</summary>
+    private Vector2 BurrowPoint(bool hasTelegraph)
+    {
+        Vector2 c = playerTransform != null ? (Vector2)playerTransform.position : Vector2.zero;
+        float min = Mathf.Max(1f, burrowMinDistance);
+        float max = Mathf.Max(min + 0.5f, burrowMaxDistance);
+        float d   = hasTelegraph ? Random.Range(min, max) : _currentWaveData.SpawnRadius;
+        return c + Random.insideUnitCircle.normalized * d;
     }
 
     // ── 층 배율이 걸린 값 ────────────────────────────────────────
@@ -408,8 +574,11 @@ public class WaveManager : MonoBehaviour
     }
 
     private EnemyBase SpawnEnemy(EnemyData data, bool isElite = false, bool isBoss = false)
+        => SpawnEnemyAt(data, GetSpawnPosition(), isElite, isBoss);
+
+    /// <summary>자리를 직접 지정해 소환한다. 출현 패턴(D50)이 쓴다.</summary>
+    private EnemyBase SpawnEnemyAt(EnemyData data, Vector2 spawnPos, bool isElite = false, bool isBoss = false)
     {
-        Vector2 spawnPos = GetSpawnPosition();
         var go = enemyPool.Get(data.Prefab, spawnPos, Quaternion.identity);
         var enemy = go.GetComponent<EnemyBase>();
         enemy.Initialize(data, isElite, isBoss);

@@ -96,3 +96,10 @@ WaveManager,maxAliveCeiling,300,동시 생존 상한의 천장. EnemyBase 의 �
 StatsPanelUI,slowTimeScale,0.25,TAB 스탯창을 보는 동안의 시간 배속 (D46). 0 이면 완전 정지라 "보면서도 플레이" 요구와 어긋난다 — 코드가 최소 0.02 로 묶는다. 임시값
 GroundTiler,depthTheme,1,층이 깊어질수록 바닥 타일 비중이 풀밭에서 돌바닥으로 옮겨간다 (D49). 0 이면 끈다
 GroundTiler,deepestLayer,9,가중치가 완전히 뒤집히는 층 번호(0부터). 맵이 10층이라 9
+WaveManager,ringBatch,8,Ring 패턴이 한 번에 원 위에 놓는 마리수 (D50). 임시값
+WaveManager,squadColumns,4,Squad 대형의 가로 칸 수. 임시값
+WaveManager,squadSpacing,1.1,Squad 대형 안 간격(유닛). 좁으면 서로 밀어내며 흩어진다. 임시값
+WaveManager,burrowMinDistance,3,Burrow 가 솟는 최소 거리. 이보다 가까우면 예고를 봐도 못 피한다
+WaveManager,burrowMaxDistance,6,Burrow 가 솟는 최대 거리. 소환 반경(20)보다 훨씬 안쪽이라 발밑 느낌이 난다
+WaveManager,burrowWindup,0.85,Burrow 예고가 떠 있는 시간. 코드가 최소 0.35 로 묶는다
+WaveManager,burrowBatch,4,Burrow 가 한 번에 솟는 자리 수. 임시값

@@ -22,16 +22,19 @@ MonoBehaviour:
     SpawnInterval: 2
     StartTime: 0
     EndTime: 66
+    Pattern: 0
   - Enemy: {fileID: 11400000, guid: 0a732f4198fbdec43a4e3a115015f59d, type: 2}
     Count: 16
     SpawnInterval: 3
     StartTime: 12
     EndTime: 62
+    Pattern: 2
   - Enemy: {fileID: 11400000, guid: 37e9bcc2a4d3cee4dac46fff477052dc, type: 2}
     Count: 24
     SpawnInterval: 2.2
     StartTime: 30
     EndTime: 85
+    Pattern: 0
   SpawnRadius: 20
   MaxAlive: 130
   EliteOverride: {fileID: 11400000, guid: c1e01a681911aaa4784749a69ba1f58c, type: 2}

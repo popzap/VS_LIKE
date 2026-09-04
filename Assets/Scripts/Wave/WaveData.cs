@@ -9,6 +9,27 @@ using UnityEngine;
 /// <b>아예 등장하지 못했다.</b> Normal3 의 Goblin 40마리가 그랬다.
 /// 지금은 각 항목이 자기 시간창 안에서 따로 돌기 때문에 여러 종이 섞여 나온다.</para>
 /// </summary>
+/// <summary>
+/// 적이 <b>어떻게 나타나는가</b> (D50). 어디서 나오는지가 아니라 <b>어떤 모양으로</b> 나오는지다.
+///
+/// <para>🔑 예전에는 하나뿐이었다 — 소환 반경 원 위 <b>아무 데나 한 마리씩</b>.
+/// 그래서 적이 늘 "사방에서 하나씩 흘러들어오는" 똑같은 모습이었다.</para>
+/// </summary>
+public enum SpawnPattern
+{
+    /// <summary>흩뿌리기 — 원 위 무작위, 간격을 두고 한 마리씩. <b>예전 동작 그대로다.</b></summary>
+    Scatter,
+
+    /// <summary>포위 — 원 위에 <b>고르게 한꺼번에</b> 놓는다. 쫓아오면서 자연히 좁혀 온다.</summary>
+    Ring,
+
+    /// <summary>부대 — <b>한 방향에서</b> 대형(줄×칸)을 이뤄 뭉쳐 온다.</summary>
+    Squad,
+
+    /// <summary>땅굴 — 플레이어 <b>가까이</b>에서 예고 뒤에 솟아오른다. 🔴 예고가 이 패턴의 전부다.</summary>
+    Burrow
+}
+
 [System.Serializable]
 public class WaveSpawnEntry
 {
@@ -21,6 +42,13 @@ public class WaveSpawnEntry
 
     /// <summary>이 초를 넘기면 남은 마리수가 있어도 그만둔다. <c>0</c> 이면 제한 없음.</summary>
     public float EndTime;
+
+    /// <summary>
+    /// 이 항목이 나타나는 모양 (D50). <c>Waves.csv</c> 에서는 맨 끝에 <c>~Ring</c> 처럼 붙인다 —
+    /// <c>Goblin*36@1.4:12-60~Ring</c>. <b>안 적으면 <see cref="SpawnPattern.Scatter"/></b> 라
+    /// 기존 줄은 그대로 돈다.
+    /// </summary>
+    public SpawnPattern Pattern = SpawnPattern.Scatter;
 }
 
 /// <summary>

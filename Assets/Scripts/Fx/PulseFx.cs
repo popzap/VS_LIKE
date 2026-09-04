@@ -24,6 +24,12 @@ using UnityEngine;
 /// <c>Time.deltaTime</c> 을 쓰면 <b>얼어붙은 링이 패널 뒤에 그대로 붙어 있다</b>
 /// (D41 검증 중 실제로 그렇게 나왔다 — scale 0.30 · alpha 1.00 에서 정지).</para>
 ///
+/// <para>🔴 <b>다만 시계를 고를 수 있어야 한다</b> (D50). 이 연출이 <b>예고</b>로 쓰이면
+/// — 표시가 사라진 <b>뒤에</b> 무슨 일이 일어난다면 — 그 일이 <c>scaled</c> 시간으로 오는데
+/// 표시만 <c>unscaled</c> 로 먼저 사라진다. 저배속(TAB 스탯창 <c>0.25</c>)에서 실제로
+/// <b>표시가 없어지고 한참 뒤에 적이 솟는</b> 상태가 됐다.
+/// ⇒ 그런 쓰임에는 <see cref="useUnscaledTime"/> 를 꺼서 시계를 맞춘다.</para>
+///
 /// <para>⚠️ 다만 <b>화면 흔들림은 일시정지 중에는 안 난다</b> —
 /// <see cref="CameraController"/> 가 <c>Time.deltaTime &lt;= 0</c> 이면 통째로 조기 반환한다
 /// (<c>CameraController.cs:84</c>). 흔들림이 실제로 보이는 건 <b>제단(E 키) 승급</b>처럼
@@ -32,7 +38,7 @@ using UnityEngine;
 public class PulseFx : MonoBehaviour
 {
     // 🔴 컴파일 반영 확인용 (D27).
-    public const int Version = 2;   // 2 = unscaledDeltaTime (D41 검증 중 발견)
+    public const int Version = 3;   // 3 = 시계를 고를 수 있게 (D50 검증 중 발견)
 
     [Header("그림")]
     [Tooltip("퍼져 나가는 링. 배열 순서대로 시차를 두고 출발한다.")]
@@ -62,6 +68,13 @@ public class PulseFx : MonoBehaviour
 
     [Tooltip("별이 뜨고 사라지는 시간.")]
     [SerializeField] private float burstDuration = 0.30f;
+
+    [Header("시계")]
+    [Tooltip("일시정지·저배속에 영향받지 않는 실시간을 쓸지. "
+           + "🔴 승급·레벨업 파동은 timeScale = 0 에서 떠야 하므로 켠다(D41). "
+           + "반대로 '예고 뒤에 무슨 일이 일어나는' 표시는 반드시 꺼야 한다 — "
+           + "그 일이 scaled 시간으로 오면 표시만 먼저 사라진다(D50).")]
+    [SerializeField] private bool useUnscaledTime = true;
 
     [Header("화면 흔들림 — 0 이면 안 흔든다")]
     [Tooltip("보스 등장이 0.55/0.7, 엘리트 처치가 0.20/0.25 다. 그 사이 어디쯤인지는 플레이 판정 → TUNING.md")]
@@ -108,7 +121,7 @@ public class PulseFx : MonoBehaviour
         float t = 0f;
         while (t < total)
         {
-            t += Time.unscaledDeltaTime;
+            t += useUnscaledTime ? Time.unscaledDeltaTime : Time.deltaTime;
 
             for (int i = 0; i < n; i++)
             {

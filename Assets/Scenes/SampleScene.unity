@@ -13205,6 +13205,8 @@ MonoBehaviour:
     Weight: 1
   margin: 4
   seed: 1337
+  depthTheme: 1
+  deepestLayer: 9
 --- !u!483693784 &1278891372
 TilemapRenderer:
   serializedVersion: 2
@@ -23270,6 +23272,10 @@ PrefabInstance:
       propertyPath: playerTransform
       value: 
       objectReference: {fileID: 4505039495625385280}
+    - target: {fileID: 5897929191394594014, guid: 3dec23194ba32e048855858b514f07fe, type: 3}
+      propertyPath: burrowTelegraphPrefab
+      value: 
+      objectReference: {fileID: 2541256783732814964, guid: b859111d71a82714d97122f2c4bbcc52, type: 3}
     - target: {fileID: 5897929191394594014, guid: 3dec23194ba32e048855858b514f07fe, type: 3}
       propertyPath: eliteWaves.Array.size
       value: 2
