@@ -314,6 +314,14 @@ public class LevelUpManager : MonoBehaviour
     public void ApplyItemFromShop(ItemData item) => ApplyItem(item);
 
     /// <summary>현재 런에서 해당 아이템을 보유 중인지 확인.</summary>
+    /// <summary>
+    /// 지금 보유한 아이템과 레벨. <see cref="StatsPanelUI"/> 가 TAB 창에 그린다 (D46).
+    ///
+    /// <para>🔴 <b>읽기 전용으로 낸다.</b> 밖에서 고치면 <c>ItemData.CurrentLevel</c> 과
+    /// 어긋나고, 그건 ScriptableObject 애셋에 쓰이는 값이라 <b>다음 런까지 남는다.</b></para>
+    /// </summary>
+    public IReadOnlyDictionary<ItemData, int> Inventory => _inventory;
+
     public bool HasItem(ItemData item) => _inventory.ContainsKey(item);
 
     // ── 소지 상한 ────────────────────────────────────────────────

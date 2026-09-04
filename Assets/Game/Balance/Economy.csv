@@ -93,3 +93,4 @@ WaveManager,layerHpGrowth,0.10,층당 적 최대체력 +10%. 0 이면 층 스케
 WaveManager,layerDamageGrowth,0.06,층당 적 접촉 피해 +6%. 체력보다 낮게 잡았다 — 피해가 빨리 오르면 한 대에 죽는 구간이 생긴다. 임시값
 WaveManager,layerSpawnGrowth,0.08,층당 소환량·동시 생존 상한 +8%. 둘 다 걸린다 — 상한을 안 올리면 대기줄만 길어진다. 임시값
 WaveManager,maxAliveCeiling,300,동시 생존 상한의 천장. EnemyBase 의 무리 분리 버퍼가 64칸이라 적 400 이상은 재판단이 필요하다(B8) — 그 아래로 묶는다
+StatsPanelUI,slowTimeScale,0.25,TAB 스탯창을 보는 동안의 시간 배속 (D46). 0 이면 완전 정지라 "보면서도 플레이" 요구와 어긋난다 — 코드가 최소 0.02 로 묶는다. 임시값
