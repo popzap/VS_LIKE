@@ -12,6 +12,9 @@ public class HUDManager : MonoBehaviour
 {
     public static HUDManager Instance { get; private set; }
 
+    // 🔴 컴파일 반영 확인용 (D27).
+    public const int Version = 2;   // 2 = 레벨업 파동을 패널 닫힘으로 옮김 (D43)
+
     // ── 포트레이트 (좌측 상단) ───────────────────────────────
     [Header("포트레이트")]
     [SerializeField] private Image   portraitImage;        // 원형 마스크 안의 얼굴 이미지
@@ -69,7 +72,9 @@ public class HUDManager : MonoBehaviour
     // ── 레벨업 연출 ──────────────────────────────────────────
     [Header("레벨업 연출")]
     [SerializeField] private Animator levelUpAnimator;    // "LevelUp" 트리거가 있는 Animator
-    [SerializeField] private GameObject levelUpEffect;    // 파티클 등
+    [Tooltip("레벨업 파동(Fx_LevelUp). SceneWiring.csv 의 HUDManager,levelUpEffect 로 배선한다. "
+           + "🔴 여기서 바로 띄우지 않는다 — PlayLevelUpEffect() 를 LevelUpManager 가 부른다.")]
+    [SerializeField] private GameObject levelUpEffect;
 
     // ────────────────────────────────────────────────────────
 
@@ -283,12 +288,26 @@ public class HUDManager : MonoBehaviour
         // 그 예외가 CollectXp 밖으로 전파되어 레벨업 패널이 아예 안 뜬다.
         if (levelUpAnimator != null) levelUpAnimator.SetTrigger("LevelUp");
 
-        if (levelUpEffect != null)
-        {
-            var player = FindFirstObjectByType<PlayerController>();
-            if (player != null)
-                Instantiate(levelUpEffect, player.transform.position, Quaternion.identity);
-        }
+        // 🔴 파동은 여기서 안 띄운다 (D43).
+        //    이 함수가 도는 바로 그 프레임에 레벨업 패널이 열리는데, 캔버스가
+        //    ScreenSpaceOverlay 라 월드 스프라이트는 무조건 그 아래다 — sortingOrder 로도 못 이긴다.
+        //    D41 에서 파동이 "생기기는 하는데 한 번도 안 보이는" 상태였다.
+        //    ⇒ 패널이 실제로 닫히는 시점에 LevelUpManager 가 PlayLevelUpEffect() 를 부른다.
+    }
+
+    /// <summary>
+    /// 레벨업 파동을 플레이어 자리에 띄운다. <see cref="LevelUpManager.HidePanel"/> 이 부른다.
+    ///
+    /// <para>🔴 <c>?.</c> 를 쓰지 않는다 — 미할당 직렬화 필드는 "가짜 null" 이라
+    /// <c>?.</c> 가 통과시키고 예외가 호출 사슬 밖으로 샌다 (I-24).
+    /// 여기서 새면 <b>레벨업 패널이 닫히다 만다.</b></para>
+    /// </summary>
+    public void PlayLevelUpEffect()
+    {
+        if (levelUpEffect == null) return;
+        var player = FindFirstObjectByType<PlayerController>();
+        if (player == null) return;
+        Instantiate(levelUpEffect, player.transform.position, Quaternion.identity);
     }
 
     private void RefreshXP()

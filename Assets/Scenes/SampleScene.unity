@@ -20305,6 +20305,39 @@ PrefabInstance:
       propertyPath: removeListContent
       value: 
       objectReference: {fileID: 1060567788}
+    - target: {fileID: 8163439294184431030, guid: dd984b45809b1964d8196ddc77259acd, type: 3}
+      propertyPath: 'npcDialogues.Array.data[0]'
+      value: 'Only the finest goods here.
+
+        Nothing you fancy?
+
+        I
+        can reroll the lot.'
+      objectReference: {fileID: 0}
+    - target: {fileID: 8163439294184431030, guid: dd984b45809b1964d8196ddc77259acd, type: 3}
+      propertyPath: 'npcDialogues.Array.data[1]'
+      value: 'Today''s bargain! Buy quick,
+
+        or the next customer will.'
+      objectReference: {fileID: 0}
+    - target: {fileID: 8163439294184431030, guid: dd984b45809b1964d8196ddc77259acd, type: 3}
+      propertyPath: 'npcDialogues.Array.data[2]'
+      value: 'Looking for something?
+
+        I can help. For a price.'
+      objectReference: {fileID: 0}
+    - target: {fileID: 8163439294184431030, guid: dd984b45809b1964d8196ddc77259acd, type: 3}
+      propertyPath: 'npcDialogues.Array.data[3]'
+      value: 'Stronger foes are waiting.
+
+        Come prepared, friend.'
+      objectReference: {fileID: 0}
+    - target: {fileID: 8163439294184431030, guid: dd984b45809b1964d8196ddc77259acd, type: 3}
+      propertyPath: 'npcDialogues.Array.data[4]'
+      value: 'Removing is cheap. Travel light,
+
+        that''s what I always say.'
+      objectReference: {fileID: 0}
     m_RemovedComponents:
     - {fileID: 3782867895578021264, guid: dd984b45809b1964d8196ddc77259acd, type: 3}
     m_RemovedGameObjects: []

@@ -53,6 +53,19 @@ public class LevelUpManager : MonoBehaviour
     /// </summary>
     private bool _panelIsForced;
 
+    /// <summary>
+    /// 이번 패널 세션에서 <b>레벨업 빚을 하나라도 갚았나</b> (D43).
+    ///
+    /// <para>파동은 패널이 실제로 닫힐 때 한 번만 띄운다. 그런데 같은 패널을
+    /// <see cref="ShowForcedChoices"/>(진화 제안)로 닫는 경우도 있어서,
+    /// <b>레벨업으로 열린 것이었는지</b>를 따로 세야 진화 카드를 골랐을 뿐인데
+    /// 레벨업 파동이 뜨는 일이 없다.</para>
+    ///
+    /// <para>레벨업이 여러 번 밀려 있었어도(B10 대기열) 파동은 <b>마지막에 한 번</b>이다 —
+    /// 세 번 겹쳐 뜨면 그냥 지저분하다.</para>
+    /// </summary>
+    private bool _levelUpConsumed;
+
     // ── Public API ───────────────────────────────────────────────
 
     /// <summary>
@@ -125,7 +138,11 @@ public class LevelUpManager : MonoBehaviour
     {
         // 🔴 진화 제안 패널을 닫는 것은 레벨업 빚을 갚은 게 아니다.
         //    여기서 같이 세면 대기 중인 레벨업이 카드 없이 사라진다.
-        if (!_panelIsForced && _pendingLevelUps > 0) _pendingLevelUps--;
+        if (!_panelIsForced && _pendingLevelUps > 0)
+        {
+            _pendingLevelUps--;
+            _levelUpConsumed = true;
+        }
         _panelIsForced = false;
 
         if (_pendingLevelUps > 0)
@@ -136,6 +153,17 @@ public class LevelUpManager : MonoBehaviour
         }
 
         if (levelUpPanel != null) levelUpPanel.SetActive(false);
+
+        // 🔴 레벨업 파동은 여기서 띄운다 (D43 · A안).
+        //    HUDManager.OnLevelUp 에서 띄우면 같은 프레임에 이 패널이 열려 통째로 가린다 —
+        //    캔버스가 ScreenSpaceOverlay 라 월드 스프라이트는 그 아래고 sortingOrder 로도 못 이긴다.
+        //    패널을 내린 "지금"이 플레이어가 다시 월드를 보는 순간이다.
+        if (_levelUpConsumed)
+        {
+            _levelUpConsumed = false;
+            if (HUDManager.Instance != null) HUDManager.Instance.PlayLevelUpEffect();
+        }
+
         GameManager.Instance.OnLevelUpCompleted();
     }
 
