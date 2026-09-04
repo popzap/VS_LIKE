@@ -61,6 +61,14 @@ public class EvolutionManager : MonoBehaviour
 
     public float AltarRadius => altarRadius;
 
+    // ── 도감이 읽는 목록 (D54) ──────────────────────────────────
+    //
+    // 🔑 도감이 자기 목록을 따로 배선하지 않는 이유다. 여기서 읽으면
+    //    **게임에 실제로 들어간 레시피만** 도감에 뜬다 — 애셋 폴더를 훑으면
+    //    배선 안 된 시험용 레시피까지 목록에 섞인다.
+    public EvolutionData[]      AllEvolutions   => allEvolutions   != null ? allEvolutions   : System.Array.Empty<EvolutionData>();
+    public ClassEvolutionData[] ClassEvolutions => classEvolutions != null ? classEvolutions : System.Array.Empty<ClassEvolutionData>();
+
     // ── 런 초기화 ────────────────────────────────────────────────
 
     /// <summary>

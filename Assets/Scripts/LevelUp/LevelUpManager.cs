@@ -212,6 +212,8 @@ public class LevelUpManager : MonoBehaviour
         _inventory[item]++;
         item.CurrentLevel = _inventory[item];
 
+        Discover(CodexKind.Item, item);   // 도감 (D54) — 레벨업·상점·진화 결과가 전부 여길 지난다
+
         switch (item.Category)
         {
             case ItemCategory.Weapon:
@@ -395,6 +397,24 @@ public class LevelUpManager : MonoBehaviour
         _inventory[item]  = level;
         item.CurrentLevel = level;
         WeaponManager.Instance?.AddOrUpgradeWeapon(weapon, level);
+
+        // 🔴 이 경로는 ApplyItem 을 안 태운다(위 주석) — 그래서 발견 기록도 여기서 따로 남긴다.
+        //    안 하면 "매 판 들고 시작하는 무기가 도감에서 영원히 ???" 가 된다.
+        Discover(CodexKind.Item, item);
+    }
+
+
+    // ── 도감 발견 (D54) ─────────────────────────────────────────
+    //
+    // 🔴 GameManager.Instance.MetaProgression 을 Awake 에서 캐시하지 않는다 (I-8 / I-38).
+    //    그 참조는 GameManager.Start 에서 채워지는데 모든 Awake 는 모든 Start 보다 먼저 돈다 —
+    //    캐시하면 null 이 잡히고도 예외가 안 나서 기능만 조용히 죽는다.
+    private static void Discover(CodexKind kind, UnityEngine.Object asset)
+    {
+        if (asset == null) return;
+        var gm = GameManager.Instance;
+        if (gm == null || gm.MetaProgression == null) return;   // 🔴 ?. 금지 (I-24)
+        gm.MetaProgression.Discover(kind, asset.name);
     }
 
     /// <summary><paramref name="weapon"/> 을 가리키는 무기 <see cref="ItemData"/> 를 찾는다. 없으면 null.</summary>

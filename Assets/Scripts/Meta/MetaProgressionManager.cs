@@ -29,6 +29,24 @@ public class SaveData
 
     // 해금된 스킨 목록
     public List<string> UnlockedSkins = new();
+
+    // ── 도감 (D54) ──────────────────────────────────────────
+    //
+    // 🔑 애셋 파일명(= CSV 의 Id)을 그대로 쓴다. ItemName 같은 표시 이름을 쓰면
+    //    번역하거나 이름을 다듬는 순간 예전 세이브의 발견 기록이 통째로 날아간다.
+    //
+    // ℹ️ 옛 세이브에는 이 필드들이 없지만 JsonUtility 는 없는 필드를 건드리지 않으므로
+    //    위 초기화(new())가 그대로 남는다 — TotalPlaySeconds 와 같은 사정이다.
+    //    즉 예전 판을 하던 사람은 "아무것도 발견 안 한 상태"로 시작한다(깨지지 않는다).
+
+    /// <summary>먹어 본 아이템. 무기·건물·패시브를 한 목록에 담는다(전부 ItemData 다).</summary>
+    public List<string> DiscoveredItems   = new();
+
+    /// <summary>골라 봤거나 승급해 본 직업.</summary>
+    public List<string> DiscoveredClasses = new();
+
+    /// <summary>화면에 나온 적. 죽였는지가 아니라 <b>봤는지</b>가 기준이다.</summary>
+    public List<string> DiscoveredEnemies = new();
 }
 
 // Unity에서 Dictionary를 직렬화하기 위한 래퍼
@@ -188,6 +206,51 @@ public class MetaProgressionManager : MonoBehaviour
     public bool IsCharacterUnlocked(string id) => _data.UnlockedCharacters.Contains(id);
     public bool IsSkinUnlocked(string id)      => _data.UnlockedSkins.Contains(id);
 
+    // ── 도감 발견 기록 (D54) ────────────────────────────────
+    //
+    // 🔴 여기서 Save() 를 부르지 않는다. Discover 는 적이 스폰될 때마다 불리는데
+    //    그때마다 파일을 쓰면 웨이브 중에 디스크 I/O 가 끼어든다.
+    //    대신 더럽다고만 표시하고, 런이 끝날 때·도감을 열 때·게임을 끌 때 한 번에 쓴다.
+
+    private bool _dirty;
+
+    private List<string> ListOf(CodexKind kind) => kind switch
+    {
+        CodexKind.Class  => _data.DiscoveredClasses,
+        CodexKind.Enemy  => _data.DiscoveredEnemies,
+        _                => _data.DiscoveredItems,
+    };
+
+    /// <summary>
+    /// 발견을 기록한다. <b>이미 있으면 아무 일도 안 한다.</b>
+    /// </summary>
+    /// <param name="id">애셋 파일명(= CSV 의 Id). 표시 이름을 넣지 말 것.</param>
+    /// <returns>이번에 <b>처음</b> 발견했으면 true.</returns>
+    public bool Discover(CodexKind kind, string id)
+    {
+        if (string.IsNullOrEmpty(id)) return false;
+        var list = ListOf(kind);
+        if (list.Contains(id)) return false;
+        list.Add(id);
+        _dirty = true;
+        return true;
+    }
+
+    public bool IsDiscovered(CodexKind kind, string id)
+        => !string.IsNullOrEmpty(id) && ListOf(kind).Contains(id);
+
+    public int DiscoveredCount(CodexKind kind) => ListOf(kind).Count;
+
+    /// <summary>쌓인 발견 기록을 파일에 내린다. 이미 깨끗하면 아무 일도 안 한다.</summary>
+    public void FlushIfDirty()
+    {
+        if (_dirty) Save();
+    }
+
+    // 🔴 알트+F4 로 꺼도 그날 발견한 것이 남아야 한다.
+    //    에디터에서는 플레이 종료 시에도 불린다.
+    private void OnApplicationQuit() => FlushIfDirty();
+
     // ── 저장 / 로드 ──────────────────────────────────────────────
 
     public void Save()
@@ -196,6 +259,7 @@ public class MetaProgressionManager : MonoBehaviour
         {
             string json = JsonUtility.ToJson(_data, prettyPrint: true);
             File.WriteAllText(SavePath, json);
+            _dirty = false;   // D54 — 도감 발견 기록도 같이 내려갔다
             Debug.Log($"[Meta] Saved to {SavePath}");
         }
         catch (Exception e)
@@ -228,3 +292,15 @@ public class MetaProgressionManager : MonoBehaviour
         }
     }
 }
+
+/// <summary>
+/// 도감이 나누는 갈래 (D54).
+///
+/// <para>🔴 <b>무기를 따로 두지 않는다.</b> 무기·건물·패시브는 전부 <see cref="ItemData"/> 라
+/// 발견 경로가 하나(<c>LevelUpManager.ApplyItem</c>)다. 화면에서만 카테고리로 갈라 보여준다 —
+/// 저장 쪽까지 갈라 두면 같은 사실이 두 목록에 나뉘어 들어간다.</para>
+///
+/// <para>진화는 여기 없다. <b>진화는 재료로부터 파생되는 상태</b>라
+/// 따로 기록하면 재료 기록과 어긋날 수 있다 — 재료를 다 발견했으면 조건이 보인다.</para>
+/// </summary>
+public enum CodexKind { Item, Class, Enemy }

@@ -19,10 +19,13 @@ public class MainMenuUI : GameStatePanel
     [SerializeField] private Button optionButton;
     [SerializeField] private Button quitButton;
     [SerializeField] private Button creditsButton;
+    [Tooltip("도감 (D54). 발견한 아이템·적·진화 조건을 본다")]
+    [SerializeField] private Button codexButton;
 
     [Header("옵션 서브 패널 (PauseMenuUI 와 공유)")]
     [SerializeField] private GameObject optionSubPanel;
     [SerializeField] private GameObject creditsPanel;
+    [SerializeField] private GameObject codexPanel;
 
     protected override bool IsVisibleIn(GameState state) => state == GameState.MainMenu;
 
@@ -37,6 +40,7 @@ public class MainMenuUI : GameStatePanel
         if (optionButton) optionButton.onClick.AddListener(OnOptionClicked);
         if (quitButton)   quitButton  .onClick.AddListener(OnQuitClicked);
         if (creditsButton) creditsButton.onClick.AddListener(OnCreditsClicked);
+        if (codexButton)   codexButton  .onClick.AddListener(OnCodexClicked);
     }
 
     protected override void OnShown(GameState state)
@@ -55,6 +59,18 @@ public class MainMenuUI : GameStatePanel
     protected override void OnHidden()
     {
         if (optionSubPanel != null) optionSubPanel.SetActive(false);
+
+        // 🔴 도감·크레딧도 같이 닫는다 (I-50 과 같은 사정).
+        //    켜진 채로 남으면 전투 진입에서 앞 패널들이 꺼지는 순간 갑자기 튀어나온다.
+        if (creditsPanel != null) creditsPanel.SetActive(false);
+        if (codexPanel   != null) codexPanel  .SetActive(false);
+    }
+
+    private void OnCodexClicked()
+    {
+        if (codexPanel == null) return;   // 🔴 ?. 금지 (I-24)
+        AudioManager.Play(SfxId.UiSelect);
+        codexPanel.SetActive(true);
     }
 
     private void RefreshCurrency()

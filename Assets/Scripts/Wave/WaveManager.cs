@@ -104,6 +104,44 @@ public class WaveManager : MonoBehaviour
     /// <summary>현재 웨이브가 진행 중인지. HUD 가 표시 여부를 정할 때 쓴다.</summary>
     public bool  IsWaveActive => _waveActive;
 
+    /// <summary>
+    /// 이 게임에 실제로 나오는 적 전부 (D54 · 도감).
+    ///
+    /// <para>🔑 <b>애셋 폴더를 훑지 않는다.</b> 배선된 웨이브를 걸어서 모으므로
+    /// <c>Waves.csv</c> 에 안 적힌 적은 도감에도 안 뜬다 — 목록이 게임과 어긋날 수 없다.</para>
+    ///
+    /// <para>엘리트/보스 <c>Override</c> 도 같이 담는다. <c>Bonecaller</c> 처럼
+    /// 소환 항목에는 없고 보스로만 나오는 적이 있기 때문이다.</para>
+    /// </summary>
+    public List<EnemyData> CollectEnemies()
+    {
+        var seen = new List<EnemyData>();
+
+        void Add(EnemyData e)
+        {
+            if (e != null && !seen.Contains(e)) seen.Add(e);
+        }
+
+        void Walk(WaveData[] pool)
+        {
+            if (pool == null) return;
+            foreach (var w in pool)
+            {
+                if (w == null) continue;
+                if (w.Spawns != null)
+                    foreach (var s in w.Spawns) if (s != null) Add(s.Enemy);
+                Add(w.EliteOverride);
+                Add(w.BossOverride);
+            }
+        }
+
+        Walk(normalWaves);
+        Walk(eliteWaves);
+        Walk(eventWaves);
+        Walk(new[] { bossWave });   // bossWave 는 배열이 아니라 한 개다
+        return seen;
+    }
+
     /// <summary>지금 필드에 살아 있는 적 수.</summary>
     public int   EnemiesAlive => _alive.Count;
 

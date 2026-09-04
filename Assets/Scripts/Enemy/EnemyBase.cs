@@ -91,6 +91,13 @@ public class EnemyBase : MonoBehaviour
         Visual  = GetComponent<EnemyVisual>();
 
         PlayerTransform = GameObject.FindGameObjectWithTag("Player")?.transform;
+
+        // 도감 (D54) — 죽였는지가 아니라 **봤는지**가 기준이다.
+        // 🔴 여기서 파일을 쓰지 않는다. Discover 는 목록에만 넣고 저장은 나중에 몰아서 한다 —
+        //    적 스폰마다 디스크를 건드리면 웨이브 중에 I/O 가 끼어든다.
+        var gm = GameManager.Instance;
+        if (gm != null && gm.MetaProgression != null && data != null)   // 🔴 ?. 금지 (I-24)
+            gm.MetaProgression.Discover(CodexKind.Enemy, data.name);
         _playerRb       = PlayerTransform != null ? PlayerTransform.GetComponent<Rigidbody2D>() : null;
 
         float hpMult     = isBoss ? data.BossHpMult     : isElite ? data.EliteHpMult     : 1f;

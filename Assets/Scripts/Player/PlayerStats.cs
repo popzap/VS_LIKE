@@ -116,6 +116,7 @@ public class PlayerStats : MonoBehaviour
     {
         _classChain.Clear();
         if (cls != null) _classChain.Add(cls);
+        DiscoverClass(cls);   // 도감 (D54) — 런 시작 시 고른 직업
 
         RecalculateStats();
         CurrentHp = Final.MaxHp;
@@ -138,11 +139,25 @@ public class PlayerStats : MonoBehaviour
 
         float before = Final.MaxHp;
         _classChain.Add(cls);
+        DiscoverClass(cls);   // 도감 (D54) — 승급 직업은 시작 선택 목록에 없어 이 경로로만 들어온다
         RecalculateStats();
 
         CurrentHp = Mathf.Min(Final.MaxHp, CurrentHp + Mathf.Max(0f, Final.MaxHp - before));
 
         ApplyClassVisual(cls);
+    }
+
+    // ── 도감 발견 (D54) ─────────────────────────────────────────
+    //
+    // 호출부가 둘(시작 적용·승급)이라 한 곳으로 모은다.
+    // 🔴 GameManager.Instance.MetaProgression 을 Awake 에서 캐시하지 않는다 (I-8 / I-38) —
+    //    그 참조는 GameManager.Start 에서 채워지는데 모든 Awake 가 모든 Start 보다 먼저 돈다.
+    private static void DiscoverClass(CharacterClassData cls)
+    {
+        if (cls == null) return;
+        var gm = GameManager.Instance;
+        if (gm == null || gm.MetaProgression == null) return;   // 🔴 ?. 금지 (I-24)
+        gm.MetaProgression.Discover(CodexKind.Class, cls.name);
     }
 
     /// <summary>
