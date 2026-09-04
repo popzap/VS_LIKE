@@ -460,7 +460,7 @@ CONTENT 는 **읽기만** 한다 — 내 요청이 언제 처리될지 가늠하
 
 | 세션 | 다음 이슈 번호 |
 |---|---|
-| DEV | `D58` |
+| DEV | `D59` |
 | DEV | `D41` | `Assets/Scripts/Fx/PulseFx.cs` · `Assets/Prefabs/Fx_{Promote,LevelUp}.prefab` · `Assets/Scripts/Evolution/EvolutionManager.cs` · `Assets/Game/Balance/SceneWiring.csv` · `Assets/Scenes/SampleScene.unity` · `Docs/**` | 2026-09-04 | `완료` — **요청-26 (C34)**: 메타 아이콘 **7/7** + 승급·레벨업 파동. 🔴 **검증 중 내 결함을 잡았다** — 이 연출이 뜨는 두 순간이 **둘 다 `timeScale = 0`** 이라 `Time.deltaTime` 이면 **얼어붙은 링이 화면에 붙어 있다**. `unscaledDeltaTime` 으로 고침. 🟡 **판정 ⑤ 보류** — 레벨업 파동은 뜨지만 `ScreenSpaceOverlay` 패널이 덮어 **안 보인다** → `TODO.md` 결정 3안. 🟡 고아 애셋 `UpGoldGain.asset` 발견 |
 | DEV | `D42` | `Assets/Game/Sprites/UI/{ShopKeeper,MainMenuBG}.png` · `Assets/Scenes/SampleScene.unity` · `Docs/**` | 2026-09-04 | `완료` — **요청-27 (C35)**: Unity AI 그림 2장. 판정 **7/7** (알파 0 · 배경 밝기 **0.150** · 세로 점유 **86.1 %**). **코드 0줄.** 🔴 **`I-41` 가짜 투명이 또 났다** — 프롬프트에 명시해도 알파가 전부 255 였다. 🔴 CONTENT 의 *"형제 순서 0"* 지시를 일부러 안 따랐다 — 그 자리 `DimBG` 가 **알파 1.00 불투명**이라 배경이 가린다. 🟡 `pivot` 이 위쪽이라 배치를 한 번 틀렸다 |
 | DEV | `D43` | `Assets/Scripts/{UI/HUDManager,LevelUp/LevelUpManager}.cs` · `Assets/GameObjects/UI Canvas.prefab` · `Assets/Scenes/SampleScene.unity` · `Docs/**` | 2026-09-04 | `완료` — 사용자 결정 2건. ① **`B11` 닫음** — 씬 **과 프리팹 원본** 둘 다 영문화. 🔴 씬만 고쳤으면 오버라이드라 **부활했다**. 전수 조사(씬 263 · 프리팹 69) 한글 **0건**, 스캐너에 **대조군**을 넣어 배열까지 보는 걸 증명했다 ② **레벨업 파동 A안** — 패널 닫힘 시점으로 옮김. 판정 3/3 |
@@ -478,6 +478,7 @@ CONTENT 는 **읽기만** 한다 — 내 요청이 언제 처리될지 가늠하
 | DEV | `D55` | `Assets/Scripts/UI/CodexPanel.cs` · `Assets/Scenes/SampleScene.unity` · `Docs/**` | 2026-09-04 | `완료` — **도감을 아이콘 격자로 다시 짰다**(사용자 스케치). 7열 · 칸 108px · 진화 조건은 아이콘 아래 전용 줄. 🔑 **가리는 방향이 두 개다** — 이름은 `???` 로 감추고 **윤곽은 준다**. D54 는 아이콘이 40px 라 실루엣이 사실상 안 보였다. 판정 **6/6** (5탭 칸 수 12·16·7·10·7 · 배선 null 0/8 · 콘솔 0). 🔵 **52칸 전부 그림이 있다** — 예비 글자 경로는 안 쓰였지만 남겼다. 🟡 `--amend` 금지라 D54 를 고치지 않고 새 커밋으로 |
 | DEV | `D56` | `Assets/Scripts/UI/CodexPanel.cs` · `Assets/Scenes/SampleScene.unity` · `Docs/**` | 2026-09-04 | `완료` — **도감 가시성**(사용자 스크린샷). **실루엣은 검정으로 두고 미발견 칸을 밝게 뒤집었다** · 칸 108→132px · 본문 25→32pt(자동 축소). 판정 **5/5** — 실루엣 대비 **0.1468→0.4533 (3.1배)** · 본문 4종 전부 상자 안 · 콘솔 0. 🔴 **고치다가 정답을 새게 했다** — "실루엣을 밝게" 로 갔는데 `Image.color` 는 곱셈이라 원색이 흐려질 뿐이었고 0/12 인데 무기 12종이 다 보였다. **숫자는 좋아졌으므로 캡처를 안 봤으면 개선이라고 보고했을 것이다** |
 | DEV | `D57` | `Assets/Scripts/UI/CodexPanel.cs` · `Assets/Scenes/SampleScene.unity` · `Docs/**` | 2026-09-04 | `완료` — **도감 닫기를 우측 상단 X + ESC 로**(사용자 요구). 격자·상세 **+60px**. 🔵 PauseMenuUI 도 ESC 를 읽지만 CanPause 가 Wave 뿐이라 안 부딪힌다 — **전제를 주석에 못박았다**. 판정 **4/4**(X · ESC · 대조군 일시정지 안 열림 · 664→724). 🔴 **처음엔 ESC 가 안 닫혔는데 시험이 문제였다** — wasPressedThisFrame 은 엣지인데 InputSystem.Update() 를 직접 불러 엣지를 소모했다 |
+| DEV | `D58` | `Docs/**` (측정만 · **코드·애셋 변경 0**) | 2026-09-04 | `절반` — **C40 요청-32 실플레이 검증**. 17개 중 **6개를 숫자로 닫았다** — 0-a **vSync 켜져 있었다**(1·144Hz) · 2-a **294마리 111.3 fps** · 2-h BONECALLER·HP 2926 · 3-a **색상각 170도**+밝기 0.383 · 2-c·2-g 는 D53 값. §0-b 는 ProfilerDriver 접근 불가라 **논리로 닫았다**(에디터 오버헤드 포함 111fps ⇒ 빌드는 더 빠르다). 🔴 **§1 자동화 불가 이유를 찾았다** — 레벨업 카드 선택에서 timeScale 0 으로 멈춘다. 🟡 예측 **M ≈ 600**(이론 최대 1757G vs 배수 241G, 실측 처치당 1.65G). **사람이 해야 하는 9개**는 사용자에게 넘김 → 요청-42 |
 | CONTENT | `C41` |
 | 버그(공용) | `B12` |
 
