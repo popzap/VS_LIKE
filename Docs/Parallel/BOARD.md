@@ -47,6 +47,7 @@
 >
 
 | CONTENT | `C37` | `Assets/Game/Tiles/*.asset` · `Tools/Art/` · `REQ/DEV.md` | 2026-09-04 | `대기(REQ→DEV)` — **바닥 타일 층별 색 분리**(요청-37 의 답 · **코드 0줄 · Import 불필요**). 🔴 **DEV 가 준 A·B·C 가 다 안 맞았다** — 타일 원본 밝기 폭은 0.175 인데 `I-28` 평준화가 10종을 **한 점**으로 끌어내려서(화면 `0.156 ± 0.002`) PNG 를 다시 칠해도 또 뭉개진다. **손잡이는 PNG 가 아니라 `m_Color`.** 🔑 **안 D — 한 점이 아니라 램프로 평준화한다.** `I-28`(층 안 퀼트)과 `D49`(층 간 구분)는 *"언제 같이 깔리나"* 를 넣으면 **안 부딪힌다**. `dL 0.0001 → 0.0443` · 층0 밝기는 그대로. 🟡 두 무리로 끊었다가 퀼트가 재발해서 램프로 되돌렸다(구분 0.009 내주고 퀼트 36 % 감소) → [`REQ/DEV.md`](REQ/DEV.md) **요청-29** · [`DONE/C37.md`](DONE/C37.md) |
+| CONTENT | `C38` | `Assets/Game/Balance/Economy.csv` · `REQ/DEV.md` | 2026-09-04 | `대기(REQ→DEV)` — **층별 난이도 계수 + 스탯창 배속 + 보스 확인**(요청-34·35·36 세 건을 한 번에). **Import 1회 · 코드 0줄.** 🔑 **다섯 값 중 둘만 바꿨다** — HP·피해 성장률과 `slowTimeScale` 은 **이길 근거가 없어 유지**했다. *"값을 정해 달라"의 답이 "안 바꾼다"일 수 있다.* 🔴 `layerSpawnGrowth` **0.08→0.14**(9층 최대 223→**293**) · `maxAliveCeiling` **300→320** — `PERF.md` §0 의 장르 정의("수백 마리")와 내 성능 실측(400=7 %) **두 고정점 사이**라 바꿀 수 있었다. 400 아래라 `B8` 재판단 불필요. 🟡 방어력이 정액이라 **방어 11 이면 9층 고블린도 바닥값 1** — 선형 피해 성장으로는 못 따라잡는다(빌드 선택이지 값의 결함이 아니다). ✅ 아이콘 없는 아이템 **0개** · 보스 판단 4개 전부 수용 + 재실측 통과 → [`REQ/DEV.md`](REQ/DEV.md) **요청-30** · [`DONE/C38.md`](DONE/C38.md) |
 
 > 상태값: `진행중` · `대기(REQ→DEV)` · `검증대기` · `막힘(B1)`
 > 끝나면 **자기 줄을 지운다.**
@@ -455,7 +456,7 @@ CONTENT 는 **읽기만** 한다 — 내 요청이 언제 처리될지 가늠하
 | DEV | `D48` | `Assets/Game/Sprites/Enemies/Bonecaller.png`(신규) · `Assets/Game/EnemyData/Bonecaller.asset`(신규) · `Assets/Game/Balance/{Enemies,Waves,Bosses}.csv` · `Docs/**` | 2026-09-04 | `완료` — **보스 전용 그림** (`ROADMAP` §2-5 마지막 줄, `요청-27` 재개). 🔑 **잡몹 Ogre 는 안 건드렸다** — 보스 전용 `EnemyData` 행을 새로 만들고 수치는 Ogre 복사(밸런스 변화 0). 🔴 **컨셉을 내가 정했다** (CONTENT 미가동) — 지어내지 않고 보스가 하는 일에서 끌어냈다. 이름·보스 수·걷기 시트는 **CONTENT 확인 대기** → 요청-36. 🔴 `maxTextureSize` 축소가 **PPU 도 같이 낮춰** 보스가 2배가 될 뻔했다. 판정 **7/7** |
 | DEV | `D49` | `Assets/Scripts/Stage/GroundTiler.cs` · `Assets/Game/Balance/Economy.csv` · `Docs/**` | 2026-09-04 | 🟡 `절반` — **층별 바닥 테마** (`ROADMAP` §7). 🔑 새 애셋 0 — `tiles` 가 이미 얕은 것→깊은 것 순서라 **가중치를 역순으로 보간**했다. 0층 대조군 `Grass 38.4 %`(예전과 같다) · 9층 `Flagstone 38.6 %`. 🔴 **그런데 화면은 1.4 % 만 달라진다**(밝기 0.1510→0.1447) — 타일 10종이 서로 너무 비슷하다. 판정 기준과 함께 CONTENT 에 넘김 → 요청-37 |
 | DEV | `D50` | `Assets/Scripts/Wave/{WaveData,WaveManager}.cs` · `Assets/Scripts/Fx/PulseFx.cs` · `Assets/Editor/BalanceImporter.cs` · `Assets/Prefabs/Fx_Burrow.prefab`(신규) · `Assets/Game/Balance/{Economy,SceneWiring,Waves}.csv` · `Assets/Scenes/SampleScene.unity` · `Docs/**` | 2026-09-04 | `완료` — **적 출현 패턴 4종**(사용자 요구). 흩뿌리기·**원으로 조이기**·**부대**·**땅굴**. 🔑 `Waves.csv` 에 **열을 안 늘렸다** — 맨 뒤 **`~패턴` 접미사**로 넣고 `Scatter` 는 안 쓴다 ⇒ 기존 행 바이트 동일. 판정 **7/7** (Ring 45.0~45.0도 · Squad 각도 폭 9.4도 · Burrow 예고 4/적 0 · 거리 3.43~5.55 · **배선 끊으면 20.0** 대조군). 🔴 **`D41`↔`D46` 사이를 가로지르는 결함** — `PulseFx` 는 unscaled 인데 땅굴 대기는 scaled 라 TAB 저배속에서 **예고가 2.5초 먼저 사라진다**. `useUnscaledTime` 신설. 🟡 계수 7개는 사람이 해 봐야 안다 → 요청-38 |
-| CONTENT | `C38` |
+| CONTENT | `C39` |
 | 버그(공용) | `B12` |
 
 > 번호를 쓸 때 이 표를 **즉시** 올린다. 선점이 곧 예약이다.
