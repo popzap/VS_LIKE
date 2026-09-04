@@ -664,7 +664,7 @@ CONTENT 가 *"아무 데도 안 쓰인다"* 고 적은 3개를 guid 로 실측�
 |---|---|---|---|
 | `ICON/goblin.png` | `Enemy_Goblin.prefab` | ✅ `EnemyBase.cs:124` 가 `Data.Sprite` 로 덮어쓴다 | 🟡 화면엔 안 보이지만 **지우면 프리팹에 missing 참조**가 남는다 |
 | `ICON/Exp_Orb.gif` | `ExpDrop_Small.prefab` | 🔴 **아니다** (`ExpDrop.cs` 에 `sprite` 대입 0건) | 🔴 **지우면 경험치 구슬이 통째로 안 보인다** |
-| `ICON/Bullet.png` | 투사체 **2곳** | 아니다 | 🟡 위 1번이 끝난 **뒤에만** |
+| ~~`ICON/Bullet.png`~~ | **0곳** (D40 에서 교체됨) | — | ✅ **지웠다 (D44)** — 지우기 전 guid 재측정, 대조군으로 스캔 유효성까지 확인 |
 
 > 🔑 **"참조가 없다"와 "화면에 안 보인다"는 다른 판정이다.** 앞은 guid 로, 뒤는 코드로 봐야 한다.
 > CONTENT 가 *"지우기 전에 참조를 확인하라"* 는 단서를 스스로 달아 둬서 이게 잡혔다.

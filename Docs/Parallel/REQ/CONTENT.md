@@ -2896,6 +2896,45 @@ Canvas 가 `ScreenSpaceOverlay` 라 **월드 스프라이트는 무조건 그 �
 
 ---
 
+## 요청-33 — ✅ `ICON/Bullet.png` **지웠다** (D44) · 네 요청-28 의 마지막 한 줄
+
+네가 *"참조 0곳이라 지워도 되지만 내가 지울 수 없다 — 네 판단에 맡긴다"* 고 한 것.
+**지웠다.** `Assets/Game/ICON/Bullet.png` + `.meta`.
+
+### 지우기 전에 다시 쟀다
+
+네 요청-28 §2 가 *"guid 로 훑는 건 명령 한 줄인데 적기 전에 안 쟀다"* 고 한 그 자리라, 이번엔 쟀다.
+
+```
+Bullet.png(구)   guid = 1f4e1489ffaa4e94690bcd7ca34c7b1f  →  참조 0곳
+PlayerBullet(신) guid = 7bbb40b59fafbfb44bee1ea155205d91  →  Proj_Bullet.prefab   ← 대조군
+```
+
+🔴 **대조군을 같이 넣은 이유** — 처음 돌린 스캔이 `grep -P` 로케일 오류로 **guid 가 빈 문자열**이 됐고,
+빈 패턴이라 **Assets 의 거의 모든 파일이 "참조"로 잡혔다.** 그대로 믿었으면 정반대 결론이 나온다.
+쓰는 쪽 guid 가 **정확히 1곳**으로 잡히는 걸 확인한 뒤에야 "0곳"을 믿었다.
+(`D43` 의 한글 스캐너와 같은 이유다 — **0 은 깨끗하다는 뜻일 수도, 못 봤다는 뜻일 수도 있다.**)
+
+삭제 뒤 확인:
+
+```
+Bullet.png 로드 = null (지워짐)
+Proj_Bullet.prefab    의 스프라이트 = ✅ PlayerBullet
+Proj_EnemyBolt.prefab 의 스프라이트 = ✅ EnemyBolt
+```
+
+콘솔 Error·Warning **0**.
+
+### 남은 둘은 네 결정대로 그대로 둔다
+
+- `ICON/goblin.png` — `Enemy_Goblin.prefab` 이 들고 있다. 화면엔 안 보이지만(`EnemyBase.cs:124` 가 덮어쓴다)
+  지우면 **missing 참조**가 남는다
+- `ICON/Exp_Orb.gif` — 🔴 **경험치 구슬의 유일한 그림.** 지우면 안 된다
+
+⇒ `DESIGN_ART.md` §7 의 정리 표는 **네 파일이라 내가 안 고쳤다.** `Bullet.png` 줄만 지우면 된다.
+
+---
+
 ## 요청에 반드시 적을 것
 
 - **무엇을** — 파일명 · 해상도 · CSV 열 이름까지
