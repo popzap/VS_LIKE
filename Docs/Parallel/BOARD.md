@@ -441,11 +441,12 @@ CONTENT 는 **읽기만** 한다 — 내 요청이 언제 처리될지 가늠하
 
 | 세션 | 다음 이슈 번호 |
 |---|---|
-| DEV | `D45` |
+| DEV | `D46` |
 | DEV | `D41` | `Assets/Scripts/Fx/PulseFx.cs` · `Assets/Prefabs/Fx_{Promote,LevelUp}.prefab` · `Assets/Scripts/Evolution/EvolutionManager.cs` · `Assets/Game/Balance/SceneWiring.csv` · `Assets/Scenes/SampleScene.unity` · `Docs/**` | 2026-09-04 | `완료` — **요청-26 (C34)**: 메타 아이콘 **7/7** + 승급·레벨업 파동. 🔴 **검증 중 내 결함을 잡았다** — 이 연출이 뜨는 두 순간이 **둘 다 `timeScale = 0`** 이라 `Time.deltaTime` 이면 **얼어붙은 링이 화면에 붙어 있다**. `unscaledDeltaTime` 으로 고침. 🟡 **판정 ⑤ 보류** — 레벨업 파동은 뜨지만 `ScreenSpaceOverlay` 패널이 덮어 **안 보인다** → `TODO.md` 결정 3안. 🟡 고아 애셋 `UpGoldGain.asset` 발견 |
 | DEV | `D42` | `Assets/Game/Sprites/UI/{ShopKeeper,MainMenuBG}.png` · `Assets/Scenes/SampleScene.unity` · `Docs/**` | 2026-09-04 | `완료` — **요청-27 (C35)**: Unity AI 그림 2장. 판정 **7/7** (알파 0 · 배경 밝기 **0.150** · 세로 점유 **86.1 %**). **코드 0줄.** 🔴 **`I-41` 가짜 투명이 또 났다** — 프롬프트에 명시해도 알파가 전부 255 였다. 🔴 CONTENT 의 *"형제 순서 0"* 지시를 일부러 안 따랐다 — 그 자리 `DimBG` 가 **알파 1.00 불투명**이라 배경이 가린다. 🟡 `pivot` 이 위쪽이라 배치를 한 번 틀렸다 |
 | DEV | `D43` | `Assets/Scripts/{UI/HUDManager,LevelUp/LevelUpManager}.cs` · `Assets/GameObjects/UI Canvas.prefab` · `Assets/Scenes/SampleScene.unity` · `Docs/**` | 2026-09-04 | `완료` — 사용자 결정 2건. ① **`B11` 닫음** — 씬 **과 프리팹 원본** 둘 다 영문화. 🔴 씬만 고쳤으면 오버라이드라 **부활했다**. 전수 조사(씬 263 · 프리팹 69) 한글 **0건**, 스캐너에 **대조군**을 넣어 배열까지 보는 걸 증명했다 ② **레벨업 파동 A안** — 패널 닫힘 시점으로 옮김. 판정 3/3 |
 | DEV | `D44` | `Assets/Game/ICON/Bullet.png(+meta)` 삭제 · `Docs/**` | 2026-09-04 | `완료` — CONTENT `C36` 이 DEV 판단으로 넘긴 정리 1건. guid 재측정 **0곳** 확인 후 삭제. 🔴 **첫 스캔은 버렸다** — `grep -P` 로케일 오류로 guid 가 빈 문자열이 되어 **거의 모든 파일이 참조로 잡혔다**(정반대 결론). 대조군을 넣어 다시 쟀다 |
+| DEV | `D45` | `Assets/Scripts/Wave/LayerScaling.cs`(신규) · `Assets/Scripts/Wave/WaveManager.cs` · `Assets/Scripts/Enemy/EnemyBase.cs` · `Assets/Scripts/Core/GameManager.cs` · `Assets/Game/Balance/Economy.csv` · `Docs/**` | 2026-09-04 | `완료` — **층별 난이도 (B) 전역 배율** (ROADMAP §3 결정 4). 층당 체력 +10 % · 피해 +6 % · 소환 +8 %. 🔑 **소환 수만 올리면 아무 일도 안 일어난다** — `MaxAlive` 상한에서 대기줄만 길어진다. 상한·처치목표에 같이 걸었다. 🔴 `WaveData` SO 원본은 안 건드린다(읽을 때마다 곱한다). 판정 **6/6** (1층 대조군 x1.00 포함). 🟢 **보스 그림 보류의 재개 조건이 다 풀렸다** |
 | CONTENT | `C37` |
 | 버그(공용) | `B12` |
 

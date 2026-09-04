@@ -22,6 +22,23 @@ public class WaveManager : MonoBehaviour
     [Tooltip("보스 내려찍기의 예고+폭발 프리팹 (D31). 비어 있으면 내려찍기만 조용히 안 나간다")]
     [SerializeField] private GameObject  bossSlamPrefab;
 
+    // ── 층별 난이도 (ROADMAP §3 결정 4 · B안) ────────────────────
+    // 🔴 수치는 Economy.csv 의 WaveManager 행이 들고 있다. 여기 기본값은 자리표시다.
+    [Header("층별 난이도 — 값은 Economy.csv 가 덮는다")]
+    [Tooltip("층당 적 최대체력 증가율. 0.10 = 층마다 +10 %. 0 이면 층 스케일링이 꺼진다.")]
+    [SerializeField] private float layerHpGrowth = 0.10f;
+
+    [Tooltip("층당 적 접촉 피해 증가율.")]
+    [SerializeField] private float layerDamageGrowth = 0.06f;
+
+    [Tooltip("층당 소환량 증가율. 소환 수와 동시 생존 상한에 같이 걸린다 — "
+           + "상한을 같이 안 올리면 대기줄만 길어지고 화면은 그대로다.")]
+    [SerializeField] private float layerSpawnGrowth = 0.08f;
+
+    [Tooltip("동시 생존 상한의 천장. 🔴 EnemyBase 의 무리 분리 버퍼가 64칸이라 "
+           + "적 400 이상에서는 그 값을 다시 판단해야 한다(B8) — 그 선 아래로 묶어 둔다.")]
+    [SerializeField] private int maxAliveCeiling = 300;
+
     // ── 런타임 상태 ──────────────────────────────────────────────
     private StageNode   _currentNode;
     private WaveData    _currentWaveData;
@@ -104,6 +121,10 @@ public class WaveManager : MonoBehaviour
             _               => normalWaves[Random.Range(0, normalWaves.Length)]
         };
 
+        // 🔴 웨이브 데이터를 고른 "뒤" 에 층 배율을 세운다.
+        //    적이 Initialize 될 때 LayerScaling 을 읽으므로 첫 소환보다 먼저여야 한다.
+        LayerScaling.Set(node.Layer, layerHpGrowth, layerDamageGrowth, layerSpawnGrowth);
+
         // 소환 항목마다 코루틴을 따로 띄운다 = 병렬 소환.
         foreach (var entry in _currentWaveData.Spawns)
             _routines.Add(StartCoroutine(SpawnEntryRoutine(entry)));
@@ -162,7 +183,7 @@ public class WaveManager : MonoBehaviour
         //    광역기에서는 더 나쁘다: OverlapCircleAll 루프 밖으로 예외가 나가
         //    **같은 반경 안의 나머지 적이 피해를 아예 안 받는다** (D20 에서 실제로 봤다).
         if (_currentWaveData != null && _currentWaveData.UseKillClear
-            && _killCount >= _currentWaveData.KillTarget)
+            && _killCount >= ScaledKillTarget())
             ClearWave();
     }
 
@@ -178,8 +199,9 @@ public class WaveManager : MonoBehaviour
         while (_waveActive && _waveElapsed < entry.StartTime) yield return null;
 
         float interval = Mathf.Max(0.05f, entry.SpawnInterval);
+        int   count    = LayerScaling.ScaleCount(entry.Count);
 
-        for (int i = 0; i < entry.Count; i++)
+        for (int i = 0; i < count; i++)
         {
             if (!_waveActive) yield break;
 
@@ -195,10 +217,30 @@ public class WaveManager : MonoBehaviour
         }
     }
 
+    // ── 층 배율이 걸린 값 ────────────────────────────────────────
+    // 🔴 WaveData 는 ScriptableObject 다. 여기서 필드를 고치면 **애셋 파일이 더러워지고
+    //    다음 런까지 남는다.** 그래서 원본은 안 건드리고 읽을 때마다 곱한다.
+
+    /// <summary>
+    /// 동시 생존 상한. <b>소환 수만 늘리고 이걸 안 늘리면 아무 일도 안 일어난다</b> —
+    /// 넘치는 소환은 <see cref="WaitForSpawnSlot"/> 에서 대기할 뿐이라 화면은 그대로다.
+    /// </summary>
+    private int ScaledMaxAlive()
+    {
+        int raw = Mathf.Max(1, LayerScaling.ScaleCount(_currentWaveData.MaxAlive));
+        return Mathf.Min(raw, Mathf.Max(1, maxAliveCeiling));
+    }
+
+    /// <summary>
+    /// 처치 목표. 소환량이 늘었는데 이게 그대로면 <b>웨이브가 상대적으로 짧아진다</b> —
+    /// 층이 깊어질수록 오히려 빨리 끝난다.
+    /// </summary>
+    private int ScaledKillTarget() => LayerScaling.ScaleCount(_currentWaveData.KillTarget);
+
     /// <summary>일시정지가 풀리고 소환 상한에 자리가 날 때까지 기다린다.</summary>
     private IEnumerator WaitForSpawnSlot()
     {
-        int cap = Mathf.Max(1, _currentWaveData.MaxAlive);
+        int cap = ScaledMaxAlive();
 
         while (_waveActive)
         {
@@ -476,7 +518,7 @@ public class WaveManager : MonoBehaviour
         // 🔴 OnEnemyKilled 와 같은 이유로 null 을 본다 (B5). 이건 공개 API 라
         //    웨이브 밖에서 불릴 수 있고, 그때 NRE 가 나면 부르는 쪽(BossBrain)이 끊긴다.
         if (_currentWaveData == null) return;
-        if (_alive.Count >= _currentWaveData.MaxAlive) return;   // 상한은 보스도 못 넘는다
+        if (_alive.Count >= ScaledMaxAlive()) return;   // 상한은 보스도 못 넘는다
 
         var go = enemyPool.Get(data.Prefab, at, Quaternion.identity);
         var enemy = go.GetComponent<EnemyBase>();

@@ -28,6 +28,8 @@ public class EnemyBase : MonoBehaviour
     public float HpNow      => CurrentHp;
     public float HpMax      => MaxHp;
     public float HpFraction => MaxHp > 0f ? Mathf.Clamp01(CurrentHp / MaxHp) : 0f;
+    /// <summary>지금 이 적의 접촉 피해. 등급 배율과 층 배율이 이미 곱해진 값이다.</summary>
+    public float ContactDamageNow => ContactDamage;
     public bool  Dead       => IsDead;
 
     /// <summary>보스 이름표에 쓴다. <c>EnemyData</c> 를 통째로 넘기지 않으려는 것이다.</summary>
@@ -84,10 +86,13 @@ public class EnemyBase : MonoBehaviour
         float speedMult  = isBoss ? data.BossSpeedMult  : isElite ? data.EliteSpeedMult   : 1f;
         int   xpMult     = isBoss ? data.BossXpMult     : isElite ? data.EliteXpMult      : 1;
 
-        MaxHp         = data.MaxHp         * hpMult;
+        // 🔴 층 배율은 등급 배율 "위에" 곱한다 (ROADMAP §3 결정 4 · B안).
+        //    이동 속도는 일부러 뺐다 — 적이 플레이어(3.5~4.6)보다 빨라지면
+        //    피하는 게 아니라 맞는 게 되고, 그건 난이도가 아니라 조작 불능이다.
+        MaxHp         = data.MaxHp         * hpMult  * LayerScaling.HpMult;
         CurrentHp     = MaxHp;
         MoveSpeed     = data.MoveSpeed     * speedMult;
-        ContactDamage = data.ContactDamage * dmgMult;
+        ContactDamage = data.ContactDamage * dmgMult * LayerScaling.DamageMult;
         Armor         = data.Armor;
         XpDrop        = data.XpDrop        * xpMult;
         CurrencyDrop  = data.CurrencyDrop;

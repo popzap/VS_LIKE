@@ -177,6 +177,9 @@ public class GameManager : MonoBehaviour
     public void StartRun()
     {
         // ItemData.CurrentLevel 은 SO 애셋에 남는 런타임 값이라 씬 리로드만으로는 지워지지 않는다.
+        // 🔴 안 되돌리면 다음 런 1층이 지난 런 10층 난이도로 시작한다.
+        LayerScaling.Reset();
+
         LevelUpManager.ResetRunState();
         if (BuildingMgr != null)  BuildingMgr.ResetRunState();
         if (EvolutionMgr != null) EvolutionMgr.ResetRunState();
