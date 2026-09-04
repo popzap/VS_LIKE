@@ -30,7 +30,7 @@ using UnityEngine.UI;
 public class CodexPanel : MonoBehaviour
 {
     // 🔴 컴파일 반영 확인용 (D27).
-    public const int Version = 2;   // 2 = 아이콘 격자 (D55)
+    public const int Version = 5;   // 5 = 본문 자동 축소 (D56)
 
     public enum Tab { Weapons, Items, Evolution, Classes, Enemies }
 
@@ -45,6 +45,9 @@ public class CodexPanel : MonoBehaviour
     [SerializeField] private GameObject cellTemplate;
 
     [Header("상세")]
+    [Tooltip("상세 아이콘 뒤의 판. 🔴 미발견이면 밝게 깔아야 검은 실루엣이 보인다")]
+    [SerializeField] private Image           detailIconBg;
+
     [SerializeField] private Image           detailIcon;
     [SerializeField] private TextMeshProUGUI detailTitle;
 
@@ -60,10 +63,30 @@ public class CodexPanel : MonoBehaviour
     /// <summary>미발견 표시. 사용자 요구 그대로 물음표 세 개다.</summary>
     private const string Unknown = "???";
 
-    private static readonly Color FoundTint   = Color.white;
-    private static readonly Color HiddenTint  = new Color(0f, 0f, 0f, 0.85f);   // 실루엣
-    private static readonly Color CellNormal  = new Color(0.20f, 0.20f, 0.25f, 1f);
-    private static readonly Color CellPicked  = new Color(0.85f, 0.80f, 0.45f, 1f);
+    private static readonly Color FoundTint  = Color.white;
+
+    /// <summary>
+    /// 미발견 실루엣의 색 (D56).
+    ///
+    /// <para>🔴 <b>여기서 한 번 크게 틀렸다.</b> 어두운 칸 위의 검은 실루엣이 안 보인다고
+    /// <b>실루엣을 밝게</b> 바꿨는데, <see cref="Image.color"/> 는 <b>곱셈</b>이라
+    /// 밝은 회색을 곱해도 실루엣이 되지 않고 <b>원색이 조금 흐려질 뿐</b>이었다 —
+    /// 0/12 발견 상태에서 무기 12종이 전부 알아볼 수 있게 떴다. <b>정답이 새어 나갔다.</b></para>
+    ///
+    /// <para>⇒ 실루엣은 <b>검정으로 되돌리고 칸 배경을 밝게</b> 뒤집었다.
+    /// 곱셈으로 형체만 남기려면 색이 <c>0</c> 이어야 하고, 그러면 <b>바탕이 밝아야</b> 보인다.
+    /// 도감이 어두우니 <b>미발견 칸만</b> 밝게 깐다 — 발견한 칸(어두운 바탕 + 원색)과도
+    /// 한눈에 갈린다.</para>
+    /// </summary>
+    private static readonly Color HiddenTint = new Color(0.03f, 0.03f, 0.05f, 1f);
+
+    /// <summary>발견한 칸. 어두운 바탕에 원색 아이콘.</summary>
+    private static readonly Color CellNormal = new Color(0.24f, 0.24f, 0.30f, 1f);
+
+    /// <summary>🔑 미발견 칸은 <b>밝다.</b> 검은 실루엣이 읽히려면 바탕이 밝아야 한다.</summary>
+    private static readonly Color CellHidden = new Color(0.62f, 0.62f, 0.68f, 1f);
+
+    private static readonly Color CellPicked = new Color(0.95f, 0.88f, 0.50f, 1f);
 
     private readonly List<GameObject> _cells   = new();
     private readonly List<Entry>      _entries = new();
@@ -74,7 +97,7 @@ public class CodexPanel : MonoBehaviour
     private struct Entry
     {
         public string Name;      // 발견했으면 진짜 이름, 아니면 "???"
-        public Sprite Icon;      // 🔑 미발견이어도 넣는다 — 실루엣으로 그린다
+        public Sprite Icon;      // 🔑 미발견이어도 넣는다 — 밝은 실루엣으로 그린다 (D56)
         public bool   Found;
         public string Recipe;    // 진화 조건 한 줄. 없으면 빈 문자열
         public string Body;      // 수치
@@ -85,6 +108,24 @@ public class CodexPanel : MonoBehaviour
     private void Awake()
     {
         if (closeButton != null) closeButton.onClick.AddListener(Close);
+
+        // 🔴 본문 길이가 항목마다 다르다 — 패시브는 수치가 12줄이고 적은 5줄이다.
+        //    한 크기로 박아 두면 긴 항목이 상자 밖으로 넘쳐 CLOSE 버튼을 덮는다(D56 에서 실제로 났다).
+        //    자동 축소로 맡긴다. 원본이 코드에 있어야 씬이 덮지 않는다 (B11 의 교훈).
+        if (detailBody != null)
+        {
+            detailBody.enableAutoSizing = true;
+            detailBody.fontSizeMin = 20f;
+            detailBody.fontSizeMax = 32f;
+            detailBody.overflowMode = TextOverflowModes.Truncate;
+        }
+        if (detailTitle != null) detailTitle.overflowMode = TextOverflowModes.Ellipsis;
+        if (detailRecipe != null)
+        {
+            detailRecipe.enableAutoSizing = true;
+            detailRecipe.fontSizeMin = 24f;
+            detailRecipe.fontSizeMax = 40f;
+        }
 
         if (tabButtons != null)
             for (int i = 0; i < tabButtons.Length; i++)
@@ -185,7 +226,8 @@ public class CodexPanel : MonoBehaviour
             {
                 icon.sprite  = e.Icon;
                 icon.enabled = e.Icon != null;
-                // 🔑 미발견도 그림을 넣고 검게 칠한다 — 모양은 보여야 유추가 된다.
+                // 🔑 미발견도 그림을 넣는다 — 모양은 보여야 유추가 된다.
+                //    색은 HiddenTint(밝은 회색). 어두운 칸 위라 검게 칠하면 형체가 안 잡힌다 (D56).
                 icon.color   = e.Found ? FoundTint : HiddenTint;
             }
 
@@ -196,7 +238,12 @@ public class CodexPanel : MonoBehaviour
             {
                 bool needText = e.Icon == null;
                 fallback.gameObject.SetActive(needText);
-                if (needText) fallback.text = e.Found ? Short(e.Name) : Unknown;
+                if (needText)
+                {
+                    fallback.text = e.Found ? Short(e.Name) : Unknown;
+                    // 미발견 칸은 밝으므로 글자도 검어야 읽힌다 (아이콘과 같은 규칙).
+                    fallback.color = e.Found ? Color.white : HiddenTint;
+                }
             }
         }
 
@@ -209,7 +256,13 @@ public class CodexPanel : MonoBehaviour
         {
             if (!_cells[i].activeSelf) continue;
             var bg = _cells[i].GetComponent<Image>();
-            if (bg != null) bg.color = (i == _picked) ? CellPicked : CellNormal;
+            if (bg == null) continue;
+
+            // 🔑 칸 배경도 발견 여부로 가른다. 밝은 실루엣만으로는
+            //    "아직 못 먹은 것"인지 "무채색 아이템"인지 헷갈릴 수 있다.
+            //    미발견 칸을 더 어둡게 깔면 실루엣의 대비도 같이 올라간다.
+            bool found = i < _entries.Count && _entries[i].Found;
+            bg.color = (i == _picked) ? CellPicked : (found ? CellNormal : CellHidden);
         }
     }
 
@@ -247,6 +300,13 @@ public class CodexPanel : MonoBehaviour
             detailIcon.sprite  = ok ? e.Icon : null;
             detailIcon.enabled = ok && e.Icon != null;
             detailIcon.color   = ok && e.Found ? FoundTint : HiddenTint;
+        }
+        // 🔴 상세 판도 칸과 같은 규칙으로 뒤집는다 — 안 그러면 어두운 상세창에서
+        //    검은 실루엣이 통째로 사라진다(칸에서만 보이고 상세에서는 안 보이는 꼴).
+        if (detailIconBg != null)
+        {
+            detailIconBg.enabled = ok && e.Icon != null;
+            detailIconBg.color   = ok && e.Found ? CellNormal : CellHidden;
         }
     }
 
