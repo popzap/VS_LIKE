@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Tile_CrackedEarth
   m_EditorClassIdentifier: UnityEngine.dll::UnityEngine.Tilemaps.Tile
   m_Sprite: {fileID: 21300000, guid: 826570bd16aeff9429c1918c4afe2dd3, type: 3}
-  m_Color: {r: 0.5704, g: 0.7045, b: 0.6177, a: 1}
+  m_Color: {r: 0.4188, g: 0.5653, b: 0.6262, a: 1}
   m_Transform:
     e00: 1
     e01: 0

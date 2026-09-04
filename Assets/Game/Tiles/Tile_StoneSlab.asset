@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Tile_StoneSlab
   m_EditorClassIdentifier: UnityEngine.dll::UnityEngine.Tilemaps.Tile
   m_Sprite: {fileID: 21300000, guid: 8718bf066499cf74ba27d8ea65ec7fcd, type: 3}
-  m_Color: {r: 0.537, g: 0.5747, b: 0.4198, a: 1}
+  m_Color: {r: 0.3194, g: 0.3658, b: 0.4425, a: 1}
   m_Transform:
     e00: 1
     e01: 0

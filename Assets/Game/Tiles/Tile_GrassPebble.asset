@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Tile_GrassPebble
   m_EditorClassIdentifier: UnityEngine.dll::UnityEngine.Tilemaps.Tile
   m_Sprite: {fileID: 21300000, guid: 4bde3f8a5dd46184cb540bf7e3d6f485, type: 3}
-  m_Color: {r: 0.6725, g: 0.6753, b: 0.5279, a: 1}
+  m_Color: {r: 0.6443, g: 0.7225, b: 0.4959, a: 1}
   m_Transform:
     e00: 1
     e01: 0

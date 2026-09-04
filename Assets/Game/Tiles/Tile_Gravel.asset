@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Tile_Gravel
   m_EditorClassIdentifier: UnityEngine.dll::UnityEngine.Tilemaps.Tile
   m_Sprite: {fileID: 21300000, guid: 676b229c1f421e14c973b093efaade88, type: 3}
-  m_Color: {r: 0.5942, g: 0.7078, b: 0.5561, a: 1}
+  m_Color: {r: 0.5016, g: 0.6618, b: 0.5410, a: 1}
   m_Transform:
     e00: 1
     e01: 0
