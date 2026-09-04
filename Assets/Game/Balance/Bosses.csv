@@ -42,4 +42,4 @@
 #                 3페이즈에도 가장 느린 직업(3.5)보다 느리다 — 카이팅을 막지 않는 선이다.
 # Summon* : DEV 임시값 그대로 뒀다. 바꿀 근거가 없었다 (TUNING.md 로 넘김).
 Id,EnemyId,PhaseThresholds,PhaseSpeedMult,SlamWindup,SlamRadius,SlamDamage,SlamCooldown,SummonEnemyId,SummonCount,SummonCooldown,SummonRadius,EntryShakeMagnitude,EntryShakeDuration
-BossOgre,Ogre,0.7|0.4,1|1.5|2.2,1.15,2.4,18,5|3.8|2.6,Goblin,3|4|6,12|9|7,3.5,0.55,0.7
+BossOgre,Bonecaller,0.7|0.4,1|1.5|2.2,1.15,2.4,18,5|3.8|2.6,Goblin,3|4|6,12|9|7,3.5,0.55,0.7

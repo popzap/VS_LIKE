@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f727ed748ff2d0a4b8e043023fd55e12, type: 3}
   m_Name: BossOgre
   m_EditorClassIdentifier: Assembly-CSharp::BossPatternData
-  EnemyId: Ogre
+  EnemyId: Bonecaller
   PhaseThresholds:
   - 0.7
   - 0.4

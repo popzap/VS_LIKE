@@ -205,6 +205,16 @@ HUD 하단에 `EvolutionPromptUI` 가 "지금 누를 수 있다 / 상자에서 �
 값은 `Assets/Game/Balance/Bosses.csv` 가 원본이다 (→ [`BALANCE.md`](BALANCE.md)).
 ⚠️ **수치는 임시다** — 근거가 하나뿐이다(웨이브 240초 · 보스 HP 1540).
 
+✅ **2026-09-04 (D48) — 끝났다.** 보스가 전용 그림 `Bonecaller` 를 쓴다
+(뼈색 + 병든 초록 · 넓적한 실루엣). 잡몹 `Ogre` 는 그대로다 — 보스 전용 `EnemyData` 행을
+새로 만들어 `Boss1.BossOverride` 만 갈아 끼웠고 **수치는 Ogre 복사라 밸런스 변화 0** 이다.
+컨셉은 **보스가 실제로 하는 일**에서 끌어냈다 — 못 쫓아오니 버티고 서서 내려찍는 것,
+고블린을 소환하니 강령술사, 예고 원이 붉으니 붉은 대역 금지.
+⚠️ 이름 `Bonecaller` 와 **보스를 3체로 늘릴지는 CONTENT 확인 대기** → `REQ/CONTENT.md` **요청-36**.
+
+<details>
+<summary>이전 상태 (접어 둠)</summary>
+
 🔴 **남은 것: 보스가 아직 `Ogre` 다** — 잡몹과 **같은 스프라이트**를 쓴다
 (`Assets/Game/Sprites/Enemies/Ogre.png`, 프리팹도 적 6종이 공유하는 `Enemy_Goblin.prefab`).
 차별은 **크기 2배 + 빨간 외곽선**(I-26) 뿐이라, 플레이어가 보는 건 **"조금 큰 오우거"** 다.
@@ -231,6 +241,8 @@ CONTENT 의 [`DESIGN_ART.md`](DESIGN_ART.md) §6 이 보스 그림을 **7순위*
 > **재개 조건** — §3 결정 4(층별 난이도)가 들어간 뒤, 또는 `DESIGN_ART.md` §6 의 1~6번이 끝난 뒤.
 
 ✅ 예고 원 전용 스프라이트는 `C30` 이 만들었다 (`BossSlamRing.png`, D34).
+
+</details>
 
 ### 2-6. ~~직업이 시작 시점의 고정 선택이다~~ — ✅ **해결 (I-56, 19차)**
 
