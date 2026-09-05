@@ -35,7 +35,7 @@ public class MeleeWeapon : WeaponBase
 
     private IEnumerator SwingCombo()
     {
-        int   swings = Mathf.Max(1, Data.GetProjectileCount(Level));
+        int   swings = ScaledProjectileCount();
         float range  = Data.GetRange(Level);
 
         for (int i = 0; i < swings; i++)

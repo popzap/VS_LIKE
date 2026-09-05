@@ -101,6 +101,30 @@ public class PlayerStats : MonoBehaviour
     /// <summary>공속 버프의 남은 초 (D67). 오라 점등 판정에 쓴다.</summary>
     public float HasteRemaining => Mathf.Max(0f, _hasteTimer);
 
+    // ── 이속 버프 (D68 · 사용자 요구 12 "이속증가(추가해)") ──────
+    private float _swiftTimer;
+    private float _swiftMoveSpeed;
+
+    /// <summary>이속 버프가 켜져 있는가.</summary>
+    public bool  IsSwift        => _swiftTimer > 0f;
+    /// <summary>이속 버프의 남은 초. 오라 점등 판정에 쓴다.</summary>
+    public float SwiftRemaining => Mathf.Max(0f, _swiftTimer);
+
+    // ── 진화 특전 (D68 · 사용자 요구 12) ─────────────────────────
+    //
+    // 🔑 패시브·직업과 달리 **한 번 켜지면 런이 끝날 때까지 끄지 않는다.**
+    //    그래서 RecalculateStats 가 매번 다시 더할 필요가 없는 값(투사체 수·버프 지속)은
+    //    프로퍼티로 그냥 내놓고, 스탯에 섞이는 값(골드)만 재계산에 태운다.
+
+    /// <summary>무기 투사체(근접은 연타) 수 배율. 기본 1, <c>DoubleProjectiles</c> 로 2.</summary>
+    public int   ProjectileCountMult { get; private set; } = 1;
+
+    /// <summary>필드 드랍 버프의 지속시간 배율. 기본 1, <c>DoubleBuffDuration</c> 로 2.</summary>
+    public float BuffDurationMult    { get; private set; } = 1f;
+
+    /// <summary>골드 획득 배율(특전분). <see cref="RecalculateStats"/> 가 <c>Final.GoldGain</c> 에 곱한다.</summary>
+    private float _perkGoldMult = 1f;
+
     private readonly List<PassiveEffect> _activePassives = new();
 
     private PlayerController _controller;
@@ -124,6 +148,12 @@ public class PlayerStats : MonoBehaviour
             // 만료된 프레임에 한 번만 재계산한다. 매 프레임 돌리면 패시브·직업 사슬을
             // 통째로 다시 더하게 되므로 켜져 있는 동안 내내 비용을 낸다.
             if (_hasteTimer <= 0f) { _hasteTimer = 0f; RecalculateStats(); }
+        }
+
+        if (_swiftTimer > 0f)
+        {
+            _swiftTimer -= Time.deltaTime;
+            if (_swiftTimer <= 0f) { _swiftTimer = 0f; _swiftMoveSpeed = 0f; RecalculateStats(); }
         }
     }
 
@@ -295,6 +325,11 @@ public class PlayerStats : MonoBehaviour
         // 픽업 버프는 패시브 다음이다 — 임시값이 영구값 위에 얹히는 순서여야
         // 버프가 꺼졌을 때 원래 자리로 정확히 돌아간다.
         if (_hasteTimer > 0f) Final.AttackSpeed += _hasteAttackSpeed;
+        if (_swiftTimer > 0f) Final.MoveSpeed   += _swiftMoveSpeed;   // D68
+
+        // 진화 특전 (D68). 🔑 배율이라 마지막에 곱한다 — 먼저 곱하면 뒤에 더해지는
+        //    패시브·직업 보너스가 배율을 안 받아 "2배" 가 2배가 아니게 된다.
+        Final.GoldGain *= _perkGoldMult;
 
         // 🔴 쿨다운 배율이 0 이하로 내려가면 WeaponBase 의 _timer 가 0 이하에서 시작해
         // 무기가 매 프레임 발사된다. 지금 최악은 Aegis(-0.05) + AttackSpeed Lv5(-0.30)
@@ -329,6 +364,43 @@ public class PlayerStats : MonoBehaviour
     {
         _hasteAttackSpeed = Mathf.Min(_hasteAttackSpeed, attackSpeedBonus); // 음수라 Min 이 "더 셈"
         _hasteTimer       = Mathf.Max(_hasteTimer, seconds);
+        RecalculateStats();
+    }
+
+    /// <summary>
+    /// 픽업으로 얻는 이동 속도 버프 (D68). <paramref name="moveSpeedBonus"/> 는
+    /// <c>MoveSpeed</c> 에 <b>더해지는 값</b>이라 양수가 "더 빠름"이다.
+    ///
+    /// <para>겹치면 <see cref="GrantHaste"/> 와 같은 규칙 — <b>더 센 것 하나만</b> 남기고
+    /// 시간만 늘린다. 더하면 두 개만 겹쳐도 화면 밖으로 나간다.</para>
+    /// </summary>
+    public void GrantSwift(float seconds, float moveSpeedBonus)
+    {
+        _swiftMoveSpeed = Mathf.Max(_swiftMoveSpeed, moveSpeedBonus);   // 양수라 Max 가 "더 셈"
+        _swiftTimer     = Mathf.Max(_swiftTimer, seconds);
+        RecalculateStats();
+    }
+
+    /// <summary>
+    /// 진화를 끝냈을 때 특전을 켠다 (D68 · <see cref="EvolutionManager"/> 가 부른다).
+    ///
+    /// <para>🔑 <b>끄는 경로가 없다.</b> 진화는 되돌릴 수 없으므로 런이 끝날 때까지 남는다 —
+    /// 씬을 다시 읽으면(<c>GameManager.ReloadScene</c>) 저절로 초기값으로 돌아간다.</para>
+    ///
+    /// <para>🔴 같은 특전을 두 번 받아도 <b>2배가 3배가 되지 않는다</b> — 대입이지 곱셈이 아니다.
+    /// 같은 진화를 두 번 못 하도록 <c>EvolutionManager._completed</c> 가 막고 있지만,
+    /// 막는 쪽이 하나뿐이면 언젠가 새 경로가 생겼을 때 조용히 깨진다.</para>
+    /// </summary>
+    public void ApplyEvolutionPerk(EvolutionPerk perk)
+    {
+        switch (perk)
+        {
+            case EvolutionPerk.DoubleProjectiles:  ProjectileCountMult = 2;   break;
+            case EvolutionPerk.DoubleBuffDuration: BuffDurationMult    = 2f;  break;
+            case EvolutionPerk.DoubleGold:         _perkGoldMult       = 2f;  break;
+            default: return;
+        }
+        Debug.Log($"[PlayerStats] 진화 특전 — {perk}");
         RecalculateStats();
     }
 

@@ -26402,11 +26402,11 @@ PrefabInstance:
       objectReference: {fileID: 5031122426119572849, guid: ab11ad2470e5bbd448f175b544113393, type: 3}
     - target: {fileID: 3487634682706099646, guid: 662dda8a5b427484cbf8f24476baa8f0, type: 3}
       propertyPath: pickupChances.Array.size
-      value: 6
+      value: 7
       objectReference: {fileID: 0}
     - target: {fileID: 3487634682706099646, guid: 662dda8a5b427484cbf8f24476baa8f0, type: 3}
       propertyPath: pickupPrefabs.Array.size
-      value: 6
+      value: 7
       objectReference: {fileID: 0}
     - target: {fileID: 3487634682706099646, guid: 662dda8a5b427484cbf8f24476baa8f0, type: 3}
       propertyPath: 'xpThresholds.Array.data[1]'
@@ -26469,6 +26469,10 @@ PrefabInstance:
       value: 0.004
       objectReference: {fileID: 0}
     - target: {fileID: 3487634682706099646, guid: 662dda8a5b427484cbf8f24476baa8f0, type: 3}
+      propertyPath: 'pickupChances.Array.data[6]'
+      value: 0.008
+      objectReference: {fileID: 0}
+    - target: {fileID: 3487634682706099646, guid: 662dda8a5b427484cbf8f24476baa8f0, type: 3}
       propertyPath: 'pickupPrefabs.Array.data[0]'
       value: 
       objectReference: {fileID: 1151350119078902949, guid: 07a536b975bdeb8499edc581e5f3a130, type: 3}
@@ -26492,6 +26496,10 @@ PrefabInstance:
       propertyPath: 'pickupPrefabs.Array.data[5]'
       value: 
       objectReference: {fileID: 8323487029373996655, guid: c93b099c6bcfe9540af40b3c9a47a21f, type: 3}
+    - target: {fileID: 3487634682706099646, guid: 662dda8a5b427484cbf8f24476baa8f0, type: 3}
+      propertyPath: 'pickupPrefabs.Array.data[6]'
+      value: 
+      objectReference: {fileID: 7643726423324120768, guid: 79683d35cfef4a18acd5c1549c5422c1, type: 3}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -26798,6 +26806,12 @@ MonoBehaviour:
   bounceSpeed: 13
   leanAmount: 0.1
   leanResponse: 12
+  auraInvincible: {r: 0.62, g: 0.88, b: 1, a: 1}
+  auraHaste: {r: 1, g: 0.68, b: 0.22, a: 1}
+  auraSwift: {r: 0.55, g: 1, b: 0.45, a: 1}
+  auraWidth: 9
+  auraBlinkBelow: 1.5
+  auraBlinkPerSecond: 6
 --- !u!1001 &4688072706779885624
 PrefabInstance:
   m_ObjectHideFlags: 0

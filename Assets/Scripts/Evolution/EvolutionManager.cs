@@ -152,6 +152,11 @@ public class EvolutionManager : MonoBehaviour
         lm.GrantEvolvedItem(evo.ResultItem);
         _completed.Add(evo);
 
+        // 진화 특전 (D68). 🔑 결과 무기를 준 **뒤에** 켠다 — 특전이 스탯 재계산을 부르는데
+        //    무기가 아직 없으면 그 프레임의 재계산이 빠진 채로 굳는다.
+        if (evo.Perk != EvolutionPerk.None && PlayerStats.Current != null)
+            PlayerStats.Current.ApplyEvolutionPerk(evo.Perk);
+
         AudioManager.Play(SfxId.LevelUp);
         Debug.Log($"[EvolutionManager] 진화 완료 — {evo.EvolutionName} → {evo.ResultItem.ItemName}");
         return true;

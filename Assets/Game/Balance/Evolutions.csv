@@ -14,7 +14,11 @@
 #
 # 소모 규칙: 무기 재료만 사라진다. 패시브와 건물은 남는다 —
 #    건물이 사라지면 "제단 앞에서 눌렀더니 제단이 증발"하는 꼴이 된다.
-Id,EvolutionName,Description,Ingredients,RequiredLevels,ResultItem
-Excalibur,Excalibur,Sword sharpened by raw power.,Sword|Damage,5|3,Excalibur
-Windforce,Windforce,A bow that finds every weak point.,Bow|CritChance,5|3,Windforce
-Devastator,Devastator,Gunfire that detonates on impact.,Gun|Fireball,5|5,Devastator
+# Perk = 진화를 끝냈을 때 런 내내 남는 특전 (D68 · 사용자 요구 12). 비우면 None.
+#        None | DoubleProjectiles(투사체·연타 2배) | DoubleBuffDuration(필드 드랍 버프 지속 2배)
+#        | DoubleGold(골드 획득 2배)
+#        🔴 EvolutionPerk 는 정수 직렬화라 enum 에 값을 넣을 때 **뒤에만** 붙일 것.
+Id,EvolutionName,Description,Ingredients,RequiredLevels,ResultItem,Perk
+Excalibur,Excalibur,Sword sharpened by raw power.,Sword|Damage,5|3,Excalibur,DoubleGold
+Windforce,Windforce,A bow that finds every weak point.,Bow|CritChance,5|3,Windforce,DoubleBuffDuration
+Devastator,Devastator,Gunfire that detonates on impact.,Gun|Fireball,5|5,Devastator,DoubleProjectiles

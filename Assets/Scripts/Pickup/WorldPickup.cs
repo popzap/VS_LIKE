@@ -14,7 +14,12 @@ public enum PickupKind
     /// <summary>공속. 몇 초 동안 무기 쿨다운이 짧아진다.</summary>
     Haste,
     /// <summary>골드. 즉시 재화가 들어온다.</summary>
-    Gold
+    Gold,
+    /// <summary>
+    /// 이동 속도. 몇 초 동안 빨라진다 (D68 · 사용자 요구 12에서 *"이속증가(추가해)"*).
+    /// <b>enum 은 정수 직렬화라 맨 뒤에 붙였다</b> — 중간에 끼우면 기존 프리팹의 kind 가 밀린다.
+    /// </summary>
+    Swift
 }
 
 /// <summary>
@@ -61,6 +66,13 @@ public class WorldPickup : MonoBehaviour
     [Tooltip("공속 버프의 쿨다운 배율 가산분. 음수가 빠름 (-0.5 = 쿨다운 절반)")]
     [SerializeField] private float hasteAttackSpeed = -0.5f;
 
+    [Header("Swift (D68)")]
+    [Tooltip("이속 버프 지속(초).")]
+    [SerializeField] private float swiftDuration = 8f;
+
+    [Tooltip("이속 버프의 이동속도 가산분(유닛/초). 기본 MoveSpeed 4 기준 +2 는 1.5배다.")]
+    [SerializeField] private float swiftMoveSpeed = 2f;
+
     [Header("Gold")]
     [Tooltip("골드 픽업 금액. GoldGain 배율이 여기에 곱해진다")]
     [SerializeField] private int goldAmount = 15;
@@ -101,6 +113,10 @@ public class WorldPickup : MonoBehaviour
         if (distSqr < touchRadius * touchRadius) Collect();
     }
 
+    /// <summary>필드 드랍 버프의 지속시간 배율 (D68). 특전이 없으면 1 이다.</summary>
+    private static float BuffMult =>
+        PlayerStats.Current != null ? PlayerStats.Current.BuffDurationMult : 1f;
+
     private void Collect()
     {
         _collected = true;
@@ -122,16 +138,25 @@ public class WorldPickup : MonoBehaviour
                 DetonateBomb();
                 break;
 
+            // 🔑 지속시간에 진화 특전 배율을 곱한다 (D68 · DoubleBuffDuration).
+            //    🔴 곱셈은 여기서 한 번만 한다 — PlayerStats 안에서 또 곱하면
+            //    겹쳐 먹을 때 Mathf.Max 가 이미 늘어난 값과 비교해 배율이 두 번 먹는다.
             case PickupKind.Invincible:
                 AudioManager.Play(SfxId.BuffPickup);
                 if (PlayerStats.Current != null)
-                    PlayerStats.Current.GrantInvincibility(invincibleDuration);
+                    PlayerStats.Current.GrantInvincibility(invincibleDuration * BuffMult);
                 break;
 
             case PickupKind.Haste:
                 AudioManager.Play(SfxId.BuffPickup);
                 if (PlayerStats.Current != null)
-                    PlayerStats.Current.GrantHaste(hasteDuration, hasteAttackSpeed);
+                    PlayerStats.Current.GrantHaste(hasteDuration * BuffMult, hasteAttackSpeed);
+                break;
+
+            case PickupKind.Swift:
+                AudioManager.Play(SfxId.BuffPickup);
+                if (PlayerStats.Current != null)
+                    PlayerStats.Current.GrantSwift(swiftDuration, swiftMoveSpeed);
                 break;
 
             case PickupKind.Gold:

@@ -9,6 +9,23 @@ public abstract class WeaponBase : MonoBehaviour
 
     private float _timer;
 
+    /// <summary>
+    /// 이번 발사에 나갈 투사체 수(근접은 연타 수). 진화 특전 배율을 곱한다 (D68).
+    ///
+    /// <para>🔑 <b>두 무기가 같은 식을 쓰게 여기 하나로 모았다.</b> 각자 곱하면
+    /// 한쪽만 고쳐지는 날이 온다 — 근접의 "연타"와 원거리의 "투사체"는 이름이 달라서
+    /// 특히 그렇다. <c>WeaponData</c> 에서 보면 둘 다 <c>ProjectileCount</c> 다.</para>
+    ///
+    /// <para>🔴 <c>OwnerStats</c> 가 null 일 수 있다 — 배율 없이 <b>원래 수를 그대로</b> 낸다.
+    /// 여기서 0 을 내면 무기가 조용히 안 나간다.</para>
+    /// </summary>
+    protected int ScaledProjectileCount()
+    {
+        int baseCount = Mathf.Max(1, Data.GetProjectileCount(Level));
+        int mult      = OwnerStats != null ? Mathf.Max(1, OwnerStats.ProjectileCountMult) : 1;
+        return baseCount * mult;
+    }
+
     public void Initialize(WeaponData data, int level, PlayerStats owner, ObjectPool pool)
     {
         Data       = data;

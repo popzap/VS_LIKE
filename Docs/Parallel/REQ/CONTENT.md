@@ -3516,6 +3516,45 @@ PlayerPrefs "gfx_quality" = 2
 
 ---
 
+## 요청-46 — ⚠️ **`Evolutions.csv` · `SceneWiring.csv` 를 건드렸다 (D68)** · 그리고 그림 하나가 필요하다
+
+**한 줄:** 사용자 요구 `12`(진화 특전 분배 + 이속 픽업 신설)을 하느라
+**CONTENT 소유 CSV 두 개**에 열과 항목을 넣었다.
+
+### 바꾼 것
+
+| 파일 | 무엇 |
+|---|---|
+| `Evolutions.csv` | **`Perk` 열 신설.** Excalibur=`DoubleGold` · Windforce=`DoubleBuffDuration` · Devastator=`DoubleProjectiles` |
+| `SceneWiring.csv` | `pickupPrefabs` · `pickupChances` 에 **`Pickup_Swift` 0.008 을 맨 뒤에** 추가 (6→7) |
+
+🔴 **두 배열 다 맨 뒤에만 붙였다.** 중간에 끼우면 프리팹과 확률의 **짝이 통째로 밀린다.**
+같은 이유로 `PickupKind`·`EvolutionPerk` enum 도 뒤에만 늘렸다(정수 직렬화).
+
+### 왜 이렇게 나눴나
+
+| 진화 | 특전 | 근거 |
+|---|---|---|
+| Devastator (Gun+Fireball) | 투사체 2배 | *"터지는 총알"* — 탄막이 두 배가 되는 게 컨셉과 맞는다 |
+| Windforce (Bow+Crit) | 필드 드랍 지속 2배 | 바람 = 신속 |
+| Excalibur (Sword+Damage) | **골드 2배** | 🔑 **+@ 는 DEV 가 골랐다** — 사용자 불만 `2`(*"상점이 너무 비쌈"*)와 맞물려 실제로 쓸모가 있다 |
+
+⚠️ **다르게 나누고 싶으면 `Evolutions.csv` 의 `Perk` 열만 고치면 된다.** 코드는 안 건드려도 된다.
+
+### 🔴 그림이 하나 필요하다 — `Pickup_Swift`
+
+지금은 **`Pickup_Haste.prefab` 을 복제해 스프라이트를 연두(`0.55, 1.00, 0.45`)로 물들인 것**이다.
+즉 **공속 픽업과 모양이 같고 색만 다르다.** 난전에서 둘을 가르기 어렵다.
+
+- 필요한 것: **이동 속도**를 뜻하는 아이콘 1장 (깃털·날개·부츠 계열)
+- 규격은 기존 픽업과 같게. `Assets/Prefabs/Pickup_Swift.prefab` 의 `m_Sprite` 만 바꾸면 된다
+- 🔴 **`m_Color` 는 연두로 두는 게 좋다** — 오라 색(연두)과 짝이 맞아야
+  *"저걸 먹으면 저 색이 된다"* 가 읽힌다
+
+⚠️ 급하지 않다. 색만으로도 굴러가고, 마감(9/7)에서 우선순위가 높지 않다.
+
+---
+
 ## 요청-45 — ⚠️ **`Economy.csv` 를 건드렸다 (D65)** · 그리고 `B-2` 는 이미 끝나 있었다
 
 **한 줄:** 사용자 플레이테스트 피드백 24건 중 `10. 경험치통이 너무 큼` 을 처리하느라

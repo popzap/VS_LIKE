@@ -7,7 +7,7 @@ public class ProjectileWeapon : WeaponBase
         var target = FindNearestEnemy();
         if (target == null) return;
 
-        int count = Data.GetProjectileCount(Level);
+        int count = ScaledProjectileCount();
         float spread = count > 1 ? 15f : 0f;
         Vector2 baseDir = ((Vector2)(target.position - transform.position)).normalized;
 

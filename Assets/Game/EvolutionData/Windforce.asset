@@ -19,3 +19,4 @@ MonoBehaviour:
   - {fileID: 11400000, guid: b04a6f3181b3844418a9fde20590ef5d, type: 2}
   RequiredLevels: 0500000003000000
   ResultItem: {fileID: 11400000, guid: e2331c71b1875a24abcf388473e7bb26, type: 2}
+  Perk: 2

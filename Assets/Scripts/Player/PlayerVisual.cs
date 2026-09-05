@@ -54,6 +54,9 @@ public class PlayerVisual : MonoBehaviour
     [Tooltip("공속 오라 색. 주황 계열이라 '빨라졌다' 로 읽힌다.")]
     [SerializeField] private Color auraHaste = new(1f, 0.68f, 0.22f, 1f);
 
+    [Tooltip("이속 오라 색 (D68). 연두 계열 — 공속(주황)과 한눈에 갈린다.")]
+    [SerializeField] private Color auraSwift = new(0.55f, 1f, 0.45f, 1f);
+
     [Tooltip("오라 굵기(텍셀). 셰이더가 _OutlineWidth / _OutlineTexSize 의 uv 거리로 쓴다. "
            + "🔴 14 는 너무 굵다 — 검처럼 얇은 부분이 양쪽 테두리에 끼여 원래 색이 안 보인다(B1 계열). "
            + "실제 플레이 배율(ortho 6)에서 캡처해 고른 값이 9 다.")]
@@ -174,10 +177,15 @@ public class PlayerVisual : MonoBehaviour
 
         bool inv = _stats.IsBuffInvincible;
         bool has = _stats.IsHasted;
-        if (!inv && !has) { mpb.SetFloat(OutlineWidthId, 0f); return; }
+        bool swi = _stats.IsSwift;
+        if (!inv && !has && !swi) { mpb.SetFloat(OutlineWidthId, 0f); return; }
 
-        Color c    = inv ? auraInvincible : auraHaste;
-        float left = inv ? _stats.BuffInvincibleRemaining : _stats.HasteRemaining;
+        // 우선순위: 무적 → 공속 → 이속. 지금 죽지 않는다는 사실이 제일 중요하고,
+        // 그다음이 공격, 그다음이 이동이다.
+        Color c; float left;
+        if      (inv) { c = auraInvincible; left = _stats.BuffInvincibleRemaining; }
+        else if (has) { c = auraHaste;      left = _stats.HasteRemaining; }
+        else          { c = auraSwift;      left = _stats.SwiftRemaining; }
 
         // 🔑 굵기가 아니라 알파를 점등한다. 굵기를 흔들면 실루엣이 커졌다 작아져
         //    캐릭터가 물리적으로 변한 것처럼 보인다.

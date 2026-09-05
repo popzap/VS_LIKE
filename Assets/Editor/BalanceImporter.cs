@@ -438,6 +438,7 @@ public static class BalanceImporter
             a.EvolutionName = CsvRow.Str(row, "EvolutionName", id);
             a.Description   = CsvRow.Str(row, "Description", a.Description);
             a.ResultItem    = LoadById<ItemData>(ItemFolder, CsvRow.Str(row, "ResultItem"), id, "ItemData", log);
+            a.Perk          = CsvRow.Enum(row, "Perk", a.Perk);
 
             var ids = SplitIds(CsvRow.Str(row, "Ingredients"));
             a.Ingredients = new ItemData[ids.Length];
