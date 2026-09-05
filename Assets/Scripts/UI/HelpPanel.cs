@@ -15,58 +15,106 @@ using UnityEngine.UI;
 /// <c>OnEnable</c> 마다 코드 값을 씌워 <b>코드가 항상 이긴다.</b></para>
 ///
 /// <para>🔴 문자열은 영문이다 — 폰트가 Static 115자라 한글 글리프가 없다 (I-60).
-/// 화살표(→ U+2192)와 가운뎃점(· U+00B7)은 문자표에 있으므로 써도 된다.</para>
+/// 가운뎃점(· U+00B7)은 문자표에 있으므로 써도 된다.</para>
 /// </summary>
 public class HelpPanel : MonoBehaviour
 {
     // 🔴 컴파일 반영 확인용 (D27).
-    public const int Version = 1;
+    public const int Version = 3;   // 3 = 2단 배치 (D85) · 2 = 여백·제목 구분
 
+    [Tooltip("왼쪽 단 — CONTROLS")]
     [SerializeField] private TextMeshProUGUI bodyText;
-    [SerializeField] private Button          closeButton;
+
+    [Tooltip("오른쪽 단 — SCREEN + GOOD TO KNOW. 🔴 한 단으로 두면 넘친다(실측 필요 1004 / 자리 708).")]
+    [SerializeField] private TextMeshProUGUI bodyRightText;
+
+    [SerializeField] private Button closeButton;
 
     /// <summary>
-    /// 🔴 <b>코드가 원본</b>이다 (B11 의 교훈). 고칠 때는 여기만 고친다.
+    /// 왼쪽 단 — 조작. 🔴 <b>코드가 원본</b>이다 (B11 의 교훈).
     ///
-    /// <para>순서는 <b>배우는 순서</b>다 — 움직이고, 싸우고(자동), 고르고, 그 다음이 편의다.
-    /// 배율은 사용자가 물어본 항목이라 <b>따로 한 줄을 준다.</b></para>
+    /// <para>순서는 <b>배우는 순서</b>다 — 움직이고, 고르고, 그 다음이 편의다.</para>
+    ///
+    /// <para>🔴 <b>가독성이 요구였다</b> (D85 · *"너무 글씨가 몰려있어"*).
+    /// 키와 설명을 <b>같은 줄에 표로 붙이지 않는다</b> — 예전 배치는 공백으로 칸을 맞춰서
+    /// 글자가 조금만 길어져도 붙어 보였다. 키를 한 줄, 설명을 들여쓰기로 아래에 둔다.</para>
+    ///
+    /// <para>🔴 <b>한 단으로는 안 들어간다</b> — 실측 필요 높이 <b>1004</b>, 자리 <b>708</b> 이었다.
+    /// 글자를 줄이면 요구와 반대가 되므로 <b>카드의 남는 가로를 쓴다.</b></para>
     /// </summary>
-    private const string Body =
-        "CONTROLS\n" +
+    private const string BodyLeft =
+        "<size=118%><color=#F0C040>CONTROLS</color></size>\n" +
         "\n" +
-        "WASD  ·  Arrow keys      Move\n" +
-        "Weapons fire automatically.\n" +
+        "WASD  ·  Arrow keys\n" +
+        "<indent=8%>Move.</indent>\n" +
+        "<indent=8%>Weapons fire automatically.</indent>\n" +
         "\n" +
-        "1  2  3                  Pick a level-up card\n" +
-        "Z                        Place a building\n" +
-        "TAB                      Stats and items (slows time)\n" +
-        "ESC                      Pause\n" +
+        "1   2   3\n" +
+        "<indent=8%>Pick a level-up card.</indent>\n" +
         "\n" +
-        "SCREEN\n" +
+        "Z\n" +
+        "<indent=8%>Place a building.</indent>\n" +
         "\n" +
-        "F7                       Zoom in   (see less, bigger)\n" +
-        "F8                       Zoom out  (see more, smaller)\n" +
-        "Your choice is remembered between runs.\n" +
+        "TAB\n" +
+        "<indent=8%>Stats and items.</indent>\n" +
+        "<indent=8%>Time slows down.</indent>\n" +
         "\n" +
-        "TIPS\n" +
+        "ESC\n" +
+        "<indent=8%>Pause.</indent>";
+
+    /// <summary>오른쪽 단 — 화면 설정과 알아 둘 것.</summary>
+    private const string BodyRight =
+        "<size=118%><color=#F0C040>SCREEN</color></size>\n" +
+        "\n" +
+        "F7   ·   F8\n" +
+        "<indent=8%>Zoom in  ·  Zoom out.</indent>\n" +
+        "<indent=8%>Remembered between runs.</indent>\n" +
+        "\n" +
+        "\n" +
+        "<size=118%><color=#F0C040>GOOD TO KNOW</color></size>\n" +
         "\n" +
         "Each class has its own slot limits.\n" +
-        "The row under your health bar shows what you\n" +
-        "carry and how many slots are left.\n" +
         "\n" +
-        "A shop node lets you buy, remove, or reroll.\n" +
-        "When there is nothing left to buy it offers\n" +
-        "rest and gold exchange instead.";
+        "The rows under your health bar\n" +
+        "show what you carry and how\n" +
+        "many slots are left.\n" +
+        "\n" +
+        "A shop lets you buy, remove,\n" +
+        "or reroll. When there is nothing\n" +
+        "left to buy it offers rest and\n" +
+        "gold exchange instead.";
 
     private void Start()
     {
-        if (bodyText != null) bodyText.text = Body;
+        Apply();
         if (closeButton != null) closeButton.onClick.AddListener(() => gameObject.SetActive(false));
     }
 
     // 패널을 다시 열 때도 코드 값이 이기게 한다.
-    private void OnEnable()
+    private void OnEnable() => Apply();
+
+    private void Apply()
     {
-        if (bodyText != null) bodyText.text = Body;
+        Style(bodyText,      BodyLeft);
+        Style(bodyRightText, BodyRight);
+    }
+
+    /// <summary>
+    /// 🔴 <b>글자 배치도 코드가 정한다</b> (D85). 씬 값이면 다음에 캔버스를 만질 때 조용히 돌아간다 (B11).
+    ///
+    /// <para>🔴 <b>자동 축소를 끈다.</b> 켜져 있으면 본문이 길어질수록 글자가 스스로 작아져
+    /// *"몰려 보인다"* 가 다시 생긴다 — 넘치면 <b>글자가 아니라 배치를 고쳐야</b> 한다.</para>
+    /// </summary>
+    private static void Style(TextMeshProUGUI t, string body)
+    {
+        if (t == null) return;
+        t.text             = body;
+        t.alignment        = TextAlignmentOptions.TopLeft;
+        t.enableAutoSizing = false;
+        t.fontSize         = 21f;
+        t.lineSpacing      = 10f;    // "적당히 거리 두고"
+        t.paragraphSpacing = 6f;
+        t.overflowMode     = TextOverflowModes.Overflow;
+        t.richText         = true;
     }
 }

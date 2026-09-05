@@ -27,6 +27,9 @@ public class BossOffscreenArrowUI : MonoBehaviour
     [Tooltip("0 이면 깜빡이지 않는다. 초당 맥동 횟수.")]
     [SerializeField] private float pulsePerSecond = 1.6f;
 
+    [Tooltip("🔴 이 거리(월드 유닛)보다 멀면 화면 안이어도 화살표를 띄운다. 0 이면 예전처럼 화면 밖에서만.")]
+    [SerializeField] private float showBeyondDistance = 7f;
+
     private WaveManager      _wave;
     private EnemyBase        _boss;
     private BossArrowGraphic _arrow;
@@ -98,8 +101,19 @@ public class BossOffscreenArrowUI : MonoBehaviour
         float halfW = size.x * 0.5f - edgeMargin;
         float halfH = size.y * 0.5f - edgeMargin;
 
-        // 화면 안이면 화살표가 필요 없다. 체력 바가 이미 "지금 싸우는 중"을 말해 준다.
-        if (sp.z > 0f && Mathf.Abs(p.x) <= halfW && Mathf.Abs(p.y) <= halfH)
+        // 🔴 <b>"화면 밖일 때만" 은 실제로 거의 안 뜬다</b> (D85 · 사용자가 세 번 지적했다).
+        //    보스는 플레이어를 쫓고 카메라는 플레이어를 따라가므로 <b>화면 밖으로 나갈 일이 거의 없다.</b>
+        //    `D83` 에서 보스를 25.7유닛 밖으로 옮겨 보니 화살표는 정상으로 떴다 —
+        //    즉 <b>기능이 죽은 게 아니라 조건이 안 생겼다.</b>
+        //
+        //    ⇒ 조건을 하나 더 준다: <b>멀면</b> 화면 안이어도 띄운다.
+        //    보스는 화면 안에 있어도 작은 점이라 난전에서 안 찾아진다 — 사용자가 본 게 그 상태다.
+        //    🔑 가까우면 안 뜬다 — 눈앞에 있는 걸 화살표로 가리키면 그건 방해다.
+        var player = PlayerStats.Current;
+        bool far = showBeyondDistance > 0f && player != null
+                && Vector2.Distance(player.transform.position, _boss.transform.position) > showBeyondDistance;
+
+        if (!far && sp.z > 0f && Mathf.Abs(p.x) <= halfW && Mathf.Abs(p.y) <= halfH)
         {
             SetVisible(false);
             return;

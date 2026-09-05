@@ -13,7 +13,7 @@ public class HUDManager : MonoBehaviour
     public static HUDManager Instance { get; private set; }
 
     // 🔴 컴파일 반영 확인용 (D27).
-    public const int Version = 3;   // 3 = 직업 초상화 + 보유 아이템 줄 (D82) · 2 = 레벨업 파동 (D43)
+    public const int Version = 4;   // 4 = 아이템 줄을 분류별 3줄로 (D85) · 3 = 초상화+아이템 줄 (D82) · 2 = 레벨업 파동 (D43)
 
     // ── 포트레이트 (좌측 상단) ───────────────────────────────
     [Header("포트레이트")]
@@ -26,12 +26,18 @@ public class HUDManager : MonoBehaviour
 
     // ── 보유 아이템 줄 (D82 · 사용자 요구 2) ──────────────────
     [Header("보유 아이템 줄 — HP 바 아래")]
-    [Tooltip("칩이 담길 자리. 가로 레이아웃 그룹을 붙여 둔다.")]
-    [SerializeField] private Transform  itemSlotRow;
+    [Tooltip("🔴 분류별로 한 줄씩 — [0] 무기 · [1] 패시브 · [2] 건물. 각각 가로 레이아웃 그룹을 붙여 둔다.")]
+    [SerializeField] private Transform[] itemSlotRows = new Transform[3];
+
     [Tooltip("Prefab_ItemChip. StatsPanel(TAB)이 쓰는 것과 같은 프리팹이다.")]
     [SerializeField] private GameObject itemChipPrefab;
 
-    private readonly System.Collections.Generic.List<ItemChipUI> _slotChips = new();
+    private readonly System.Collections.Generic.List<ItemChipUI>[] _rowChips =
+    {
+        new System.Collections.Generic.List<ItemChipUI>(),
+        new System.Collections.Generic.List<ItemChipUI>(),
+        new System.Collections.Generic.List<ItemChipUI>(),
+    };
     private int _slotSignature = -1;   // 재구축 여부만 가른다 (매 프레임 다시 만들지 않기 위해)
 
     // ── HP 바 ────────────────────────────────────────────────
@@ -144,7 +150,8 @@ public class HUDManager : MonoBehaviour
     /// </summary>
     private void RefreshItemSlots()
     {
-        if (itemSlotRow == null || itemChipPrefab == null) return;
+        if (itemChipPrefab == null) return;
+        if (itemSlotRows == null || itemSlotRows.Length < Categories.Length) return;
 
         var lm = GameManager.Instance != null ? GameManager.Instance.LevelUpManager : null;
         var ps = _playerStats;
@@ -157,7 +164,7 @@ public class HUDManager : MonoBehaviour
         //    메인 메뉴에서 바로 그 상태다.
         if (ps.ClassChain.Count == 0)
         {
-            for (int i = 0; i < _slotChips.Count; i++) _slotChips[i].gameObject.SetActive(false);
+            HideAllSlotChips();
             _slotSignature = -1;
             return;
         }
@@ -179,9 +186,16 @@ public class HUDManager : MonoBehaviour
         _slotSignature = sig;
 
         // ── 다시 그린다 ──────────────────────────────────────
-        int used = 0;
-        foreach (var cat in Categories)
+        // 🔴 <b>분류마다 자기 줄을 쓴다</b> (D85 · 사용자 요구).
+        //    한 줄에 13칸을 늘어놓으니 *"무엇이 무기고 무엇이 건물인지"* 가 안 읽혔다.
+        //    요구는 이 모양이었다 — 무기(검)·ㅁ·ㅁ / 패시브·ㅁ·ㅁ·ㅁ·ㅁ / 건물(터렛)·ㅁ·ㅁ
+        for (int ci = 0; ci < Categories.Length; ci++)
         {
+            var cat = Categories[ci];
+            var row = itemSlotRows[ci];
+            if (row == null) continue;
+            int used = 0;
+            {
             // 🔴 <b>상한을 한 번 더 자른다.</b> 위에서 "직업 없음"은 걸렀지만,
             //    이 값이 <c>int.MaxValue</c> 가 될 수 있는 함수라는 사실 자체가 위험하다 —
             //    <b>루프의 상한은 그 값을 믿지 않고 내가 정한다.</b>
@@ -194,7 +208,7 @@ public class HUDManager : MonoBehaviour
                 {
                     if (kv.Key == null || kv.Key.Category != cat) continue;
                     if (filled >= limit) break;          // 상한을 넘겨 그리지 않는다
-                    var chip = GetSlotChip(used++);
+                    var chip = GetSlotChip(ci, used++);
                     chip.gameObject.SetActive(true);
                     chip.Bind(kv.Key, kv.Value);
                     filled++;
@@ -202,14 +216,26 @@ public class HUDManager : MonoBehaviour
 
             for (int i = filled; i < limit; i++)
             {
-                var chip = GetSlotChip(used++);
+                var chip = GetSlotChip(ci, used++);
                 chip.gameObject.SetActive(true);
                 chip.BindEmpty();
             }
-        }
+            }
 
-        for (int i = used; i < _slotChips.Count; i++)
-            _slotChips[i].gameObject.SetActive(false);
+            var list = _rowChips[ci];
+            for (int i = used; i < list.Count; i++)
+                list[i].gameObject.SetActive(false);
+        }
+    }
+
+    private void HideAllSlotChips()
+    {
+        for (int ci = 0; ci < _rowChips.Length; ci++)
+        {
+            var list = _rowChips[ci];
+            if (list == null) continue;
+            for (int i = 0; i < list.Count; i++) list[i].gameObject.SetActive(false);
+        }
     }
 
     private static readonly ItemCategory[] Categories =
@@ -224,11 +250,12 @@ public class HUDManager : MonoBehaviour
     /// </summary>
     private const int MaxSlotsPerCategory = 12;
 
-    private ItemChipUI GetSlotChip(int index)
+    private ItemChipUI GetSlotChip(int rowIndex, int index)
     {
-        while (_slotChips.Count <= index)
+        var list = _rowChips[rowIndex];
+        while (list.Count <= index)
         {
-            var go   = Instantiate(itemChipPrefab, itemSlotRow);
+            var go   = Instantiate(itemChipPrefab, itemSlotRows[rowIndex]);
             var chip = go.GetComponent<ItemChipUI>();
             if (chip == null) chip = go.AddComponent<ItemChipUI>();
 
@@ -243,9 +270,9 @@ public class HUDManager : MonoBehaviour
             le.minHeight       = SlotChipSize;
 
             chip.SetCompact(true);
-            _slotChips.Add(chip);
+            list.Add(chip);
         }
-        return _slotChips[index];
+        return list[index];
     }
 
     private void OnDestroy()
