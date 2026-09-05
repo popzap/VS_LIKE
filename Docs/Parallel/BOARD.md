@@ -54,6 +54,8 @@
 
 | CONTENT | `C43` | `Assets/Game/Sprites/Tiles/*.meta` · `Assets/Game/Balance/Economy.csv` · `Docs/TUNING.md` · `REQ/DEV.md` | 2026-09-05 | `대기(REQ→DEV)` — **플레이 답 회수 · 값 3개 변경.** 통과 6개(🔴 **B-1 보스 회피 — 계산→대조군→실전 셋 다 맞았다**). 🔑 **B-4 의 두 불만이 원인 하나였다** — 타일이 **정확히 1유닛(플레이어와 동일)**이라 어긋난 색 한 칸이 **사람만 한 얼룩**이 된다. `PPU 1024→2048`(0.5유닛)로 줄이면 같은 편차가 **면적 1/4 의 잔결** ⇒ **깊은 층 색은 안 좁혔다**(손잡이를 남겼다). 🔴 **씬 `Grid.Cell Size` 1→0.5 를 같이 안 바꾸면 타일 사이가 벌어진다** → 요청-35. `layerSpawnGrowth 0.14→0.17` + 🔴 `maxAliveCeiling 320→360`(**안 올리면 329 가 조용히 잘린다** — 천장은 한 번 정하고 잊는 값이 아니다). 🔴 **경제는 안 눌렀다** — `D63` 이 *"구매 0 은 층 스킵 탓"* 이라 밝혔고 같은 데이터가 **세 번 다르게 읽혔다.** 🟢 **승급 7분(5번째 전투) → `TODO` §2 의 T4 미결정이 닫힌다** · [`DONE/C43.md`](DONE/C43.md) |
 
+| CONTENT | `C44` | `Assets/Game/Balance/Waves.csv` · `Assets/Game/Sprites/Pickups/` · `Tools/Art/` · `REQ/DEV.md` | 2026-09-05 | `대기(REQ→DEV)` — 🔴 **요청-35 가 이틀째 미처리라 바닥이 깨져 있을 수 있다** — 타일 `PPU 2048`(0.5유닛)은 커밋됐는데 씬 `Grid.Cell Size` 가 아직 `1,1` 이다. **되돌리는 길까지 같이 줬다**(마감 이틀 — 개선보다 안 깨진 게 먼저). ✅ **Ogre 를 화면에 내보냈다**(`D65` 의 `C-1` 진단에 **안 A**) — `Normal3` 3 · `Elite1` 2. 🔑 안 B 를 안 고른 건 **Zombie 가 유일한 `Chaser` 대조군**이라서 — 대조군을 소비해 푸는 건 마지막 수단이다. ✅ **`Pickup_Swift` 그림**(빨리감기 꺾쇠 · Haste 가 세로 번개라 주축을 90도 틀었다) — 🟡 날개 부츠로 그렸다가 **아래 화살표로 읽혀** 다시 그렸다. ✅ DEV 가 건드린 내 CSV 3건 검증(픽업 **7/7 짝** · `xpTailStep` 이 `Lv11=810` 벽을 없앴다 — **표 밖의 수를 찾은 것**) → [`REQ/DEV.md`](REQ/DEV.md) **요청-36** · [`DONE/C44.md`](DONE/C44.md) |
+
 > 상태값: `진행중` · `대기(REQ→DEV)` · `검증대기` · `막힘(B1)`
 > 끝나면 **자기 줄을 지운다.**
 >
@@ -484,7 +486,7 @@ CONTENT 는 **읽기만** 한다 — 내 요청이 언제 처리될지 가늠하
 
 | 세션 | 다음 이슈 번호 |
 |---|---|
-| DEV | `D77` |
+| DEV | `D78` |
 | DEV | `D41` | `Assets/Scripts/Fx/PulseFx.cs` · `Assets/Prefabs/Fx_{Promote,LevelUp}.prefab` · `Assets/Scripts/Evolution/EvolutionManager.cs` · `Assets/Game/Balance/SceneWiring.csv` · `Assets/Scenes/SampleScene.unity` · `Docs/**` | 2026-09-04 | `완료` — **요청-26 (C34)**: 메타 아이콘 **7/7** + 승급·레벨업 파동. 🔴 **검증 중 내 결함을 잡았다** — 이 연출이 뜨는 두 순간이 **둘 다 `timeScale = 0`** 이라 `Time.deltaTime` 이면 **얼어붙은 링이 화면에 붙어 있다**. `unscaledDeltaTime` 으로 고침. 🟡 **판정 ⑤ 보류** — 레벨업 파동은 뜨지만 `ScreenSpaceOverlay` 패널이 덮어 **안 보인다** → `TODO.md` 결정 3안. 🟡 고아 애셋 `UpGoldGain.asset` 발견 |
 | DEV | `D42` | `Assets/Game/Sprites/UI/{ShopKeeper,MainMenuBG}.png` · `Assets/Scenes/SampleScene.unity` · `Docs/**` | 2026-09-04 | `완료` — **요청-27 (C35)**: Unity AI 그림 2장. 판정 **7/7** (알파 0 · 배경 밝기 **0.150** · 세로 점유 **86.1 %**). **코드 0줄.** 🔴 **`I-41` 가짜 투명이 또 났다** — 프롬프트에 명시해도 알파가 전부 255 였다. 🔴 CONTENT 의 *"형제 순서 0"* 지시를 일부러 안 따랐다 — 그 자리 `DimBG` 가 **알파 1.00 불투명**이라 배경이 가린다. 🟡 `pivot` 이 위쪽이라 배치를 한 번 틀렸다 |
 | DEV | `D43` | `Assets/Scripts/{UI/HUDManager,LevelUp/LevelUpManager}.cs` · `Assets/GameObjects/UI Canvas.prefab` · `Assets/Scenes/SampleScene.unity` · `Docs/**` | 2026-09-04 | `완료` — 사용자 결정 2건. ① **`B11` 닫음** — 씬 **과 프리팹 원본** 둘 다 영문화. 🔴 씬만 고쳤으면 오버라이드라 **부활했다**. 전수 조사(씬 263 · 프리팹 69) 한글 **0건**, 스캐너에 **대조군**을 넣어 배열까지 보는 걸 증명했다 ② **레벨업 파동 A안** — 패널 닫힘 시점으로 옮김. 판정 3/3 |
@@ -520,7 +522,8 @@ CONTENT 는 **읽기만** 한다 — 내 요청이 언제 처리될지 가늠하
 | DEV | `D74` | `Assets/Scripts/Player/{StatBlock,PlayerStats}.cs` · `Assets/Scripts/Passive/{PassiveData,PassiveEffect}.cs` · `Assets/Editor/BalanceImporter.cs` · `Assets/Game/Balance/{Passives,Items,Economy,SceneWiring}.csv` · `Assets/Game/{PassiveData,ItemData}/HpRegen.asset`(신규) · `Assets/Scenes/SampleScene.unity` · `Docs/**` | 2026-09-05 | `완료` — 체력 재생(사용자 요구 11). 기본 **0.4/s** + 패시브 `Regeneration`(0.4~2.6/s). 판정 **4/4**(기본 재생 오차 **0.001** · 패시브 0.40→0.80→1.20 · 만피 정지). 🔴 **판정이 아니었으면 0 인 채로 넘어갔다** — `RecalculateStats` 가 `Final` 을 필드별 나열로 만들어 새 필드가 빠졌다. 🔴 **그 자리에서 `Luck` 도 같은 이유로 빠진 것을 찾아 `B13` 등재**(고치지 않음). ⚠️ `Passives.csv` 열 추가 · 아이콘 임시 재사용 → 요청-51 |
 | DEV | `D75` | `Assets/Scripts/{Evolution/EvolutionManager,Enemy/EnemyBase}.cs` · `Assets/Game/Balance/Economy.csv` · `Assets/Scenes/SampleScene.unity` · `Docs/**` | 2026-09-05 | `완료` — 승급 연출 강화(사용자 요구 B-5). **새 애셋 0개** — 히트스톱·충격파·흔들림·파동 3연을 **같은 순간에** 겹친다. 🔴 `TakeDamage(0)` 은 최소 1 피해가 들어가서 못 쓴다 → `PushAway` 신설(피해 0). 🔴 `WaitForSecondsRealtime` — 히트스톱이 timeScale 을 0 으로 만든다. 판정 **5/7** — 충격파 **안 16.0 / 밖 0.0**(대조군). 🟡 2·3번째 파동·흔들림은 **못 쟀다**(왕복 1초+ > 파동 수명 0.55s) ⇒ 화면 확인은 사용자 몫. 🔴 시험 헛짚음 1건(`SyncTransforms` 없이 재서 충격파가 0 으로 나왔다). ⚠️ `Economy.csv` 8행 추가 → 요청-52 |
 | DEV | `D76` | `Assets/Scripts/{Wave/WaveManager,Meta/EventManager}.cs` · `Assets/Editor/BalanceImporter.cs` · `Assets/Game/Balance/{Waves,Events,SceneWiring}.csv` · `Assets/Game/WaveData/Ambush1.asset`(신규) · `Assets/Scenes/SampleScene.unity` · `Docs/**` | 2026-09-05 | `완료` — 기습 이벤트(사용자 요구 9) · 🟢 **플레이테스트 24건 전부 닫힘**. 🔴 `eventWaves` 배선이 **아예 없어** 기습이 그냥 노말이었다. `Ambush1` 신설(35s · 100마리를 8초에 · 전부 `~Ring` · **Demon 제외**). 🔑 `~Ring`(D50)이 *"전맵 테두리에서"* 를 그대로 만족 — 새 패턴 불필요. 🔴 *"기습만"* 때문에 `GameEvent.WaveId` + `StartWave(node, overrideWave)` 신설(무작위로 뽑으면 **지뢰밭에도 100마리**가 쏟아진다). 판정 **6/6** — 4분면 **18/20/20/18** · 평균 거리 17.2. 🔴 또 *"이미 도착한 적을 쟀다"*(D51 과 같은 함정) → `timeScale 0.25` 로 재측정 |
-| CONTENT | `C44` |
+| DEV | `D77` | `Docs/PLAYTEST_2.md`(신규) · `Docs/{SETUP_STATUS,TODO}.md` (문서만 · 코드 변경 0) | 2026-09-05 | `완료` — 세션 정리. `SETUP_STATUS` 2-103 에 **D63~D76 요약**(작업 14개 · 교훈 4개 · **새 애셋 2개뿐**), `PLAYTEST_2.md` 신설(**항목 56개** · 사용자가 채우는 문서). 🔴 §1 은 **DEV 가 볼 수단이 아예 없는 것들** — `ScreenSpaceOverlay` 캔버스는 렌더 텍스처로 안 잡힌다(승급 연출 3연 · 오라 · 이동 기울기 · 맵 · 보스 화살표 · 클리어 화면 · Dev 패널 렌더링). §3 에 **결정 2건**(`B13` 처리 방식 · 마감까지 무엇을 더 할지) |
+| CONTENT | `C45` |
 | 버그(공용) | `B13` |
 
 > 번호를 쓸 때 이 표를 **즉시** 올린다. 선점이 곧 예약이다.

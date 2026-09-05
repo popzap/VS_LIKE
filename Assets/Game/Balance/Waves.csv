@@ -34,8 +34,8 @@
 Id,UseTimerClear,SurvivalTime,UseKillClear,KillTarget,SpawnRadius,MaxAlive,Spawns,EliteOverride,BossOverride,EliteCount,EliteTime,BossTime
 Normal1,1,60,0,0,20,60,Slime*30@2:0-60|Goblin*36@1.4:12-60~Squad,,,1,40,2
 Normal2,1,75,0,0,20,80,Goblin*30@2:0-62|Zombie*36@1.6:10-72|Wolf*16@2.5:35-75~Ring,,,1,40,2
-Normal3,1,90,0,0,20,110,Zombie*36@2:0-74|Wolf*24@2.2:15-70|Demon*10@4:30-72|Goblin*34@1.5:40-90~Burrow,,,1,40,2
-Elite1,1,90,0,0,20,110,Wolf*24@2.2:0-55~Ring|Zombie*30@2:8-70|Demon*12@3.5:25-72,Demon,,2,45,2
+Normal3,1,90,0,0,20,110,Zombie*36@2:0-74|Wolf*24@2.2:15-70|Demon*10@4:30-72|Goblin*34@1.5:40-90~Burrow|Ogre*3@12:45-90,,,1,40,2
+Elite1,1,90,0,0,20,110,Wolf*24@2.2:0-55~Ring|Zombie*30@2:8-70|Demon*12@3.5:25-72|Ogre*2@15:40-85,Demon,,2,45,2
 Elite2,1,100,0,0,20,130,Zombie*32@2:0-66|Demon*16@3:12-62~Squad|Wolf*24@2.2:30-85,Ogre,,2,50,2
 Boss1,1,240,1,19,22,90,Zombie*12@4:0-50|Demon*6@8:5-53,,Bonecaller,1,40,3
 Ambush1,1,35,0,0,20,110,Slime*30@0.18:0-6~Ring|Goblin*30@0.18:0-6~Ring|Zombie*24@0.25:0-7~Ring|Wolf*16@0.35:1-8~Ring,,,1,40,3
