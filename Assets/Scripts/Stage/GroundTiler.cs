@@ -133,9 +133,17 @@ public class GroundTiler : MonoBehaviour
         float halfH = _cam.orthographicSize;
         float halfW = halfH * _cam.aspect;
 
+        // 🔴 <b>월드 유닛을 칸 수로 그대로 쓰면 안 된다</b> (D78).
+        //    예전 식은 <c>CeilToInt(halfW * 2)</c> 였는데, 그건 <b>셀 크기가 1 일 때만</b> 맞는다.
+        //    타일이 0.5유닛이 되면서 셀도 0.5 가 됐고, 그대로 두면 <b>화면의 절반만 덮어</b>
+        //    가장자리가 검게 빈다. 셀 크기로 나눠야 크기가 무엇이든 화면을 채운다.
+        Vector3 cell = _map.layoutGrid != null ? _map.layoutGrid.cellSize : Vector3.one;
+        float cx = Mathf.Max(0.01f, cell.x);
+        float cy = Mathf.Max(0.01f, cell.y);
+
         Vector2Int need = new Vector2Int(
-            Mathf.CeilToInt(halfW * 2f) + margin * 2,
-            Mathf.CeilToInt(halfH * 2f) + margin * 2);
+            Mathf.CeilToInt(halfW * 2f / cx) + margin * 2,
+            Mathf.CeilToInt(halfH * 2f / cy) + margin * 2);
 
         if (_buffer != null && need == _size) return;
 
