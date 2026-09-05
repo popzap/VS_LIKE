@@ -48,6 +48,31 @@ public class EnemyVisual : MonoBehaviour
     private Rigidbody2D          _rb;
     private MaterialPropertyBlock _mpb;
 
+    /// <summary>
+    /// <b>쓸 때 만든다</b> (B14 · D84).
+    ///
+    /// <para>🔴 예전에는 <see cref="Setup"/> 에서만 만들었고, 쓰는 곳은
+    /// <c>if (_sr == null) return;</c> <b>하나만</b> 봤다. 그런데 이 둘은 <b>같이 사라지지 않는다</b> —
+    /// <b>플레이 중 스크립트가 다시 컴파일되면</b>(에디터 기본값이 "Recompile And Continue Playing")
+    /// 도메인 리로드가 돌고, 그때 <c>_sr</c> 은 <b>UnityEngine.Object 참조라 복원되는데</b>
+    /// <c>_mpb</c> 는 <b>순수 C# 객체라 null 이 된다.</b></para>
+    ///
+    /// <para>⇒ 가드를 통과한 채 <c>GetPropertyBlock(null)</c> 이 불려
+    /// <c>ArgumentNullException: dest</c> 가 <b>매 프레임, 적마다</b> 터졌다
+    /// (사용자 플레이 로그에서 8초에 47건).</para>
+    ///
+    /// <para>🔑 가드를 하나 더 다는 대신 <b>지연 생성</b>으로 바꿨다 —
+    /// 리로드 뒤에도 <b>스스로 낫는다</b>. <see cref="EnemyBase"/> 는 이미 이 방식이었다.</para>
+    /// </summary>
+    private MaterialPropertyBlock Mpb
+    {
+        get
+        {
+            if (_mpb == null) _mpb = new MaterialPropertyBlock();
+            return _mpb;
+        }
+    }
+
     private float _flashTimer;
     private bool  _facingRight = true;
 
@@ -65,8 +90,7 @@ public class EnemyVisual : MonoBehaviour
     {
         _sr = sr != null ? sr : GetComponent<SpriteRenderer>();
         if (_rb == null)  _rb  = GetComponent<Rigidbody2D>();
-        if (_mpb == null) _mpb = new MaterialPropertyBlock();
-        if (_sr == null) return;
+        if (_sr == null) return;   // _mpb 는 Mpb 프로퍼티가 알아서 만든다 (B14)
 
         _flashTimer  = 0f;
         _facingRight = true;
@@ -91,12 +115,12 @@ public class EnemyVisual : MonoBehaviour
 
         float speed = bounceSpeed * (scaleWithSpeed ? Mathf.Clamp(moveSpeed, 0.5f, 3f) : 1f);
 
-        _sr.GetPropertyBlock(_mpb);
-        _mpb.SetFloat(AnimSpeedId, speed);
+        _sr.GetPropertyBlock(Mpb);
+        Mpb.SetFloat(AnimSpeedId, speed);
         // 개체마다 다른 위상. 같은 프레임에 스폰된 무리가 한 몸처럼 움직이는 걸 막는다.
-        _mpb.SetFloat(AnimPhaseId, Random.Range(0f, Mathf.PI * 2f));
-        _mpb.SetFloat(FlashAmountId, 0f);
-        _sr.SetPropertyBlock(_mpb);
+        Mpb.SetFloat(AnimPhaseId, Random.Range(0f, Mathf.PI * 2f));
+        Mpb.SetFloat(FlashAmountId, 0f);
+        _sr.SetPropertyBlock(Mpb);
 
         // ⚠️ 풀 재사용 대비로 **항상** 다시 넘긴다. 이전 생애가 시트를 쓰던 적이었다면
         //    _SpriteRect 에 남의 칸이 남아 외곽선이 엉뚱하게 잘린다.
@@ -140,10 +164,10 @@ public class EnemyVisual : MonoBehaviour
             }
         }
 
-        _sr.GetPropertyBlock(_mpb);
-        _mpb.SetVector(SpriteRectId, r);
-        _mpb.SetFloat(OutlineTexSizeId, texSize);
-        _sr.SetPropertyBlock(_mpb);
+        _sr.GetPropertyBlock(Mpb);
+        Mpb.SetVector(SpriteRectId, r);
+        Mpb.SetFloat(OutlineTexSizeId, texSize);
+        _sr.SetPropertyBlock(Mpb);
     }
 
     /// <summary>피격 시 EnemyBase 가 호출.</summary>
@@ -209,8 +233,8 @@ public class EnemyVisual : MonoBehaviour
         _flashTimer -= Time.deltaTime;
         float amount = Mathf.Clamp01(_flashTimer / flashDuration);
 
-        _sr.GetPropertyBlock(_mpb);
-        _mpb.SetFloat(FlashAmountId, amount);
-        _sr.SetPropertyBlock(_mpb);
+        _sr.GetPropertyBlock(Mpb);
+        Mpb.SetFloat(FlashAmountId, amount);
+        _sr.SetPropertyBlock(Mpb);
     }
 }

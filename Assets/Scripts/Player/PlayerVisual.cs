@@ -37,6 +37,22 @@ public class PlayerVisual : MonoBehaviour
     private Rigidbody2D           _rb;
     private MaterialPropertyBlock _mpb;
 
+    /// <summary>
+    /// <b>쓸 때 만든다</b> (B14 · D84). <see cref="EnemyVisual"/> 이 같은 이유로 터졌다.
+    ///
+    /// <para>🔴 <c>Awake</c> 에서만 만들면 <b>플레이 중 스크립트 재컴파일</b> 뒤에 null 이 된다 —
+    /// 도메인 리로드에서 <c>_sr</c>(UnityEngine.Object 참조)은 복원되지만
+    /// <c>_mpb</c>(순수 C# 객체)는 사라지고, <c>Awake</c> 는 <b>다시 안 돈다.</b></para>
+    /// </summary>
+    private MaterialPropertyBlock Mpb
+    {
+        get
+        {
+            if (_mpb == null) _mpb = new MaterialPropertyBlock();
+            return _mpb;
+        }
+    }
+
     private Sprite[] _frames;
     private Sprite   _idleFrame;
     private float    _frameTimer;
@@ -84,7 +100,7 @@ public class PlayerVisual : MonoBehaviour
     {
         _sr  = GetComponent<SpriteRenderer>();
         _rb  = GetComponent<Rigidbody2D>();
-        _mpb = new MaterialPropertyBlock();
+        // _mpb 는 Mpb 프로퍼티가 알아서 만든다 (B14 — 리로드 뒤 null 이 되던 자리)
         _idleFrame = _sr.sprite;
 
         // 🔴 GameManager 를 거치지 않는 같은 오브젝트의 컴포넌트라 Awake 에서 잡아도 된다.
@@ -155,19 +171,19 @@ public class PlayerVisual : MonoBehaviour
         }
         _lean = Mathf.MoveTowards(_lean, target, leanResponse * leanAmount * Time.deltaTime);
 
-        _sr.GetPropertyBlock(_mpb);
-        _mpb.SetFloat(AnimSpeedId, moving ? bounceSpeed : 0f);
-        _mpb.SetFloat(AnimPhaseId, 0f);
-        _mpb.SetFloat(LeanAmtId,   _lean);
+        _sr.GetPropertyBlock(Mpb);
+        Mpb.SetFloat(AnimSpeedId, moving ? bounceSpeed : 0f);
+        Mpb.SetFloat(AnimPhaseId, 0f);
+        Mpb.SetFloat(LeanAmtId,   _lean);
 
         // 🔴 <b>D65 는 부호만 고쳤고 그것으로는 부족했다</b> (D79 · 사용자가 두 번 지적했다).
         //    전단의 기준선을 안 주면 피벗(= 스프라이트 한가운데)이 기준이 되어
         //    위가 오른쪽으로 밀리는 만큼 **아래(다리)가 왼쪽으로 밀린다.**
         //    화면에서 가장 크게 움직이는 건 다리라, 부호가 맞아도 **몸이 반대로 가 보인다.**
         //    밑변을 넣어 발을 고정한다 — 프레임마다 스프라이트가 바뀌므로 매번 읽는다.
-        if (_sr.sprite != null) _mpb.SetFloat(LeanPivotId, _sr.sprite.bounds.min.y);
-        PushAura(_mpb);
-        _sr.SetPropertyBlock(_mpb);
+        if (_sr.sprite != null) Mpb.SetFloat(LeanPivotId, _sr.sprite.bounds.min.y);
+        PushAura(Mpb);
+        _sr.SetPropertyBlock(Mpb);
     }
 
     /// <summary>
@@ -242,9 +258,9 @@ public class PlayerVisual : MonoBehaviour
             }
         }
 
-        _sr.GetPropertyBlock(_mpb);
-        _mpb.SetVector(SpriteRectId, r);
-        _mpb.SetFloat(OutlineTexSizeId, texSize);
-        _sr.SetPropertyBlock(_mpb);
+        _sr.GetPropertyBlock(Mpb);
+        Mpb.SetVector(SpriteRectId, r);
+        Mpb.SetFloat(OutlineTexSizeId, texSize);
+        _sr.SetPropertyBlock(Mpb);
     }
 }

@@ -118,11 +118,29 @@ public class ExpDrop : MonoBehaviour
         if (distSqr < 0.3f * 0.3f) Collect();
     }
 
+    /// <summary>
+    /// 구슬을 회수한다.
+    ///
+    /// <para>🔴 <b>XP 지급이 실패해도 반납은 반드시 돈다</b> (B15 · D84).
+    /// 예전에는 <c>ExperienceManager.Instance.CollectXp(...)</c> 를 <b>가드 없이</b> 불렀다.
+    /// 매니저가 없는 순간(런 종료 정산·씬 전환 중)에 구슬이 플레이어에 닿으면
+    /// <c>NullReferenceException</c> 이 <b>여기서</b> 터지고, 그러면 아래 반납 코드가
+    /// <b>실행되지 않는다</b> — 게다가 <c>_collected</c> 는 이미 <c>true</c> 라
+    /// 다음 프레임에는 <see cref="Collect"/> 가 <b>바로 돌아간다.</b>
+    /// ⇒ 구슬이 <b>화면에 영원히 남고</b> XP 도 안 들어간다.</para>
+    ///
+    /// <para>🔑 사용자 플레이 로그에서 실제로 2건 나왔다. 예외를 없애는 게 아니라
+    /// <b>반납이 예외와 무관하게 돌도록</b> 순서를 바꾼 것이 고침의 핵심이다.</para>
+    /// </summary>
     private void Collect()
     {
         if (_collected) return;
         _collected = true;
-        ExperienceManager.Instance.CollectXp(_amount);
+
+        // 🔴 ?. 를 쓰지 않는다 — 파괴된 UnityEngine.Object 는 "가짜 null" 이다 (I-24).
+        var xp = ExperienceManager.Instance;
+        if (xp != null) xp.CollectXp(_amount);
+        else Debug.LogWarning("[ExpDrop] ExperienceManager 가 없다 — XP 는 버리고 구슬만 반납한다 (B15)");
 
         // 🔴 씬 전체 순회를 하지 않는다 (D27). EnemyBase 가 같은 이유로 이미
         //    SharedPool 캐시를 쓰고 있었는데(EnemyBase.cs:598 주석) 여기엔 안 옮겨져 있었다.

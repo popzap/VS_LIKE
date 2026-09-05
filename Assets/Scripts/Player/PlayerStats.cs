@@ -468,10 +468,25 @@ public class PlayerStats : MonoBehaviour
         CurrentHp = Mathf.Min(Final.MaxHp, CurrentHp + amount);
     }
 
+    /// <summary>
+    /// 🔴 <c>GameManager.Instance</c> 를 <b>가드 없이 부르면 안 된다</b> (D84 · B14 와 같은 가족).
+    ///
+    /// <para><see cref="GameManager.Instance"/> 는 <b>정적 필드</b>라 <c>Awake</c> 에서만 채워진다.
+    /// 플레이 중 스크립트가 다시 컴파일되면 도메인 리로드가 돌면서 <b>정적 필드가 지워지는데
+    /// <c>Awake</c> 는 다시 안 돈다</b> — 그 뒤 죽으면 여기서 <c>NullReferenceException</c> 이 난다.
+    /// (`B14` 를 재현하다가 실제로 잡았다.)</para>
+    ///
+    /// <para>🟡 <b>빌드된 게임에서는 안 난다</b> — 리로드가 없다. 개발 중에만 나는 문제지만,
+    /// 죽음은 핵심 경로라 여기서 예외가 나면 <b>정산·클리어 화면이 통째로 안 뜬다</b>(I-24 와 같은 모양).</para>
+    /// </summary>
     private void Die()
     {
         IsDead = true;
         AudioManager.Play(SfxId.PlayerDie);
-        GameManager.Instance.OnPlayerDied();
+
+        var gm = GameManager.Instance;
+        if (gm != null) gm.OnPlayerDied();
+        else Debug.LogWarning("[PlayerStats] GameManager 가 없다 — 사망 정산을 건너뛴다 "
+                            + "(플레이 중 재컴파일 뒤에만 나는 상태다)");
     }
 }
