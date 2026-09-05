@@ -312,10 +312,9 @@ public class ShopManager : MonoBehaviour
 
         // 🔴 CanAcquire 만으로는 부족하다 — 이미 가진 아이템은 무조건 true 를 돌려주므로
         //    만렙인 것까지 통과한다. 살 수 있다 = 받을 수 있고 + 아직 올릴 수 있다.
-        int itemSlots  = Mathf.Max(0, shopSlotCount - 1);          // 한 칸은 휴식 몫
         var candidates = levelUp.GetShopCandidates(shopSlotCount * 3)
                                 .Where(i => i != null && levelUp.CanAcquire(i) && !i.IsMaxLevel)
-                                .Take(itemSlots)
+                                .Take(shopSlotCount)
                                 .ToList();
 
         foreach (var item in candidates)
@@ -330,11 +329,15 @@ public class ShopManager : MonoBehaviour
             });
         }
 
-        // 아이템이 모자란 만큼 골드 전환으로 메운다.
-        for (int i = candidates.Count; i < itemSlots; i++)
-            CurrentSlots.Add(MakeExchangeSlot());
-
-        CurrentSlots.Add(MakeHealSlot());
+        // 🔴 <b>휴식·전환은 살 아이템이 모자랄 때만 나온다</b> (D72 에서 바로잡았다).
+        //    D71 은 휴식을 <b>항상</b> 한 칸 두었는데, 사용자 의도는
+        //    *"더이상 구매 못하는 상황에서 뜨게"* 였다 — 아이템 칸을 상시로 하나 빼앗으면
+        //    살 게 있는 판에서도 선택지가 줄어든다.
+        //
+        // 🔑 빈자리의 <b>첫 칸이 휴식</b>이다. 체력이 없으면 골드도 의미가 없으므로
+        //    회복을 전환보다 먼저 보여 준다.
+        for (int i = candidates.Count; i < shopSlotCount; i++)
+            CurrentSlots.Add(i == candidates.Count ? MakeHealSlot() : MakeExchangeSlot());
     }
 
     /// <summary>휴식 칸 (사용자 요구 6). 층이 깊을수록 비싸다 — 가격 규칙을 아이템과 맞춘다.</summary>

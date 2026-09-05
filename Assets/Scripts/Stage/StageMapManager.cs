@@ -77,7 +77,11 @@ public class StageMapManager : MonoBehaviour
                     Layer        = layer,
                     IndexInLayer = i,
                     StageType    = StageType.Normal,   // 실제 종류는 아래에서 층 단위로 정한다
-                    MapPosition  = new Vector2(layer * xSpacing, (i - nodeCount * 0.5f) * ySpacing)
+                    // 🔴 예전 식 `(i - nodeCount * 0.5f)` 은 <b>0 을 중심으로 대칭이 아니다</b> —
+                    //    2칸 층은 -1.0·0.0, 3칸 층은 -1.5·-0.5·0.5 로 서로 반 칸씩 어긋나
+                    //    화면에서 들쭉날쭉해 보였다. (i - (n-1)/2) 는 항상 0 을 가운데 둔다.
+                    MapPosition  = new Vector2(layer * xSpacing,
+                                               (i - (nodeCount - 1) * 0.5f) * ySpacing)
                 };
                 layerList.Add(node);
             }
@@ -99,13 +103,32 @@ public class StageMapManager : MonoBehaviour
             var current = Layers[layer];
             var next    = Layers[layer + 1];
 
-            // 각 노드에서 다음 층 1~2개 연결 (중복 허용)
-            foreach (var node in current)
+            // 🔴 예전에는 다음 층의 <b>아무 칸이나</b> 1~2개 골랐다 (`Random.Range(0, next.Count)`).
+            //    그래서 맨 위 노드가 맨 아래로 가는 선이 예사로 생겼고, 3×3 구간에서는
+            //    선 여섯 줄이 서로 엇갈려 <b>어디로 이어지는지 눈으로 못 따라간다.</b>
+            //
+            // 🔑 <b>자기 자리에 대응하는 칸과 그 이웃</b>에만 잇는다. 위/아래 순서가 뒤집히지
+            //    않으므로(단조) 선이 교차하는 경우가 거의 없어진다 —
+            //    슬레이 더 스파이어의 맵이 읽히는 이유가 이것이다.
+            for (int i = 0; i < current.Count; i++)
             {
-                int connections = Random.Range(1, Mathf.Min(3, next.Count + 1));
-                var indices = new HashSet<int>();
-                while (indices.Count < connections)
-                    indices.Add(Random.Range(0, next.Count));
+                var node = current[i];
+
+                // 이 노드가 다음 층에서 "같은 높이" 로 보이는 자리
+                int center = current.Count <= 1
+                    ? next.Count / 2
+                    : Mathf.RoundToInt(i * (next.Count - 1) / (float)(current.Count - 1));
+                center = Mathf.Clamp(center, 0, next.Count - 1);
+
+                var indices = new HashSet<int> { center };
+
+                // 절반쯤은 이웃 한 칸을 더 연다 — 갈림길이 있어야 맵이 의미가 있다.
+                if (next.Count > 1 && Random.value < 0.5f)
+                {
+                    int side = Random.value < 0.5f ? -1 : 1;
+                    int alt  = Mathf.Clamp(center + side, 0, next.Count - 1);
+                    indices.Add(alt);
+                }
 
                 node.NextNodeIndices.AddRange(indices);
             }
