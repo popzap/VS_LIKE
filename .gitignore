@@ -72,3 +72,8 @@ desktop.ini
 # Python 도구 캐시 (Tools/Audio 가 dsp.py 를 import 하면서 생긴다)
 __pycache__/
 *.pyc
+
+# Unity 씬 복구본 (비정상 종료 시 자동 생성 · D60)
+# 🔴 원본 씬은 커밋돼 있으므로 이건 산출물이다. 들어가면 865KB 짜리 씬 사본이 히스토리에 남는다.
+/[Aa]ssets/_Recovery/
+/[Aa]ssets/_Recovery.meta
