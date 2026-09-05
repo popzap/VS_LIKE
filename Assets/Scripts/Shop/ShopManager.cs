@@ -33,6 +33,21 @@ public class ShopManager : MonoBehaviour
     [SerializeField] private int   rerollCostIncrease = 1;     // 리롤 횟수당 비용 증가
     [SerializeField] private float refundRate         = 0.5f;  // 제거 시 환급 비율
 
+    // ── 가격 스케일 (D69 · 사용자 요구 2) ────────────────────────
+    // 🔴 수치는 Economy.csv 의 ShopManager 행이 들고 있다. 여기 기본값은 자리표시다.
+    [Header("가격 스케일 — 값은 Economy.csv 가 덮는다")]
+    [Tooltip("0층·미보유일 때 Items.csv 의 ShopPrice 에 곱하는 값. "
+           + "1 보다 작으면 초반이 싸진다 — 사용자 판정 \"상점이 너무 비쌈\" 이 초반 얘기다.")]
+    [SerializeField] private float priceBaseMult = 0.6f;
+
+    [Tooltip("이미 가진 아이템의 레벨 1당 가격 증가율. 0.35 = 레벨당 +35 %. "
+           + "업그레이드가 쌓일수록 비싸진다.")]
+    [SerializeField] private float priceLevelStep = 0.35f;
+
+    [Tooltip("층 1당 가격 증가율. 0.18 = 층마다 +18 %. "
+           + "후반에 골드가 남는 문제(D61 의 M=1168)를 여기서 뺀다.")]
+    [SerializeField] private float priceLayerStep = 0.18f;
+
     // ── 이벤트 ────────────────────────────────────────────────────
     [Header("이벤트")]
     public UnityEvent          OnShopOpened    = new();
@@ -135,9 +150,47 @@ public class ShopManager : MonoBehaviour
     //  아이템 제거
     // ─────────────────────────────────────────────────────────────
 
-    /// <summary>골드 환급 금액을 반환한다 (ShopPrice × refundRate, 최소 1).</summary>
+    /// <summary>
+    /// 지금 이 아이템의 상점 가격 (D69 · 사용자 요구 2).
+    ///
+    /// <para>사용자 판정: *"상점이 너무 비쌈 (해당 아이템의 현재 레벨, 스테이지 단계에 따라
+    /// 비싸지는 방식으로)"*. 요구가 둘로 갈린다 — <b>싸게</b> 그리고 <b>비싸지게</b>.
+    /// 모순이 아니다: 실측이 그 둘을 따로 가리키고 있었다.</para>
+    ///
+    /// <para>🔑 <c>D61</c> 의 두 판이 정확히 반대였다 —
+    /// <b>3노드 사망 판은 `M=89`</b>(초반엔 돈이 없어 못 산다),
+    /// <b>9노드 완주 판은 `M=1168`</b>(후반엔 남아돈다). 고정가 하나로는 둘 다 못 맞춘다.
+    /// 그래서 <b>기준가를 내리고(0.6배) 층·레벨로 올린다.</b></para>
+    ///
+    /// <para>🔴 <b>보유 레벨은 <c>ItemData.CurrentLevel</c> 로 본다.</b>
+    /// 안 가진 아이템은 0 이라 배율이 1 이 되고, 그게 *"처음 사는 건 싸다"* 다.</para>
+    /// </summary>
+    public int GetPrice(ItemData item)
+    {
+        if (item == null) return 0;
+
+        int level = Mathf.Max(0, item.CurrentLevel);
+
+        // 🔴 <b>LayerScaling.Layer 를 쓰면 한 층 뒤처진다.</b> 그 값은 WaveManager.StartWave 에서만
+        //    갱신되는데, 상점 노드는 웨이브를 안 돈다 — 3층 상점이 2층 가격으로 팔린다.
+        //    지금 들어와 있는 노드의 Layer 를 직접 본다. 노드가 없을 때(창 밖에서 값만 물어볼 때)만
+        //    전역값으로 떨어진다.
+        int layer = _currentNode != null
+            ? Mathf.Max(0, _currentNode.Layer)
+            : Mathf.Max(0, LayerScaling.Layer);
+        float mult  = priceBaseMult
+                    * (1f + priceLevelStep * level)
+                    * (1f + priceLayerStep * layer);
+
+        // 🔴 최소 1. 0 이 되면 "공짜 아이템"이 생겨 상점이 무의미해진다.
+        return Mathf.Max(1, Mathf.RoundToInt(item.ShopPrice * mult));
+    }
+
+    /// <summary>골드 환급 금액을 반환한다 (<see cref="GetPrice"/> × refundRate, 최소 1).</summary>
     public int GetRefundAmount(ItemData item)
-        => Mathf.Max(1, Mathf.RoundToInt(item.ShopPrice * refundRate));
+        // 🔑 고정가가 아니라 **지금 가격**의 절반이다 (D69). 안 그러면 깊은 층에서
+        //    비싸게 산 것을 싸게 되팔게 되고, 반대로 초반엔 산 값보다 비싸게 팔린다.
+        => Mathf.Max(1, Mathf.RoundToInt(GetPrice(item) * refundRate));
 
     /// <summary>보유 아이템을 제거하고 골드를 환급한다.</summary>
     public void RemoveItem(ItemData item)
@@ -172,7 +225,7 @@ public class ShopManager : MonoBehaviour
             CurrentSlots.Add(new ShopSlot
             {
                 Item      = item,
-                Price     = item.ShopPrice,
+                Price     = GetPrice(item),
                 IsSold    = false,
                 IsUpgrade = levelUp.HasItem(item) && !item.IsMaxLevel
             });

@@ -33,7 +33,10 @@ StageMapManager,weightEvent,0.15,1~8층 추첨 가중치 — 이벤트
 ShopManager,shopSlotCount,3,한 번에 진열되는 상품 수
 ShopManager,baseRerollCost,25,리롤 기본 비용(골드)
 ShopManager,rerollCostIncrease,15,리롤 1회마다 비용 증가. 25 → 40 → 55 …
-ShopManager,refundRate,0.5,아이템 제거 시 환급 비율
+ShopManager,refundRate,0.5,"아이템 제거 시 환급 비율. 🔴 D69 부터 고정가가 아니라 **지금 가격**(GetPrice)의 절반이다 — 안 그러면 깊은 층에서 비싸게 산 것을 싸게 되판다"
+ShopManager,priceBaseMult,0.6,"0층·미보유일 때 Items.csv 의 ShopPrice 에 곱하는 값 (D69 · 사용자 요구 2). 🔴 실측이 초반과 후반을 정반대로 가리켰다 — D61 의 3노드 사망 판은 M=89(못 산다), 9노드 완주 판은 M=1168(남아돈다). 고정가 하나로는 둘 다 못 맞춘다. 그래서 기준을 내리고 층·레벨로 올린다. 검산: Sword 70 → 0층 미보유 42"
+ShopManager,priceLevelStep,0.35,"이미 가진 아이템의 레벨 1당 가격 증가율. 0.35 = 레벨당 +35 %. 업그레이드를 쌓을수록 비싸져 '한 무기만 올리기'가 공짜가 아니게 된다"
+ShopManager,priceLayerStep,0.18,"층 1당 가격 증가율. 0.18 = 층마다 +18 %. 검산: Sword 70 → 8층·Lv4 보유 시 246. 후반에 골드가 남는 문제를 여기서 뺀다"
 # ── 레벨업 선택 리롤 ─────────────────────────────────────────────
 # 레벨업 1회당 리롤은 딱 한 번만 가능하다. 그래서 비용 증가 항목이 없다.
 # 1G 는 사실상 공짜라 항상 눌렀다. 한 판 레벨업이 10~12회이므로 10G 면 총 100~120G — 상점 아이템 한 개 값이다.
