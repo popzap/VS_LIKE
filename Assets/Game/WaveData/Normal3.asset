@@ -41,6 +41,12 @@ MonoBehaviour:
     StartTime: 40
     EndTime: 90
     Pattern: 3
+  - Enemy: {fileID: 11400000, guid: c1e01a681911aaa4784749a69ba1f58c, type: 2}
+    Count: 3
+    SpawnInterval: 12
+    StartTime: 45
+    EndTime: 90
+    Pattern: 0
   SpawnRadius: 20
   MaxAlive: 110
   EliteOverride: {fileID: 0}

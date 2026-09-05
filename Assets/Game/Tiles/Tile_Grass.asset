@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Tile_Grass
   m_EditorClassIdentifier: UnityEngine.dll::UnityEngine.Tilemaps.Tile
   m_Sprite: {fileID: 21300000, guid: 7c0e4afddf4108d41a19592138900c27, type: 3}
-  m_Color: {r: 0.9614, g: 0.9687, b: 0.8875, a: 1}
+  m_Color: {r: 0.9614, g: 0.8503, b: 0.8875, a: 1}
   m_Transform:
     e00: 1
     e01: 0

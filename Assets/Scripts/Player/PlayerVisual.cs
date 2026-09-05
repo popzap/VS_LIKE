@@ -40,6 +40,7 @@ public class PlayerVisual : MonoBehaviour
     private static readonly int AnimSpeedId = Shader.PropertyToID("_AnimSpeed");
     private static readonly int AnimPhaseId = Shader.PropertyToID("_AnimPhase");
     private static readonly int LeanAmtId   = Shader.PropertyToID("_LeanAmt");
+    private static readonly int LeanPivotId = Shader.PropertyToID("_LeanPivotY");
 
     // ── 버프 오라 (D67 · 사용자 요구 8) ──────────────────────────
     private static readonly int OutlineColorId   = Shader.PropertyToID("_OutlineColor");
@@ -140,7 +141,7 @@ public class PlayerVisual : MonoBehaviour
         {
             // 🔴 예전에는 여기에 `* (_sr.flipX ? -1f : 1f)` 가 붙어 있었다. **틀렸다** (D65).
             //    flipX 는 메시 정점을 뒤집을 뿐 오브젝트 공간의 축은 그대로라,
-            //    셰이더의 `pos.x += pos.y * _LeanAmt` 는 flipX 와 무관하게 항상 화면 오른쪽으로 민다.
+            //    셰이더의 전단은 flipX 와 무관하게 항상 화면 오른쪽으로 민다.
             //    그래서 왼쪽 이동에서 부호가 두 번 뒤집혀(-1 × -1) **가는 쪽의 반대로 기울었다.**
             //    실측(D65): lean +0.4 → flipX 무관하게 +39.10 / +38.58 px, lean −0.4 → −38.57 / −39.10 px.
             float dir = Mathf.Abs(vel.x) > moveDeadzone ? Mathf.Sign(vel.x) : 0f;
@@ -152,6 +153,13 @@ public class PlayerVisual : MonoBehaviour
         _mpb.SetFloat(AnimSpeedId, moving ? bounceSpeed : 0f);
         _mpb.SetFloat(AnimPhaseId, 0f);
         _mpb.SetFloat(LeanAmtId,   _lean);
+
+        // 🔴 <b>D65 는 부호만 고쳤고 그것으로는 부족했다</b> (D79 · 사용자가 두 번 지적했다).
+        //    전단의 기준선을 안 주면 피벗(= 스프라이트 한가운데)이 기준이 되어
+        //    위가 오른쪽으로 밀리는 만큼 **아래(다리)가 왼쪽으로 밀린다.**
+        //    화면에서 가장 크게 움직이는 건 다리라, 부호가 맞아도 **몸이 반대로 가 보인다.**
+        //    밑변을 넣어 발을 고정한다 — 프레임마다 스프라이트가 바뀌므로 매번 읽는다.
+        if (_sr.sprite != null) _mpb.SetFloat(LeanPivotId, _sr.sprite.bounds.min.y);
         PushAura(_mpb);
         _sr.SetPropertyBlock(_mpb);
     }

@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Tile_MossyCobble
   m_EditorClassIdentifier: UnityEngine.dll::UnityEngine.Tilemaps.Tile
   m_Sprite: {fileID: 21300000, guid: db02ab5dffa466f44a128ec448909de3, type: 3}
-  m_Color: {r: 0.6101, g: 0.7036, b: 1.0000, a: 1}
+  m_Color: {r: 0.8869, g: 0.9279, b: 0.9554, a: 1}
   m_Transform:
     e00: 1
     e01: 0

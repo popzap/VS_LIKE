@@ -160,11 +160,14 @@ I-14~I-18은 **코드 수정이 끝났다.** 하지만 전부 스모크 테스�
 - [ ] **Retry** → 아이템 레벨이 0부터 다시 시작하는지 *(I-17)*
 - [ ] **런 종료 후** `TotalRuns` / `TotalKills` 가 증가·저장되는지 *(I-18)*
 
-### CONTENT `요청-36` 의 남은 두 건 (D78 이 §0 만 처리했다)
+### CONTENT 요청 중 남은 것
 
-- [ ] **`Pickup_Swift.prefab` 의 `m_Sprite` 배선** — CONTENT 가 `Swift.png` 를 그렸는데
-      **`Swift.png.meta` 가 아직 커밋 안 됐다**(추적되지 않은 파일). guid 가 확정돼야 프리팹이 가리킬 수 있다.
-      ⇒ **재개 조건: CONTENT 가 `.meta` 를 커밋한 뒤.** 그때 한 줄 배선하면 끝난다 (`요청-54`)
+- [ ] 🟢 **`Pickup_Swift.prefab` 의 `m_Sprite` 배선** — **막힘이 풀렸다.**
+      `D78` 때는 `Swift.png.meta` 가 커밋 안 돼 guid 가 없었는데, CONTENT 가 `C46` 에서
+      임포트 설정까지 고쳐 커밋했다(PPU 2048 · Point · Single · 무압축 — Haste 와 동일).
+      ⇒ **한 줄이면 끝난다.** `m_Sprite` 를 Haste guid → Swift guid 로.
+      🔴 `m_Color (0.55, 1.00, 0.45)` 는 **그대로 둔다** — 그림이 중립이라 초록으로 칠하면 두 번 곱해진다
+      (CONTENT `요청-38`). 배선하면 `PLAYTEST_2` §2-I 의 *"지금은 색만 바꾼 것"* 경고를 지운다
 - [ ] **Ogre 후반 접촉 피해** — CONTENT 가 `Normal3` 3마리·`Elite1` 2마리로 내보냈다.
       접촉 25 는 9층에서 **38.5**. `Blocker` 라 쫓아오지 않으니 *"피할 수 있는 피해"* 여야 맞다.
       **로그로는 판정 못 한다** ⇒ [`PLAYTEST_2.md`](PLAYTEST_2.md) §2-K

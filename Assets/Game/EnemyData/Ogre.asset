@@ -16,7 +16,7 @@ MonoBehaviour:
   Prefab: {fileID: 3241561999773228563, guid: 35bc07b6190591b4eb4f3c5d45f08647, type: 3}
   Sprite: {fileID: 21300000, guid: 262de0fa85165c2498cc5b34dc43ce22, type: 3}
   Tint: {r: 1, g: 1, b: 1, a: 1}
-  SizeScale: 1.6
+  SizeScale: 2.4
   WalkFrames:
   - {fileID: 1008574107, guid: 6d9f22cfe0d470d40aab60ae6dc6b796, type: 3}
   - {fileID: -2574563, guid: 6d9f22cfe0d470d40aab60ae6dc6b796, type: 3}

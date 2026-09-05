@@ -52,6 +52,13 @@ Shader "VS_LIKE/SpriteOutline"
         // 이동 방향으로 몸을 기울인다. 회전이 아니라 전단(shear)이라 발은 땅에 붙어 있고
         // 위쪽만 밀린다. transform.rotation 을 돌리면 Rigidbody2D 와 싸우게 되므로 피한다.
         _LeanAmt    ("Lean (shear)", Range(-0.4,0.4)) = 0
+
+        // 🔴 <b>전단의 기준선</b> (오브젝트 공간 y · D79).
+        // 0 이면 피벗(= 스프라이트 한가운데)이 기준이라 위가 오른쪽으로 밀릴 때
+        // <b>아래(다리)는 왼쪽으로 밀린다.</b> 화면에서 가장 크게 움직이는 게 다리라
+        // 기울기 부호가 맞아도 <b>몸이 가는 쪽의 반대로 가는 것처럼 보인다</b> — 사용자가 두 번 지적했다.
+        // 스프라이트 밑변(<c>sprite.bounds.min.y</c>)을 넣으면 발이 고정된다.
+        _LeanPivotY ("Lean Pivot Y (object space)", Float) = 0
     }
 
     SubShader
@@ -108,6 +115,7 @@ Shader "VS_LIKE/SpriteOutline"
                 half   _SquashAmt;
                 half   _BobAmt;
                 half   _LeanAmt;
+                float  _LeanPivotY;
             CBUFFER_END
 
             Varyings vert (Attributes IN)
@@ -128,10 +136,10 @@ Shader "VS_LIKE/SpriteOutline"
                     pos.y += s * _BobAmt;
                 }
 
-                // 피벗(발밑)에서 멀수록 많이 밀린다 → 아래는 고정, 위만 기운다.
-                // pos.y 는 피벗 기준이므로 피벗이 Center 면 발도 반대로 밀린다.
-                // 지금 스프라이트는 전부 Center 피벗이라 그 정도 반동은 오히려 자연스럽다.
-                pos.x += pos.y * _LeanAmt;
+                // 기준선에서 멀수록 많이 밀린다 → 아래는 고정, 위만 기운다.
+                // 🔴 <b>_LeanPivotY 가 없으면(0) 피벗 = 스프라이트 한가운데가 기준이 되어
+                // 다리가 반대로 밀린다</b> (D79). 코드가 밑변을 넣어 준다.
+                pos.x += (pos.y - _LeanPivotY) * _LeanAmt;
 
                 OUT.positionCS = TransformObjectToHClip(pos);
                 OUT.uv         = IN.uv;

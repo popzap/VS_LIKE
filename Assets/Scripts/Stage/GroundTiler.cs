@@ -31,6 +31,10 @@ public class GroundTiler : MonoBehaviour
     [Tooltip("같은 배치를 다시 보고 싶으면 이 값을 고정해 둔다. 바꾸면 지형이 통째로 달라진다.")]
     [SerializeField] private int seed = 1337;
 
+    [Tooltip("카메라가 이 칸 수를 넘어야 바닥을 다시 채운다. 크게 잡을수록 다시 채우는 횟수가 줄지만 "
+           + "창이 그만큼 넓어진다(칸 수가 늘어난다). 칸이 0.25유닛이면 8 = 2유닛마다 한 번이다.")]
+    [Min(1)] [SerializeField] private int refillStep = 8;
+
     // ── 층별 테마 (ROADMAP §7 · D49) ────────────────────────────
     [Header("층별 테마 — 값은 Economy.csv 가 덮는다")]
     [Tooltip("층이 깊어질수록 바닥이 달라진다. 🔴 그러려면 위 tiles 배열이 "
@@ -55,7 +59,16 @@ public class GroundTiler : MonoBehaviour
     private int _builtLayer = -1;
 
     // 🔴 컴파일 반영 확인용 (D27).
-    public const int Version = 2;   // 2 = 층별 테마 (D49)
+    public const int Version = 4;   // 4 = 층 색조를 타일맵으로 (D79) · 3 = 기준점 양자화 (D79) · 2 = 층별 테마 (D49)
+
+    /// <summary>
+    /// <paramref name="v"/> 를 <paramref name="step"/> 의 배수로 내림한다.
+    ///
+    /// <para>🔴 <c>v / step * step</c> 으로 쓰면 안 된다 — C# 의 정수 나눗셈은 <b>0 쪽으로</b> 자르므로
+    /// 음수에서 결과가 위로 튄다(<c>-1/8*8 = 0</c>). 그러면 원점 부근에서 기준점이 왔다 갔다 하며
+    /// <b>매 프레임 다시 채운다.</b> 바닥은 원점 왼쪽/아래에도 깔린다.</para>
+    /// </summary>
+    private static int Quantize(int v, int step) => Mathf.FloorToInt(v / (float)step) * step;
 
     private void Awake()
     {
@@ -93,7 +106,44 @@ public class GroundTiler : MonoBehaviour
             _totalWeight += Mathf.Lerp(shallow, deep, t);
             _cumulative[i] = _totalWeight;
         }
+
+        ApplyDepthTint(t);
         _builtLayer = layer;
+    }
+
+    // ── 층 색조 (D79) ────────────────────────────────────────────
+
+    /// <summary>층0 색조. 타일 애셋의 색을 그대로 쓴다 = 대조군.</summary>
+    private static readonly Color ShallowTint = new Color(1.00f, 1.00f, 1.00f, 1f);
+
+    /// <summary>
+    /// 가장 깊은 층 색조. 빨강·초록만 내려 <b>차갑고 어둡게</b> 만든다.
+    ///
+    /// <para>🔑 값은 <b>C37 램프의 층9 밝기(화면 L 0.110)에 맞췄다</b> — 이번 변경의 목적은
+    /// *"특정색이 튄다"* 를 없애는 것이지 후반을 어둡게 하는 게 아니다. 아무것도 뒷걸음치지 않는다.
+    /// (0.45, 0.50, 1.00) 으로 두면 L 0.054 로 <b>예전의 절반</b>이 되어 분위기가 통째로 바뀐다.</para>
+    /// </summary>
+    private static readonly Color DeepTint    = new Color(0.62f, 0.68f, 1.00f, 1f);
+
+    /// <summary>
+    /// 층 구분을 <b>타일이 아니라 타일맵 전체</b>에 건다 (D79 · 사용자 요구).
+    ///
+    /// <para>🔴 예전에는 타일 10종의 색을 <b>얕은색 → 깊은색 램프</b>로 칠해 두고
+    /// 층마다 가중치를 뒤집었다(<c>C37</c>). 그러면 <b>한 층 안에 서로 다른 색이 섞인다</b> —
+    /// 층0 에서도 깊은 타일이 7 % 는 깔리는데 그게 가장 먼 색이라
+    /// <b>올리브 바닥에 남색 구멍처럼 박혔다.</b> 사용자가 그걸 짚었다.</para>
+    ///
+    /// <para>🔑 이제 타일 10종은 <b>전부 같은 한 점</b>이고(<c>Tools/Art/retint_tiles.py</c>),
+    /// 층 구분은 여기 색조 하나가 만든다. 모든 타일에 <b>같이</b> 곱해지므로
+    /// 아무리 세게 갈라도 한 층 안에서는 여전히 한 색이다 — 두 목표가 더는 서로를 깎지 않는다.</para>
+    ///
+    /// <para>⚠️ 정점 색은 곱셈이라 <b>1 을 넘겨 밝힐 수 없다.</b> 그래서 얕은 쪽이 흰색(=원본)이고
+    /// 깊은 쪽으로만 내려간다. 타일 애셋의 목표색이 초반 밝기 기준이 되는 이유다.</para>
+    /// </summary>
+    private void ApplyDepthTint(float t)
+    {
+        if (_map == null) return;
+        _map.color = depthTheme ? Color.Lerp(ShallowTint, DeepTint, t) : ShallowTint;
     }
 
     private void LateUpdate()
@@ -116,10 +166,19 @@ public class GroundTiler : MonoBehaviour
 
         EnsureBuffer();
 
+        // 🔴 <b>카메라 칸을 그대로 쓰면 칸이 작아질수록 비용이 폭증한다</b> (D79).
+        //    예전에는 카메라가 <b>한 칸</b>을 넘을 때마다 창 전체(수천 칸)를 다시 썼다.
+        //    칸을 절반으로 줄이면 창의 칸 수가 4배가 되고 넘는 횟수도 2배가 되어 <b>비용이 8배</b>다.
+        //    ⇒ 기준점을 <see cref="refillStep"/> 칸 단위로 <b>양자화</b>한다. 그러면 다시 채우는 간격이
+        //    "칸 몇 개"가 아니라 "<b>월드 거리 얼마</b>"로 고정되어 칸 크기와 무관해진다.
+        //    그 대신 창을 그만큼 넓게 잡는다(<see cref="EnsureBuffer"/> 의 <c>+ step * 2</c>).
+        int step = Mathf.Max(1, refillStep);
         Vector3Int camCell = _map.WorldToCell(_cam.transform.position);
-        Vector3Int want    = new Vector3Int(camCell.x - _size.x / 2, camCell.y - _size.y / 2, 0);
+        Vector3Int want    = new Vector3Int(
+            Quantize(camCell.x, step) - _size.x / 2,
+            Quantize(camCell.y, step) - _size.y / 2, 0);
 
-        // 카메라가 한 칸을 넘어갔을 때만 다시 채운다. 그 사이 프레임은 아무 일도 안 한다.
+        // 기준점이 그대로면 아무 일도 안 한다.
         if (_hasOrigin && want == _origin) return;
 
         _origin    = want;
@@ -141,9 +200,13 @@ public class GroundTiler : MonoBehaviour
         float cx = Mathf.Max(0.01f, cell.x);
         float cy = Mathf.Max(0.01f, cell.y);
 
+        // 🔑 <c>step * 2</c> 가 양자화의 대가다 (D79). 기준점이 <c>step</c> 칸 단위로만 움직이므로
+        //    카메라가 창 중심에서 최대 <c>step</c> 칸까지 벗어난다 — 그만큼을 양쪽에 미리 깔아 둔다.
+        //    <see cref="margin"/> 은 그 위에 남는 여유다(카메라 흔들림 몫).
+        int step = Mathf.Max(1, refillStep);
         Vector2Int need = new Vector2Int(
-            Mathf.CeilToInt(halfW * 2f / cx) + margin * 2,
-            Mathf.CeilToInt(halfH * 2f / cy) + margin * 2);
+            Mathf.CeilToInt(halfW * 2f / cx) + (margin + step) * 2,
+            Mathf.CeilToInt(halfH * 2f / cy) + (margin + step) * 2);
 
         if (_buffer != null && need == _size) return;
 

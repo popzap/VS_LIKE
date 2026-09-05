@@ -6245,7 +6245,7 @@ Grid:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 501410704}
   m_Enabled: 1
-  m_CellSize: {x: 0.5, y: 0.5, z: 0}
+  m_CellSize: {x: 0.25, y: 0.25, z: 0}
   m_CellGap: {x: 0, y: 0, z: 0}
   m_CellLayout: 0
   m_CellSwizzle: 0
@@ -14999,6 +14999,7 @@ MonoBehaviour:
     Weight: 1
   margin: 4
   seed: 1337
+  refillStep: 8
   depthTheme: 1
   deepestLayer: 9
 --- !u!483693784 &1278891372
