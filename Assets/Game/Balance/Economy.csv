@@ -14,6 +14,17 @@ GameManager,bossClearReward,60,보스 노드 클리어(런 승리) 보상
 # 표를 넘어서면 [표 마지막 + (레벨 - 표길이) * xpTailStep] 으로 이어진다 (ExperienceManager.XpToNext)
 ExperienceManager,xpThresholds,5|9|14|20|27|35|44|54|65|77,"Lv1~Lv10 필요 경험치. 🔴 D65 가 사용자 판정(''경험치통이 너무 큼'')을 받고 5|10|20|35|55|80|110|150|200|260 에서 내렸다 — 9노드 완주 판이 13레벨에서 끝났다. 같은 XP 수입(실측 2600~3500)으로 약 26레벨까지 간다"
 ExperienceManager,xpTailStep,12,"표(Lv10) 를 넘어선 뒤 레벨당 늘어나는 필요 XP. 🔴 예전에는 코드에 50 이 박혀 있었고 식도 '레벨*50' 이라 Lv11 이 810 으로 튀었다 — 표 마지막(77)의 10배 벽. 지금은 Lv11=89, Lv20=197 로 표에서 매끄럽게 이어진다"
+# ── 승급 연출 (EvolutionManager · B-5 · D75) ─────────────────────
+# 🔑 새 애셋 0개다. 이미 있는 부품(PulseFx · Shake · Hitstop · 넉백)을 같은 순간에 겹친다.
+EvolutionManager,promotePulseCount,3,"파동을 몇 번 겹칠지. 1 이면 D41 과 같다 — 사용자 판정이 '약하다' 였고, 한 번짜리로는 레벨업 파동과 구분이 안 됐다"
+EvolutionManager,promotePulseInterval,0.13,"파동 사이 간격(초). 🔴 실시간이다 — 히트스톱이 timeScale 을 0 으로 만들므로 WaitForSeconds 로 하면 두 번째 파동이 영원히 안 온다"
+EvolutionManager,promotePulseGrowth,1.25,"겹칠 때마다 커지는 비율. 세 번째가 1.56배"
+EvolutionManager,promoteHitstop,0.12,"승급 순간 게임을 멈추는 시간(초). 🔴 0.2 를 넘기면 '멈췄다' 가 아니라 '끊겼다' 로 읽힌다"
+EvolutionManager,promoteShakeMagnitude,0.5,"추가 화면 흔들림 세기. 파동 프리팹의 흔들림 위에 얹힌다"
+EvolutionManager,promoteShakeDuration,0.45,"추가 화면 흔들림 시간(초)"
+EvolutionManager,promotePushRadius,5.5,"승급 충격파 반경(월드 유닛). 0 이면 안 민다"
+EvolutionManager,promotePushForce,16,"충격파 세기. 🔴 피해는 0 이다 — 연출이 잡몹을 죽이면 그건 연출이 아니라 기술이다. 보스는 등급 저항으로 안 밀린다"
+
 # ── 스테이지 맵 구성 (StageMapManager) ───────────────────────────
 # ⚠️ C27 에서 새로 옮겨 온 줄이다. 값은 코드 기본값 그대로라 첫 Import 는 아무것도 안 바꾼다.
 #    옮긴 이유: 런 골드 예산이 통째로 이 가중치에 매달려 있는데 숨어 있었다.

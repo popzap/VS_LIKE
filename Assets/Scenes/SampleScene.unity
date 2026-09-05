@@ -25291,6 +25291,14 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 8d0701fd0e204eb4c9ec91f2c2d72137, type: 2}
   altarRadius: 2.2
   promoteEffect: {fileID: 1169142809547007888, guid: cf36263f13c7265419e8e7f72cbb4a77, type: 3}
+  promotePulseCount: 3
+  promotePulseInterval: 0.13
+  promotePulseGrowth: 1.25
+  promoteHitstop: 0.12
+  promoteShakeMagnitude: 0.5
+  promoteShakeDuration: 0.45
+  promotePushRadius: 5.5
+  promotePushForce: 16
 --- !u!1 &2084465013
 GameObject:
   m_ObjectHideFlags: 0

@@ -621,6 +621,32 @@ public class EnemyBase : MonoBehaviour
         ApplyKnockback(from);
     }
 
+    /// <summary>
+    /// <b>피해 없이</b> 밀어낸다 (D75 · 승급 충격파).
+    ///
+    /// <para>🔴 <c>TakeDamage(0, from)</c> 으로는 안 된다 — 그 안의
+    /// <c>Mathf.Max(1, raw - Armor)</c> 가 <b>최소 1 피해를 넣는다.</b>
+    /// 승급 연출이 잡몹을 조금씩 죽이면 그건 연출이 아니라 기술이다.</para>
+    ///
+    /// <para>등급별 저항은 그대로 쓴다 — 보스는 승급으로도 안 밀린다.</para>
+    /// </summary>
+    public void PushAway(Vector2 from, float force)
+    {
+        if (IsDead) return;
+
+        float resist = IsBoss  ? CombatFeel.BossKnockbackResist
+                     : IsElite ? CombatFeel.EliteKnockbackResist
+                               : 1f;
+        if (resist <= 0f) return;
+
+        Vector2 dir = (Vector2)transform.position - from;
+        if (dir.sqrMagnitude < 0.0001f) dir = Random.insideUnitCircle;
+        dir.Normalize();
+
+        Rb.linearVelocity = dir * (force * resist);
+        _knockbackTimer   = CombatFeel.EnemyKnockbackTime;
+    }
+
     private void ApplyKnockback(Vector2? from)
     {
         if (from == null) return;

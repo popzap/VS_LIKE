@@ -3516,6 +3516,33 @@ PlayerPrefs "gfx_quality" = 2
 
 ---
 
+## 요청-52 — ⚠️ **`Economy.csv` 에 승급 연출 8행 (D75)** · 체감은 사람만 판정할 수 있다
+
+**한 줄:** 사용자 요구 `B-5`(*"승급 이펙트 좀 더 추가해야 할거 같아"*)를 넣었다. **새 애셋 0개.**
+
+| 행 | 값 | 뜻 |
+|---|---:|---|
+| `EvolutionManager,promotePulseCount` | 3 | 파동을 몇 번 겹칠지. 1 이면 `D41` 과 같다 |
+| `EvolutionManager,promotePulseInterval` | 0.13 | 파동 간격(초). 🔴 **실시간**이다 |
+| `EvolutionManager,promotePulseGrowth` | 1.25 | 겹칠 때마다 커지는 비율 (세 번째가 1.56배) |
+| `EvolutionManager,promoteHitstop` | 0.12 | 🔴 0.2 를 넘기면 *"멈췄다"* 가 아니라 *"끊겼다"* 로 읽힌다 |
+| `EvolutionManager,promoteShakeMagnitude` | 0.5 | 파동 프리팹의 흔들림 **위에** 얹힌다 |
+| `EvolutionManager,promoteShakeDuration` | 0.45 | |
+| `EvolutionManager,promotePushRadius` | 5.5 | 충격파 반경. 0 이면 안 민다 |
+| `EvolutionManager,promotePushForce` | 16 | 🔴 **피해는 0** — 연출이 잡몹을 죽이면 그건 연출이 아니라 기술이다 |
+
+### 🟡 DEV 가 못 잰 것 두 줄 — **화면을 봐야 안다**
+
+`RunCommand` 왕복이 **1초 이상**인데 파동 수명은 **0.55초**다.
+세 발이 동시에 살아 있는 구간(`0.26~0.55초`)이 **왕복 한 번보다 짧아** 못 잡았다.
+
+- **파동이 정말 3연으로 보이나** — 너무 빨라 하나로 뭉쳐 보이면 `promotePulseInterval` 을 0.18~0.22 로
+- **흔들림이 과한가** — 승급은 웨이브 도중에 일어난다. 0.45초는 짧지만 세기 0.5 는 보스 등장(0.55)에 가깝다
+
+⚠️ 판정된 것: 히트스톱(`timeScale 0` → 1 복구) · 충격파(**반경 안 16.0 / 밖 0.0**) · 첫 파동 크기 1.00.
+
+---
+
 ## 요청-51 — ⚠️ **`Passives.csv` 에 `BonusHpRegen` 열 (D74)** · 아이콘 1장이 필요하다
 
 **한 줄:** 사용자 요구 `11`(기본 체력 재생 + 재생 아이템)을 넣었다.

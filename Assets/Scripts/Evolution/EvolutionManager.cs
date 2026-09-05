@@ -42,6 +42,32 @@ public class EvolutionManager : MonoBehaviour
            + "SceneWiring.csv 의 EvolutionManager,promoteEffect 로 배선한다.")]
     [SerializeField] private GameObject promoteEffect;
 
+    // ── 승급 연출 (B-5 · D75) ───────────────────────────────────
+    // 🔴 수치는 Economy.csv 의 EvolutionManager 행이 들고 있다. 여기 기본값은 자리표시다.
+    [Header("승급 연출 — 값은 Economy.csv 가 덮는다")]
+    [Tooltip("파동을 몇 번 겹쳐 낼지. 1 이면 D41 과 같다. "
+           + "사용자 판정이 '약하다' 였고, 한 번짜리로는 레벨업 파동과 구분이 안 됐다.")]
+    [SerializeField] private int promotePulseCount = 3;
+
+    [Tooltip("파동 사이 간격(초). 🔴 실시간이다 — 히트스톱으로 게임이 멈춰 있어도 이어져야 한다")]
+    [SerializeField] private float promotePulseInterval = 0.13f;
+
+    [Tooltip("파동이 겹칠 때마다 커지는 비율. 1.25 = 두 번째가 1.25배, 세 번째가 1.56배")]
+    [SerializeField] private float promotePulseGrowth = 1.25f;
+
+    [Tooltip("승급 순간 게임을 멈추는 시간(초). 🔴 0.2 를 넘기면 '멈췄다' 가 아니라 '끊겼다' 로 읽힌다")]
+    [SerializeField] private float promoteHitstop = 0.12f;
+
+    [Tooltip("추가 화면 흔들림 세기 / 시간. 파동 프리팹의 흔들림 위에 얹힌다")]
+    [SerializeField] private float promoteShakeMagnitude = 0.5f;
+    [SerializeField] private float promoteShakeDuration  = 0.45f;
+
+    [Tooltip("주변 적을 밀어내는 반경(월드 유닛). 0 이면 안 민다")]
+    [SerializeField] private float promotePushRadius = 5.5f;
+
+    [Tooltip("밀어내는 세기. 🔴 피해는 0 이다 — 연출이 잡몹을 죽이면 그건 연출이 아니라 기술이다")]
+    [SerializeField] private float promotePushForce = 16f;
+
     // 이번 런에서 이미 완성한 레시피. 결과 아이템을 상점에서 팔아 버려도 다시 만들 수는 없다.
     private readonly HashSet<EvolutionData> _completed = new();
 
@@ -346,6 +372,65 @@ public class EvolutionManager : MonoBehaviour
     private void PlayPromoteFx(Vector3 at)
     {
         if (promoteEffect == null) return;
-        Instantiate(promoteEffect, at, Quaternion.identity);
+
+        // 🔑 이 게임에서 **가장 큰 보상**이다. 사용자 판정이 "약하다" 였고,
+        //    파동 한 번짜리로는 레벨업 파동과 구분이 안 됐다 (B-5).
+        //    새 애셋은 0개다 — 이미 있는 부품(PulseFx · Shake · Hitstop · 넉백)을 겹친다.
+        StartCoroutine(PromoteFxRoutine(at));
+    }
+
+    /// <summary>
+    /// 승급 연출 (D75 · 사용자 요구 B-5).
+    ///
+    /// <para>네 가지가 <b>같은 순간에</b> 일어난다 — 하나씩은 이미 게임 어딘가에 있던 것들이고,
+    /// 겹치는 것 자체가 *"이건 다른 사건이다"* 라는 신호다.</para>
+    ///
+    /// <list type="number">
+    ///   <item><b>히트스톱</b> — 시간이 멎는다. 제일 먼저 온다.</item>
+    ///   <item><b>충격파</b> — 주변 적이 밀려난다. <b>피해는 0</b>이다.</item>
+    ///   <item><b>화면 흔들림</b> — 파동 프리팹의 흔들림 위에 한 번 더.</item>
+    ///   <item><b>파동 3연</b> — 점점 커지며 겹친다.</item>
+    /// </list>
+    ///
+    /// <para>🔴 <c>WaitForSecondsRealtime</c> 을 쓴다. 히트스톱이 <c>timeScale</c> 을 0 으로 만드므로
+    /// <c>WaitForSeconds</c> 로 하면 <b>두 번째 파동이 영원히 안 온다.</b></para>
+    ///
+    /// <para>🔴 승급 직후 레벨업 패널이 뜰 수 있다(무기 만렙 = 레벨업 직후인 경우가 많다).
+    /// 그때도 <c>timeScale</c> 이 0 이라 같은 이유로 실시간이어야 한다.</para>
+    /// </summary>
+    private System.Collections.IEnumerator PromoteFxRoutine(Vector3 at)
+    {
+        // ① 시간이 멎는다
+        if (promoteHitstop > 0f && GameManager.Instance != null)
+            GameManager.Instance.DoHitstop(promoteHitstop);
+
+        // ② 충격파 — 주변 적을 민다. 피해 0.
+        if (promotePushRadius > 0f && promotePushForce > 0f)
+        {
+            var hits = Physics2D.OverlapCircleAll(at, promotePushRadius, LayerMask.GetMask("Enemy"));
+            foreach (var h in hits)
+            {
+                var e = h.GetComponent<EnemyBase>();
+                if (e != null) e.PushAway(at, promotePushForce);
+            }
+        }
+
+        // ③ 화면 흔들림 — 프리팹이 내는 것 위에 한 번 더
+        var cam = Camera.main != null ? Camera.main.GetComponent<CameraController>() : null;
+        if (cam != null && promoteShakeMagnitude > 0f)
+            cam.Shake(promoteShakeMagnitude, promoteShakeDuration);
+
+        // ④ 파동 3연 — 점점 커진다
+        int count = Mathf.Max(1, promotePulseCount);
+        float scale = 1f;
+        for (int i = 0; i < count; i++)
+        {
+            var go = Instantiate(promoteEffect, at, Quaternion.identity);
+            if (scale != 1f) go.transform.localScale *= scale;
+            scale *= Mathf.Max(1f, promotePulseGrowth);
+
+            if (i < count - 1)
+                yield return new WaitForSecondsRealtime(Mathf.Max(0.01f, promotePulseInterval));
+        }
     }
 }
