@@ -59,10 +59,33 @@ public class PlayerStats : MonoBehaviour
     public float CurrentHp { get; private set; }
     public bool  IsDead    { get; private set; }
 
-    /// <summary>피격 무적 중인가.</summary>
-    public bool IsInvincible => _invincibleTimer > 0f;
+    /// <summary>
+    /// 지금 아무 피해도 안 받는가. <b>피격 무적과 픽업 무적을 합쳐서</b> 본다 —
+    /// <see cref="TryTakeHit"/> 이 물어보는 건 *"맞을 수 있나"* 하나뿐이다.
+    /// </summary>
+    public bool IsInvincible => _invincibleTimer > 0f || _buffInvincibleTimer > 0f;
 
+    /// <summary>피격 무적(i-frame). 맞을 때마다 <see cref="invincibleTime"/> 로 채워진다.</summary>
     private float _invincibleTimer;
+
+    /// <summary>
+    /// 픽업 무적 (D67). 🔴 <b>피격 무적과 타이머를 갈랐다.</b>
+    ///
+    /// <para>예전에는 하나였다. 그때는 <c>TryTakeHit</c> 이 무적 중에 되돌아가므로
+    /// 서로 덮어쓸 일이 없어서 문제가 없었는데, <b>오라를 붙이는 순간 달라졌다</b>(사용자 요구 8) —
+    /// 합쳐 두면 <b>적에게 맞을 때마다 0.x초짜리 오라가 번쩍인다.</b>
+    /// 그건 *"무적 아이템을 먹었다"* 와 정반대 신호다.</para>
+    ///
+    /// <para>가르고 나니 예전 주석의 *"짧은 피격 무적이 긴 버프를 잘라내지 않게 긴 쪽을 남긴다"*
+    /// 라는 조심이 <b>통째로 필요 없어졌다</b> — 애초에 서로 못 건드린다.</para>
+    /// </summary>
+    private float _buffInvincibleTimer;
+
+    /// <summary>픽업 무적이 켜져 있는가. 오라가 이걸 본다 (피격 무적은 안 본다).</summary>
+    public bool  IsBuffInvincible        => _buffInvincibleTimer > 0f;
+
+    /// <summary>픽업 무적의 남은 초. 만료가 가까우면 오라를 점등시킨다.</summary>
+    public float BuffInvincibleRemaining => Mathf.Max(0f, _buffInvincibleTimer);
 
     // ── 픽업 버프 (시간이 지나면 저절로 꺼진다) ──────────────────
     //
@@ -74,6 +97,9 @@ public class PlayerStats : MonoBehaviour
 
     /// <summary>공속 버프가 켜져 있는가. HUD·VFX 가 물어볼 자리다.</summary>
     public bool IsHasted => _hasteTimer > 0f;
+
+    /// <summary>공속 버프의 남은 초 (D67). 오라 점등 판정에 쓴다.</summary>
+    public float HasteRemaining => Mathf.Max(0f, _hasteTimer);
 
     private readonly List<PassiveEffect> _activePassives = new();
 
@@ -89,7 +115,8 @@ public class PlayerStats : MonoBehaviour
 
     private void Update()
     {
-        if (_invincibleTimer > 0f) _invincibleTimer -= Time.deltaTime;
+        if (_invincibleTimer     > 0f) _invincibleTimer     -= Time.deltaTime;
+        if (_buffInvincibleTimer > 0f) _buffInvincibleTimer -= Time.deltaTime;
 
         if (_hasteTimer > 0f)
         {
@@ -278,15 +305,17 @@ public class PlayerStats : MonoBehaviour
     // ── 픽업 버프 ────────────────────────────────────────────────
 
     /// <summary>
-    /// 픽업으로 얻는 완전 무적. 피격 무적(<see cref="invincibleTime"/>)과 <b>같은 타이머</b>를 쓴다.
+    /// 픽업으로 얻는 완전 무적. 🔴 <b>피격 무적과 다른 타이머를 쓴다</b> (D67).
     ///
-    /// <para>타이머를 따로 두지 않은 이유는 <see cref="TryTakeHit"/> 가 무적 중이면 아예
-    /// 되돌아가기 때문이다. 즉 버프가 켜진 동안에는 피격 무적이 타이머를 덮어쓸 일이 없다.
-    /// 반대로 <b>짧은 피격 무적이 긴 버프를 잘라내지 않도록</b> 긴 쪽을 남긴다.</para>
+    /// <para>예전에는 <c>_invincibleTimer</c> 하나를 공유했다. 피해 판정만 놓고 보면
+    /// 그래도 맞았지만, <b>화면에 표시를 붙이는 순간 틀린 설계가 된다</b> —
+    /// 오라가 피격 i-frame 에도 켜져서 맞을 때마다 번쩍인다 (사용자 요구 8).</para>
+    ///
+    /// <para>겹쳐 먹으면 <b>긴 쪽을 남긴다.</b> 더하면 무적 픽업 두 개로 판이 끝난다.</para>
     /// </summary>
     public void GrantInvincibility(float seconds)
     {
-        _invincibleTimer = Mathf.Max(_invincibleTimer, seconds);
+        _buffInvincibleTimer = Mathf.Max(_buffInvincibleTimer, seconds);
     }
 
     /// <summary>

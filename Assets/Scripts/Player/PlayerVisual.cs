@@ -41,12 +41,45 @@ public class PlayerVisual : MonoBehaviour
     private static readonly int AnimPhaseId = Shader.PropertyToID("_AnimPhase");
     private static readonly int LeanAmtId   = Shader.PropertyToID("_LeanAmt");
 
+    // ── 버프 오라 (D67 · 사용자 요구 8) ──────────────────────────
+    private static readonly int OutlineColorId   = Shader.PropertyToID("_OutlineColor");
+    private static readonly int OutlineWidthId   = Shader.PropertyToID("_OutlineWidth");
+    private static readonly int SpriteRectId     = Shader.PropertyToID("_SpriteRect");
+    private static readonly int OutlineTexSizeId = Shader.PropertyToID("_OutlineTexSize");
+
+    [Header("버프 오라 — 무적 / 공속 (D67)")]
+    [Tooltip("무적 오라 색. 흰-하늘색 계열이라 '못 맞는다' 로 읽힌다.")]
+    [SerializeField] private Color auraInvincible = new(0.62f, 0.88f, 1f, 1f);
+
+    [Tooltip("공속 오라 색. 주황 계열이라 '빨라졌다' 로 읽힌다.")]
+    [SerializeField] private Color auraHaste = new(1f, 0.68f, 0.22f, 1f);
+
+    [Tooltip("오라 굵기(텍셀). 셰이더가 _OutlineWidth / _OutlineTexSize 의 uv 거리로 쓴다. "
+           + "🔴 14 는 너무 굵다 — 검처럼 얇은 부분이 양쪽 테두리에 끼여 원래 색이 안 보인다(B1 계열). "
+           + "실제 플레이 배율(ortho 6)에서 캡처해 고른 값이 9 다.")]
+    [SerializeField] private float auraWidth = 9f;
+
+    [Tooltip("남은 시간이 이 값 아래로 내려가면 점등한다(초).")]
+    [SerializeField] private float auraBlinkBelow = 1.5f;
+
+    [Tooltip("점등 속도(초당 깜빡임 수).")]
+    [SerializeField] private float auraBlinkPerSecond = 6f;
+
+    /// <summary>_SpriteRect 를 마지막으로 넘긴 스프라이트. 바뀔 때만 다시 넘긴다.</summary>
+    private Sprite _rectSprite;
+
+    private PlayerStats _stats;
+
     private void Awake()
     {
         _sr  = GetComponent<SpriteRenderer>();
         _rb  = GetComponent<Rigidbody2D>();
         _mpb = new MaterialPropertyBlock();
         _idleFrame = _sr.sprite;
+
+        // 🔴 GameManager 를 거치지 않는 같은 오브젝트의 컴포넌트라 Awake 에서 잡아도 된다.
+        //    (I-8 은 GameManager.Instance.XxxMgr 얘기다 — 그건 Start 에서 채워진다)
+        _stats = GetComponent<PlayerStats>();
     }
 
     /// <summary>직업이 정해질 때 <see cref="PlayerStats.ApplyClass"/> 가 호출한다.</summary>
@@ -69,6 +102,7 @@ public class PlayerVisual : MonoBehaviour
         bool    moving = speed > moveDeadzone;
 
         StepFrames(moving, speed);
+        ApplySpriteRect(_sr.sprite);   // 🔴 PushShader 보다 먼저 — 둘 다 같은 _mpb 를 쓴다
         PushShader(moving, vel);
     }
 
@@ -115,6 +149,80 @@ public class PlayerVisual : MonoBehaviour
         _mpb.SetFloat(AnimSpeedId, moving ? bounceSpeed : 0f);
         _mpb.SetFloat(AnimPhaseId, 0f);
         _mpb.SetFloat(LeanAmtId,   _lean);
+        PushAura(_mpb);
+        _sr.SetPropertyBlock(_mpb);
+    }
+
+    /// <summary>
+    /// 버프 오라 (D67 · 사용자 요구 8: *"무적·공속을 먹었을 때 겉모습 변화가 없어 알기 어려움.
+    /// 오라색 + 제한시간 되면 점등되는 식으로"*).
+    ///
+    /// <para>🔑 <b>새 애셋도 새 오브젝트도 없다.</b> 이 스프라이트가 이미 쓰는
+    /// <c>VS_LIKE/SpriteOutline</c> 셰이더에 외곽선 기능이 들어 있다 — 엘리트/보스 표시에 쓰던 것을
+    /// 그대로 빌린다. 자식 오브젝트를 붙이면 정렬·풀링·바운스를 다 따로 맞춰야 한다.</para>
+    ///
+    /// <para>🔴 <b>피격 무적은 안 본다</b>(<c>IsInvincible</c> 대신 <c>IsBuffInvincible</c>).
+    /// 예전에는 타이머가 하나라 이 구분이 불가능했고, 그래서 <c>D67</c> 에서 갈랐다 —
+    /// 합쳐 두면 <b>맞을 때마다 오라가 번쩍여서</b> 아이템 신호가 아니라 피격 신호가 된다.</para>
+    ///
+    /// <para>둘 다 켜져 있으면 <b>무적을 먼저</b> 보여 준다 — 지금 죽지 않는다는 사실이
+    /// 공격이 빠르다는 사실보다 중요하다.</para>
+    /// </summary>
+    private void PushAura(MaterialPropertyBlock mpb)
+    {
+        if (_stats == null) { mpb.SetFloat(OutlineWidthId, 0f); return; }
+
+        bool inv = _stats.IsBuffInvincible;
+        bool has = _stats.IsHasted;
+        if (!inv && !has) { mpb.SetFloat(OutlineWidthId, 0f); return; }
+
+        Color c    = inv ? auraInvincible : auraHaste;
+        float left = inv ? _stats.BuffInvincibleRemaining : _stats.HasteRemaining;
+
+        // 🔑 굵기가 아니라 알파를 점등한다. 굵기를 흔들면 실루엣이 커졌다 작아져
+        //    캐릭터가 물리적으로 변한 것처럼 보인다.
+        if (left <= auraBlinkBelow && auraBlinkPerSecond > 0f)
+        {
+            float s = Mathf.Sin(Time.unscaledTime * Mathf.PI * auraBlinkPerSecond);
+            c.a *= 0.35f + 0.65f * Mathf.Abs(s);
+        }
+
+        mpb.SetColor(OutlineColorId, c);
+        mpb.SetFloat(OutlineWidthId, auraWidth);
+    }
+
+    /// <summary>
+    /// 지금 그리는 프레임이 <b>텍스처의 어느 사각형인지</b>와 <b>그 텍스처가 몇 픽셀인지</b>를
+    /// 넘긴다 (<c>B1</c> · <see cref="EnemyVisual"/> 와 같은 이유).
+    ///
+    /// <para>🔴 <b>오라를 켜는 순간 이게 필수가 됐다.</b> 지금까지 플레이어는 외곽선을 안 써서
+    /// 없어도 됐지만, 걷기 시트는 4×4 짜리라 이 사각형이 없으면 외곽선이
+    /// <b>옆 걷기 프레임의 알파를 빨아들인다</b> — 그게 <c>B1</c> 이었다.</para>
+    ///
+    /// <para><c>_OutlineTexSize</c> 도 같이 넘긴다. 굵기는 <c>_OutlineWidth / 이 값</c> 의 uv 거리라
+    /// 셰이더 기본값 512 로 두면 1024 시트에서 <b>2배</b>가 된다.</para>
+    /// </summary>
+    private void ApplySpriteRect(Sprite s)
+    {
+        if (s == _rectSprite || _sr == null) return;
+        _rectSprite = s;
+
+        Vector4 r       = new Vector4(0f, 0f, 1f, 1f);
+        float   texSize = 512f;
+        if (s != null && s.texture != null)
+        {
+            Rect  tr = s.textureRect;
+            float tw = s.texture.width, th = s.texture.height;
+            if (tw > 0f && th > 0f)
+            {
+                r = new Vector4(tr.xMin / tw, tr.yMin / th, tr.xMax / tw, tr.yMax / th);
+                texSize = Mathf.Max(tw, th);
+            }
+        }
+
+        _sr.GetPropertyBlock(_mpb);
+        _mpb.SetVector(SpriteRectId, r);
+        _mpb.SetFloat(OutlineTexSizeId, texSize);
         _sr.SetPropertyBlock(_mpb);
     }
 }
