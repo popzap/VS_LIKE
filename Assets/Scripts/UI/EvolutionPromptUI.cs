@@ -23,7 +23,11 @@ public class EvolutionPromptUI : MonoBehaviour
     private void Start()
     {
         // 🔴 [Z] Build 줄(y=26) 바로 위에 얹는다. 둘이 겹치면 둘 다 못 읽는다.
-        PromptCorner.Place(promptText, 66f);
+        // 🔴 <b>78 이지 66 이 아니다</b> (D81). 아래 칸(<see cref="HUDManager"/> 의 건물 안내)이
+        //    y 26 에서 높이 44 라 <b>70 까지 차지한다</b> — 66 이면 4px 이 겹친다.
+        //    두 안내가 동시에 뜨는 순간(승급 가능 + 건물 설치 가능)에만 보이는 겹침이라
+        //    지금까지 아무도 못 봤다. 26 + 44 + 8(여백) = 78.
+        PromptCorner.Place(promptText, 78f);
         if (promptText != null) promptText.gameObject.SetActive(false);
     }
 

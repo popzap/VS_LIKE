@@ -376,6 +376,67 @@ Village 재해금 후 Z 순서 = Farm > Bombard > Village > Turret   (기대값�
 
 ---
 
+## B15 — 🔴 **`ExpDrop.Collect` 이 `NullReferenceException` 을 던진다** (사용자 플레이 중 실측)
+
+**언제:** 2026-09-05 00:13:50~51 · 사용자 플레이테스트 중 · **2건**
+
+```
+NullReferenceException: Object reference not set to an instance of an object
+ExpDrop.Collect () (at Assets/Scripts/Experience/ExpDrop.cs:125)
+ExpDrop.Update ()  (at Assets/Scripts/Experience/ExpDrop.cs:118)
+```
+
+125번 줄은 `ExperienceManager.Instance.CollectXp(_amount)` 다.
+⇒ **`ExperienceManager.Instance` 가 null 인 순간에 구슬이 회수됐다.**
+
+🔴 **결과가 조용하지 않다** — 예외가 `Collect()` 중간에서 터지므로 `_collected = true` 는 이미 섰지만
+**풀 반납(`SharedPool.Return`)이 안 된다.** 구슬이 살아 있는 채로 화면에 남고, XP 도 안 들어간다.
+
+🟡 **원인 미확정.** 런이 끝나는 순간(정산/씬 전환)에 매니저가 먼저 사라졌을 가능성이 크지만
+**로그만으로는 확정할 수 없다.** 재현 조건을 못 잡았다.
+
+---
+
+## B14 — 🔴 **`EnemyVisual` 이 매 `LateUpdate` 마다 예외를 던진다** (사용자 플레이 중 47건)
+
+**언제:** 2026-09-05 00:13:49~57 · 사용자 플레이테스트 중 · **8초 동안 47건**
+
+```
+ArgumentNullException: Value cannot be null.  Parameter name: dest
+UnityEngine.Renderer.GetPropertyBlock (MaterialPropertyBlock properties)
+EnemyVisual.ApplySpriteRect (Sprite s) (at Assets/Scripts/Enemy/EnemyVisual.cs:143)
+EnemyVisual.StepFrames ()               (at Assets/Scripts/Enemy/EnemyVisual.cs:176)
+EnemyVisual.LateUpdate ()               (at Assets/Scripts/Enemy/EnemyVisual.cs:160)
+
+... 그리고 같은 예외가 UpdateFlash() (212) 에서도
+```
+
+`dest` = `_sr.GetPropertyBlock(_mpb)` 의 `_mpb` 다. ⇒ **`_mpb` 가 null 인데 `_sr` 은 살아 있다.**
+
+`LateUpdate` 의 가드는 `if (_sr == null) return;` **하나뿐이라** 이 상태를 못 막는다:
+
+```csharp
+private void LateUpdate()
+{
+    if (_sr == null) return;      // 🔴 _mpb 는 안 본다
+    UpdateFacing(); StepFrames(); UpdateFlash();
+}
+```
+
+🔴 **왜 한쪽만 null 인지는 확정하지 못했다.** `_sr` 도 `_mpb` 도 **둘 다 직렬화되지 않는 필드**이고
+둘 다 `Setup()` 에서 나란히 채워진다(`_mpb` 는 `_sr` 보다 **먼저**). 그러므로
+*"`Setup` 이 안 돌았다"* 로는 설명이 안 된다 — 그랬다면 `_sr` 도 null 이라 가드에 걸렸을 것이다.
+**추측을 적지 않는다.** 재현 조건부터 잡아야 한다.
+
+⚠️ **비용이 크다** — 적 하나가 프레임마다 예외를 두 번 던진다. 적이 수백 마리인 장르에서
+이건 성능 문제이기도 하다(`TODO §1-B` 의 성능 항목과 같이 볼 것).
+
+🟡 **`D79` 가 원인일 가능성은 낮다** — `D79` 는 `PlayerVisual` 과 셰이더를 건드렸고
+`EnemyVisual` 은 안 건드렸다. 다만 `SizeScale` 변경으로 적이 더 많이/크게 보이게 된 것과
+**시점이 겹치므로** 그 이전 판에서도 났는지 확인이 필요하다.
+
+---
+
 ## B13 — 🟡 **`base`/`meta` 의 `Luck` 이 최종 스탯에 안 들어간다** (미확인 · 코드로 확정)
 
 **증상(예측):** `Economy.csv` 에 `PlayerStats,baseStats.Luck` 행을 넣거나
