@@ -100,6 +100,16 @@ Unity MCP 릴레이로 **켜져 있는 에디터**를 직접 조작한다.
   그 참조들은 `GameManager.Start()` 에서 채워지는데 **모든 `Awake` 는 모든 `Start` 보다 먼저** 돈다.
   null 이 잡혀도 예외가 안 나고 **기능만 조용히 죽는다** (Z 키 건물 설치가 통째로 안 먹었다).
   `Start()` 로 미루거나, 첫 사용 시점에 지연 조회하는 프로퍼티로 감쌀 것.
+- 🔴 **키 입력은 `UnityEngine.Input` 이 아니라 `Keyboard.current` 로 읽는다** (D83).
+  이 프로젝트는 `ProjectSettings.activeInputHandler = 1`, 즉 **Input System 패키지 전용**이다.
+  그 모드에서 옛 `Input.GetKeyDown` 은 **호출될 때마다 `InvalidOperationException` 을 던진다.**
+  `Update()` 에 넣으면 **매 프레임** 터져 콘솔이 잠기고 **에디터가 통째로 멎는다** — 실제로 그랬다.
+  ```csharp
+  var kb = UnityEngine.InputSystem.Keyboard.current;
+  if (kb == null) return;                                  // 키보드가 없을 수 있다
+  if (kb[UnityEngine.InputSystem.Key.F7].wasPressedThisFrame) { ... }
+  ```
+  `DevPanel`·`LevelUpManager` 가 이미 이 방식을 쓴다. **새로 쓰기 전에 기존 코드를 먼저 볼 것.**
 - UI에 표시되는 **문자열은 영문**으로 쓴다. 주석·문서는 한국어.
 
 ---

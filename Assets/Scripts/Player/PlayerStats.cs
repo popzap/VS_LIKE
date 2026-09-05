@@ -328,28 +328,16 @@ public class PlayerStats : MonoBehaviour
         // 한 번 더 더해져 전 스탯이 2배가 된다.
         var meta = GameManager.Instance?.MetaProgression?.GetStatBonus() ?? StatBlock.Zero();
 
-        Final = new StatBlock
-        {
-            MaxHp          = baseStats.MaxHp          + meta.MaxHp,
-            MoveSpeed      = baseStats.MoveSpeed       + meta.MoveSpeed,
-            Damage         = baseStats.Damage          + meta.Damage,
-            AttackSpeed    = baseStats.AttackSpeed     + meta.AttackSpeed,
-            ProjectileSize = baseStats.ProjectileSize  + meta.ProjectileSize,
-            PickupRadius   = baseStats.PickupRadius    + meta.PickupRadius,
-            CritChance     = baseStats.CritChance      + meta.CritChance,
-            CritMultiplier = baseStats.CritMultiplier  + meta.CritMultiplier,
-            Armor          = baseStats.Armor           + meta.Armor,
-            XpGain         = baseStats.XpGain          + meta.XpGain,
-            GoldGain       = baseStats.GoldGain        + meta.GoldGain,
-            BuildingCooldown = baseStats.BuildingCooldown + meta.BuildingCooldown,
-            HpRegen        = baseStats.HpRegen         + meta.HpRegen,
-        };
-
-        // 🔴 이 목록은 **필드별 나열**이라 StatBlock 에 필드를 더할 때마다 여기도 손대야 한다.
-        //    D74 에서 실제로 걸렸다 — HpRegen 을 넣고 Import 까지 마쳤는데
-        //    Final.HpRegen 이 0 이었다. 합산에서 빠졌기 때문이다.
-        //    ⚠️ 지금 Luck 이 같은 이유로 빠져 있다 (B13). base/meta 의 Luck 이 죽는다 —
-        //       메타 업그레이드에 Luck 이 없고 baseStats.Luck 행도 없어 아직 안 터질 뿐이다.
+        // 🔑 <b>합산을 한 곳으로 모았다</b> (D83 · B13 사용자 결정 B안).
+        //
+        //    예전에는 여기서 필드를 **손으로 나열**해 더했고, 그 나열이 **두 번** 사람을 속였다 —
+        //    `Luck`(줄곧 빠져 있었다 · B13)과 `HpRegen`(D74 에서 실측으로 잡았다).
+        //    필드를 더할 때마다 `StatBlock.Zero()` 와 이 나열 **두 곳**을 고쳐야 했는데,
+        //    한 곳을 잊으면 **예외도 경고도 없이 그 스탯만 죽는다.**
+        //
+        //    🔴 그래서 고친 자리는 `PlayerStats` 가 아니라 `StatBlock` 이다 —
+        //    같은 함정을 다음 필드에서 또 밟지 않으려면 **합산이 한 곳이어야** 한다.
+        Final = StatBlock.Add(baseStats, meta);
 
         // 사슬 전체를 더한다. 진화는 갈아타기가 아니라 쌓기이므로 T1 의 보너스도 계속 살아 있다.
         foreach (var cls in _classChain)

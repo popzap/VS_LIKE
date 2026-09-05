@@ -16,9 +16,9 @@ ExperienceManager,xpThresholds,5|9|14|20|27|35|44|54|65|77,"Lv1~Lv10 필요 경�
 ExperienceManager,xpTailStep,12,"표(Lv10) 를 넘어선 뒤 레벨당 늘어나는 필요 XP. 🔴 예전에는 코드에 50 이 박혀 있었고 식도 '레벨*50' 이라 Lv11 이 810 으로 튀었다 — 표 마지막(77)의 10배 벽. 지금은 Lv11=89, Lv20=197 로 표에서 매끄럽게 이어진다"
 # ── 승급 연출 (EvolutionManager · B-5 · D75) ─────────────────────
 # 🔑 새 애셋 0개다. 이미 있는 부품(PulseFx · Shake · Hitstop · 넉백)을 같은 순간에 겹친다.
-EvolutionManager,promotePulseCount,3,"파동을 몇 번 겹칠지. 1 이면 D41 과 같다 — 사용자 판정이 '약하다' 였고, 한 번짜리로는 레벨업 파동과 구분이 안 됐다"
+EvolutionManager,promotePulseCount,1,"파동을 몇 번 겹칠지. 🔴 D83 에서 3 -> 1. D75 가 3연으로 올렸지만 사용자 판정이 '3개의 파동이 동시에 나와 난잡해 큰 파동 하나면 될거 같아' 였다 — '약하다'를 파동 수로 풀려던 게 틀렸고, 크기로 풀어야 했다(promotePulseGrowth 를 시작 배율로 쓴다)"
 EvolutionManager,promotePulseInterval,0.13,"파동 사이 간격(초). 🔴 실시간이다 — 히트스톱이 timeScale 을 0 으로 만들므로 WaitForSeconds 로 하면 두 번째 파동이 영원히 안 온다"
-EvolutionManager,promotePulseGrowth,1.25,"겹칠 때마다 커지는 비율. 세 번째가 1.56배"
+EvolutionManager,promotePulseGrowth,1.6,"겹칠 때마다 커지는 비율. 🔴 D83 에서 파동이 1개가 되면서 '첫 파동의 크기'로 뜻이 바뀌었다 — 한 번만 뜨므로 그 한 번이 커야 한다. 1.25 -> 1.6"
 EvolutionManager,promoteHitstop,0.12,"승급 순간 게임을 멈추는 시간(초). 🔴 0.2 를 넘기면 '멈췄다' 가 아니라 '끊겼다' 로 읽힌다"
 EvolutionManager,promoteShakeMagnitude,0.5,"추가 화면 흔들림 세기. 파동 프리팹의 흔들림 위에 얹힌다"
 EvolutionManager,promoteShakeDuration,0.45,"추가 화면 흔들림 시간(초)"

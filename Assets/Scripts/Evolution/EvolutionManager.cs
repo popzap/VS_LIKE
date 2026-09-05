@@ -420,13 +420,22 @@ public class EvolutionManager : MonoBehaviour
         if (cam != null && promoteShakeMagnitude > 0f)
             cam.Shake(promoteShakeMagnitude, promoteShakeDuration);
 
-        // ④ 파동 3연 — 점점 커진다
+        // ④ 파동 — 🔴 <b>기본이 1개다</b> (D83 · 사용자 판정).
+        //
+        //    `D75` 는 *"약하다"* 를 **파동 수**로 풀었는데(1 -> 3), 판정이
+        //    *"3개의 파동이 동시에 나와 난잡해 큰 파동 하나면 될거 같아"* 였다.
+        //    ⇒ **수가 아니라 크기로 푼다.**
+        //
+        //    🔑 그래서 <see cref="promotePulseGrowth"/> 의 뜻이 바뀌었다 —
+        //    예전에는 *두 번째부터* 곱해지는 값이라 1개면 아무 효과가 없었다.
+        //    이제 <b>첫 파동부터</b> 곱한다. 값도 1.25 -> 1.6 으로 올렸다.
+        //    (2 이상으로 두면 예전 3연 동작이 그대로 돌아온다 — 되돌릴 손잡이를 남겼다)
         int count = Mathf.Max(1, promotePulseCount);
-        float scale = 1f;
+        float scale = Mathf.Max(1f, promotePulseGrowth);
         for (int i = 0; i < count; i++)
         {
             var go = Instantiate(promoteEffect, at, Quaternion.identity);
-            if (scale != 1f) go.transform.localScale *= scale;
+            if (!Mathf.Approximately(scale, 1f)) go.transform.localScale *= scale;
             scale *= Mathf.Max(1f, promotePulseGrowth);
 
             if (i < count - 1)

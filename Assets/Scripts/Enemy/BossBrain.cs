@@ -191,18 +191,28 @@ public class BossBrain : MonoBehaviour
             : Vector2.right;
         if (dir.sqrMagnitude < 0.0001f) dir = Vector2.right;
 
-        float step = _data.LineLength / segments;
+        // 🔴 <b>원 여러 개가 아니라 직사각형 하나다</b> (D83 · 사용자 요구).
+        //    사용자 판정: *"일직선으로 안 보인다 (그냥 원 여러 개)"*.
+        //    D73 은 원을 줄 세워 일직선을 만들었는데, 줄 지어 있어도 **하나의 띠로 안 읽힌다**.
+        //
+        //    🔑 판정도 같이 사각형이 된다 — 예전에는 원 7개가 각각 판정해서
+        //    **원과 원 사이 오목한 자리가 안전지대**였다. 이제 보이는 모양과 판정이 같다.
+        //
+        //    <c>LineSegments</c> 는 더 안 쓰지만 CSV 열은 남겨 둔다 —
+        //    지우면 임포터가 잡을 대상이 없어진다(CLAUDE.md §2).
+        float length = Mathf.Max(0.5f, _data.LineLength);
+        float width  = Mathf.Max(0.3f, _data.LineRadius * 2f);   // 예전 원의 지름이 곧 띠의 폭이다
+        float angle  = Mathf.Atan2(dir.y, dir.x) * Mathf.Rad2Deg;
 
-        for (int i = 0; i < segments; i++)
-        {
-            // 🔑 보스 몸 바로 밖(0.5칸)부터 깐다. 몸 위에 깔면 보스가 자기 그림에 가린다.
-            Vector2 at = origin + dir * (step * (i + 0.5f));
+        // 띠의 중심은 보스에서 길이의 절반만큼 앞. 예전 원들이 덮던 구간과 같다.
+        Vector2 center = origin + dir * (length * 0.5f);
 
-            var go = _pool.Get(_slamPrefab, at, Quaternion.identity);
-            var slam = go.GetComponent<BossSlam>();
-            if (slam != null)
-                slam.Initialize(_data.LineDamage, _data.LineRadius, _data.LineWindup, _pool);
-        }
+        var go = _pool.Get(_slamPrefab, center, Quaternion.Euler(0f, 0f, angle));
+        var slam = go.GetComponent<BossSlam>();
+        if (slam != null)
+            slam.InitializeBox(_data.LineDamage, length, width, angle, _data.LineWindup, _pool);
+
+        if (segments <= 0) return;   // (경고 없이 넘어가지 않도록 값은 여전히 읽는다)
     }
 
     // ── 페이즈 ──────────────────────────────────────────────────

@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ItemData
   ItemName: Regeneration
   Description: Slowly heals you while you fight. Stacks with your base regeneration.
-  Icon: {fileID: 21300000, guid: f9384af5de3c7cb43ac46b5f76edc2b0, type: 3}
+  Icon: {fileID: 21300000, guid: b9b1e534056c416cb565b2264f3e4740, type: 3}
   Category: 2
   MaxLevel: 5
   WeaponRef: {fileID: 0}

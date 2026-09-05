@@ -30,16 +30,119 @@ public class BossSlam : MonoBehaviour
 
     private ObjectPool _pool;
 
+    // ── 직사각형 예고 (D83) ──────────────────────────────────────
+    //
+    // 🔴 <b>애셋을 만들지 않는다.</b> 1x1 흰 사각형은 `Texture2D.whiteTexture` 로 충분하고,
+    //    새 png 을 넣으면 CONTENT 소유 경로를 건드리게 된다.
+    private static Sprite _boxSprite;
+
+    // 🔴 풀에서 재사용되므로 원래 원형 스프라이트를 기억해 뒀다가 되돌린다.
+    //    안 그러면 사각형으로 한 번 쓴 오브젝트가 다음에 원형 내려찍기로 나올 때
+    //    <b>사각형인 채로</b> 뜬다.
+    private Sprite _circleSprite;
+    private bool   _spriteCached;
+
+    private static Sprite BoxSprite
+    {
+        get
+        {
+            if (_boxSprite == null)
+                _boxSprite = Sprite.Create(Texture2D.whiteTexture, new Rect(0f, 0f, 1f, 1f),
+                                           new Vector2(0.5f, 0.5f), 1f);
+            return _boxSprite;
+        }
+    }
+
+    private void CacheCircleSprite()
+    {
+        if (_spriteCached || telegraph == null) return;
+        _circleSprite = telegraph.sprite;
+        _spriteCached = true;
+    }
+
     /// <param name="windup">예고 시간. 0 이하로 들어와도 최소 0.15초는 준다.</param>
     public void Initialize(float damage, float radius, float windup, ObjectPool pool)
     {
         _pool = pool;
+        CacheCircleSprite();
         StopAllCoroutines();
         StartCoroutine(Run(damage, radius, Mathf.Max(0.15f, windup)));
     }
 
+    /// <summary>
+    /// <b>직사각형</b> 예고 (D83 · 사용자 요구).
+    ///
+    /// <para>사용자 판정: *"일직선으로 안 보인다 (그냥 원 여러 개)"* → *"원 여러개를 쓰지 말고
+    /// 직사각형의 범위로 새로 만들어"*. <c>D73</c> 은 <see cref="BossSlam"/> 원을 줄 세워
+    /// 일직선을 만들었는데, 원 7개는 <b>줄 지어 있어도 하나의 띠로 안 읽힌다</b>.</para>
+    ///
+    /// <para>🔑 판정도 같이 사각형이 된다 — 예전에는 원 7개 각각이 따로 판정해서
+    /// <b>원과 원 사이(오목한 자리)가 안전지대</b>였다. 보이는 모양과 맞는 판정이 된다.</para>
+    /// </summary>
+    public void InitializeBox(float damage, float length, float width, float angleDeg, float windup, ObjectPool pool)
+    {
+        _pool = pool;
+        CacheCircleSprite();
+        StopAllCoroutines();
+        StartCoroutine(RunBox(damage, Mathf.Max(0.1f, length), Mathf.Max(0.1f, width),
+                              angleDeg, Mathf.Max(0.15f, windup)));
+    }
+
+    private IEnumerator RunBox(float damage, float length, float width, float angleDeg, float windup)
+    {
+        if (telegraph != null) telegraph.sprite = BoxSprite;
+        transform.rotation   = Quaternion.Euler(0f, 0f, angleDeg);
+        transform.localScale = new Vector3(length, width, 1f);   // 1x1 스프라이트라 배율이 곧 크기다
+
+        yield return Telegraph(windup);
+
+        AudioManager.Play(SfxId.Explosion);
+        if (telegraph != null) telegraph.color = burstColor;
+
+        // 🔴 회전을 고려한 사각형 판정. 로컬 좌표로 되돌리면 배율까지 풀리므로
+        //    -0.5 ~ +0.5 안에 있는지만 보면 된다.
+        var player = PlayerStats.Current;
+        if (player != null)
+        {
+            Vector3 local = transform.InverseTransformPoint(player.transform.position);
+            if (Mathf.Abs(local.x) <= 0.5f && Mathf.Abs(local.y) <= 0.5f)
+                player.TryTakeHit(damage, transform.position);
+        }
+
+        var cam = Camera.main != null ? Camera.main.GetComponent<CameraController>() : null;
+        if (cam != null) cam.Shake(0.25f, 0.18f);
+
+        yield return new WaitForSeconds(burstHold);
+
+        // 🔴 다음 사용을 위해 원형으로 되돌린다 (풀 재사용).
+        if (telegraph != null && _circleSprite != null) telegraph.sprite = _circleSprite;
+        transform.rotation = Quaternion.identity;
+
+        if (_pool != null) _pool.Return(gameObject);
+        else               gameObject.SetActive(false);
+    }
+
+    /// <summary>알파를 키우며 "차오르는" 예고. 원형·사각형이 같이 쓴다.</summary>
+    private IEnumerator Telegraph(float windup)
+    {
+        float t = 0f;
+        while (t < windup)
+        {
+            t += Time.deltaTime;
+            float k = Mathf.Clamp01(t / windup);
+            if (telegraph != null)
+                telegraph.color = new Color(warnColor.r, warnColor.g, warnColor.b,
+                                            Mathf.Lerp(warnColor.a * 0.35f, warnColor.a, k));
+            yield return null;
+        }
+    }
+
     private IEnumerator Run(float damage, float radius, float windup)
     {
+        // 🔴 사각형으로 쓰였던 오브젝트가 풀에서 돌아올 수 있다. 원형으로 되돌린다.
+        if (telegraph != null && _circleSprite != null) telegraph.sprite = _circleSprite;
+        transform.rotation = Quaternion.identity;
+
         if (spriteRadiusAtScaleOne > 0f)
             transform.localScale = Vector3.one * (radius / spriteRadiusAtScaleOne);
 

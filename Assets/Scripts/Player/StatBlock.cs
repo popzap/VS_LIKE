@@ -63,4 +63,38 @@ public class StatBlock
         Luck             = 0f,
         HpRegen          = 0f,   // 🔴 새 필드는 여기에도 넣어야 한다 (I-21)
     };
+
+    /// <summary>
+    /// 두 블록을 <b>필드별로 더한 새 블록</b>을 만든다 (D83 · <c>B13</c> 사용자 결정 B안).
+    ///
+    /// <para>🔴 <b>왜 이게 필요했나</b> — <see cref="PlayerStats"/> 의 <c>RecalculateStats</c> 가
+    /// 합산을 <b>손으로 나열</b>하고 있었고, 그 나열이 <b>두 번</b> 사람을 속였다:
+    /// <c>Luck</c>(줄곧 빠져 있었다 · <c>B13</c>)과 <c>HpRegen</c>(<c>D74</c> 에서 실측으로 잡았다).
+    /// 필드를 더할 때마다 <b>두 곳</b>(여기 <see cref="Zero"/> 와 그 나열)을 같이 고쳐야 했는데,
+    /// 한 곳을 잊으면 <b>예외도 경고도 없이 그 스탯만 죽는다.</b></para>
+    ///
+    /// <para>🔑 이제 합산 지점이 <b>한 곳</b>이다. 필드를 더할 때 고칠 곳도 여기 하나로 준다
+    /// — <see cref="Zero"/> 와 이 함수가 <b>나란히 있어서</b> 하나만 고치면 눈에 띈다.</para>
+    ///
+    /// <para>⚠️ <b>더하기지 곱하기가 아니다.</b> <c>Damage</c>·<c>AttackSpeed</c> 처럼
+    /// "배율"인 필드도 여기서는 더한다 — 기존 나열이 그렇게 하고 있었고,
+    /// <c>base</c> 가 1.0 이고 <c>meta</c> 가 증분(0.05 …)이라 그게 맞다.</para>
+    /// </summary>
+    public static StatBlock Add(StatBlock a, StatBlock b) => new()
+    {
+        MaxHp            = a.MaxHp            + b.MaxHp,
+        MoveSpeed        = a.MoveSpeed        + b.MoveSpeed,
+        Damage           = a.Damage           + b.Damage,
+        AttackSpeed      = a.AttackSpeed      + b.AttackSpeed,
+        ProjectileSize   = a.ProjectileSize   + b.ProjectileSize,
+        PickupRadius     = a.PickupRadius     + b.PickupRadius,
+        CritChance       = a.CritChance       + b.CritChance,
+        CritMultiplier   = a.CritMultiplier   + b.CritMultiplier,
+        Armor            = a.Armor            + b.Armor,
+        XpGain           = a.XpGain           + b.XpGain,
+        GoldGain         = a.GoldGain         + b.GoldGain,
+        BuildingCooldown = a.BuildingCooldown + b.BuildingCooldown,
+        Luck             = a.Luck             + b.Luck,      // 🔴 B13 — 여기가 빠져 있었다
+        HpRegen          = a.HpRegen          + b.HpRegen,
+    };
 }

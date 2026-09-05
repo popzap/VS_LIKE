@@ -53,10 +53,14 @@ public class CameraController : MonoBehaviour
 
     private void Awake()
     {
-        _cam         = GetComponent<Camera>();
-        _currentZoom = defaultZoom;
-        _targetZoom  = defaultZoom;
-        _cam.orthographicSize = defaultZoom;
+        _cam = GetComponent<Camera>();
+
+        // 🔴 저장된 사용자 배율에서 시작한다 (D83). `defaultZoom` 으로 시작하면
+        //    매 판 첫 몇 초 동안 예전 배율로 보이다가 스르륵 바뀐다.
+        float z      = UserZoom;
+        _currentZoom = z;
+        _targetZoom  = z;
+        _cam.orthographicSize = z;
 
         if (target != null)
         {
@@ -74,6 +78,11 @@ public class CameraController : MonoBehaviour
             if (player) target = player.transform;
         }
     }
+
+    // 🔴 <b>키 입력은 LateUpdate 가 아니라 여기서 받는다</b> (D83).
+    //    아래 LateUpdate 는 <c>target == null</c> 이거나 <c>deltaTime == 0</c>(일시정지)면
+    //    바로 돌아간다 — 거기 넣으면 <b>메뉴나 일시정지 중에 F7/F8 이 안 먹는다.</b>
+    private void Update() => HandleZoomKeys();
 
     private void LateUpdate()
     {
@@ -163,8 +172,75 @@ public class CameraController : MonoBehaviour
     /// <summary>보스 등장 줌아웃, 클리어 줌인 등에 사용.</summary>
     public void SetTargetZoom(float zoom) => _targetZoom = zoom;
 
-    /// <summary>기본 줌으로 복귀.</summary>
-    public void ResetZoom() => _targetZoom = defaultZoom;
+    /// <summary>기본 줌으로 복귀. 🔴 사용자가 F7/F8 로 정한 배율을 존중한다.</summary>
+    public void ResetZoom() => _targetZoom = UserZoom;
+
+    // ── 사용자 화면 배율 · F7 / F8 (D83) ─────────────────────────
+
+    [Header("화면 배율 (F7 좁게 / F8 넓게)")]
+    [Tooltip("한 번에 바뀌는 폭(월드 유닛). 0.5 면 F8 두 번에 한 칸이 더 보인다.")]
+    [SerializeField] private float zoomStep = 0.5f;
+    [Tooltip("가장 좁게. 이보다 좁으면 적이 화면 밖에서 튀어나온다.")]
+    [SerializeField] private float minZoom  = 4f;
+    [Tooltip("가장 넓게. 이보다 넓으면 적 스프라이트가 너무 작아 읽히지 않는다.")]
+    [SerializeField] private float maxZoom  = 11f;
+
+    private const string ZoomPrefKey = "vs_user_zoom";
+
+    /// <summary>
+    /// 사용자가 정한 화면 배율 (D83 · 사용자 요구).
+    ///
+    /// <para>요구: *"적과 플레이어 크기는 적절한데 화면에 너무 끼는 느낌이라
+    /// F7,F8로 화면 배율을 조절할 수 있게 해줘"*.</para>
+    ///
+    /// <para>🔑 <b>적을 줄이는 대신 화면을 넓힌다.</b> `D79` 가 적을 1.5배로 키운 건
+    /// 사용자 요구였고 판정도 *"크기는 적절"* 이었다. 좁게 느껴지는 건 크기가 아니라
+    /// <b>보이는 범위</b>의 문제라 손잡이를 그쪽에 달았다.</para>
+    ///
+    /// <para>🔴 <b>런을 넘어 남는다</b>(<see cref="PlayerPrefs"/>). 매 판 다시 맞춰야 하면
+    /// 손잡이가 아니라 성가신 일이 된다.</para>
+    /// </summary>
+    public float UserZoom
+    {
+        get
+        {
+            if (!_userZoomLoaded)
+            {
+                _userZoom = PlayerPrefs.GetFloat(ZoomPrefKey, defaultZoom);
+                _userZoom = Mathf.Clamp(_userZoom, minZoom, maxZoom);
+                _userZoomLoaded = true;
+            }
+            return _userZoom;
+        }
+    }
+
+    private float _userZoom;
+    private bool  _userZoomLoaded;
+
+    /// <summary>F7 = 좁게(줌인) · F8 = 넓게(줌아웃). 단계는 <see cref="zoomStep"/>.</summary>
+    public void NudgeUserZoom(float delta)
+    {
+        float before = UserZoom;                       // getter 가 처음 한 번 불러오기도 한다
+        _userZoom = Mathf.Clamp(before + delta, minZoom, maxZoom);
+        PlayerPrefs.SetFloat(ZoomPrefKey, _userZoom);
+        _targetZoom = _userZoom;
+        Debug.Log($"[Camera] 화면 배율 {before:F1} -> {_userZoom:F1} (F7 좁게 / F8 넓게 · 범위 {minZoom}~{maxZoom})");
+    }
+
+    private void HandleZoomKeys()
+    {
+        // 🔴 <b>`UnityEngine.Input` 을 쓰면 안 된다</b> (D83 에서 실제로 에디터를 멈췄다).
+        //    이 프로젝트는 `ProjectSettings.activeInputHandler = 1`, 즉
+        //    <b>Input System 패키지 전용</b>이다. 그 모드에서 옛 `Input.GetKeyDown` 은
+        //    <b>매 프레임 `InvalidOperationException` 을 던진다</b> — 플레이 중에 초당 수십 번
+        //    쏟아져 콘솔이 잠기고 에디터가 멎었다.
+        //    🔑 <see cref="DevPanel"/>·<see cref="LevelUpManager"/> 가 이미 이 방식을 쓰고 있었다.
+        var kb = UnityEngine.InputSystem.Keyboard.current;
+        if (kb == null) return;   // 키보드가 없을 수 있다 (패드만 연결 등)
+
+        if (kb[UnityEngine.InputSystem.Key.F7].wasPressedThisFrame) NudgeUserZoom(-zoomStep);
+        if (kb[UnityEngine.InputSystem.Key.F8].wasPressedThisFrame) NudgeUserZoom(+zoomStep);
+    }
 
     /// <summary>즉시 타겟 위치로 이동 (씬 전환 후 등).</summary>
     public void SnapToTarget()

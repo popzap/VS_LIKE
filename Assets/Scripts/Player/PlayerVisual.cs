@@ -22,8 +22,14 @@ public class PlayerVisual : MonoBehaviour
     [Header("셰이더 연출")]
     [Tooltip("스쿼시/바운스 주기. 걸음 속도와 비슷해야 발이 겉돌지 않는다.")]
     [SerializeField] private float bounceSpeed = 13f;
-    [Tooltip("이동 방향으로 기울이는 정도(전단). 0 이면 끔.")]
-    [SerializeField] private float leanAmount = 0.10f;
+    // 🔴 <b>0 = 꺼짐이 지금의 정답이다</b> (D83 · 사용자 결정).
+    //    세 번 고쳤다 — `D65`(부호) · `D79`(전단 기준선) — 그리고도 사용자 판정은
+    //    *"6개 직업이 아직 반대로 보인다"* + *"너무 세다"* 였다.
+    //    마지막 답이 결론이었다: **"좌우 이동에 대해서 애니메이션을 만들어놨는데 굳이 필요할까"**.
+    //    🔑 걷기 시트가 이미 방향을 말해 주므로 전단은 **얹는 게 아니라 겹치는 것**이었다.
+    //    되살리려면 이 값 하나만 0.05~0.10 으로 올리면 된다 (셰이더·기준선은 그대로 둔다).
+    [Tooltip("이동 방향으로 기울이는 정도(전단). 0 이면 끔. D83 에서 0 으로 껐다 — 걷기 애니메이션과 겹친다.")]
+    [SerializeField] private float leanAmount = 0f;
     [Tooltip("기울기가 목표값까지 따라붙는 속도. 낮으면 흐느적거린다.")]
     [SerializeField] private float leanResponse = 12f;
 

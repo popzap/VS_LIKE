@@ -150,6 +150,18 @@ public class HUDManager : MonoBehaviour
         var ps = _playerStats;
         if (lm == null || ps == null) return;
 
+        // 🔴 <b>직업이 없으면 아무것도 그리지 않는다</b> (D83 — 이걸 빠뜨려 에디터를 두 번 멈췄다).
+        //    <see cref="PlayerStats.SlotLimit"/> 는 <c>_classChain</c> 이 비면 <b>int.MaxValue</b> 를 돌려준다
+        //    ("직업이 없으면 제한하지 않는다" — 카드가 안 뜨는 걸 막으려고 그렇게 만든 값이다).
+        //    그 값을 아래 루프의 상한으로 쓰면 <b>한 프레임에 21억 개를 Instantiate</b> 하려 든다.
+        //    메인 메뉴에서 바로 그 상태다.
+        if (ps.ClassChain.Count == 0)
+        {
+            for (int i = 0; i < _slotChips.Count; i++) _slotChips[i].gameObject.SetActive(false);
+            _slotSignature = -1;
+            return;
+        }
+
         var inv = lm.Inventory;
 
         // ── 서명 ─────────────────────────────────────────────
@@ -170,7 +182,11 @@ public class HUDManager : MonoBehaviour
         int used = 0;
         foreach (var cat in Categories)
         {
-            int limit = Mathf.Max(0, ps.SlotLimit(cat));
+            // 🔴 <b>상한을 한 번 더 자른다.</b> 위에서 "직업 없음"은 걸렀지만,
+            //    이 값이 <c>int.MaxValue</c> 가 될 수 있는 함수라는 사실 자체가 위험하다 —
+            //    <b>루프의 상한은 그 값을 믿지 않고 내가 정한다.</b>
+            //    지금 가장 큰 직업이 한 분류에 8칸(Mage 패시브)이라 12 면 넉넉하다.
+            int limit = Mathf.Clamp(ps.SlotLimit(cat), 0, MaxSlotsPerCategory);
             int filled = 0;
 
             if (inv != null)
@@ -201,6 +217,12 @@ public class HUDManager : MonoBehaviour
 
     /// <summary>HUD 줄에 쓸 칩 한 칸의 크기(px). 아래 주석의 계산이 이 값을 정한다.</summary>
     private const float SlotChipSize = 44f;
+
+    /// <summary>
+    /// 한 분류에 그릴 수 있는 최대 칸 수 — <b>안전망이다</b> (D83).
+    /// 지금 가장 큰 값이 Mage 의 패시브 8칸이라 12 면 넉넉하다.
+    /// </summary>
+    private const int MaxSlotsPerCategory = 12;
 
     private ItemChipUI GetSlotChip(int index)
     {
