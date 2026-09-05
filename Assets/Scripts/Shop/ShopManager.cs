@@ -6,13 +6,36 @@ using UnityEngine.Events;
 // ────────────────────────────────────────────────────────────────────────────
 //  ShopSlot  —  상점 슬롯 런타임 데이터
 // ────────────────────────────────────────────────────────────────────────────
+/// <summary>
+/// 상점 칸이 파는 것 (D71). 예전에는 <b>아이템뿐</b>이었다.
+///
+/// <para>🔴 <b>정수로 직렬화되지 않는다</b> — <see cref="ShopSlot"/> 은 런타임 전용이라
+/// 애셋에 안 남는다. 그래도 순서를 지키는 편이 읽기 쉽다.</para>
+/// </summary>
+public enum ShopSlotKind
+{
+    /// <summary>무기·패시브·건물. 지금까지 유일했던 종류.</summary>
+    Item,
+    /// <summary>휴식 — 골드로 체력을 산다 (사용자 요구 6).</summary>
+    Heal,
+    /// <summary>런 골드를 메타 골드로 바꾼다 (<c>B12</c> 의 사용자 답).</summary>
+    Exchange,
+}
+
 [System.Serializable]
 public class ShopSlot
 {
+    public ShopSlotKind Kind = ShopSlotKind.Item;
+
+    /// <summary>🔴 <see cref="ShopSlotKind.Item"/> 일 때만 채워진다. 나머지는 <c>null</c> 이다.</summary>
     public ItemData Item;
+
     public int      Price;
     public bool     IsSold;
     public bool     IsUpgrade;   // true = 이미 보유 중 → 레벨업 구매
+
+    /// <summary>이 칸이 주는 양. 회복은 체력, 전환은 메타 골드.</summary>
+    public int      Amount;
 }
 
 // ────────────────────────────────────────────────────────────────────────────
@@ -47,6 +70,23 @@ public class ShopManager : MonoBehaviour
     [Tooltip("층 1당 가격 증가율. 0.18 = 층마다 +18 %. "
            + "후반에 골드가 남는 문제(D61 의 M=1168)를 여기서 뺀다.")]
     [SerializeField] private float priceLayerStep = 0.18f;
+
+    // ── 서비스 칸 (D71 · 사용자 요구 6 + B12) ────────────────────
+    // 🔴 수치는 Economy.csv 의 ShopManager 행이 들고 있다.
+    [Header("서비스 칸 — 값은 Economy.csv 가 덮는다")]
+    [Tooltip("휴식(회복) 기본 가격. 층 배율(priceLayerStep)이 그대로 곱해진다.")]
+    [SerializeField] private int   healBasePrice = 35;
+
+    [Tooltip("휴식이 회복하는 최대 체력 비율. 0.4 = 40 %.")]
+    [SerializeField] private float healPercent = 0.4f;
+
+    [Tooltip("골드 전환 한 번에 쓰는 런 골드.")]
+    [SerializeField] private int   exchangeCost = 100;
+
+    [Tooltip("전환 비율 — 런 골드 exchangeCost 를 내면 메타 골드 이만큼. "
+           + "0.4 = 100 런 골드 → 40 메타 골드. 런이 끝나면 어차피 소멸하는 돈이라 "
+           + "손해를 봐도 이득이지만, 1 을 넘기면 골드를 쟁이는 게 최적 전략이 된다.")]
+    [SerializeField] private float exchangeRate = 0.4f;
 
     // ── 이벤트 ────────────────────────────────────────────────────
     [Header("이벤트")]
@@ -133,17 +173,55 @@ public class ShopManager : MonoBehaviour
     public bool CanPurchase(ShopSlot slot)
         => !slot.IsSold && GameManager.Instance.RunGold >= slot.Price;
 
+    /// <summary>
+    /// 칸을 산다. 종류마다 하는 일이 다르다 (D71).
+    ///
+    /// <para>🔴 <b><c>B12</c> 를 여기서 닫는다.</b> 예전에는 골드를 <b>먼저</b> 빼고
+    /// <c>ApplyItem</c> 이 조용히 거절해도 <b>성공 로그를 찍었다</b> —
+    /// 칸이 꽉 찬 카테고리의 새 아이템을 사면 <b>골드만 사라졌다.</b>
+    /// 이제 <b>줄 수 있는지 먼저 묻고</b>, 못 주면 골드에 손대지 않는다.</para>
+    /// </summary>
     public void Purchase(ShopSlot slot)
     {
         if (!CanPurchase(slot)) return;
 
+        // 🔴 골드를 빼기 전에 판정한다. 순서를 뒤집으면 그게 B12 다.
+        if (slot.Kind == ShopSlotKind.Item)
+        {
+            var lm = GameManager.Instance.LevelUpManager;
+            if (slot.Item == null || !lm.CanAcquire(slot.Item) || slot.Item.IsMaxLevel)
+            {
+                Debug.LogWarning($"[ShopManager] 구매 거절 — '{(slot.Item != null ? slot.Item.ItemName : "null")}' 을(를) 지금 받을 수 없다. 골드는 그대로다");
+                return;
+            }
+        }
+
         GameManager.Instance.SpendRunGold(slot.Price);
         slot.IsSold = true;
 
-        GameManager.Instance.LevelUpManager.ApplyItemFromShop(slot.Item);
-        OnItemPurchased.Invoke(slot);
+        switch (slot.Kind)
+        {
+            case ShopSlotKind.Item:
+                GameManager.Instance.LevelUpManager.ApplyItemFromShop(slot.Item);
+                Debug.Log($"[ShopManager] 구매: {slot.Item.ItemName} ({slot.Price}G 소모)");
+                break;
 
-        Debug.Log($"[ShopManager] 구매: {slot.Item.ItemName} ({slot.Price}G 소모)");
+            case ShopSlotKind.Heal:
+            {
+                var ps = PlayerStats.Current;
+                if (ps != null) ps.Heal(slot.Amount);
+                Debug.Log($"[ShopManager] 휴식: 체력 +{slot.Amount} ({slot.Price}G 소모)");
+                break;
+            }
+
+            case ShopSlotKind.Exchange:
+                // 🔑 런 골드는 런이 끝나면 소멸한다. 손해 보는 환율이어도 안 바꾸는 것보다 낫다.
+                GameManager.Instance.AddPendingMetaGold(slot.Amount);
+                Debug.Log($"[ShopManager] 골드 전환: 메타 +{slot.Amount} ({slot.Price}G 소모)");
+                break;
+        }
+
+        OnItemPurchased.Invoke(slot);
     }
 
     // ─────────────────────────────────────────────────────────────
@@ -213,22 +291,74 @@ public class ShopManager : MonoBehaviour
     //  슬롯 생성
     // ─────────────────────────────────────────────────────────────
 
+    /// <summary>
+    /// 진열을 다시 뽑는다 (D71 로 크게 바뀌었다).
+    ///
+    /// <para>🔑 <b>휴식 칸은 항상 하나 있다</b> (사용자 요구 6). 남은 자리에 아이템을 채우고,
+    /// <b>줄 수 있는 아이템이 모자라면 골드 전환으로 메운다</b> (<c>B12</c> 의 사용자 답).</para>
+    ///
+    /// <para>🔴 예전에는 <c>GetShopCandidates</c> 가 준 것을 그대로 진열했다.
+    /// 그 목록은 <b>지금 받을 수 있는지를 안 본다</b> — 칸이 꽉 찬 카테고리의 새 아이템도,
+    /// 이미 만렙인 것도 그냥 올라왔다. 그게 <c>B12</c> 의 절반이었다.</para>
+    ///
+    /// <para>🔑 사용자 답이 좋았던 이유: 앞서 적어 둔 세 안은 전부 *"못 사게 막는다"* 라
+    /// <b>상점 노드를 밟은 게 헛수고</b>가 된다. 이쪽은 <b>살 게 없으면 다른 걸 판다.</b></para>
+    /// </summary>
     private void RollShopSlots()
     {
         CurrentSlots.Clear();
 
-        var levelUp    = GameManager.Instance.LevelUpManager;
-        var candidates = levelUp.GetShopCandidates(shopSlotCount);
+        var levelUp = GameManager.Instance.LevelUpManager;
+
+        // 🔴 CanAcquire 만으로는 부족하다 — 이미 가진 아이템은 무조건 true 를 돌려주므로
+        //    만렙인 것까지 통과한다. 살 수 있다 = 받을 수 있고 + 아직 올릴 수 있다.
+        int itemSlots  = Mathf.Max(0, shopSlotCount - 1);          // 한 칸은 휴식 몫
+        var candidates = levelUp.GetShopCandidates(shopSlotCount * 3)
+                                .Where(i => i != null && levelUp.CanAcquire(i) && !i.IsMaxLevel)
+                                .Take(itemSlots)
+                                .ToList();
 
         foreach (var item in candidates)
         {
             CurrentSlots.Add(new ShopSlot
             {
+                Kind      = ShopSlotKind.Item,
                 Item      = item,
                 Price     = GetPrice(item),
                 IsSold    = false,
                 IsUpgrade = levelUp.HasItem(item) && !item.IsMaxLevel
             });
         }
+
+        // 아이템이 모자란 만큼 골드 전환으로 메운다.
+        for (int i = candidates.Count; i < itemSlots; i++)
+            CurrentSlots.Add(MakeExchangeSlot());
+
+        CurrentSlots.Add(MakeHealSlot());
+    }
+
+    /// <summary>휴식 칸 (사용자 요구 6). 층이 깊을수록 비싸다 — 가격 규칙을 아이템과 맞춘다.</summary>
+    private ShopSlot MakeHealSlot()
+    {
+        var ps  = PlayerStats.Current;
+        int amount = ps != null ? Mathf.Max(1, Mathf.RoundToInt(ps.Final.MaxHp * healPercent)) : 1;
+
+        int layer = _currentNode != null ? Mathf.Max(0, _currentNode.Layer)
+                                         : Mathf.Max(0, LayerScaling.Layer);
+        int price = Mathf.Max(1, Mathf.RoundToInt(healBasePrice * (1f + priceLayerStep * layer)));
+
+        return new ShopSlot { Kind = ShopSlotKind.Heal, Price = price, Amount = amount };
+    }
+
+    /// <summary>골드 전환 칸. 🔑 층 배율을 <b>안</b> 붙인다 — 환율이 층마다 나빠질 이유가 없다.</summary>
+    private ShopSlot MakeExchangeSlot()
+    {
+        int cost = Mathf.Max(1, exchangeCost);
+        return new ShopSlot
+        {
+            Kind   = ShopSlotKind.Exchange,
+            Price  = cost,
+            Amount = Mathf.Max(1, Mathf.RoundToInt(cost * exchangeRate)),
+        };
     }
 }

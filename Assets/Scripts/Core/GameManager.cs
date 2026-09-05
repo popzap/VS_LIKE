@@ -386,7 +386,20 @@ public class GameManager : MonoBehaviour
         if (baseAmount <= 0) return;
 
         float mult = PlayerStats.Current != null ? PlayerStats.Current.Final.GoldGain : 1f;
-        _pendingMetaGold += Mathf.Max(1, Mathf.RoundToInt(baseAmount * mult));
+        AddPendingMetaGold(Mathf.Max(1, Mathf.RoundToInt(baseAmount * mult)));
+    }
+
+    /// <summary>
+    /// 적립 메타 골드에 <b>배율 없이</b> 더한다 (D71 · 상점 골드 전환).
+    ///
+    /// <para>🔴 <see cref="GrantMetaGold"/> 를 쓰면 <c>GoldGain</c> 이 <b>두 번</b> 곱해진다 —
+    /// 런 골드는 벌 때 이미 그 배율을 받았고, 전환은 그 돈을 옮기는 것뿐이다.
+    /// Excalibur 특전(골드 2배)이 붙으면 차이가 그대로 두 배로 벌어진다.</para>
+    /// </summary>
+    public void AddPendingMetaGold(int amount)
+    {
+        if (amount <= 0) return;
+        _pendingMetaGold += amount;
     }
 
     /// <summary>런 종료(사망/승리) 정산. 적립된 메타 골드를 넘기고 런 골드를 버린다.</summary>
