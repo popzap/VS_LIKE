@@ -8,7 +8,13 @@ public class ExperienceManager : MonoBehaviour
     public static ExperienceManager Instance { get; private set; }
 
     [Header("레벨업 곡선 (index = 레벨, value = 필요 XP)")]
-    [SerializeField] private int[] xpThresholds = { 5,10,20,35,55,80,110,150,200,260 };
+    // 🔴 값은 Economy.csv 의 ExperienceManager 행이 덮는다. 여기 기본값은 자리표시다.
+    [SerializeField] private int[] xpThresholds = { 5,9,14,20,27,35,44,54,65,77 };
+
+    [Tooltip("표를 넘어선 뒤 레벨당 늘어나는 필요 XP (D65). "
+           + "예전에는 코드에 50 이 박혀 있어서 Lv11 이 갑자기 810 이 됐다 — "
+           + "표의 마지막 값(77)보다 10배 큰 벽이라 그 앞에서 레벨업이 사실상 멈췄다.")]
+    [SerializeField] private int xpTailStep = 12;
 
     [Header("경험치 오브젝트")]
     [SerializeField] private GameObject expDropPrefab;
@@ -16,9 +22,19 @@ public class ExperienceManager : MonoBehaviour
 
     public int CurrentLevel { get; private set; } = 1;
     public int CurrentXp    { get; private set; } = 0;
+    /// <summary>
+    /// 다음 레벨까지 필요한 XP.
+    ///
+    /// <para>🔴 표를 넘어선 뒤의 식이 <c>+ CurrentLevel * 50</c> 이었다 (D65 이전).
+    /// 표 마지막이 <c>260</c> 인데 Lv11 이 <c>260 + 550 = 810</c> 으로 <b>세 배가 넘게 튀었다</b> —
+    /// 이어지는 곡선이 아니라 <b>벽</b>이라 9노드를 완주해도 13레벨에서 멈췄다.
+    /// 이제는 <b>표 밖으로 나간 만큼만</b> 더한다: <c>표마지막 + (레벨 - 표길이) × xpTailStep</c>.
+    /// Lv11 = 77 + 12 = 89 로 표의 마지막(77) 바로 다음 값이 된다.</para>
+    /// </summary>
     public int XpToNext     => CurrentLevel <= xpThresholds.Length
                                 ? xpThresholds[CurrentLevel - 1]
-                                : xpThresholds[^1] + CurrentLevel * 50;
+                                : xpThresholds[^1]
+                                  + (CurrentLevel - xpThresholds.Length) * Mathf.Max(1, xpTailStep);
 
     public System.Action<int, int> OnXpChanged;    // (current, toNext)
     public System.Action<int>      OnLevelUp;       // (newLevel)

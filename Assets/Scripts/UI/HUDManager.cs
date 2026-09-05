@@ -86,6 +86,10 @@ public class HUDManager : MonoBehaviour
 
     private void Start()
     {
+        // 🔴 [Z] Build 안내를 화면 왼쪽 아래로 (D65 · 사용자 요구 C-3).
+        //    하단 중앙은 플레이어 바로 아래라 난전에서 적에 그대로 묻힌다.
+        PromptCorner.Place(buildPromptText, 26f);
+
         _playerStats = FindFirstObjectByType<PlayerStats>();
         _expManager  = ExperienceManager.Instance;
 

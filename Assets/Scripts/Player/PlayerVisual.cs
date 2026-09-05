@@ -101,10 +101,13 @@ public class PlayerVisual : MonoBehaviour
         float target = 0f;
         if (moving && leanAmount > 0f)
         {
-            // flipX 는 메시 x 를 뒤집으므로 기울기 부호도 같이 뒤집어야
-            // 화면상으로 "가는 쪽"으로 기운다.
+            // 🔴 예전에는 여기에 `* (_sr.flipX ? -1f : 1f)` 가 붙어 있었다. **틀렸다** (D65).
+            //    flipX 는 메시 정점을 뒤집을 뿐 오브젝트 공간의 축은 그대로라,
+            //    셰이더의 `pos.x += pos.y * _LeanAmt` 는 flipX 와 무관하게 항상 화면 오른쪽으로 민다.
+            //    그래서 왼쪽 이동에서 부호가 두 번 뒤집혀(-1 × -1) **가는 쪽의 반대로 기울었다.**
+            //    실측(D65): lean +0.4 → flipX 무관하게 +39.10 / +38.58 px, lean −0.4 → −38.57 / −39.10 px.
             float dir = Mathf.Abs(vel.x) > moveDeadzone ? Mathf.Sign(vel.x) : 0f;
-            target = leanAmount * dir * (_sr.flipX ? -1f : 1f);
+            target = leanAmount * dir;
         }
         _lean = Mathf.MoveTowards(_lean, target, leanResponse * leanAmount * Time.deltaTime);
 

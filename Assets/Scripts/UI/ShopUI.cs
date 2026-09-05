@@ -65,10 +65,23 @@ public class ShopUI : MonoBehaviour
     //  초기화
     // ─────────────────────────────────────────────────────────────
 
+    /// <summary>리롤을 누를 수 있을 때의 글자색 (D65). <see cref="LevelUpManager"/> 와 같은 값.</summary>
+    private static readonly Color RerollOn  = new Color(0.96f, 0.80f, 0.28f, 1f);
+    private static readonly Color RerollOff = new Color(0.48f, 0.50f, 0.55f, 1f);
+
     private void Awake()
     {
         if (Instance != null && Instance != this) { Destroy(gameObject); return; }
         Instance = this;
+
+        // 🔴 상점에서 KILLS / TIME / LEVEL 을 뺀다 (D65 · 사용자 요구 4).
+        //    상점은 "무엇을 살까"를 정하는 화면이고 이 셋은 그 결정에 아무것도 안 보탠다 —
+        //    NPC 자리를 셋이서 차지하고 있었다.
+        //    🔑 씬에서 지우지 않고 여기서 끈다. 나중에 되살리려면 이 세 줄만 지우면 되고,
+        //       배선(SerializeField)은 그대로라 씬을 다시 만질 필요가 없다.
+        if (killCountText   != null) killCountText  .gameObject.SetActive(false);
+        if (elapsedTimeText != null) elapsedTimeText.gameObject.SetActive(false);
+        if (playerLevelText != null) playerLevelText.gameObject.SetActive(false);
     }
 
     private void Start()
@@ -218,8 +231,13 @@ public class ShopUI : MonoBehaviour
 
         // 이모지(🔀)를 쓰지 말 것 — Pretendard SDF 에 없는 글리프라 콘솔 경고와 함께
         // 대체 문자(␡)가 그려진다. 폰트 아틀라스에 있는 글자만 쓴다.
-        rerollCostText.text          = $"Cost {cost} G";
-        rerollButton.interactable    = ShopManager.Instance.CanReroll();
+        //
+        // 🔴 색을 코드가 정한다 (D65 · 사용자 요구 1) — 씬 값이 회색이라 **누를 수 있는지가
+        //    안 보였다.** 값만 바꾸면 씬 오버라이드가 이긴다(B11).
+        bool can = ShopManager.Instance.CanReroll();
+        rerollCostText.text          = $"REROLL  {cost} G";
+        rerollCostText.color         = can ? RerollOn : RerollOff;
+        rerollButton.interactable    = can;
     }
 
     // ─────────────────────────────────────────────────────────────
@@ -255,25 +273,8 @@ public class ShopUI : MonoBehaviour
         if (npcDialogueText && npcDialogues.Length > 0)
             npcDialogueText.text = npcDialogues[Random.Range(0, npcDialogues.Length)];
 
-        // 런 현황 (WaveManager / ExperienceManager 에서 조회)
-        var wave = GameManager.Instance.WaveManager;
-        var exp  = GameManager.Instance.ExpManager;
-
-        // 숫자만 띄우면 그게 킬인지 시간인지 레벨인지 알 수 없다. 라벨을 앞에 붙인다.
-        if (killCountText  && wave != null) killCountText.text  = $"<color=#8A8F98>KILLS</color>   {wave.TotalKillCount}";
-        if (playerLevelText && exp != null) playerLevelText.text = $"<color=#8A8F98>LEVEL</color>   {exp.CurrentLevel}";
-
-        // 경과 시간은 WaveManager 에서 누적값 제공 (없으면 "-" 표시)
-        if (elapsedTimeText)
-            elapsedTimeText.text = wave != null
-                ? $"<color=#8A8F98>TIME</color>   {FormatTime(wave.TotalElapsedTime)}"
-                : "<color=#8A8F98>TIME</color>   --:--";
-    }
-
-    private static string FormatTime(float seconds)
-    {
-        int m = (int)(seconds / 60);
-        int s = (int)(seconds % 60);
-        return $"{m:00}:{s:00}";
+        // 🔴 KILLS / TIME / LEVEL 은 Awake 에서 껐다 (D65 · 사용자 요구 4).
+        //    꺼진 오브젝트에 글자를 채우던 코드도 같이 걷어낸다 —
+        //    남겨 두면 "왜 안 보이지" 하고 이 함수를 먼저 뒤지게 된다.
     }
 }

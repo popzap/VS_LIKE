@@ -11,8 +11,9 @@ GameManager,normalClearReward,8,노말 노드 클리어 보상
 GameManager,eliteClearReward,20,엘리트 노드 클리어 보상
 GameManager,bossClearReward,60,보스 노드 클리어(런 승리) 보상
 # ── 레벨업 곡선 (index = 레벨, value = 다음 레벨까지 필요 XP) ────
-# 표를 넘어서면 마지막 값 + 현재레벨*50 으로 계산된다 (ExperienceManager.XpToNext)
-ExperienceManager,xpThresholds,5|10|20|35|55|80|110|150|200|260,Lv1~Lv10 필요 경험치
+# 표를 넘어서면 [표 마지막 + (레벨 - 표길이) * xpTailStep] 으로 이어진다 (ExperienceManager.XpToNext)
+ExperienceManager,xpThresholds,5|9|14|20|27|35|44|54|65|77,"Lv1~Lv10 필요 경험치. 🔴 D65 가 사용자 판정(''경험치통이 너무 큼'')을 받고 5|10|20|35|55|80|110|150|200|260 에서 내렸다 — 9노드 완주 판이 13레벨에서 끝났다. 같은 XP 수입(실측 2600~3500)으로 약 26레벨까지 간다"
+ExperienceManager,xpTailStep,12,"표(Lv10) 를 넘어선 뒤 레벨당 늘어나는 필요 XP. 🔴 예전에는 코드에 50 이 박혀 있었고 식도 '레벨*50' 이라 Lv11 이 810 으로 튀었다 — 표 마지막(77)의 10배 벽. 지금은 Lv11=89, Lv20=197 로 표에서 매끄럽게 이어진다"
 # ── 스테이지 맵 구성 (StageMapManager) ───────────────────────────
 # ⚠️ C27 에서 새로 옮겨 온 줄이다. 값은 코드 기본값 그대로라 첫 Import 는 아무것도 안 바꾼다.
 #    옮긴 이유: 런 골드 예산이 통째로 이 가중치에 매달려 있는데 숨어 있었다.

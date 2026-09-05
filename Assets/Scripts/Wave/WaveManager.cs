@@ -259,6 +259,16 @@ public class WaveManager : MonoBehaviour
         //    사망 연출·소리·시체 정리가 전부 건너뛰어져 **시체가 살아 있는 채로 남는다.**
         //    광역기에서는 더 나쁘다: OverlapCircleAll 루프 밖으로 예외가 나가
         //    **같은 반경 안의 나머지 적이 피해를 아예 안 받는다** (D20 에서 실제로 봤다).
+        // 🔴 보스를 잡으면 그 자리에서 끝난다 (D65 · 사용자 요구 14).
+        //    예전에는 보스를 눕히고도 남은 잡몹 19마리를 마저 잡거나 240초를 채워야 했다 —
+        //    **판의 절정이 끝난 뒤에 청소가 남는다.** 킬 목표보다 먼저 본다.
+        if (enemy != null && enemy.IsBoss && IsBossWave)
+        {
+            Debug.Log("[WaveManager] 보스 처치 — 웨이브 즉시 클리어");
+            ClearWave();
+            return;
+        }
+
         if (_currentWaveData != null && _currentWaveData.UseKillClear
             && _killCount >= ScaledKillTarget())
             ClearWave();

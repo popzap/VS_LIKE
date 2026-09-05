@@ -22,6 +22,8 @@ public class EvolutionPromptUI : MonoBehaviour
 
     private void Start()
     {
+        // 🔴 [Z] Build 줄(y=26) 바로 위에 얹는다. 둘이 겹치면 둘 다 못 읽는다.
+        PromptCorner.Place(promptText, 66f);
         if (promptText != null) promptText.gameObject.SetActive(false);
     }
 
@@ -98,5 +100,34 @@ public class EvolutionPromptUI : MonoBehaviour
         var altar = final.AltarBuilding;
         return $"<color=#8A8F98>EVOLUTION READY</color>  {final.ResultItem.ItemName}  —  " +
                $"stand by your {(altar != null ? altar.BuildingName : "building")} and press E";
+    }
+}
+
+/// <summary>
+/// 안내 한 줄을 <b>화면 왼쪽 아래 구석</b>으로 옮긴다 (D65 · 사용자 요구 C-3).
+///
+/// <para>사용자 판정은 *"묻힌다"* 였고, 요구는 *"더 강조"* 가 아니라
+/// <b>*"플레이 화면을 가리니 외곽으로 빼라"*</b> 였다 —
+/// 두 안내가 <b>하단 중앙</b>, 즉 플레이어 바로 아래 세로줄에 있었다.
+/// 난전에서 적이 제일 두꺼운 자리가 하필 거기다.</para>
+///
+/// <para>🔑 <b>씬이 아니라 코드가 자리를 정한다.</b> 씬 값이 정본이면 다음에
+/// 누가 캔버스를 만질 때 조용히 돌아온다 (<c>B11</c> 에서 실제로 그랬다).</para>
+/// </summary>
+internal static class PromptCorner
+{
+    public const float Margin = 26f;
+    public const float Width  = 720f;
+
+    public static void Place(TMPro.TextMeshProUGUI text, float y)
+    {
+        if (text == null) return;
+        var rt = text.rectTransform;
+        rt.anchorMin        = new Vector2(0f, 0f);
+        rt.anchorMax        = new Vector2(0f, 0f);
+        rt.pivot            = new Vector2(0f, 0f);
+        rt.sizeDelta        = new Vector2(Width, rt.sizeDelta.y);
+        rt.anchoredPosition = new Vector2(Margin, y);
+        text.alignment      = TMPro.TextAlignmentOptions.BottomLeft;
     }
 }

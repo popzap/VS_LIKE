@@ -17,6 +17,11 @@ public class LevelUpManager : MonoBehaviour
     [Header("아이템 데이터베이스")]
     [SerializeField] private ItemData[]       allItems;        // 모든 ItemData 등록
 
+    /// <summary>리롤을 누를 수 있을 때의 글자색 (D65). 씬이 아니라 코드가 정본이다.</summary>
+    private static readonly Color RerollOn  = new Color(0.96f, 0.80f, 0.28f, 1f);
+    /// <summary>못 누를 때. 회색이되 <b>바탕과는 확실히 다른</b> 밝기로 둔다.</summary>
+    private static readonly Color RerollOff = new Color(0.48f, 0.50f, 0.55f, 1f);
+
     [Header("리롤 설정")]
     [Tooltip("리롤 1회 비용(골드). 레벨업 1회당 리롤은 한 번만 가능하다.")]
     [SerializeField] private int rerollCost = 1;
@@ -167,7 +172,43 @@ public class LevelUpManager : MonoBehaviour
         GameManager.Instance.OnLevelUpCompleted();
     }
 
-    // 카드 선택 (ItemCardUI 버튼에서 호출)
+    /// <summary>
+    /// 카드를 <b>숫자키 1·2·3</b> 으로 고른다 (D65 · 사용자 요구 7).
+    ///
+    /// <para>🔑 <c>Update</c> 는 <c>Time.timeScale</c> 의 영향을 받지 않는다 —
+    /// 레벨업 중에는 시간이 멈춰 있으므로 <c>FixedUpdate</c> 였다면 아예 안 돌았다.</para>
+    ///
+    /// <para>🔴 <b>화면에 실제로 떠 있는 카드만 받는다.</b> 후보가 2장뿐인데 <c>3</c> 을
+    /// 누르면 아무 일도 없어야 한다 — <c>_currentChoices</c> 길이로 자른다.</para>
+    ///
+    /// <para>🔴 <c>wasPressedThisFrame</c>(에지)을 쓴다. <c>isPressed</c>(레벨)로 하면
+    /// 다음 레벨업 패널이 같은 눌림에 즉시 또 먹힌다 — 44레벨 판에서는 치명적이다.</para>
+    /// </summary>
+    private void Update()
+    {
+        if (levelUpPanel == null || !levelUpPanel.activeSelf) return;
+
+        var kb = UnityEngine.InputSystem.Keyboard.current;
+        if (kb == null) return;
+
+        var keys = new[]
+        {
+            UnityEngine.InputSystem.Key.Digit1,
+            UnityEngine.InputSystem.Key.Digit2,
+            UnityEngine.InputSystem.Key.Digit3,
+        };
+
+        int n = Mathf.Min(cards.Length, _currentChoices != null ? _currentChoices.Count : 0);
+        for (int i = 0; i < n && i < keys.Length; i++)
+        {
+            if (!kb[keys[i]].wasPressedThisFrame) continue;
+            if (!cards[i].gameObject.activeSelf) continue;   // 안 뜬 카드는 못 고른다
+            SelectItem(_currentChoices[i]);
+            return;
+        }
+    }
+
+    // 카드 선택 (ItemCardUI 버튼에서 호출 · 숫자키 1/2/3 으로도 온다)
     public void SelectItem(ItemData item)
     {
         // 처리기를 먼저 비운 뒤에 부른다 — 안에서 예외가 나도 다음 레벨업까지 물고 늘어지지 않게.
@@ -298,15 +339,21 @@ public class LevelUpManager : MonoBehaviour
             cards[i].gameObject.SetActive(hasItem);
             if (hasItem) cards[i].Setup(_currentChoices[i], this);
         }
+        // 🔴 색을 코드가 정한다 (D65 · 사용자 요구 1). 씬에 회색으로 박혀 있어서
+        //    **누를 수 있는 버튼인지 아닌지가 안 보였다.** 씬 값이 이기면 또 회색이 된다(B11).
+        //    누를 수 있을 때 노랑, 못 누를 때 회색 — 차이가 색으로 먼저 읽힌다.
         if (_rerollUsed)
         {
-            rerollCostText.text       = "Reroll used";
+            rerollCostText.text       = "REROLL  used";
+            rerollCostText.color      = RerollOff;
             rerollButton.interactable = false;
         }
         else
         {
-            rerollCostText.text       = $"Reroll ({rerollCost}G)  x1";
-            rerollButton.interactable = GameManager.Instance.RunGold >= rerollCost;
+            bool can = GameManager.Instance.RunGold >= rerollCost;
+            rerollCostText.text       = $"REROLL  {rerollCost} G  (x1)";
+            rerollCostText.color      = can ? RerollOn : RerollOff;
+            rerollButton.interactable = can;
         }
     }
 

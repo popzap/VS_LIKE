@@ -26409,6 +26409,42 @@ PrefabInstance:
       value: 6
       objectReference: {fileID: 0}
     - target: {fileID: 3487634682706099646, guid: 662dda8a5b427484cbf8f24476baa8f0, type: 3}
+      propertyPath: 'xpThresholds.Array.data[1]'
+      value: 9
+      objectReference: {fileID: 0}
+    - target: {fileID: 3487634682706099646, guid: 662dda8a5b427484cbf8f24476baa8f0, type: 3}
+      propertyPath: 'xpThresholds.Array.data[2]'
+      value: 14
+      objectReference: {fileID: 0}
+    - target: {fileID: 3487634682706099646, guid: 662dda8a5b427484cbf8f24476baa8f0, type: 3}
+      propertyPath: 'xpThresholds.Array.data[3]'
+      value: 20
+      objectReference: {fileID: 0}
+    - target: {fileID: 3487634682706099646, guid: 662dda8a5b427484cbf8f24476baa8f0, type: 3}
+      propertyPath: 'xpThresholds.Array.data[4]'
+      value: 27
+      objectReference: {fileID: 0}
+    - target: {fileID: 3487634682706099646, guid: 662dda8a5b427484cbf8f24476baa8f0, type: 3}
+      propertyPath: 'xpThresholds.Array.data[5]'
+      value: 35
+      objectReference: {fileID: 0}
+    - target: {fileID: 3487634682706099646, guid: 662dda8a5b427484cbf8f24476baa8f0, type: 3}
+      propertyPath: 'xpThresholds.Array.data[6]'
+      value: 44
+      objectReference: {fileID: 0}
+    - target: {fileID: 3487634682706099646, guid: 662dda8a5b427484cbf8f24476baa8f0, type: 3}
+      propertyPath: 'xpThresholds.Array.data[7]'
+      value: 54
+      objectReference: {fileID: 0}
+    - target: {fileID: 3487634682706099646, guid: 662dda8a5b427484cbf8f24476baa8f0, type: 3}
+      propertyPath: 'xpThresholds.Array.data[8]'
+      value: 65
+      objectReference: {fileID: 0}
+    - target: {fileID: 3487634682706099646, guid: 662dda8a5b427484cbf8f24476baa8f0, type: 3}
+      propertyPath: 'xpThresholds.Array.data[9]'
+      value: 77
+      objectReference: {fileID: 0}
+    - target: {fileID: 3487634682706099646, guid: 662dda8a5b427484cbf8f24476baa8f0, type: 3}
       propertyPath: 'pickupChances.Array.data[0]'
       value: 0.025
       objectReference: {fileID: 0}
@@ -26824,7 +26860,7 @@ PrefabInstance:
       objectReference: {fileID: 5671240443907944735, guid: 5f686867ca37b1346923c8883c553681, type: 3}
     - target: {fileID: 5897929191394594014, guid: 3dec23194ba32e048855858b514f07fe, type: 3}
       propertyPath: maxAliveCeiling
-      value: 320
+      value: 360
       objectReference: {fileID: 0}
     - target: {fileID: 5897929191394594014, guid: 3dec23194ba32e048855858b514f07fe, type: 3}
       propertyPath: playerTransform
@@ -26832,7 +26868,7 @@ PrefabInstance:
       objectReference: {fileID: 4505039495625385280}
     - target: {fileID: 5897929191394594014, guid: 3dec23194ba32e048855858b514f07fe, type: 3}
       propertyPath: layerSpawnGrowth
-      value: 0.14
+      value: 0.17
       objectReference: {fileID: 0}
     - target: {fileID: 5897929191394594014, guid: 3dec23194ba32e048855858b514f07fe, type: 3}
       propertyPath: burrowTelegraphPrefab
