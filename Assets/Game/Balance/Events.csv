@@ -16,12 +16,15 @@
 #
 # 🔴 값은 임시다 (D37). E7 의 환율 3:1 은 "메타 수입 한 판 132G"(BALANCE.md §3-1) 대비
 #    한 번에 최대 40 = 약 0.3판치를 노린 것이다. 실제 수치는 CONTENT 가 정한다.
-Title,Description,Kind,XpBonus,CurrencyBonus,TriggerRandomWave,AcceptLabel,DeclineLabel,ExchangeRate,ExchangeCap,MineCount,MineInterval,MineSpread
-Abandoned Cache,You find a supply crate left behind by a fallen adventurer.,Reward,0,12,0,Take it,,3,40,3,2.6,7
-Ancient Shrine,Touching the shrine floods you with forgotten knowledge.,Reward,40,0,0,Touch it,,3,40,3,2.6,7
-Wandering Merchant,A merchant pays well for the trophies you carry.,Reward,0,20,0,Trade,,3,40,3,2.6,7
-Ambush,The path was a trap. Enemies close in from every side.,Reward,0,0,1,Fight,,3,40,3,2.6,7
-Cursed Offering,The altar grants power but wakes what slept beneath it.,Reward,60,10,1,Accept the curse,Walk away,3,40,3,2.6,7
-Exchange,A courier offers to carry your coin home. He takes a cut.,Exchange,0,0,0,Exchange,Keep my gold,3,40,3,2.6,7
-Field Promotion,An old captain watches you fight. He does not need an altar to name a rank.,FieldPromotion,0,0,0,Accept the rank,Decline,3,40,3,2.6,7
-Minefield,The ground here remembers an older war. It still goes off.,Minefield,0,0,0,Cross it,,3,40,3,2.0,7
+# WaveId = 이 이벤트의 전투에 쓸 웨이브 Id (D76). 비우면 노드 종류로 정한다.
+#          🔴 eventWaves 에 넣고 무작위로 뽑으면 **지뢰밭에도 기습 웨이브가 나온다** —
+#          사용자 요구는 "기습 이벤트는" 이라고 특정했다.
+Title,Description,Kind,XpBonus,CurrencyBonus,TriggerRandomWave,AcceptLabel,DeclineLabel,ExchangeRate,ExchangeCap,MineCount,MineInterval,MineSpread,WaveId
+Abandoned Cache,You find a supply crate left behind by a fallen adventurer.,Reward,0,12,0,Take it,,3,40,3,2.6,7,
+Ancient Shrine,Touching the shrine floods you with forgotten knowledge.,Reward,40,0,0,Touch it,,3,40,3,2.6,7,
+Wandering Merchant,A merchant pays well for the trophies you carry.,Reward,0,20,0,Trade,,3,40,3,2.6,7,
+Ambush,The path was a trap. Enemies close in from every side.,Reward,0,0,1,Fight,,3,40,3,2.6,7,Ambush1
+Cursed Offering,The altar grants power but wakes what slept beneath it.,Reward,60,10,1,Accept the curse,Walk away,3,40,3,2.6,7,
+Exchange,A courier offers to carry your coin home. He takes a cut.,Exchange,0,0,0,Exchange,Keep my gold,3,40,3,2.6,7,
+Field Promotion,An old captain watches you fight. He does not need an altar to name a rank.,FieldPromotion,0,0,0,Accept the rank,Decline,3,40,3,2.6,7,
+Minefield,The ground here remembers an older war. It still goes off.,Minefield,0,0,0,Cross it,,3,40,3,2.0,7,

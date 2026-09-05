@@ -25,6 +25,12 @@
 #   ⚠️ 시간창이나 MaxAlive 때문에 소환 수가 줄면 KillTarget 을 영영 못 채운다.
 #      그래서 보스 웨이브는 시간창 안에 마리수가 다 들어가도록 맞춰 두었고(12x4=48<50, 6x8=48<53-5),
 #      그래도 막히지 않게 타이머를 넉넉히 켜 둔다.
+# Ambush1 (D76 · 사용자 요구 9) — "전투 시간은 짧되 시작시 전맵 테두리에서 몹들 빽빽히"
+#   SurvivalTime 35 (노말 60~90 의 절반 이하) · 100마리를 0~8초에 ~Ring 으로 쏟는다.
+#   🔴 Demon 을 뺐다 — 원거리라 테두리에 서서 쏘기만 하면 '빽빽히 몰려온다' 가 안 된다.
+#   🔴 MaxAlive 110 — 층 배율이 곱해진다(9층 x2.53 = 278). 천장 360 · 성능 위험선 400 아래.
+#   ⚠️ Events.csv 의 Ambush 행이 WaveId=Ambush1 로 이 웨이브를 지목한다.
+#      SceneWiring 의 WaveManager,eventWaves 에도 있어야 FindWave 가 찾는다.
 Id,UseTimerClear,SurvivalTime,UseKillClear,KillTarget,SpawnRadius,MaxAlive,Spawns,EliteOverride,BossOverride,EliteCount,EliteTime,BossTime
 Normal1,1,60,0,0,20,60,Slime*30@2:0-60|Goblin*36@1.4:12-60~Squad,,,1,40,2
 Normal2,1,75,0,0,20,80,Goblin*30@2:0-62|Zombie*36@1.6:10-72|Wolf*16@2.5:35-75~Ring,,,1,40,2
@@ -32,3 +38,4 @@ Normal3,1,90,0,0,20,110,Zombie*36@2:0-74|Wolf*24@2.2:15-70|Demon*10@4:30-72|Gobl
 Elite1,1,90,0,0,20,110,Wolf*24@2.2:0-55~Ring|Zombie*30@2:8-70|Demon*12@3.5:25-72,Demon,,2,45,2
 Elite2,1,100,0,0,20,130,Zombie*32@2:0-66|Demon*16@3:12-62~Squad|Wolf*24@2.2:30-85,Ogre,,2,50,2
 Boss1,1,240,1,19,22,90,Zombie*12@4:0-50|Demon*6@8:5-53,,Bonecaller,1,40,3
+Ambush1,1,35,0,0,20,110,Slime*30@0.18:0-6~Ring|Goblin*30@0.18:0-6~Ring|Zombie*24@0.25:0-7~Ring|Wolf*16@0.35:1-8~Ring,,,1,40,3

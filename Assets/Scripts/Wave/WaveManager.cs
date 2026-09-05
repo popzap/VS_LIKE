@@ -190,7 +190,34 @@ public class WaveManager : MonoBehaviour
 
     // ── Public API ───────────────────────────────────────────────
 
-    public void StartWave(StageNode node)
+    /// <summary>
+    /// 이름으로 웨이브를 찾는다 (D76). 못 찾으면 <c>null</c> — 부르는 쪽이 기본 선택으로 떨어진다.
+    ///
+    /// <para>🔑 배선된 목록에서만 찾는다. <c>AssetDatabase</c> 는 빌드에 없고,
+    /// 여기 없는 웨이브는 <b>게임에 안 나오는 웨이브</b>다 (<see cref="CollectEnemies"/> 와 같은 원칙).</para>
+    /// </summary>
+    public WaveData FindWave(string id)
+    {
+        if (string.IsNullOrEmpty(id)) return null;
+
+        WaveData Search(WaveData[] pool)
+        {
+            if (pool == null) return null;
+            foreach (var w in pool)
+                if (w != null && w.name == id) return w;
+            return null;
+        }
+
+        return Search(eventWaves) ?? Search(normalWaves) ?? Search(eliteWaves)
+            ?? (bossWave != null && bossWave.name == id ? bossWave : null);
+    }
+
+    /// <param name="overrideWave">
+    /// 이 웨이브로 강제한다 (D76 · 이벤트가 자기 전투를 고를 때). <c>null</c> 이면 노드 종류로 정한다.
+    /// 🔴 <b>기습만 빽빽하게</b> 라는 요구를 만족하려면 이 창구가 필요하다 —
+    /// <c>eventWaves</c> 에 넣고 무작위로 뽑으면 <b>지뢰밭에도 100마리가 쏟아진다.</b>
+    /// </param>
+    public void StartWave(StageNode node, WaveData overrideWave = null)
     {
         _currentNode = node;
         _waveActive  = true;
@@ -206,7 +233,7 @@ public class WaveManager : MonoBehaviour
 
         // 🔴 Event 분기가 없으면 이벤트 전투가 노말로 떨어진다 (D37).
         //    eventWaves 가 비어 있으면 노말로 되돌아간다 — 조용히 안 도는 것보다 낫다.
-        _currentWaveData = node.StageType switch
+        _currentWaveData = overrideWave != null ? overrideWave : node.StageType switch
         {
             StageType.Elite => eliteWaves[Random.Range(0, eliteWaves.Length)],
             StageType.Boss  => bossWave,

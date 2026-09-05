@@ -38,6 +38,10 @@ public class EventManager : MonoBehaviour
         [TextArea] public string Description;
         public EventKind Kind = EventKind.Reward;
 
+        [Tooltip("이 이벤트의 전투에 쓸 웨이브 Id (D76). 비우면 노드 종류로 정한다. "
+               + "🔴 eventWaves 에 넣고 무작위로 뽑으면 지뢰밭에도 기습 웨이브가 나온다")]
+        public string WaveId;
+
         [Header("Reward")]
         public int  XpBonus;
         public int  CurrencyBonus;
@@ -194,8 +198,17 @@ public class EventManager : MonoBehaviour
 
     private void StartEventWave()
     {
+        var wm = GameManager.Instance.WaveManager;
+
+        // 🔑 이벤트가 자기 전투를 고른다 (D76). 못 찾으면 null 이라 예전처럼 노드 종류로 간다 —
+        //    CSV 에 오타가 나도 전투가 통째로 안 도는 일은 없다.
+        var forced = Current != null ? wm.FindWave(Current.WaveId) : null;
+        if (Current != null && !string.IsNullOrEmpty(Current.WaveId) && forced == null)
+            Debug.LogWarning($"[Event] '{Current.Title}' 의 WaveId '{Current.WaveId}' 를 못 찾았다 — "
+                           + "SceneWiring.csv 의 WaveManager,eventWaves 에 배선했는지 확인할 것");
+
         // 상태 전환을 빠뜨리면 Event 상태로 남아 HUD 도 맵도 표시되지 않는다.
-        GameManager.Instance.WaveManager.StartWave(_node);
+        wm.StartWave(_node, forced);
         GameManager.Instance.ChangeState(GameState.Wave);
     }
 

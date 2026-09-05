@@ -26909,6 +26909,10 @@ PrefabInstance:
       value: 2
       objectReference: {fileID: 0}
     - target: {fileID: 5897929191394594014, guid: 3dec23194ba32e048855858b514f07fe, type: 3}
+      propertyPath: eventWaves.Array.size
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5897929191394594014, guid: 3dec23194ba32e048855858b514f07fe, type: 3}
       propertyPath: normalWaves.Array.size
       value: 3
       objectReference: {fileID: 0}
@@ -26920,6 +26924,10 @@ PrefabInstance:
       propertyPath: 'eliteWaves.Array.data[1]'
       value: 
       objectReference: {fileID: 11400000, guid: e8255f95586a80b48875610cb40554fb, type: 2}
+    - target: {fileID: 5897929191394594014, guid: 3dec23194ba32e048855858b514f07fe, type: 3}
+      propertyPath: 'eventWaves.Array.data[0]'
+      value: 
+      objectReference: {fileID: 11400000, guid: 8c1f30b08c869a843a4d157f03216048, type: 2}
     - target: {fileID: 5897929191394594014, guid: 3dec23194ba32e048855858b514f07fe, type: 3}
       propertyPath: 'normalWaves.Array.data[0]'
       value: 
@@ -27108,6 +27116,10 @@ PrefabInstance:
     - target: {fileID: 2579906240473962077, guid: 4b264a39eaba2d34facb5a072a1b0f9d, type: 3}
       propertyPath: events.Array.data[7].Title
       value: Minefield
+      objectReference: {fileID: 0}
+    - target: {fileID: 2579906240473962077, guid: 4b264a39eaba2d34facb5a072a1b0f9d, type: 3}
+      propertyPath: events.Array.data[3].WaveId
+      value: Ambush1
       objectReference: {fileID: 0}
     - target: {fileID: 2579906240473962077, guid: 4b264a39eaba2d34facb5a072a1b0f9d, type: 3}
       propertyPath: events.Array.data[1].XpBonus

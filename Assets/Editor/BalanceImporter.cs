@@ -748,6 +748,7 @@ public static class BalanceImporter
             el.FindPropertyRelative("MineCount").intValue      = CsvRow.Int  (row, "MineCount", 3);
             el.FindPropertyRelative("MineInterval").floatValue = CsvRow.Float(row, "MineInterval", 2.6f);
             el.FindPropertyRelative("MineSpread").floatValue   = CsvRow.Float(row, "MineSpread", 7f);
+            el.FindPropertyRelative("WaveId").stringValue     = CsvRow.Str  (row, "WaveId");   // D76
 
             // 선택형인데 거절 문구가 없으면 선택이 아니다 — 값으로 만들 수 있는 실수라 잡는다.
             if (kind != EventManager.EventKind.Reward
