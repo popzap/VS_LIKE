@@ -2265,8 +2265,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 0, y: 1}
-  m_AnchoredPosition: {x: 100, y: -136}
-  m_SizeDelta: {x: 500, y: 40}
+  m_AnchoredPosition: {x: 100, y: -144}
+  m_SizeDelta: {x: 500, y: 36}
   m_Pivot: {x: 0, y: 1}
 --- !u!114 &133540967
 MonoBehaviour:
@@ -2655,7 +2655,7 @@ RectTransform:
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 0, y: 1}
   m_AnchoredPosition: {x: 100, y: -92}
-  m_SizeDelta: {x: 500, y: 40}
+  m_SizeDelta: {x: 500, y: 36}
   m_Pivot: {x: 0, y: 1}
 --- !u!114 &167606555
 MonoBehaviour:
@@ -4533,8 +4533,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: 230, y: 0}
-  m_SizeDelta: {x: -580, y: -192}
+  m_AnchoredPosition: {x: 290, y: -5}
+  m_SizeDelta: {x: -720, y: -210}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &283479111
 CanvasRenderer:
@@ -12313,7 +12313,7 @@ RectTransform:
   m_AnchorMin: {x: 0.5, y: 1}
   m_AnchorMax: {x: 0.5, y: 1}
   m_AnchoredPosition: {x: 0, y: -30}
-  m_SizeDelta: {x: 840, y: 50}
+  m_SizeDelta: {x: 1120, y: 56}
   m_Pivot: {x: 0.5, y: 1}
 --- !u!114 &1031115196
 MonoBehaviour:
@@ -17229,8 +17229,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: -220, y: 0}
-  m_SizeDelta: {x: -560, y: -192}
+  m_AnchoredPosition: {x: -290, y: -5}
+  m_SizeDelta: {x: -720, y: -210}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1432466256
 MonoBehaviour:
@@ -17567,8 +17567,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0}
   m_AnchorMax: {x: 0.5, y: 0}
-  m_AnchoredPosition: {x: 0, y: 24}
-  m_SizeDelta: {x: 260, y: 56}
+  m_AnchoredPosition: {x: 0, y: 26}
+  m_SizeDelta: {x: 300, y: 60}
   m_Pivot: {x: 0.5, y: 0}
 --- !u!114 &1442681387
 MonoBehaviour:
@@ -18513,8 +18513,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 0, y: 1}
-  m_AnchoredPosition: {x: 100, y: -180}
-  m_SizeDelta: {x: 500, y: 40}
+  m_AnchoredPosition: {x: 100, y: -196}
+  m_SizeDelta: {x: 500, y: 36}
   m_Pivot: {x: 0, y: 1}
 --- !u!114 &1490701750
 MonoBehaviour:
@@ -22657,7 +22657,7 @@ RectTransform:
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
   m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 920, y: 900}
+  m_SizeDelta: {x: 1240, y: 1000}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1752681531
 MonoBehaviour:
@@ -29834,10 +29834,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c4e000f5363ab9447a920bb8c7273966, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::BossOffscreenArrowUI
-  edgeMargin: 56
-  arrowSize: 44
-  arrowColor: {r: 0.9, g: 0.24, b: 0.24, a: 0.92}
-  pulsePerSecond: 1.6
+  edgeMargin: 86
+  arrowSize: 96
+  arrowColor: {r: 1, g: 0.28, b: 0.22, a: 1}
+  pulsePerSecond: 2.4
   showBeyondDistance: 7
 --- !u!1001 &7383268970717228493
 PrefabInstance:

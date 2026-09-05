@@ -20,7 +20,7 @@ using UnityEngine.UI;
 public class HelpPanel : MonoBehaviour
 {
     // 🔴 컴파일 반영 확인용 (D27).
-    public const int Version = 3;   // 3 = 2단 배치 (D85) · 2 = 여백·제목 구분
+    public const int Version = 4;   // 4 = 넓힌 카드 + 글자 27 (D86) · 3 = 2단 배치 · 2 = 여백
 
     [Tooltip("왼쪽 단 — CONTROLS")]
     [SerializeField] private TextMeshProUGUI bodyText;
@@ -111,8 +111,10 @@ public class HelpPanel : MonoBehaviour
         t.text             = body;
         t.alignment        = TextAlignmentOptions.TopLeft;
         t.enableAutoSizing = false;
-        t.fontSize         = 21f;
-        t.lineSpacing      = 10f;    // "적당히 거리 두고"
+        // 🔴 <b>단이 520 으로 넓어졌으므로 글자를 키운다</b> (D86 · 사용자: *"글자 크기 늘리고 좌우로 박스 더 늘려서"*).
+        //    폭이 340 일 때 27 로 두면 줄이 자주 접혀 오히려 읽기 나빠진다 — 폭을 먼저 넓히고 키웠다.
+        t.fontSize         = 27f;
+        t.lineSpacing      = 12f;
         t.paragraphSpacing = 6f;
         t.overflowMode     = TextOverflowModes.Overflow;
         t.richText         = true;

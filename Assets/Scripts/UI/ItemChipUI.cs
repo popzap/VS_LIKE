@@ -36,6 +36,9 @@ public class ItemChipUI : MonoBehaviour
 
         if (icon != null)
         {
+            // 🔴 빈 칸으로 쓰였던 칩이 풀에서 돌아올 수 있다 — 9-슬라이스를 되돌린다 (D86).
+            icon.type = UnityEngine.UI.Image.Type.Simple;
+
             if (item.Icon != null)
             {
                 icon.sprite = item.Icon;
@@ -92,10 +95,58 @@ public class ItemChipUI : MonoBehaviour
     {
         if (icon != null)
         {
-            icon.sprite = null;
-            icon.color  = new Color(1f, 1f, 1f, 0.10f);   // 자리만 보이는 흐린 사각형
+            // 🔴 <b>스프라이트를 null 로 두면 흰 사각형이 통째로 칠해진다</b> (D86 · 사용자 요구).
+            //    Unity 의 Image 는 스프라이트가 없으면 흰 쿼드를 그린다 — 그게 "흰박스"였다.
+            //    ⇒ 테두리만 있는 스프라이트를 넣고 9-슬라이스로 늘린다.
+            icon.sprite = FrameSprite;
+            icon.type   = UnityEngine.UI.Image.Type.Sliced;
+            icon.color  = new Color(1f, 1f, 1f, 0.30f);   // 자리만 알려 주는 옅은 테두리
         }
         if (label != null) label.text = string.Empty;
         name = "Chip_Empty";
+    }
+
+    // ── 빈 칸 테두리 (D86) ───────────────────────────────────────
+
+    private static Sprite _frameSprite;
+
+    /// <summary>
+    /// <b>가운데가 뚫린 1px 테두리</b> 스프라이트. 애셋을 만들지 않는다 (D86).
+    ///
+    /// <para>🔑 8x8 텍스처의 <b>가장자리 1px 만 불투명</b>하게 칠하고 9-슬라이스 <c>border</c> 를
+    /// <c>(1,1,1,1)</c> 로 준다. 그러면 칸이 얼마로 늘어나도 <b>테두리는 항상 1px</b> 이다 —
+    /// 늘어나는 건 투명한 가운데뿐이다.</para>
+    ///
+    /// <para><see cref="BossSlam"/> 이 <c>Texture2D.whiteTexture</c> 로 사각형을 만든 것과 같은 수법인데,
+    /// 여기서는 <b>속이 비어야</b> 해서 텍스처를 직접 칠한다.</para>
+    /// </summary>
+    private static Sprite FrameSprite
+    {
+        get
+        {
+            if (_frameSprite != null) return _frameSprite;
+
+            const int N = 8;
+            var tex = new Texture2D(N, N, TextureFormat.RGBA32, false)
+            {
+                filterMode = FilterMode.Point,
+                wrapMode   = TextureWrapMode.Clamp,
+                name       = "ItemChipFrame"
+            };
+            var px = new Color32[N * N];
+            for (int y = 0; y < N; y++)
+                for (int x = 0; x < N; x++)
+                {
+                    bool edge = x == 0 || y == 0 || x == N - 1 || y == N - 1;
+                    px[y * N + x] = new Color32(255, 255, 255, (byte)(edge ? 255 : 0));
+                }
+            tex.SetPixels32(px);
+            tex.Apply();
+
+            _frameSprite = Sprite.Create(tex, new Rect(0f, 0f, N, N), new Vector2(0.5f, 0.5f),
+                                         N, 0, SpriteMeshType.FullRect, new Vector4(1f, 1f, 1f, 1f));
+            _frameSprite.name = "ItemChipFrame";
+            return _frameSprite;
+        }
     }
 }

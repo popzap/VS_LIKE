@@ -61,6 +61,8 @@ MonoBehaviour:
   refundText: {fileID: 4846763697286388043}
   removeButton: {fileID: 2129961289689437829}
   confirmOverlay: {fileID: 9186246773409315037}
+  confirmButton: {fileID: 7482494839774942799}
+  cancelButton: {fileID: 0}
 --- !u!1 &1554030008156025200
 GameObject:
   m_ObjectHideFlags: 0

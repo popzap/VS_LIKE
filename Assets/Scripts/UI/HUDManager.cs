@@ -242,7 +242,9 @@ public class HUDManager : MonoBehaviour
         { ItemCategory.Weapon, ItemCategory.Passive, ItemCategory.Building };
 
     /// <summary>HUD 줄에 쓸 칩 한 칸의 크기(px). 아래 주석의 계산이 이 값을 정한다.</summary>
-    private const float SlotChipSize = 44f;
+    /// 🔴 <b>줄 간격보다 작아야 한다</b> (D86). 44 였는데 줄 간격도 44 라 여백이 0 이었고,
+    /// 행 높이(40)보다도 커서 <b>위아래 줄로 삐져나왔다</b> — 사용자 판정이 *"빈 박스끼리 겹쳐"* 였다.
+    private const float SlotChipSize = 36f;
 
     /// <summary>
     /// 한 분류에 그릴 수 있는 최대 칸 수 — <b>안전망이다</b> (D83).
