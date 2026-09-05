@@ -54,6 +54,8 @@
 
 
 
+| CONTENT | `C46` | `Assets/Game/Sprites/Pickups/Swift.png.meta` · `REQ/DEV.md` | 2026-09-05 | `대기(REQ→DEV)` — **`Pickup_Swift` 배선 단독 요청**(요청-36·37 안에 두 번 적었는데 큰 요청에 묻혔다 — 🔑 **일의 크기와 요청의 크기를 맞춰야 한다**). 🔴 **요청을 쓰다 임포트 설정 오류를 찾았다** — `Swift.png.meta` 가 Unity **기본값**(`PPU 100`·Bilinear·Multiple·압축)이라 그대로 꽂았으면 **10.24유닛 = 20배 크기의 흐릿한 아이콘**이 떴다. 내 잘못인데 화면에선 *"이상한 그림을 줬다"* 로 보인다. ✅ 네 항목 다 고쳐 Haste 와 동일하게 맞췄다(0.500유닛). 🔑 **새 애셋은 `.meta` 까지가 납품물** — `C28`(걷기 PPU)·`C33`(9-slice border)에 이어 **세 번째**고, 앞의 둘은 *적어서* 막았는데 이번엔 **내 소유 경로라 고쳐서** 막았다. **적는 것보다 맞추는 게 싸다** → [`REQ/DEV.md`](REQ/DEV.md) **요청-38** · [`DONE/C46.md`](DONE/C46.md) |
+
 > 상태값: `진행중` · `대기(REQ→DEV)` · `검증대기` · `막힘(B1)`
 > 끝나면 **자기 줄을 지운다.**
 >
@@ -538,7 +540,7 @@ CONTENT 는 **읽기만** 한다 — 내 요청이 언제 처리될지 가늠하
 | DEV | `D76` | `Assets/Scripts/{Wave/WaveManager,Meta/EventManager}.cs` · `Assets/Editor/BalanceImporter.cs` · `Assets/Game/Balance/{Waves,Events,SceneWiring}.csv` · `Assets/Game/WaveData/Ambush1.asset`(신규) · `Assets/Scenes/SampleScene.unity` · `Docs/**` | 2026-09-05 | `완료` — 기습 이벤트(사용자 요구 9) · 🟢 **플레이테스트 24건 전부 닫힘**. 🔴 `eventWaves` 배선이 **아예 없어** 기습이 그냥 노말이었다. `Ambush1` 신설(35s · 100마리를 8초에 · 전부 `~Ring` · **Demon 제외**). 🔑 `~Ring`(D50)이 *"전맵 테두리에서"* 를 그대로 만족 — 새 패턴 불필요. 🔴 *"기습만"* 때문에 `GameEvent.WaveId` + `StartWave(node, overrideWave)` 신설(무작위로 뽑으면 **지뢰밭에도 100마리**가 쏟아진다). 판정 **6/6** — 4분면 **18/20/20/18** · 평균 거리 17.2. 🔴 또 *"이미 도착한 적을 쟀다"*(D51 과 같은 함정) → `timeScale 0.25` 로 재측정 |
 | DEV | `D77` | `Docs/PLAYTEST_2.md`(신규) · `Docs/{SETUP_STATUS,TODO}.md` (문서만 · 코드 변경 0) | 2026-09-05 | `완료` — 세션 정리. `SETUP_STATUS` 2-103 에 **D63~D76 요약**(작업 14개 · 교훈 4개 · **새 애셋 2개뿐**), `PLAYTEST_2.md` 신설(**항목 56개** · 사용자가 채우는 문서). 🔴 §1 은 **DEV 가 볼 수단이 아예 없는 것들** — `ScreenSpaceOverlay` 캔버스는 렌더 텍스처로 안 잡힌다(승급 연출 3연 · 오라 · 이동 기울기 · 맵 · 보스 화살표 · 클리어 화면 · Dev 패널 렌더링). §3 에 **결정 2건**(`B13` 처리 방식 · 마감까지 무엇을 더 할지) |
 | DEV | `D78` | `Assets/Scripts/Stage/GroundTiler.cs` · `Assets/Scenes/SampleScene.unity` · `Docs/**` | 2026-09-05 | `완료` — 🟢 **요청-35 처리**(이틀째 미처리였다). CONTENT 가 `C44` 에서 짚은 대로 바닥이 실제로 깨져 있었다. **어긋난 자리가 둘이었다** — ① 씬 `Grid.Cell Size` 1.0 → **0.5**(타일 0.500u 와 일치 · 칸 채움률 **25 % → 100 %**) ② `GroundTiler.EnsureBuffer` 가 **월드 유닛을 칸 수로 그대로** 썼다 → 셀 크기로 나눈다(버퍼 20.5x12.0u → **39.0x22.0u** · 화면 36.8x20.0u). 🔑 **②는 ①을 고쳐야 드러난다** — 셀이 1.0 인 동안은 두 값이 우연히 같았다. ①만 고쳤으면 가장자리가 검게 남았다. 🔴 **CONTENT 의 PPU 를 지적하는 요청을 쓰다가 내 전제가 틀린 걸 찾아 안 보냈다** — 원본이 256px 이 아니라 **1024px** 이고 `maxTextureSize` 256 이 ¼ 로 줄여 `sprite.pixelsPerUnit` 이 2048→**512** 로 따라 내려간다. **임포터 2048 은 처음부터 맞았다.** `.meta` 한 줄만 읽고 플랫폼 오버라이드 블록을 안 본 탓 |
-| CONTENT | `C46` |
+| CONTENT | `C47` |
 | 버그(공용) | `B13` |
 
 > 번호를 쓸 때 이 표를 **즉시** 올린다. 선점이 곧 예약이다.
