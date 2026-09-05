@@ -33,6 +33,20 @@ public class StageMapManager : MonoBehaviour
     [SerializeField] private float weightShop   = 0.15f;
     [SerializeField] private float weightEvent  = 0.15f;
 
+    // ── 배치 규칙 (D70 · 사용자 요구 5) ──────────────────────────
+    // 🔴 수치는 Economy.csv 의 StageMapManager 행이 들고 있다. 여기 기본값은 자리표시다.
+    [Header("배치 규칙 — 값은 Economy.csv 가 덮는다")]
+    [Tooltip("엘리트가 나올 수 있는 가장 얕은 층. 2 면 0·1층에는 안 나온다. "
+           + "레벨 2~3 짜리가 엘리트를 만나면 그건 갈림길이 아니라 벽이다.")]
+    [SerializeField] private int eliteMinLayer = 2;
+
+    [Tooltip("상점을 이만큼 못 만나면 다음 층에 하나를 강제한다. "
+           + "🔴 D61 이 9층을 도는 동안 상점을 0회 만났다 — 확률만으로는 이게 막히지 않는다.")]
+    [SerializeField] private int shopPityLayers = 4;
+
+    /// <summary>상점이 마지막으로 나온 층. 연속 금지·자비 규칙이 같이 본다.</summary>
+    private int _lastShopLayer;
+
     public List<List<StageNode>> Layers { get; private set; } = new();
     public StageNode              CurrentNode { get; private set; }
 
@@ -41,6 +55,14 @@ public class StageMapManager : MonoBehaviour
     public void GenerateMap()
     {
         Layers.Clear();
+
+        // 🔴 <b>0 으로 시작한다 — "0층에 상점이 있었다고 친다".</b>
+        //    처음엔 -shopPityLayers 로 두었는데("충분히 오래 못 만났다"), 그러면 1층이
+        //    바로 자비 규칙에 걸려 <b>400판 중 400판이 1층 상점</b>이 됐다.
+        //    매판 같은 자리에 있으면 그건 갈림길이 아니라 정해진 길이고,
+        //    1층은 아직 돈이 거의 없어 상점의 값어치도 낮다.
+        //    0 으로 두면 ① 연속 금지가 1층을 막고, 첫 강제는 shopPityLayers 층에서 온다.
+        _lastShopLayer = 0;
 
         for (int layer = 0; layer < totalLayers; layer++)
         {
@@ -54,11 +76,15 @@ public class StageMapManager : MonoBehaviour
                 {
                     Layer        = layer,
                     IndexInLayer = i,
-                    StageType    = isBossLayer ? StageType.Boss : RollStageType(layer),
+                    StageType    = StageType.Normal,   // 실제 종류는 아래에서 층 단위로 정한다
                     MapPosition  = new Vector2(layer * xSpacing, (i - nodeCount * 0.5f) * ySpacing)
                 };
                 layerList.Add(node);
             }
+
+            if (isBossLayer) foreach (var n in layerList) n.StageType = StageType.Boss;
+            else             AssignLayerTypes(layerList, layer, totalLayers);
+
             Layers.Add(layerList);
         }
 
@@ -101,19 +127,90 @@ public class StageMapManager : MonoBehaviour
         }
     }
 
-    private StageType RollStageType(int layer)
+    /// <summary>
+    /// 한 층의 노드 종류를 <b>같이</b> 정한다 (D70 · 사용자 요구 5:
+    /// *"shop 2연속으로 안되거나 타당성있게 노드들이 배치되게"*).
+    ///
+    /// <para>🔑 <b>노드 하나씩 굴리면 규칙을 걸 수 없다.</b> "이 층에 상점이 있나",
+    /// "다 같은 종류인가" 는 <b>층을 다 보고서야</b> 답할 수 있는 질문이다.
+    /// 그래서 굴림의 단위를 노드에서 <b>층</b>으로 올렸다.</para>
+    ///
+    /// <para>규칙</para>
+    /// <list type="number">
+    ///   <item><b>상점은 연속한 두 층에 못 나온다</b> — 사용자 요구 그대로.</item>
+    ///   <item><b>자비</b>: <see cref="shopPityLayers"/> 층 동안 못 만났으면 하나를 강제한다.
+    ///         🔴 <c>D61</c> 이 9층을 도는 동안 상점을 <b>0회</b> 만났다
+    ///         (<c>weightShop 0.15</c> 의 기대는 1.35회다) — 확률만으로는 안 막힌다.</item>
+    ///   <item><b>엘리트는 <see cref="eliteMinLayer"/> 층부터.</b> 레벨 2~3 이 엘리트를 만나면
+    ///         그건 갈림길이 아니라 벽이다.</item>
+    ///   <item><b>한 층이 전부 같은 특수 노드가 되지 않는다.</b> 상점 셋뿐인 층은
+    ///         <b>갈림길이 아니다</b> — 고를 게 없으면 맵이 있으나 마나다.</item>
+    ///   <item><b>보스 직전 층은 상점을 선호한다</b> — 마지막으로 채비할 자리가 필요하다.
+    ///         연속 금지(①)와 부딪히면 <b>①이 이긴다.</b></item>
+    /// </list>
+    /// </summary>
+    private void AssignLayerTypes(List<StageNode> layerList, int layer, int total)
+    {
+        // 🔴 <b>첫 층은 예외 없이 노말이다.</b> 처음엔 이 줄이 없어서 자비 규칙(②)이
+        //    0층을 상점으로 덮어썼다 — 300판 중 <b>300판</b>이 그랬다.
+        //    `RollStageType` 이 0층에 Normal 을 돌려주는 것만으로는 부족했다.
+        //    그 뒤에 오는 강제 규칙이 결과를 갈아 끼우기 때문이다.
+        if (layer == 0)
+        {
+            foreach (var n in layerList) n.StageType = StageType.Normal;
+            return;
+        }
+
+        int  sinceShop   = layer - _lastShopLayer;
+        bool shopAllowed = sinceShop >= 2;                       // ① 연속 금지
+        bool preBoss     = layer == total - 2;                   // ⑤ 보스 직전
+        bool shopForced  = shopAllowed && (sinceShop >= Mathf.Max(1, shopPityLayers) || preBoss);
+
+        for (int i = 0; i < layerList.Count; i++)
+            layerList[i].StageType = RollStageType(layer, shopAllowed);
+
+        // ② 자비 / ⑤ 보스 직전 — 아직 상점이 없으면 한 칸을 상점으로 바꾼다.
+        if (shopForced && !layerList.Exists(n => n.StageType == StageType.Shop))
+            layerList[Random.Range(0, layerList.Count)].StageType = StageType.Shop;
+
+        // ④ 전부 같은 특수 노드면 한 칸을 노말로 되돌린다. 노드가 하나뿐인 층은 갈림길이
+        //    아니므로 규칙을 적용하지 않는다 — 그 층은 원래 선택지가 없다.
+        if (layerList.Count >= 2)
+        {
+            var first = layerList[0].StageType;
+            if (first != StageType.Normal && layerList.TrueForAll(n => n.StageType == first))
+                layerList[Random.Range(0, layerList.Count)].StageType = StageType.Normal;
+        }
+
+        if (layerList.Exists(n => n.StageType == StageType.Shop))
+            _lastShopLayer = layer;
+    }
+
+    private StageType RollStageType(int layer, bool shopAllowed)
     {
         // 첫 층은 항상 노말
         if (layer == 0) return StageType.Normal;
-        // 두 층마다 상점이 최소 1개 보장 (단순 보정)
-        float r = Random.value;
-        float cumulative = 0;
 
-        cumulative += weightNormal; if (r < cumulative) return StageType.Normal;
-        cumulative += weightElite;  if (r < cumulative) return StageType.Elite;
-        cumulative += weightShop;   if (r < cumulative) return StageType.Shop;
-        cumulative += weightEvent;  if (r < cumulative) return StageType.Event;
-        return StageType.Normal;    // 가중치 합이 1 미만일 때의 폴백
+        bool eliteAllowed = layer >= eliteMinLayer;               // ③
+
+        // 🔑 막힌 종류의 가중치를 0 으로 만들고 남은 것끼리 다시 정규화한다.
+        //    빼기만 하고 정규화를 안 하면 그만큼이 통째로 폴백(노말)으로 흘러
+        //    "엘리트를 막았더니 이벤트도 줄었다" 가 된다.
+        float wNormal = weightNormal;
+        float wElite  = eliteAllowed ? weightElite : 0f;
+        float wShop   = shopAllowed  ? weightShop  : 0f;
+        float wEvent  = weightEvent;
+
+        float sum = wNormal + wElite + wShop + wEvent;
+        if (sum <= 0f) return StageType.Normal;
+
+        float r = Random.value * sum;
+        float c = 0f;
+
+        c += wNormal; if (r < c) return StageType.Normal;
+        c += wElite;  if (r < c) return StageType.Elite;
+        c += wShop;   if (r < c) return StageType.Shop;
+        return StageType.Event;
     }
 
     // ── 진행 ────────────────────────────────────────────────────
