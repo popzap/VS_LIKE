@@ -583,6 +583,13 @@ public class EnemyBase : MonoBehaviour
 
         if (Visual != null) Visual.Flash();
 
+        // 🔑 raw 가 아니라 방어를 뺀 dmg 를 넘긴다 (D66) — 클리어 화면이 보여 주는 건
+        //    "얼마를 쐈나" 가 아니라 "얼마가 들어갔나" 다.
+        //    🔴 WaveManager 를 필드에 캐시하지 않는다 (I-8/I-38): 이 스크립트의 Awake 는
+        //       GameManager.Start 보다 먼저 돈다.
+        if (GameManager.Instance != null && GameManager.Instance.WaveManager != null)
+            GameManager.Instance.WaveManager.ReportDamage(dmg);
+
         // 데미지 팝업 (이벤트로 분리하거나 DamagePopupManager 사용)
         DamagePopupManager.Instance?.Show(transform.position, dmg);
 

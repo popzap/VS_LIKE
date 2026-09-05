@@ -28031,6 +28031,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 374751847071957136, guid: dd984b45809b1964d8196ddc77259acd, type: 3}
       insertIndex: -1
       addedObject: {fileID: 7341055525939409782}
+    - targetCorrespondingSourceObject: {fileID: 374751847071957136, guid: dd984b45809b1964d8196ddc77259acd, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 7341055525939409789}
   m_SourcePrefab: {fileID: 100100000, guid: dd984b45809b1964d8196ddc77259acd, type: 3}
 --- !u!224 &7341055525939409760 stripped
 RectTransform:
@@ -28218,6 +28221,22 @@ MonoBehaviour:
   declineButton: {fileID: 1125964750}
   acceptLabel: {fileID: 357445537}
   declineLabel: {fileID: 829236290}
+--- !u!114 &7341055525939409789
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2017430634}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c4e000f5363ab9447a920bb8c7273966, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::BossOffscreenArrowUI
+  edgeMargin: 56
+  arrowSize: 44
+  arrowColor: {r: 0.9, g: 0.24, b: 0.24, a: 0.92}
+  pulsePerSecond: 1.6
 --- !u!1001 &7383268970717228493
 PrefabInstance:
   m_ObjectHideFlags: 0

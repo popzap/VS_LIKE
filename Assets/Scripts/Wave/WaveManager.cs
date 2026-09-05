@@ -104,6 +104,24 @@ public class WaveManager : MonoBehaviour
     public float TotalElapsedTime  { get; private set; }
 
     /// <summary>
+    /// 이번 런에서 <b>한 방에 넣은 가장 큰 피해</b> (D66 · 사용자 요구 15).
+    ///
+    /// <para>클리어 화면이 킬·시간·골드뿐이라 *"내가 뭘 했는지"* 가 안 남았다.
+    /// 이 숫자 하나가 <b>빌드가 얼마나 세졌는지</b>를 말해 준다.</para>
+    ///
+    /// <para>🔑 다른 누적 통계와 같이 <b>리셋하지 않는다</b> — 런을 다시 시작하면
+    /// 씬을 통째로 다시 읽으므로(<c>GameManager.ReloadScene</c>) 저절로 0 이다.
+    /// 여기서 따로 지우면 리셋 지점이 두 곳이 되어 어긋난다.</para>
+    /// </summary>
+    public float BiggestHit { get; private set; }
+
+    /// <summary><see cref="EnemyBase.TakeDamage"/> 가 <b>방어를 뺀 실제 피해</b>로 부른다.</summary>
+    public void ReportDamage(float dealt)
+    {
+        if (dealt > BiggestHit) BiggestHit = dealt;
+    }
+
+    /// <summary>
     /// 현재 웨이브 클리어까지 남은 시간 (초). 시간 클리어가 아닌 웨이브면 <c>-1</c>.
     /// <para>HUD 가 매 프레임 폴링한다. <c>OnTimerUpdated</c> 이벤트도 있지만, 구독은
     /// <c>GameManager.Start()</c> 가 참조를 채우기 전에 일어날 수 있어(I-8·I-38 과 같은
