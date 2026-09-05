@@ -279,12 +279,51 @@ public class DevPanel : MonoBehaviour
         GUI.enabled = inWave;
         if (GUILayout.Button("Clear Node", GUILayout.Width(110f)))
             wm.DevForceClearWave();
+
+        // 🔑 보스 소환도 같은 조건이다 — 사이에서 GUI.enabled 를 되돌리면 버튼이 눌리는 것처럼 보인다.
+        if (GUILayout.Button("Spawn Boss", GUILayout.Width(110f)))
+            wm.DevSpawnBoss();
         GUI.enabled = prev;
 
         GUILayout.Label(inWave
             ? $"  remaining {wm.WaveRemainingTime:0}s"
             : $"  (not in a wave - state {gm.CurrentState})");
 
+        GUILayout.EndHorizontal();
+
+        DrawTimerRow(wm);
+    }
+
+    /// <summary>
+    /// 남은 시간 조절 줄 (D64).
+    ///
+    /// <para>🔴 <b>타이머 웨이브일 때만 켠다.</b> 킬 목표 웨이브는 타이머가 아예 안 도는데
+    /// 여기서 값을 넣으면 HUD 에 없던 숫자가 생기고 클리어 조건과 어긋난다 —
+    /// <c>WaveManager</c> 쪽에서도 한 번 더 거절하지만, <b>못 누르게 하는 게 먼저다.</b></para>
+    ///
+    /// <para>슬라이더가 아니라 버튼으로 둔다 — 슬라이더는 드래그하는 동안 매 프레임
+    /// 값을 밀어 넣어서 <b>내가 손을 뗄 때까지 시간이 안 흐른다.</b></para>
+    /// </summary>
+    private void DrawTimerRow(WaveManager wm)
+    {
+        bool timed = wm.HasWaveTimer;
+
+        GUILayout.BeginHorizontal();
+        GUILayout.Label(timed ? "Wave timer" : "Wave timer (kill-target wave)", GUILayout.Width(240f));
+
+        bool prev = GUI.enabled;
+        GUI.enabled = timed;
+
+        if (GUILayout.Button("-30s", GUILayout.Width(60f)))
+            wm.DevSetRemainingTime(wm.WaveRemainingTime - 30f);
+        if (GUILayout.Button("-10s", GUILayout.Width(60f)))
+            wm.DevSetRemainingTime(wm.WaveRemainingTime - 10f);
+        if (GUILayout.Button("+30s", GUILayout.Width(60f)))
+            wm.DevSetRemainingTime(wm.WaveRemainingTime + 30f);
+        if (GUILayout.Button("5s left", GUILayout.Width(70f)))
+            wm.DevSetRemainingTime(5f);
+
+        GUI.enabled = prev;
         GUILayout.EndHorizontal();
     }
 

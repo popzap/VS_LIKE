@@ -9,6 +9,9 @@ using UnityEngine;
 /// </summary>
 public class WaveManager : MonoBehaviour
 {
+    /// <summary>컴파일 반영 확인용 (D27). 새 심볼을 넣을 때마다 올린다.</summary>
+    public const int Version = 3;
+
     [Header("참조")]
     [SerializeField] private WaveData[]  normalWaves;   // 노말 웨이브 풀
     [SerializeField] private WaveData[]  eliteWaves;
@@ -86,6 +89,13 @@ public class WaveManager : MonoBehaviour
 
     private readonly List<Coroutine> _routines = new();
     private Coroutine   _timerRoutine;
+
+    /// <summary>
+    /// 타이머 웨이브의 남은 초. <b>지역 변수가 아니라 필드다</b> (D64) —
+    /// 개발용 시간 조절(<c>DevSetRemainingTime</c>)이 코루틴 밖에서 이 값을 만져야 한다.
+    /// <see cref="WaveRemainingTime"/> 는 이걸 그대로 비추는 읽기 전용 창이다.
+    /// </summary>
+    private float       _timerRemaining;
 
     // ── 런 누적 통계 (상점 NPC 패널 등에서 참조) ────────────────
     /// <summary>런 전체 누적 처치 수.</summary>
@@ -596,15 +606,15 @@ public class WaveManager : MonoBehaviour
 
     private IEnumerator TimerRoutine()
     {
-        float remaining = _currentWaveData.SurvivalTime;
-        while (remaining > 0 && _waveActive)
+        _timerRemaining = _currentWaveData.SurvivalTime;
+        while (_timerRemaining > 0 && _waveActive)
         {
             if (!_wavePaused)
             {
-                remaining -= Time.deltaTime;
+                _timerRemaining  -= Time.deltaTime;
                 TotalElapsedTime += Time.deltaTime;
-                WaveRemainingTime = Mathf.Max(0f, remaining);
-                OnTimerUpdated?.Invoke(remaining);
+                WaveRemainingTime = Mathf.Max(0f, _timerRemaining);
+                OnTimerUpdated?.Invoke(_timerRemaining);
             }
             yield return null;
         }
@@ -741,6 +751,69 @@ public class WaveManager : MonoBehaviour
     }
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
+    /// <summary>
+    /// 개발용 — <b>보스만 지금 부른다</b> (D64). 웨이브는 그대로 돈다.
+    ///
+    /// <para>사용자 요구: *"보스 소환 기능만 추가해서 따로 확인만 할 수 있게"*.
+    /// <c>Clear Node</c> 와 <b>엮지 않는다</b> — 클리어는 넘어가는 일이고 이건 보는 일이다.</para>
+    ///
+    /// <para>🔑 정규 소환 경로(<see cref="OverrideSpawnRoutine"/>)와 <b>같은 세 줄</b>을 쓴다 —
+    /// <c>SpawnEnemy(isBoss:true)</c> → 등장음 → <see cref="AttachBossBrain"/>.
+    /// 하나라도 빼면 <b>패턴 없는 큰 잡몹</b>이 나와서 확인이 의미가 없어진다.</para>
+    ///
+    /// <para>보스 노드가 아니면 <c>_currentWaveData.BossOverride</c> 가 비어 있으므로
+    /// <b><c>bossWave</c> 의 것으로 대신</b>한다 — 1층에서도 보스를 볼 수 있어야 한다.</para>
+    /// </summary>
+    public void DevSpawnBoss()
+    {
+        if (!_waveActive) return;
+
+        EnemyData data = null;
+        if (_currentWaveData != null) data = _currentWaveData.BossOverride;
+        if (data == null && bossWave != null) data = bossWave.BossOverride;
+
+        if (data == null)
+        {
+            Debug.LogWarning("[WaveManager] DevPanel 보스 소환 실패 — BossOverride 가 비어 있다. "
+                           + "Waves.csv 의 보스 행과 SceneWiring 을 확인할 것");
+            return;
+        }
+
+        var boss = SpawnEnemy(data, isBoss: true);
+        AudioManager.Play(SfxId.BossAppear);
+        AttachBossBrain(boss, data);
+        Debug.Log($"[WaveManager] DevPanel 보스 소환 — {data.name}");
+    }
+
+    /// <summary>
+    /// 개발용 — 남은 웨이브 시간을 바꾼다 (D64).
+    ///
+    /// <para>🔴 <b>타이머 웨이브에만 먹는다.</b> 킬 목표 웨이브는 <c>TimerRoutine</c> 자체가
+    /// 안 돌아서 <see cref="WaveRemainingTime"/> 이 <c>-1</c> 이다 — 여기서 값을 넣으면
+    /// HUD 에 없던 타이머가 생기고 클리어 조건과도 어긋난다. 그래서 <b>거절하고 알린다.</b></para>
+    ///
+    /// <para><c>0</c> 이하로 내리면 코루틴이 다음 프레임에 <c>ClearWave</c> 로 간다 —
+    /// 그게 정상 종료 경로라 따로 손대지 않는다.</para>
+    /// </summary>
+    public void DevSetRemainingTime(float seconds)
+    {
+        if (!_waveActive) return;
+
+        if (_timerRoutine == null)
+        {
+            Debug.LogWarning("[WaveManager] DevPanel 시간 조절 불가 — 이 웨이브는 킬 목표라 타이머가 없다");
+            return;
+        }
+
+        _timerRemaining   = Mathf.Max(0f, seconds);
+        WaveRemainingTime = _timerRemaining;
+        OnTimerUpdated?.Invoke(_timerRemaining);
+        Debug.Log($"[WaveManager] DevPanel 남은 시간 → {_timerRemaining:0.0}s");
+    }
+
+    /// <summary>지금 웨이브가 타이머로 도는지 (D64). DevPanel 이 버튼을 켤지 정할 때 본다.</summary>
+    public bool HasWaveTimer => _waveActive && _timerRoutine != null;
+
     /// <summary>
     /// 개발용 — 지금 웨이브를 <b>즉시 클리어 처리</b>한다 (D63). <see cref="DevPanel"/> 만 부른다.
     ///
