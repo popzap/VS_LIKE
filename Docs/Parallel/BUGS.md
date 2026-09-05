@@ -376,6 +376,51 @@ Village 재해금 후 Z 순서 = Farm > Bombard > Village > Turret   (기대값�
 
 ---
 
+## B13 — 🟡 **`base`/`meta` 의 `Luck` 이 최종 스탯에 안 들어간다** (미확인 · 코드로 확정)
+
+**증상(예측):** `Economy.csv` 에 `PlayerStats,baseStats.Luck` 행을 넣거나
+메타 업그레이드에 `Luck` 을 추가하면 **그 값이 아무 일도 안 한다.**
+
+> ⚠️ **아직 안 터진다.** 메타 업그레이드에 `Luck` 이 없고(`Upgrades.csv` 의 `StatKey` 7종에 없다)
+> `Economy.csv` 에 `baseStats.Luck` 행도 없다. **둘 중 하나만 생기면 그 순간 터진다.**
+
+### 원인 — `RecalculateStats` 가 필드별 나열이다
+
+`PlayerStats.RecalculateStats` 는 `Final` 을 이렇게 만든다.
+
+```csharp
+Final = new StatBlock
+{
+    MaxHp = baseStats.MaxHp + meta.MaxHp,
+    ...
+    BuildingCooldown = baseStats.BuildingCooldown + meta.BuildingCooldown,
+    HpRegen          = baseStats.HpRegen + meta.HpRegen,   // D74 에서 추가
+    // 🔴 Luck 이 없다
+};
+```
+
+`Luck` 이 목록에 없으므로 **기본 생성자 값(0)** 이 그대로 남는다.
+패시브의 `Luck` 은 뒤이어 `p.Apply(Final)` 이 더하므로 **패시브만 작동한다** —
+그래서 지금까지 안 걸렸다.
+
+### 🔑 이 함정은 반복된다
+
+`D74` 가 `HpRegen` 을 넣으면서 **똑같이 밟았다.** `StatBlock` 에 필드를 더하고
+`PassiveEffect.Apply` 까지 고쳤는데 `Final.HpRegen` 이 **0** 이었다 —
+이 나열에서 빠졌기 때문이다. 런타임 판정이 아니었으면 못 봤다.
+
+| 안 | 무엇 | 대가 |
+|---|---|---|
+| **A** | `Luck` 한 줄을 더한다 | 다음 필드에서 또 밟는다 |
+| **B** | `StatBlock.Add(a, b)` 같은 합산 메서드를 두고 세 곳(여기 · `PassiveEffect` · `CharacterClassData`)이 같이 쓴다 | 손대는 파일이 늘어난다 |
+
+🔑 **B 가 맞아 보인다** — 이 나열은 지금까지 **두 번** 사람을 속였다(`Luck`·`HpRegen`).
+다만 스탯 합산은 게임 전체가 매달린 자리라 **바꾸면 전 스탯을 다시 재야 한다.**
+
+⚠️ **사용자 결정 없이 안 고쳤다** (`CLAUDE.md` §1). 발견 경위는 `SETUP_STATUS.md` 2-100.
+
+---
+
 ## B12 — ✅ **해결됨 (D71, 2026-09-05)** · 슬롯이 꽉 차면 상점에서 골드만 사라졌다
 
 **증상(예측):** 무기/패시브/건물 칸이 꽉 찬 상태에서 그 카테고리의 **새 아이템**을 상점에서 사면

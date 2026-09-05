@@ -54,6 +54,7 @@ MetaProgressionManager,characterUnlockCost,150,캐릭터 해금 비용. 완주 1
 MetaProgressionManager,skinUnlockCost,75,스킨 해금 비용. 캐릭터의 절반
 # ── 플레이어 기본 스탯 ───────────────────────────────────────────
 PlayerStats,baseStats.MaxHp,100,최대 체력
+PlayerStats,baseStats.HpRegen,0.4,"초당 체력 재생 (D74 · 사용자 요구 11). 🔴 배율이 아니라 **더해지는 양**이다 — 1 로 두면 아무것도 안 먹은 플레이어가 초당 1 씩 찬다. 0.4/s = 분당 24 로, 최대 체력 100~130 기준 웨이브 하나(60~100초)에 24~40 을 되찾는다. 🔑 D73 이 보스 패턴을 둘 늘려 압박만 커졌는데 회복 수단은 상점 휴식뿐이었다"
 PlayerStats,baseStats.MoveSpeed,4,이동 속도
 PlayerStats,baseStats.Damage,1,무기 데미지 배율
 PlayerStats,baseStats.AttackSpeed,1,무기 쿨다운 배율 (낮을수록 빠름)

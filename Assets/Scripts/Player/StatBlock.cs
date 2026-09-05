@@ -30,6 +30,15 @@ public class StatBlock
     public float Luck = 0f;
 
     /// <summary>
+    /// 초당 체력 재생 (D74 · 사용자 요구 11).
+    ///
+    /// <para>🔴 <b>기본값이 0 이다.</b> <c>XpGain</c>/<c>GoldGain</c> 처럼 배율이 아니라
+    /// <b>더해지는 양</b>이라, 1 로 두면 아무 것도 안 먹은 플레이어가 초당 1 씩 회복한다.
+    /// 실제 기본값은 <c>Economy.csv</c> 의 <c>PlayerStats,baseStats.HpRegen</c> 이 넣는다.</para>
+    /// </summary>
+    public float HpRegen = 0f;
+
+    /// <summary>
     /// 전부 0 인 블록. <b>"보너스"로 쓸 때는 반드시 이걸 써야 한다.</b>
     ///
     /// <para>기본 생성자는 위 초기값(MaxHp 100, MoveSpeed 4 …)을 가진다. 그건 인스펙터에서
@@ -52,5 +61,6 @@ public class StatBlock
         GoldGain       = 0f,
         BuildingCooldown = 0f,
         Luck             = 0f,
+        HpRegen          = 0f,   // 🔴 새 필드는 여기에도 넣어야 한다 (I-21)
     };
 }

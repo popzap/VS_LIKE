@@ -85,3 +85,9 @@ MonoBehaviour:
   - 0.5
   - 0.7
   - 1
+  BonusHpRegen:
+  - 0
+  - 0
+  - 0
+  - 0
+  - 0

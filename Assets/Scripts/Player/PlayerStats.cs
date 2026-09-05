@@ -155,6 +155,35 @@ public class PlayerStats : MonoBehaviour
             _swiftTimer -= Time.deltaTime;
             if (_swiftTimer <= 0f) { _swiftTimer = 0f; _swiftMoveSpeed = 0f; RecalculateStats(); }
         }
+
+        TickRegen();
+    }
+
+    /// <summary>
+    /// 초당 체력 재생 (D74 · 사용자 요구 11: *"기본 체력 재생 추가 (아이템도 추가 체력 재생 추가)"*).
+    ///
+    /// <para>🔑 <b>왜 필요했나</b> — `D73` 이 보스 패턴을 둘 늘려 압박만 커졌는데
+    /// 회복 수단은 상점 휴식(`D71`)뿐이었다. **깎이기만 하고 차지 않으면**
+    /// 한 번 크게 맞은 판은 그 뒤로 계속 조심만 하게 된다.</para>
+    ///
+    /// <para>🔴 <b>죽은 뒤에는 안 돈다.</b> <see cref="Heal"/> 은 <c>IsDead</c> 를 안 보므로
+    /// 여기서 막지 않으면 시체가 체력을 채운다.</para>
+    ///
+    /// <para>🔴 <b>이미 만피면 아무것도 안 한다.</b> <c>Heal</c> 을 매 프레임 부르면
+    /// 그 안의 <c>Mathf.Min</c> 이 계속 돌고, 나중에 회복 연출을 붙일 때
+    /// <b>가만히 서 있어도 이펙트가 터진다.</b></para>
+    ///
+    /// <para><c>Time.deltaTime</c> 이라 레벨업·일시정지 중에는 안 찬다 — 그게 맞다.</para>
+    /// </summary>
+    private void TickRegen()
+    {
+        if (IsDead) return;
+
+        float perSec = Final.HpRegen;
+        if (perSec <= 0f) return;
+        if (CurrentHp >= Final.MaxHp) return;
+
+        Heal(perSec * Time.deltaTime);
     }
 
     private void Start()
@@ -313,7 +342,14 @@ public class PlayerStats : MonoBehaviour
             XpGain         = baseStats.XpGain          + meta.XpGain,
             GoldGain       = baseStats.GoldGain        + meta.GoldGain,
             BuildingCooldown = baseStats.BuildingCooldown + meta.BuildingCooldown,
+            HpRegen        = baseStats.HpRegen         + meta.HpRegen,
         };
+
+        // 🔴 이 목록은 **필드별 나열**이라 StatBlock 에 필드를 더할 때마다 여기도 손대야 한다.
+        //    D74 에서 실제로 걸렸다 — HpRegen 을 넣고 Import 까지 마쳤는데
+        //    Final.HpRegen 이 0 이었다. 합산에서 빠졌기 때문이다.
+        //    ⚠️ 지금 Luck 이 같은 이유로 빠져 있다 (B13). base/meta 의 Luck 이 죽는다 —
+        //       메타 업그레이드에 Luck 이 없고 baseStats.Luck 행도 없어 아직 안 터질 뿐이다.
 
         // 사슬 전체를 더한다. 진화는 갈아타기가 아니라 쌓기이므로 T1 의 보너스도 계속 살아 있다.
         foreach (var cls in _classChain)

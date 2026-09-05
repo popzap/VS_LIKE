@@ -3516,6 +3516,42 @@ PlayerPrefs "gfx_quality" = 2
 
 ---
 
+## 요청-51 — ⚠️ **`Passives.csv` 에 `BonusHpRegen` 열 (D74)** · 아이콘 1장이 필요하다
+
+**한 줄:** 사용자 요구 `11`(기본 체력 재생 + 재생 아이템)을 넣었다.
+`D73` 이 보스 패턴을 둘 늘려 **압박만 커졌는데** 회복 수단은 상점 휴식뿐이었다.
+
+### 바꾼 것
+
+| 파일 | 무엇 |
+|---|---|
+| `Passives.csv` | **`BonusHpRegen` 열 신설** (기존 11행은 전부 `0\|0\|0\|0\|0`) + 새 행 `HpRegen,Regeneration,… ,0.4\|0.8\|1.3\|1.9\|2.6` |
+| `Items.csv` | 새 행 `HpRegen` (Passive · MaxLevel 5 · ShopPrice 60) |
+| `Economy.csv` | `PlayerStats,baseStats.HpRegen,0.4` |
+| `SceneWiring.csv` | `LevelUpManager,allItems` 에 `HpRegen.asset` 추가 |
+
+🔴 **`HpRegen` 은 배율이 아니라 "초당 몇" 이다.** `XpGain`/`GoldGain` 과 달리 1 로 두면
+아무것도 안 먹은 플레이어가 초당 1 씩 찬다.
+
+### 🔴 그림이 하나 필요하다 — `Regeneration` 아이콘
+
+지금은 **`MaxHp.png`(하트)를 그대로 재사용**하고 있다.
+즉 **최대 체력 패시브와 아이콘이 같다** — 레벨업 카드에서 둘을 못 가른다.
+
+- 필요한 것: **재생**을 뜻하는 아이콘 1장 (하트 + 십자 / 새싹 / 회전 화살표 계열)
+- 넣을 곳: `Assets/Game/Sprites/Passives/HpRegen.png`
+- 그 뒤 `Items.csv` 의 `HpRegen` 행에서 `Icon` 을 그 경로로 바꾸면 끝이다
+
+⚠️ `Pickup_Swift`(`요청-46`)와 같은 상황이다. **급하지 않다** — 색이 아니라 아이콘이 겹치는 것이라
+`Pickup_Swift` 보다는 조금 더 헷갈릴 수 있다.
+
+### ⚠️ 사람이 해 봐야 아는 값
+
+- 기본 `0.4/s` 가 **너무 후한지** — 웨이브 하나(60~100초)에 24~40 을 되찾는다 (최대 체력 100~130)
+- 패시브 Lv5 `2.6/s` 가 **접촉 피해를 무시할 정도인지**
+
+---
+
 ## 요청-50 — ⚠️ **`Bosses.csv` 에 12열 추가 (D73)** · 보스 패턴 2종
 
 **한 줄:** 사용자 요구 `B-1`(*"쫄 소환 + 돌진 패턴, 예고 범위 일직선 공격"*)을 넣었다.

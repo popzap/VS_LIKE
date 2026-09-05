@@ -25,6 +25,9 @@ public class PassiveData : ScriptableObject
     /// <summary>픽업 드랍 확률 배율에 더해진다. 최종확률 = 기본확률 × (1 + Luck). 1.0 이면 정확히 2배.</summary>
     public float[] BonusLuck            = { 0, 0, 0, 0, 0 };
 
+    [Tooltip("초당 체력 재생 가산분 (D74). 최대 체력이 아니라 '초당 몇' 이다")]
+    public float[] BonusHpRegen         = { 0, 0, 0, 0, 0 };
+
     private float Get(float[] arr, int lv) => arr.Length == 0 ? 0 :
         arr[Mathf.Clamp(lv - 1, 0, arr.Length - 1)];
 
@@ -40,4 +43,5 @@ public class PassiveData : ScriptableObject
     public float GetGoldGain(int lv)       => Get(BonusGoldGain, lv);
     public float GetBuildingCooldown(int lv) => Get(BonusBuildingCooldown, lv);
     public float GetLuck(int lv)           => Get(BonusLuck, lv);
+    public float GetHpRegen(int lv)        => Get(BonusHpRegen, lv);
 }

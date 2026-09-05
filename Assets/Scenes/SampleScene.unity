@@ -26516,6 +26516,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 611062577489313148, guid: f1dc3c77f27e5e1468a15be80a98f273, type: 3}
+      propertyPath: shopPityLayers
+      value: 4
+      objectReference: {fileID: 0}
     - target: {fileID: 1185150258529104588, guid: f1dc3c77f27e5e1468a15be80a98f273, type: 3}
       propertyPath: m_Name
       value: StageMapManager
@@ -26692,6 +26696,10 @@ PrefabInstance:
     - target: {fileID: 1855837409175803465, guid: a25b3b2ed063c5b4d9bee9bbbca7add9, type: 3}
       propertyPath: m_TagString
       value: Player
+      objectReference: {fileID: 0}
+    - target: {fileID: 4549060506320574290, guid: a25b3b2ed063c5b4d9bee9bbbca7add9, type: 3}
+      propertyPath: baseStats.HpRegen
+      value: 0.4
       objectReference: {fileID: 0}
     - target: {fileID: 5848485527948084907, guid: a25b3b2ed063c5b4d9bee9bbbca7add9, type: 3}
       propertyPath: 'm_Materials.Array.data[0]'
@@ -27437,7 +27445,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2390381838099993656, guid: c31a45deba47f474fbd07507a573c2b2, type: 3}
       propertyPath: allItems.Array.size
-      value: 25
+      value: 26
       objectReference: {fileID: 0}
     - target: {fileID: 2390381838099993656, guid: c31a45deba47f474fbd07507a573c2b2, type: 3}
       propertyPath: 'cards.Array.data[0]'
@@ -27551,6 +27559,10 @@ PrefabInstance:
       propertyPath: 'allItems.Array.data[24]'
       value: 
       objectReference: {fileID: 11400000, guid: 71fe819efa5048944ac7218a80809a19, type: 2}
+    - target: {fileID: 2390381838099993656, guid: c31a45deba47f474fbd07507a573c2b2, type: 3}
+      propertyPath: 'allItems.Array.data[25]'
+      value: 
+      objectReference: {fileID: 11400000, guid: 138a8e4d64850fb4fa15d493bf791716, type: 2}
     - target: {fileID: 4267826130673351957, guid: c31a45deba47f474fbd07507a573c2b2, type: 3}
       propertyPath: m_Name
       value: LevelUpManager

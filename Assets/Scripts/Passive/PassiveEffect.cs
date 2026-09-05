@@ -29,5 +29,6 @@ public class PassiveEffect
         stat.GoldGain       += Data.GetGoldGain(Level);
         stat.BuildingCooldown += Data.GetBuildingCooldown(Level);
         stat.Luck           += Data.GetLuck(Level);
+        stat.HpRegen        += Data.GetHpRegen(Level);
     }
 }
