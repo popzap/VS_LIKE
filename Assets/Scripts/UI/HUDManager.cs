@@ -13,7 +13,7 @@ public class HUDManager : MonoBehaviour
     public static HUDManager Instance { get; private set; }
 
     // 🔴 컴파일 반영 확인용 (D27).
-    public const int Version = 2;   // 2 = 레벨업 파동을 패널 닫힘으로 옮김 (D43)
+    public const int Version = 3;   // 3 = 직업 초상화 + 보유 아이템 줄 (D82) · 2 = 레벨업 파동 (D43)
 
     // ── 포트레이트 (좌측 상단) ───────────────────────────────
     [Header("포트레이트")]
@@ -23,6 +23,16 @@ public class HUDManager : MonoBehaviour
     [SerializeField] private Sprite  faceWorried;          // HP 25~50%
     [SerializeField] private Sprite  faceCritical;         // HP 25% 이하
     [SerializeField] private Image   statusDot;            // 포트레이트 우하단 상태 점
+
+    // ── 보유 아이템 줄 (D82 · 사용자 요구 2) ──────────────────
+    [Header("보유 아이템 줄 — HP 바 아래")]
+    [Tooltip("칩이 담길 자리. 가로 레이아웃 그룹을 붙여 둔다.")]
+    [SerializeField] private Transform  itemSlotRow;
+    [Tooltip("Prefab_ItemChip. StatsPanel(TAB)이 쓰는 것과 같은 프리팹이다.")]
+    [SerializeField] private GameObject itemChipPrefab;
+
+    private readonly System.Collections.Generic.List<ItemChipUI> _slotChips = new();
+    private int _slotSignature = -1;   // 재구축 여부만 가른다 (매 프레임 다시 만들지 않기 위해)
 
     // ── HP 바 ────────────────────────────────────────────────
     [Header("HP 바")]
@@ -86,9 +96,12 @@ public class HUDManager : MonoBehaviour
 
     private void Start()
     {
-        // 🔴 [Z] Build 안내를 화면 왼쪽 아래로 (D65 · 사용자 요구 C-3).
-        //    하단 중앙은 플레이어 바로 아래라 난전에서 적에 그대로 묻힌다.
-        PromptCorner.Place(buildPromptText, 26f);
+        // 🔴 [Z] Build 안내를 <b>가로 가운데 · 바닥에서 1/3</b> 높이로 (D82 · 사용자 요구).
+        //    `D65` 는 좌하단으로 뺐고 사용자 판정은 *"읽힌다"* 였다. 그런데 이번 요구가
+        //    *"중앙 아래로 — 맨 아래 말고 중앙에서 아래 2:1 느낌으로"* 다.
+        //    🔑 `D65` 가 피하려던 건 "하단 중앙"이 아니라 **플레이어 바로 아래**였는데,
+        //    바닥에서 1/3 이면 플레이어(화면 중앙)보다 충분히 아래라 겹치지 않는다.
+        PromptCorner.PlaceCenterLower(buildPromptText);
 
         _playerStats = FindFirstObjectByType<PlayerStats>();
         _expManager  = ExperienceManager.Instance;
@@ -110,6 +123,107 @@ public class HUDManager : MonoBehaviour
 
         if (_playerStats == null) return;
         RefreshHP();   // HP는 매 프레임 체크 (공격 받을 때마다 변함)
+        RefreshItemSlots();
+    }
+
+    /// <summary>
+    /// HP 바 아래 <b>보유 아이템 줄</b> (D82 · 사용자 요구 2).
+    ///
+    /// <para>요구는 *"현재 소유한 아이템들을 박스 안에 아이콘으로 — 그러면 상한까지 몇 개
+    /// 남았는지 확인하기 쉽다"* 였다. 🔑 <b>남은 자리가 보여야 한다</b>는 게 핵심이라
+    /// 가진 것만이 아니라 <b>상한만큼</b> 칸을 그린다. 분류 순서는 무기 → 패시브 → 건물.</para>
+    ///
+    /// <para>🔑 <b>새 부품이 없다</b> — 칩은 TAB 스탯 창이 쓰는 <c>Prefab_ItemChip</c> 그대로고
+    /// 상한은 <see cref="PlayerStats.SlotLimit"/>, 보유 수는 <see cref="LevelUpManager.CountOwned"/> 다.
+    /// 🟢 그래서 이 줄이 <b>소지 상한이 실제로 도는지 보여 주는 화면</b>이기도 하다.</para>
+    ///
+    /// <para>🔴 <b>매 프레임 다시 만들지 않는다.</b> 보유 구성이 바뀌었을 때만 재구축한다 —
+    /// 그 판정을 위해 (종류 수 · 레벨 합 · 상한 합)으로 만든 <b>서명</b>을 비교한다.
+    /// 이벤트를 안 쓴 이유는 상점 구매·레벨업·승급 <b>세 경로</b>가 모두 인벤토리를 바꾸는데
+    /// 그중 하나만 놓쳐도 줄이 조용히 낡기 때문이다.</para>
+    /// </summary>
+    private void RefreshItemSlots()
+    {
+        if (itemSlotRow == null || itemChipPrefab == null) return;
+
+        var lm = GameManager.Instance != null ? GameManager.Instance.LevelUpManager : null;
+        var ps = _playerStats;
+        if (lm == null || ps == null) return;
+
+        var inv = lm.Inventory;
+
+        // ── 서명 ─────────────────────────────────────────────
+        int sig = 17;
+        foreach (var cat in Categories)
+            sig = sig * 31 + ps.SlotLimit(cat);
+        if (inv != null)
+            foreach (var kv in inv)
+            {
+                if (kv.Key == null) continue;
+                sig = sig * 31 + kv.Key.GetInstanceID();
+                sig = sig * 31 + kv.Value;
+            }
+        if (sig == _slotSignature) return;
+        _slotSignature = sig;
+
+        // ── 다시 그린다 ──────────────────────────────────────
+        int used = 0;
+        foreach (var cat in Categories)
+        {
+            int limit = Mathf.Max(0, ps.SlotLimit(cat));
+            int filled = 0;
+
+            if (inv != null)
+                foreach (var kv in inv)
+                {
+                    if (kv.Key == null || kv.Key.Category != cat) continue;
+                    if (filled >= limit) break;          // 상한을 넘겨 그리지 않는다
+                    var chip = GetSlotChip(used++);
+                    chip.gameObject.SetActive(true);
+                    chip.Bind(kv.Key, kv.Value);
+                    filled++;
+                }
+
+            for (int i = filled; i < limit; i++)
+            {
+                var chip = GetSlotChip(used++);
+                chip.gameObject.SetActive(true);
+                chip.BindEmpty();
+            }
+        }
+
+        for (int i = used; i < _slotChips.Count; i++)
+            _slotChips[i].gameObject.SetActive(false);
+    }
+
+    private static readonly ItemCategory[] Categories =
+        { ItemCategory.Weapon, ItemCategory.Passive, ItemCategory.Building };
+
+    /// <summary>HUD 줄에 쓸 칩 한 칸의 크기(px). 아래 주석의 계산이 이 값을 정한다.</summary>
+    private const float SlotChipSize = 44f;
+
+    private ItemChipUI GetSlotChip(int index)
+    {
+        while (_slotChips.Count <= index)
+        {
+            var go   = Instantiate(itemChipPrefab, itemSlotRow);
+            var chip = go.GetComponent<ItemChipUI>();
+            if (chip == null) chip = go.AddComponent<ItemChipUI>();
+
+            // 🔴 프리팹은 TAB 스탯 창용이라 76x96 이다. 상한 합이 최대 14칸(Mage)이라
+            //    그대로 쓰면 1116px 이 필요한데 HUD 에 난 자리는 660px 뿐이다.
+            //    44px 로 줄이고(14x44 + 13x3 = 655) 글자는 끈다 — 그 크기에선 안 읽힌다.
+            var le = go.GetComponent<LayoutElement>();
+            if (le == null) le = go.AddComponent<LayoutElement>();
+            le.preferredWidth  = SlotChipSize;
+            le.preferredHeight = SlotChipSize;
+            le.minWidth        = SlotChipSize;
+            le.minHeight       = SlotChipSize;
+
+            chip.SetCompact(true);
+            _slotChips.Add(chip);
+        }
+        return _slotChips[index];
     }
 
     private void OnDestroy()
@@ -261,14 +375,44 @@ public class HUDManager : MonoBehaviour
         else                    hpFill.color = ColorHpCrit;
     }
 
+    /// <summary>
+    /// 초상화 칸을 채운다 (D82 · 사용자 요구 3: *"캐릭터 얼굴 박스가 아직 비어있는 상태"*).
+    ///
+    /// <para>🔴 <b>비어 있던 이유는 그림이 없어서다.</b> 이 함수는 HP 4단계에 따라
+    /// <see cref="faceHealthy"/>~<see cref="faceCritical"/> 를 갈아 끼우게 돼 있는데
+    /// <b>넷 다 미할당</b>이라 매번 <c>sprite = null</c> 을 넣고 있었다.</para>
+    ///
+    /// <para>🔑 <b>새 그림을 만들지 않았다</b> — 직업 10종이 이미 `Portrait` 를 갖고 있다
+    /// (직업 선택 화면이 쓰는 그 그림이다). 지금 직업의 것을 그대로 쓴다.</para>
+    ///
+    /// <para>🔴 <b>매번 다시 읽는다.</b> 캐시하면 승급으로 직업이 바뀌었을 때 옛 얼굴이 남는다.
+    /// HP 가 바뀔 때만 불리는 함수라 비용도 문제되지 않는다.</para>
+    /// </summary>
     private void UpdatePortrait(float ratio)
     {
         if (portraitImage == null) return;
 
-        if      (ratio > 0.75f) portraitImage.sprite = faceHealthy;
-        else if (ratio > 0.50f) portraitImage.sprite = faceNormal;
-        else if (ratio > 0.25f) portraitImage.sprite = faceWorried;
-        else                    portraitImage.sprite = faceCritical;
+        Sprite face = null;
+
+        // ① 얼굴 그림이 실제로 있으면 예전대로 HP 4단계를 쓴다.
+        if      (ratio > 0.75f) face = faceHealthy;
+        else if (ratio > 0.50f) face = faceNormal;
+        else if (ratio > 0.25f) face = faceWorried;
+        else                    face = faceCritical;
+
+        // ② 없으면 지금 직업의 초상화로 대신한다.
+        if (face == null)
+        {
+            var ps = PlayerStats.Current;
+            if (ps != null && ps.ClassChain.Count > 0)
+            {
+                var cur = ps.ClassChain[ps.ClassChain.Count - 1];   // 승급했으면 마지막이 지금 직업
+                if (cur != null) face = cur.Portrait;
+            }
+        }
+
+        portraitImage.sprite  = face;
+        portraitImage.enabled = face != null;   // 없으면 빈 사각형을 그리지 않는다
 
         // 상태 점 색상
         if (statusDot != null)

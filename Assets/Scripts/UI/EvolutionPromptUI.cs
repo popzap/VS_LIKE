@@ -23,11 +23,10 @@ public class EvolutionPromptUI : MonoBehaviour
     private void Start()
     {
         // 🔴 [Z] Build 줄(y=26) 바로 위에 얹는다. 둘이 겹치면 둘 다 못 읽는다.
-        // 🔴 <b>78 이지 66 이 아니다</b> (D81). 아래 칸(<see cref="HUDManager"/> 의 건물 안내)이
-        //    y 26 에서 높이 44 라 <b>70 까지 차지한다</b> — 66 이면 4px 이 겹친다.
-        //    두 안내가 동시에 뜨는 순간(승급 가능 + 건물 설치 가능)에만 보이는 겹침이라
-        //    지금까지 아무도 못 봤다. 26 + 44 + 8(여백) = 78.
-        PromptCorner.Place(promptText, 78f);
+        // 🔑 <b>이제 좌하단 구석을 혼자 쓴다</b> (D82). `D81` 이 건물 안내와 4px 겹쳐서
+        //    66 -> 78 로 올렸는데, `D82` 가 건물 안내를 <b>가로 가운데 · 바닥 1/3</b> 로 옮기면서
+        //    그 이유가 사라졌다. 구석에 붙는 게 맞으므로 26 으로 내린다.
+        PromptCorner.Place(promptText, 26f);
         if (promptText != null) promptText.gameObject.SetActive(false);
     }
 
@@ -122,6 +121,27 @@ internal static class PromptCorner
 {
     public const float Margin = 26f;
     public const float Width  = 720f;
+
+    /// <summary>
+    /// 가로 가운데 · 세로는 <b>바닥에서 1/3</b> 높이에 놓는다 (D82 · 사용자 요구).
+    ///
+    /// <para>요구는 *"중앙 아래로 — 맨 아래 말고 중앙에서 아래 2:1 느낌으로"* 였다.
+    /// 위:아래 = 2:1 로 나누는 자리가 곧 <b>바닥에서 1/3</b> 이다.</para>
+    ///
+    /// <para>🔴 <b>앵커 자체를 1/3 에 둔다.</b> 바닥 앵커에 <c>y = 높이/3</c> 을 주면
+    /// 화면 비율이 바뀔 때 따라가지 못한다 — <c>D81</c> 에서 겹침을 만든 것이 정확히 그 방식이었다.</para>
+    /// </summary>
+    public static void PlaceCenterLower(TMPro.TextMeshProUGUI text)
+    {
+        if (text == null) return;
+        var rt = text.rectTransform;
+        rt.anchorMin        = new Vector2(0.5f, 1f / 3f);
+        rt.anchorMax        = new Vector2(0.5f, 1f / 3f);
+        rt.pivot            = new Vector2(0.5f, 0.5f);
+        rt.sizeDelta        = new Vector2(Width, rt.sizeDelta.y);
+        rt.anchoredPosition = Vector2.zero;
+        text.alignment      = TMPro.TextAlignmentOptions.Center;
+    }
 
     public static void Place(TMPro.TextMeshProUGUI text, float y)
     {

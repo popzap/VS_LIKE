@@ -64,4 +64,38 @@ public class ItemChipUI : MonoBehaviour
 
         name = $"Chip_{item.name}";
     }
+
+    /// <summary>
+    /// <b>빈 칸</b>으로 만든다 (D82 · HUD 아이템 줄).
+    ///
+    /// <para>사용자 요구는 *"상한까지 몇 개 남았는지 확인하기 쉽게"* 였다.
+    /// 가진 것만 보여 주면 <b>남은 자리가 안 보인다</b> — 빈 칸을 같이 그려야
+    /// "셋 중 둘 찼다"가 한눈에 읽힌다.</para>
+    ///
+    /// <para>🔴 <see cref="Bind"/> 는 <c>item == null</c> 이면 <b>그냥 돌아간다</b>(앞 칩의 그림이 남는다).
+    /// 칩은 풀에서 재사용되므로 빈 칸은 이렇게 <b>명시적으로</b> 지워야 한다.</para>
+    /// </summary>
+    /// <summary>
+    /// <b>아이콘만</b> 남긴다 (D82 · HUD 아이템 줄).
+    ///
+    /// <para>🔴 이 프리팹은 TAB 스탯 창용이라 <b>76x96</b> 이다. HUD 줄은 상한 합이
+    /// 최대 <b>14칸</b>(Mage)이라 그 크기로는 <b>1116px</b> 이 필요한데 자리는 660px 뿐이다.
+    /// 44px 로 줄이면 <c>Lv.N</c> 글자가 읽히지 않으므로 <b>글자를 끈다</b> —
+    /// 요구도 *"박스 안에 아이콘으로"* 였고, 레벨은 TAB 창에서 본다.</para>
+    /// </summary>
+    public void SetCompact(bool on)
+    {
+        if (label != null) label.gameObject.SetActive(!on);
+    }
+
+    public void BindEmpty()
+    {
+        if (icon != null)
+        {
+            icon.sprite = null;
+            icon.color  = new Color(1f, 1f, 1f, 0.10f);   // 자리만 보이는 흐린 사각형
+        }
+        if (label != null) label.text = string.Empty;
+        name = "Chip_Empty";
+    }
 }

@@ -66,7 +66,10 @@ public class ShopUI : MonoBehaviour
     // ─────────────────────────────────────────────────────────────
 
     /// <summary>리롤을 누를 수 있을 때의 글자색 (D65). <see cref="LevelUpManager"/> 와 같은 값.</summary>
-    private static readonly Color RerollOn  = new Color(0.96f, 0.80f, 0.28f, 1f);
+    // 🔴 <b>흰색이다</b> (D82 · 사용자 요구). `D65` 가 회색 -> 금색으로 올려 *"눌러 보이게"* 는 됐지만,
+    //    상점 화면이 온통 금색(가격·골드·아이템 등급)이라 **금색끼리 묻힌다.**
+    //    흰색은 이 화면에서 유일해서 버튼이 곧바로 눈에 든다.
+    private static readonly Color RerollOn  = Color.white;
     private static readonly Color RerollOff = new Color(0.48f, 0.50f, 0.55f, 1f);
 
     private void Awake()
