@@ -482,7 +482,7 @@ CONTENT 는 **읽기만** 한다 — 내 요청이 언제 처리될지 가늠하
 
 | 세션 | 다음 이슈 번호 |
 |---|---|
-| DEV | `D60` |
+| DEV | `D62` |
 | DEV | `D41` | `Assets/Scripts/Fx/PulseFx.cs` · `Assets/Prefabs/Fx_{Promote,LevelUp}.prefab` · `Assets/Scripts/Evolution/EvolutionManager.cs` · `Assets/Game/Balance/SceneWiring.csv` · `Assets/Scenes/SampleScene.unity` · `Docs/**` | 2026-09-04 | `완료` — **요청-26 (C34)**: 메타 아이콘 **7/7** + 승급·레벨업 파동. 🔴 **검증 중 내 결함을 잡았다** — 이 연출이 뜨는 두 순간이 **둘 다 `timeScale = 0`** 이라 `Time.deltaTime` 이면 **얼어붙은 링이 화면에 붙어 있다**. `unscaledDeltaTime` 으로 고침. 🟡 **판정 ⑤ 보류** — 레벨업 파동은 뜨지만 `ScreenSpaceOverlay` 패널이 덮어 **안 보인다** → `TODO.md` 결정 3안. 🟡 고아 애셋 `UpGoldGain.asset` 발견 |
 | DEV | `D42` | `Assets/Game/Sprites/UI/{ShopKeeper,MainMenuBG}.png` · `Assets/Scenes/SampleScene.unity` · `Docs/**` | 2026-09-04 | `완료` — **요청-27 (C35)**: Unity AI 그림 2장. 판정 **7/7** (알파 0 · 배경 밝기 **0.150** · 세로 점유 **86.1 %**). **코드 0줄.** 🔴 **`I-41` 가짜 투명이 또 났다** — 프롬프트에 명시해도 알파가 전부 255 였다. 🔴 CONTENT 의 *"형제 순서 0"* 지시를 일부러 안 따랐다 — 그 자리 `DimBG` 가 **알파 1.00 불투명**이라 배경이 가린다. 🟡 `pivot` 이 위쪽이라 배치를 한 번 틀렸다 |
 | DEV | `D43` | `Assets/Scripts/{UI/HUDManager,LevelUp/LevelUpManager}.cs` · `Assets/GameObjects/UI Canvas.prefab` · `Assets/Scenes/SampleScene.unity` · `Docs/**` | 2026-09-04 | `완료` — 사용자 결정 2건. ① **`B11` 닫음** — 씬 **과 프리팹 원본** 둘 다 영문화. 🔴 씬만 고쳤으면 오버라이드라 **부활했다**. 전수 조사(씬 263 · 프리팹 69) 한글 **0건**, 스캐너에 **대조군**을 넣어 배열까지 보는 걸 증명했다 ② **레벨업 파동 A안** — 패널 닫힘 시점으로 옮김. 판정 3/3 |
@@ -502,6 +502,7 @@ CONTENT 는 **읽기만** 한다 — 내 요청이 언제 처리될지 가늠하
 | DEV | `D57` | `Assets/Scripts/UI/CodexPanel.cs` · `Assets/Scenes/SampleScene.unity` · `Docs/**` | 2026-09-04 | `완료` — **도감 닫기를 우측 상단 X + ESC 로**(사용자 요구). 격자·상세 **+60px**. 🔵 PauseMenuUI 도 ESC 를 읽지만 CanPause 가 Wave 뿐이라 안 부딪힌다 — **전제를 주석에 못박았다**. 판정 **4/4**(X · ESC · 대조군 일시정지 안 열림 · 664→724). 🔴 **처음엔 ESC 가 안 닫혔는데 시험이 문제였다** — wasPressedThisFrame 은 엣지인데 InputSystem.Update() 를 직접 불러 엣지를 소모했다 |
 | DEV | `D58` | `Docs/**` (측정만 · **코드·애셋 변경 0**) | 2026-09-04 | `절반` — **C40 요청-32 실플레이 검증**. 17개 중 **6개를 숫자로 닫았다** — 0-a **vSync 켜져 있었다**(1·144Hz) · 2-a **294마리 111.3 fps** · 2-h BONECALLER·HP 2926 · 3-a **색상각 170도**+밝기 0.383 · 2-c·2-g 는 D53 값. §0-b 는 ProfilerDriver 접근 불가라 **논리로 닫았다**(에디터 오버헤드 포함 111fps ⇒ 빌드는 더 빠르다). 🔴 **§1 자동화 불가 이유를 찾았다** — 레벨업 카드 선택에서 timeScale 0 으로 멈춘다. 🟡 예측 **M ≈ 600**(이론 최대 1757G vs 배수 241G, 실측 처치당 1.65G). **사람이 해야 하는 9개**는 사용자에게 넘김 → 요청-42 |
 | DEV | `D59` | `Docs/PLAYTEST.md`(신규) · `Docs/{ROADMAP,TODO,SETUP_STATUS}.md` | 2026-09-04 | `완료` — 사용자 요구 2건. ① **PLAYTEST.md 신설** — C40 중 사람만 판정 가능한 것을 체크박스로. 소유를 첫 줄에 박았다(세션은 묻기만). ② **완성률** — 기능 95 % · 콘텐츠 70 % · **체감 검증 3 %** ⇒ 가중 68 %(포트폴리오 기준 85 %대). 🔴 **곁일이 본일보다 컸다** — ROADMAP §0 현황표가 2026-08-28 값으로 방치돼 거의 모든 줄이 틀렸다(적 6→7 · 행동 3→6 · 무기 5→12 · 아이템 23→28). 같은 사실이 §0·§7 두 곳에 있어 §7 만 갱신돼 온 탓 |
+| DEV | `D61` | `Docs/{SETUP_STATUS,Parallel/REQ/CONTENT}.md` (측정만 · 코드 변경 0) | 2026-09-05 | `완료` — **`C40` `1-a` 실측으로 닫음.** `Editor.log` 백그라운드 감시(MCP 불필요). 판1 `M=89`(3노드 사망) · 판2 🔴 `M=1168`(**9노드 · 상점 0회**) ⇒ **통과선 300 의 3.9배 · 실패**. 🔑 원인은 배수구를 **지나지도 못하는 것** — `weightShop 0.28` · `shopSlotCount 4` 가 맞는 자리. 🔴 **표본 하나로 일반화해 중간 보고가 틀렸다**(판2 노드당 130 G ≈ CSV 계산 134 G). 🔴 `open('wb').write(encode())` 로 SETUP_STATUS 663KB 를 0바이트로 날렸다가 복구(D54 이후 두 번째) → 요청-44 |
 | CONTENT | `C43` |
 | 버그(공용) | `B12` |
 
