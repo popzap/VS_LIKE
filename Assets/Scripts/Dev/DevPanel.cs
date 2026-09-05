@@ -248,6 +248,44 @@ public class DevPanel : MonoBehaviour
             player.Heal(player.Final.MaxHp);
 
         GUILayout.EndHorizontal();
+
+        DrawStageRow(gm);
+    }
+
+    /// <summary>
+    /// 스테이지 진행 줄 (D63) — <b>지금 노드를 즉시 클리어</b>한다.
+    ///
+    /// <para>사용자 요구: *"9라운드까지 빠르게"*. 병목은 난이도가 아니라
+    /// <b>웨이브 타이머(60~100초)</b>라서, 그걸 건너뛰는 버튼 하나면 된다.</para>
+    ///
+    /// <para>🔴 <b>웨이브일 때만 누를 수 있다.</b> 상점·이벤트 노드에는 각자의 닫기 경로가
+    /// 따로 있어서 여기서 흉내 내면 그쪽 상태가 어긋난다 — 버튼을 막고 지금 상태를 보여 준다.</para>
+    /// </summary>
+    private void DrawStageRow(GameManager gm)
+    {
+        var wm = gm.WaveManager;
+        if (wm == null) return;
+
+        GUILayout.BeginHorizontal();
+
+        // 층은 LayerScaling 이 정본이다 (StartWave 가 채운다).
+        GUILayout.Label($"Layer <b>{LayerScaling.Layer}</b>   HP x{LayerScaling.HpMult:0.00}"
+                      + $"   Spawn x{LayerScaling.SpawnMult:0.00}", RichLabel, GUILayout.Width(240f));
+
+        bool inWave = gm.CurrentState == GameState.Wave && wm.IsWaveActive;
+
+        // 🔴 GUI.enabled 를 반드시 되돌린다. 안 그러면 이 아래 모든 줄이 회색으로 죽는다.
+        bool prev = GUI.enabled;
+        GUI.enabled = inWave;
+        if (GUILayout.Button("Clear Node", GUILayout.Width(110f)))
+            wm.DevForceClearWave();
+        GUI.enabled = prev;
+
+        GUILayout.Label(inWave
+            ? $"  remaining {wm.WaveRemainingTime:0}s"
+            : $"  (not in a wave - state {gm.CurrentState})");
+
+        GUILayout.EndHorizontal();
     }
 
     // ── 아이템 목록 ──────────────────────────────────────────────

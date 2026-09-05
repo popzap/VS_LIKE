@@ -740,6 +740,26 @@ public class WaveManager : MonoBehaviour
         return (Vector2)playerTransform.position + dir * _currentWaveData.SpawnRadius;
     }
 
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+    /// <summary>
+    /// 개발용 — 지금 웨이브를 <b>즉시 클리어 처리</b>한다 (D63). <see cref="DevPanel"/> 만 부른다.
+    ///
+    /// <para>🔴 <c>#if UNITY_EDITOR || DEVELOPMENT_BUILD</c> 안에 둔다.
+    /// <see cref="DevPanel"/> 이 파일 전체를 그 조건으로 감싸는 것과 같은 이유다 —
+    /// <b>릴리즈 빌드에 치트 입구를 남기지 않는다.</b></para>
+    ///
+    /// <para>🔑 <c>ClearWave</c> 를 그대로 부른다. 보상 지급·이벤트 효과 해제·스테이지 진행이
+    /// 전부 그 안에 있으므로, <b>따로 흉내 내면 정상 클리어와 다른 상태가 된다.</b>
+    /// 특히 <see cref="GameManager.OnWaveCleared"/> 를 건너뛰면 맵이 안 넘어간다.</para>
+    /// </summary>
+    public void DevForceClearWave()
+    {
+        if (!_waveActive) return;
+        Debug.Log("[WaveManager] DevPanel 강제 클리어");
+        ClearWave();
+    }
+#endif
+
     private void ClearWave()
     {
         // 🔴 이벤트의 전투 한정 효과는 여기서 끝난다 (D37 · E9).
