@@ -1,3 +1,4 @@
+using System.Collections;
 using UnityEngine;
 
 /// <summary>
@@ -26,6 +27,9 @@ public class BossBrain : MonoBehaviour
     private int   _phase = -1;      // -1 = 아직 등장 처리 전
     private float _slamCd;
     private float _summonCd;
+    private float _chargeCd;      // B-1 (D73)
+    private float _lineCd;        // B-1 (D73)
+    private bool  _busy;          // 🔴 돌진처럼 여러 프레임을 쓰는 기술이 도는 중
     private bool  _finished;
 
     /// <summary>지금 몇 페이즈인가 (0 = 1페이즈). HP 바가 읽는다.</summary>
@@ -43,6 +47,8 @@ public class BossBrain : MonoBehaviour
 
         _phase    = -1;
         _finished = false;
+        _busy     = false;
+        _boss.AiSuspended = false;   // 풀에서 재사용된 몸일 수 있다
 
         EnterPhase(0, isEntry: true);
     }
@@ -61,6 +67,13 @@ public class BossBrain : MonoBehaviour
         // ── 기술 ──
         _slamCd   -= Time.deltaTime;
         _summonCd -= Time.deltaTime;
+        _chargeCd -= Time.deltaTime;
+        _lineCd   -= Time.deltaTime;
+
+        // 🔴 여러 프레임짜리 기술이 도는 중에는 다른 기술을 시작하지 않는다.
+        //    돌진하면서 내려찍기까지 나가면 **예고를 보고 피할 자리가 없다** —
+        //    그건 어려운 게 아니라 불공평한 것이다.
+        if (_busy) return;
 
         if (_slamCd <= 0f)
         {
@@ -72,6 +85,123 @@ public class BossBrain : MonoBehaviour
         {
             Summon(BossPatternData.At(_data.SummonCount, _phase));
             _summonCd = BossPatternData.At(_data.SummonCooldown, _phase);
+        }
+
+        float lineCd = BossPatternData.At(_data.LineCooldown, _phase);
+        if (lineCd > 0f && _lineCd <= 0f)
+        {
+            LineSlam();
+            _lineCd = lineCd;
+        }
+
+        float chargeCd = BossPatternData.At(_data.ChargeCooldown, _phase);
+        if (chargeCd > 0f && _chargeCd <= 0f)
+        {
+            StartCoroutine(SummonCharge());
+            _chargeCd = chargeCd;
+        }
+    }
+
+    // ── B-1 기술 (D73) ──────────────────────────────────────────
+
+    /// <summary>
+    /// <b>쫄 소환 + 돌진</b> (사용자 요구 B-1).
+    ///
+    /// <para>🔑 <b>둘을 하나로 묶은 게 핵심이다.</b> 따로 두면 각각 *"가끔 일어나는 일"* 인데,
+    /// 묶으면 <b>쫄이 나타난 것 자체가 돌진의 예고</b>가 되어 플레이어가 읽을 수 있다.
+    /// 그리고 쫄이 길을 막아 <b>피할 자리를 좁힌다</b> — 두 기술이 서로를 돕는다.</para>
+    ///
+    /// <para>🔴 돌진 방향은 <b>노려보기가 끝나는 순간</b> 정한다. 매 프레임 다시 겨누면
+    /// 유도 미사일이 되어 <b>피할 수 없는 공격</b>이 된다.</para>
+    ///
+    /// <para>🔴 <c>WaitForSeconds</c> 는 <c>timeScale</c> 을 따른다 — 레벨업 패널이 뜨면
+    /// 보스도 같이 멈춘다. 그게 맞다(<c>unscaled</c> 로 하면 카드를 고르는 동안 맞는다).</para>
+    /// </summary>
+    private IEnumerator SummonCharge()
+    {
+        _busy = true;
+
+        // ① 쫄이 먼저 나온다 — 이게 예고다
+        Summon(BossPatternData.At(_data.ChargeSummonCount, _phase));
+
+        // ② 멈춰 서서 노려본다
+        _boss.AiSuspended = true;
+        _boss.DriveVelocity(Vector2.zero);
+        yield return new WaitForSeconds(Mathf.Max(0.05f, _data.ChargeWindup));
+
+        // 죽었으면 여기서 끝. 아래에서 몸을 계속 밀면 시체가 날아간다.
+        if (_boss == null || _boss.Dead) { EndCharge(); yield break; }
+
+        // ③ 방향 확정 — 여기서 한 번만 겨눈다
+        var target = PlayerStats.Current;
+        Vector2 dir = target != null
+            ? ((Vector2)target.transform.position - (Vector2)transform.position).normalized
+            : Vector2.right;
+        if (dir.sqrMagnitude < 0.0001f) dir = Vector2.right;
+
+        float t = 0f;
+        while (t < _data.ChargeDuration)
+        {
+            if (_boss == null || _boss.Dead) { EndCharge(); yield break; }
+            _boss.DriveVelocity(dir * Mathf.Max(0.1f, _data.ChargeSpeed));
+            t += Time.deltaTime;
+            yield return null;
+        }
+
+        // ④ 경직 — 플레이어의 반격 기회
+        _boss.DriveVelocity(Vector2.zero);
+        yield return new WaitForSeconds(Mathf.Max(0f, _data.ChargeRecover));
+
+        EndCharge();
+    }
+
+    /// <summary>돌진 상태를 반드시 되돌린다. 🔴 어느 갈래로 끝나도 여기를 지나야 한다.</summary>
+    private void EndCharge()
+    {
+        if (_boss != null)
+        {
+            _boss.AiSuspended = false;
+            _boss.DriveVelocity(Vector2.zero);
+        }
+        _busy = false;
+    }
+
+    /// <summary>
+    /// <b>예고 범위 일직선 공격</b> (사용자 요구 B-1).
+    ///
+    /// <para>🔑 <b>새 시스템을 안 만들었다.</b> <see cref="BossSlam"/>(예고 → 폭발 → 풀 반환)을
+    /// <b>줄 세워</b> 놓는다 — <c>D37</c> 의 지뢰밭이 같은 부품을 썼고 이미 검증된 코드다.
+    /// 직선 판정을 새로 짜면 예고 그림·풀 반환·피해 판정을 전부 다시 만들어야 한다.</para>
+    ///
+    /// <para>🔴 마디가 서로 겹치므로 <b>한 번에 여러 마디에 맞을 수 있다.</b>
+    /// 그래서 <see cref="BossPatternData.LineDamage"/> 는 내려찍기보다 낮게 둔다.</para>
+    ///
+    /// <para>보스 몸에서 시작해 플레이어 쪽으로 뻗는다 — <b>보스가 쏘는 것</b>으로 읽혀야 한다.</para>
+    /// </summary>
+    private void LineSlam()
+    {
+        if (_slamPrefab == null || _pool == null) return;
+
+        int segments = Mathf.Max(1, _data.LineSegments);
+        var target = PlayerStats.Current;
+
+        Vector2 origin = transform.position;
+        Vector2 dir = target != null
+            ? ((Vector2)target.transform.position - origin).normalized
+            : Vector2.right;
+        if (dir.sqrMagnitude < 0.0001f) dir = Vector2.right;
+
+        float step = _data.LineLength / segments;
+
+        for (int i = 0; i < segments; i++)
+        {
+            // 🔑 보스 몸 바로 밖(0.5칸)부터 깐다. 몸 위에 깔면 보스가 자기 그림에 가린다.
+            Vector2 at = origin + dir * (step * (i + 0.5f));
+
+            var go = _pool.Get(_slamPrefab, at, Quaternion.identity);
+            var slam = go.GetComponent<BossSlam>();
+            if (slam != null)
+                slam.Initialize(_data.LineDamage, _data.LineRadius, _data.LineWindup, _pool);
         }
     }
 
@@ -97,6 +227,18 @@ public class BossBrain : MonoBehaviour
                             : BossPatternData.At(_data.SlamCooldown, phase) * 0.5f;
         _summonCd = isEntry ? BossPatternData.At(_data.SummonCooldown, phase)
                             : 0f;   // 페이즈가 바뀌면 그 자리에서 부른다
+
+        // 🔴 B-1 의 두 기술도 <b>등장 유예를 받아야 한다</b> (D73).
+        //    처음엔 이 두 줄이 없어서 <c>_chargeCd</c>·<c>_lineCd</c> 가 0 인 채로 시작했고,
+        //    <b>보스가 나타난 첫 프레임에 일직선과 돌진이 동시에 나갔다.</b>
+        //    등장음이 울리기도 전에 맞으면 그건 패턴이 아니라 사고다.
+        //    (시험에서는 이 결함을 <b>거꾸로 이용해</b> 기술을 즉시 발동시켜 쟀다)
+        //
+        //    페이즈가 바뀔 때는 절반만 준다 — 내려찍기와 같은 규칙이다.
+        float chargeCd = BossPatternData.At(_data.ChargeCooldown, phase);
+        float lineCd   = BossPatternData.At(_data.LineCooldown,   phase);
+        _chargeCd = isEntry ? Mathf.Max(chargeCd, _data.ChargeWindup + 2f) : chargeCd * 0.5f;
+        _lineCd   = isEntry ? Mathf.Max(lineCd,   _data.LineWindup   + 2f) : lineCd   * 0.5f;
     }
 
     // ── 기술 ────────────────────────────────────────────────────

@@ -35,5 +35,23 @@ MonoBehaviour:
   - 9
   - 7
   SummonRadius: 3.5
+  ChargeWindup: 0.75
+  ChargeSpeed: 11
+  ChargeDuration: 0.55
+  ChargeRecover: 0.9
+  ChargeCooldown:
+  - 9
+  - 7
+  - 5
+  ChargeSummonCount: 020000000300000004000000
+  LineWindup: 1.1
+  LineLength: 12
+  LineRadius: 1.4
+  LineSegments: 7
+  LineDamage: 14
+  LineCooldown:
+  - 8
+  - 6
+  - 4.5
   EntryShakeMagnitude: 0.55
   EntryShakeDuration: 0.7

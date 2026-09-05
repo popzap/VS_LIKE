@@ -65,6 +65,48 @@ public class BossPatternData : ScriptableObject
     [Tooltip("보스 주변 이 반경 안에 놓는다")]
     public float SummonRadius = 3.5f;
 
+    [Header("소환 돌진 (B-1 · D73)")]
+    // 🔑 소환과 돌진을 **하나의 기술**로 묶었다. 따로 두면 둘 다 "가끔 일어나는 일" 인데,
+    //    묶으면 **쫄이 나타난 것 자체가 돌진의 예고**가 되어 플레이어가 읽을 수 있다.
+    [Tooltip("돌진 전 멈춰 서서 노려보는 시간(초). 🔴 이만큼은 피할 수 있어야 한다")]
+    public float ChargeWindup = 0.75f;
+
+    [Tooltip("돌진 속도(월드 유닛/초). 플레이어 기본 이동 3.7~4.6 보다 빨라야 위협이 된다")]
+    public float ChargeSpeed = 11f;
+
+    [Tooltip("돌진이 지속되는 시간(초). 속도 × 이 값 = 돌진 거리")]
+    public float ChargeDuration = 0.55f;
+
+    [Tooltip("돌진 뒤 멈춰 있는 시간(초). 🔴 플레이어의 반격 기회다 — 0 이면 계속 밀린다")]
+    public float ChargeRecover = 0.9f;
+
+    [Tooltip("페이즈별 소환 돌진 대기(초). 0 이하면 이 기술을 안 쓴다")]
+    public float[] ChargeCooldown = { 9f, 7f, 5f };
+
+    [Tooltip("돌진과 함께 부르는 잡몹 수(페이즈별). SummonEnemy 를 그대로 쓴다")]
+    public int[] ChargeSummonCount = { 2, 3, 4 };
+
+    [Header("예고 일직선 (B-1 · D73)")]
+    // 🔑 새 시스템을 안 만들었다 — BossSlam(예고→폭발→풀 반환)을 **줄 세워** 놓는다.
+    //    D37 의 지뢰밭이 같은 부품을 썼고, 그건 이미 검증된 코드다.
+    [Tooltip("예고가 떠 있는 시간(초). 🔴 0 이면 피할 수 없는 공격이 된다")]
+    public float LineWindup = 1.1f;
+
+    [Tooltip("직선의 길이(월드 유닛). 화면 반너비가 약 10.7 이라 이보다 길면 화면을 가른다")]
+    public float LineLength = 12f;
+
+    [Tooltip("직선의 굵기 = 각 마디의 반경(월드 유닛)")]
+    public float LineRadius = 1.4f;
+
+    [Tooltip("직선을 이루는 마디 수. 많을수록 촘촘하지만 예고 오브젝트도 그만큼 늘어난다")]
+    public int LineSegments = 7;
+
+    [Tooltip("마디 하나의 피해량. 🔴 마디가 겹치므로 실제로는 여러 번 맞을 수 있다 — 낮게 둔다")]
+    public float LineDamage = 14f;
+
+    [Tooltip("페이즈별 일직선 대기(초). 0 이하면 이 기술을 안 쓴다")]
+    public float[] LineCooldown = { 8f, 6f, 4.5f };
+
     [Header("등장")]
     [Tooltip("등장 시 화면 흔들림 세기 / 길이")]
     public float EntryShakeMagnitude = 0.55f;

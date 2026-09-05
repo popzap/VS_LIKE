@@ -41,5 +41,12 @@
 # PhaseSpeedMult 1|1.5|2.2 : 1.08 -> 1.62 -> 2.38. DEV 안(1.35배=1.46)은 체감이 안 난다.
 #                 3페이즈에도 가장 느린 직업(3.5)보다 느리다 — 카이팅을 막지 않는 선이다.
 # Summon* : DEV 임시값 그대로 뒀다. 바꿀 근거가 없었다 (TUNING.md 로 넘김).
-Id,EnemyId,PhaseThresholds,PhaseSpeedMult,SlamWindup,SlamRadius,SlamDamage,SlamCooldown,SummonEnemyId,SummonCount,SummonCooldown,SummonRadius,EntryShakeMagnitude,EntryShakeDuration
-BossOgre,Bonecaller,0.7|0.4,1|1.5|2.2,1.15,2.4,18,5|3.8|2.6,Goblin,3|4|6,12|9|7,3.5,0.55,0.7
+# B-1 (D73) — 쫄 소환 + 돌진 / 예고 일직선
+# Charge* : 쫄을 부르고 곧바로 돌진한다. 🔑 쫄이 나타난 것 자체가 돌진의 예고다.
+#           ChargeWindup 노려보기 · ChargeSpeed 돌진 속도(플레이어 3.7~4.6 보다 빨라야 한다)
+#           ChargeDuration 지속(속도×이 값 = 거리) · ChargeRecover 경직(🔴 0 이면 계속 밀린다)
+#           ChargeCooldown 0 이하면 이 기술을 안 쓴다
+# Line*   : BossSlam 예고를 **줄 세워** 놓는다 (새 시스템 아님 · D37 지뢰밭과 같은 부품).
+#           🔴 마디가 겹쳐 여러 번 맞을 수 있으므로 LineDamage 는 SlamDamage 보다 낮게.
+Id,EnemyId,PhaseThresholds,PhaseSpeedMult,SlamWindup,SlamRadius,SlamDamage,SlamCooldown,SummonEnemyId,SummonCount,SummonCooldown,SummonRadius,EntryShakeMagnitude,EntryShakeDuration,ChargeWindup,ChargeSpeed,ChargeDuration,ChargeRecover,ChargeCooldown,ChargeSummonCount,LineWindup,LineLength,LineRadius,LineSegments,LineDamage,LineCooldown
+BossOgre,Bonecaller,0.7|0.4,1|1.5|2.2,1.15,2.4,18,5|3.8|2.6,Goblin,3|4|6,12|9|7,3.5,0.55,0.7,0.75,11,0.55,0.9,9|7|5,2|3|4,1.1,12,1.4,7,14,8|6|4.5

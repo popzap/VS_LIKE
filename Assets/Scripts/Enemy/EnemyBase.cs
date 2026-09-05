@@ -44,6 +44,20 @@ public class EnemyBase : MonoBehaviour
     /// <summary>보스 페이즈에 따른 영구 속도 배수. 1 이 기본이다.</summary>
     public void SetSpeedMultiplier(float mult) => _phaseSpeedMult = Mathf.Max(0.05f, mult);
 
+    /// <summary>
+    /// 외부가 이동을 가져갔는가 (D73). 켜져 있는 동안 <see cref="FixedUpdate"/> 의 AI 가 안 돈다.
+    ///
+    /// <para>🔴 <b>풀에서 재사용되므로 <see cref="Initialize"/> 에서 반드시 끈다.</b>
+    /// 돌진 도중에 죽은 보스가 풀로 돌아갔다가 잡몹으로 나오면 그 잡몹이 안 움직인다.</para>
+    /// </summary>
+    public bool AiSuspended { get; set; }
+
+    /// <summary>AI 를 재운 쪽이 속도를 직접 준다 (D73). <c>Rb</c> 를 공개하지 않으려고 둔 창구다.</summary>
+    public void DriveVelocity(Vector2 v)
+    {
+        if (Rb != null) Rb.linearVelocity = v;
+    }
+
     // 🔴 컴파일 반영 확인용 (D27). Assets/Refresh 는 재컴파일을 보장하지 않는다.
     public const int Version = 2;   // 2 = 행동 3종 추가 (D51)
 
@@ -120,6 +134,7 @@ public class EnemyBase : MonoBehaviour
         // 이전 생애의 넉백/사망 연출 잔재를 지운다. 안 지우면 갓 스폰된 적이
         // 잠깐 못 움직이거나(넉백 타이머) 충돌이 꺼진 채로 살아난다(사망 연출).
         _knockbackTimer = 0f;
+        AiSuspended     = false;   // 🔴 풀 재사용 — 돌진 중에 죽었으면 켜진 채로 돌아온다 (D73)
         _slowMult       = 1f;   // 안 지우면 다음 웨이브의 멀쩡한 적이 느린 채로 태어난다
         _slowUntil      = 0f;
         if (_deathPopRoutine != null) { StopCoroutine(_deathPopRoutine); _deathPopRoutine = null; }
@@ -214,6 +229,11 @@ public class EnemyBase : MonoBehaviour
             _knockbackTimer -= Time.fixedDeltaTime;
             return;
         }
+
+        // 🔴 외부가 이동을 가져간 동안에는 AI 를 재운다 (D73 · BossBrain 돌진).
+        //    넉백과 같은 이유로 **return 이 필요하다** — 아래 Tick 들이 linearVelocity 를
+        //    통째로 덮어써서, 이 줄이 없으면 돌진 속도가 다음 물리 프레임에 지워진다.
+        if (AiSuspended) return;
 
         switch (Data.AI)
         {

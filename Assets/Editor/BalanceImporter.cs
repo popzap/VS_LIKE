@@ -335,9 +335,31 @@ public static class BalanceImporter
             a.EntryShakeMagnitude = CsvRow.Float (row, "EntryShakeMagnitude", a.EntryShakeMagnitude);
             a.EntryShakeDuration  = CsvRow.Float (row, "EntryShakeDuration",  a.EntryShakeDuration);
 
+            // ── B-1 (D73) ──
+            a.ChargeWindup        = CsvRow.Float (row, "ChargeWindup",   a.ChargeWindup);
+            a.ChargeSpeed         = CsvRow.Float (row, "ChargeSpeed",    a.ChargeSpeed);
+            a.ChargeDuration      = CsvRow.Float (row, "ChargeDuration", a.ChargeDuration);
+            a.ChargeRecover       = CsvRow.Float (row, "ChargeRecover",  a.ChargeRecover);
+            a.ChargeCooldown      = CsvRow.Floats(row, "ChargeCooldown", a.ChargeCooldown);
+            a.ChargeSummonCount   = CsvRow.Ints  (row, "ChargeSummonCount", a.ChargeSummonCount);
+            a.LineWindup          = CsvRow.Float (row, "LineWindup",   a.LineWindup);
+            a.LineLength          = CsvRow.Float (row, "LineLength",   a.LineLength);
+            a.LineRadius          = CsvRow.Float (row, "LineRadius",   a.LineRadius);
+            a.LineSegments        = CsvRow.Int   (row, "LineSegments", a.LineSegments);
+            a.LineDamage          = CsvRow.Float (row, "LineDamage",   a.LineDamage);
+            a.LineCooldown        = CsvRow.Floats(row, "LineCooldown", a.LineCooldown);
+
             // 🔴 예고가 0 이면 피할 수 없는 공격이 된다. 값으로 만들 수 있는 실수라 여기서 잡는다.
             if (a.SlamWindup <= 0f)
                 log.AppendLine($"  ! Bosses.csv '{id}' SlamWindup 이 {a.SlamWindup} 다 — 예고 없는 광역기는 피할 수 없다");
+
+            // B-1 의 두 기술도 같은 이유로 예고가 있어야 한다 (D73).
+            if (a.LineWindup <= 0f)
+                log.AppendLine($"  ! Bosses.csv '{id}' LineWindup 이 {a.LineWindup} 다 — 예고 없는 일직선은 피할 수 없다");
+            if (a.ChargeWindup <= 0f)
+                log.AppendLine($"  ! Bosses.csv '{id}' ChargeWindup 이 {a.ChargeWindup} 다 — 노려보는 시간이 없으면 돌진을 못 피한다");
+            if (a.ChargeRecover <= 0f)
+                log.AppendLine($"  ! Bosses.csv '{id}' ChargeRecover 가 {a.ChargeRecover} 다 — 경직이 없으면 계속 밀리기만 한다");
 
             // 내림차순이 아니면 PhaseOf 가 엉뚱한 페이즈를 답한다.
             for (int i = 1; i < (a.PhaseThresholds?.Length ?? 0); i++)
@@ -953,13 +975,19 @@ public static class BalanceImporter
 
         ExportRows("Bosses.csv",
             "Id,EnemyId,PhaseThresholds,PhaseSpeedMult,SlamWindup,SlamRadius,SlamDamage,SlamCooldown," +
-            "SummonEnemyId,SummonCount,SummonCooldown,SummonRadius,EntryShakeMagnitude,EntryShakeDuration",
+            "SummonEnemyId,SummonCount,SummonCooldown,SummonRadius,EntryShakeMagnitude,EntryShakeDuration," +
+            "ChargeWindup,ChargeSpeed,ChargeDuration,ChargeRecover,ChargeCooldown,ChargeSummonCount," +
+            "LineWindup,LineLength,LineRadius,LineSegments,LineDamage,LineCooldown",
             LoadAll<BossPatternData>(BossFolder), (a, id) => string.Join(",",
                 id, E(a.EnemyId),
                 CsvTable.JoinArray(a.PhaseThresholds), CsvTable.JoinArray(a.PhaseSpeedMult),
                 N(a.SlamWindup), N(a.SlamRadius), N(a.SlamDamage), CsvTable.JoinArray(a.SlamCooldown),
                 E(a.SummonEnemyId), CsvTable.JoinArray(a.SummonCount), CsvTable.JoinArray(a.SummonCooldown),
-                N(a.SummonRadius), N(a.EntryShakeMagnitude), N(a.EntryShakeDuration)));
+                N(a.SummonRadius), N(a.EntryShakeMagnitude), N(a.EntryShakeDuration),
+                N(a.ChargeWindup), N(a.ChargeSpeed), N(a.ChargeDuration), N(a.ChargeRecover),
+                CsvTable.JoinArray(a.ChargeCooldown), CsvTable.JoinArray(a.ChargeSummonCount),
+                N(a.LineWindup), N(a.LineLength), N(a.LineRadius), a.LineSegments,
+                N(a.LineDamage), CsvTable.JoinArray(a.LineCooldown)));
 
         ExportRows("Upgrades.csv",
             "Id,UpgradeId,DisplayName,Description,Icon,MaxLevel,StatKey,Costs,Bonus",
