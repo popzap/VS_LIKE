@@ -30,6 +30,7 @@ MonoBehaviour:
   BonusWeaponSlots: 4
   BonusPassiveSlots: 6
   BonusBuildingSlots: 1
+  ArtFacesRight: 0
   Portrait: {fileID: 21300000, guid: 59578a0dce2e34b449dff41e3428db1b, type: 3}
   BodySprite: {fileID: 473946822, guid: 38e5e616b14aca946b75887a2dd29dfa, type: 3}
   WalkFrames:

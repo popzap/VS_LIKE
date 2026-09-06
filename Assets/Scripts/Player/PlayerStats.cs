@@ -256,6 +256,9 @@ public class PlayerStats : MonoBehaviour
 
         if (cls.BodySprite != null) _controller?.ApplyBodySprite(cls.BodySprite);
 
+        // 🔴 그림의 기본 무기 방향을 알려 준다 (D100). 승급으로 직업이 바뀌면 여기가 다시 돈다.
+        if (_controller != null) _controller.SetArtFacesRight(cls.ArtFacesRight);
+
         // 걷기 프레임은 정지 그림 다음에 넘겨야 한다. PlayerVisual 이 첫 프레임으로
         // sr.sprite 를 다시 덮어쓰므로 순서가 뒤바뀌면 정지 그림이 이겨 버린다.
         if (cls.WalkFrames == null || cls.WalkFrames.Length == 0) return;

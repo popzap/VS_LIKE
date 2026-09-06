@@ -67,7 +67,12 @@ public class PlayerController : MonoBehaviour
             rb.linearVelocity = input.normalized * _stats.Final.MoveSpeed;
 
         // ── 스프라이트 반전 ──────────────────────────────────
-        if (input.x != 0) sr.flipX = input.x < 0;
+        // 🔴 <b>직업마다 기본 방향이 다르다</b> (D100 · 사용자 지적).
+        //    걷기 시트가 전부 <b>정면 그림</b>이라 "향하는 쪽"이 없고,
+        //    <b>무기를 어느 손에 그렸는지</b>가 곧 기본 방향이다 — 그게 엇갈린다.
+        //    Warrior 는 칼이 왼쪽, Ranger 는 활이 오른쪽이라 <b>한 규칙으로는 둘 다 못 맞춘다.</b>
+        //    ⇒ 값은 `Classes.csv` 의 `ArtFacesRight` 가 들고 있다.
+        if (input.x != 0) sr.flipX = _artFacesRight ? input.x < 0 : input.x > 0;
 
         // ── 건물 설치 (Z) ────────────────────────────────────
         // 고르는 단계가 없다. 대기열 맨 앞(가장 먼저 얻은 건물)이 바로 옆에 선다.
@@ -118,6 +123,17 @@ public class PlayerController : MonoBehaviour
         if (sr == null || sprite == null) return;
         sr.sprite = sprite;
     }
+
+    /// <summary>이 직업의 그림이 무기를 오른쪽에 들고 있나 (D100).</summary>
+    private bool _artFacesRight;
+
+    /// <summary>
+    /// <see cref="PlayerStats.ApplyClass"/> 가 직업을 정할 때 알려 준다 (D100).
+    ///
+    /// <para>🔴 <b>승급할 때도 다시 온다</b> — <c>Warrior</c>(칼 왼쪽) → <c>Warden</c>(방패 왼쪽)처럼
+    /// 사슬이 이어져도 값이 바뀔 수 있다. 한 번만 읽고 캐시하면 승급 뒤에 방향이 굳는다.</para>
+    /// </summary>
+    public void SetArtFacesRight(bool facesRight) => _artFacesRight = facesRight;
 
     // ── 피격 연출 ────────────────────────────────────────────
 

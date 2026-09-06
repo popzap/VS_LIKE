@@ -71,6 +71,24 @@ public class CharacterClassData : ScriptableObject
     [Tooltip("건물 종류 칸을 이만큼 늘린다.")]
     public int BonusBuildingSlots;
 
+    /// <summary>
+    /// <b>이 직업의 그림이 무기를 오른쪽에 들고 있나</b> (D100 · 사용자 지적).
+    ///
+    /// <para>🔴 걷기 시트가 전부 <b>정면 그림</b>이라 "원래 향하는 쪽"이 없다.
+    /// <c>flipX</c> 는 좌우를 통째로 뒤집을 뿐이라, <b>무기가 어느 손에 그려졌는지</b>가
+    /// 곧 "기본 방향"이 된다. 그런데 그게 <b>직업마다 엇갈린다</b>:</para>
+    ///
+    /// <list type="bullet">
+    ///   <item><c>false</c> — 무기가 그림 <b>왼쪽</b> (Warrior 칼 · Mage 지팡이 …). 7종</item>
+    ///   <item><c>true</c>  — 무기가 그림 <b>오른쪽</b> (Ranger 활 · Sentinel/Aegis 총구). 3종</item>
+    /// </list>
+    ///
+    /// <para>⚠️ <b>그림에서 읽어 내는 건 포기했다.</b> 불투명 픽셀 무게중심으로 자동 판정해 봤는데
+    /// Ranger 가 "중앙" 으로 나왔다 — <b>몸통 질량을 잰 것이지 무기 위치가 아니다.</b>
+    /// 그래서 <b>사람이 보고 표에 적는다.</b></para>
+    /// </summary>
+    public bool ArtFacesRight;
+
     [Header("연출")]
     [Tooltip("메뉴/HUD 초상화")]
     public Sprite     Portrait;
