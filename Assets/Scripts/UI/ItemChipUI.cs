@@ -18,6 +18,9 @@ using UnityEngine.UI;
 /// </summary>
 public class ItemChipUI : MonoBehaviour
 {
+    // 🔴 컴파일 반영 확인용 (D27).
+    public const int Version = 1;   // 1 = 테두리를 별도 자식으로 분리 (D90)
+
     [SerializeField] private Image           icon;
     [SerializeField] private TextMeshProUGUI label;
 
@@ -33,6 +36,11 @@ public class ItemChipUI : MonoBehaviour
     public void Bind(ItemData item, int level)
     {
         if (item == null) return;
+
+        // 🔑 <b>아이템이 들어와도 테두리는 남는다</b> (D90 · 사용자 요구).
+        //    예전에는 <see cref="icon"/> 하나가 테두리 노릇도 했기 때문에 아이콘을 그리는 순간
+        //    <b>테두리가 사라져</b> 찬 칸만 줄에서 튀어 보였다. 테두리를 별도 자식으로 뽑았다.
+        ShowFrame(item.Category, 0.95f);
 
         if (icon != null)
         {
@@ -93,26 +101,63 @@ public class ItemChipUI : MonoBehaviour
 
     public void BindEmpty(ItemCategory category)
     {
+        // 빈 칸은 <b>같은 테두리를 더 옅게</b> 그린다 — 찬 칸과 한눈에 갈린다.
+        ShowFrame(category, 0.55f);
+
         if (icon != null)
         {
             // 🔴 <b>스프라이트를 null 로 두면 흰 사각형이 통째로 칠해진다</b> (D86 · 사용자 요구).
             //    Unity 의 Image 는 스프라이트가 없으면 흰 쿼드를 그린다 — 그게 "흰박스"였다.
-            //    ⇒ 테두리만 있는 스프라이트를 넣고 9-슬라이스로 늘린다.
-            icon.sprite = FrameSprite;
-            icon.type   = UnityEngine.UI.Image.Type.Sliced;
-
-            // 🔑 <b>분류색 테두리</b> (D87 · 참고 이미지). 줄이 셋이라 색까지 다르면
-            //    무기/패시브/건물이 <b>한눈에</b> 갈린다. 알파 0.30 은 화면에서 안 보였다.
-            var tint = category switch
-            {
-                ItemCategory.Weapon   => WeaponTint,
-                ItemCategory.Building => BuildingTint,
-                _                     => PassiveTint
-            };
-            icon.color = new Color(tint.r, tint.g, tint.b, 0.55f);
+            //    테두리는 이제 <see cref="ShowFrame"/> 이 그리므로 여기서는 <b>지우기만</b> 한다.
+            icon.sprite = null;
+            icon.type   = UnityEngine.UI.Image.Type.Simple;
+            icon.color  = new Color(0f, 0f, 0f, 0f);
         }
         if (label != null) label.text = string.Empty;
         name = "Chip_Empty";
+    }
+
+    // ── 테두리 (D86 신설 · D90 에 별도 자식으로 분리) ──────────────
+
+    private UnityEngine.UI.Image _frame;
+
+    /// <summary>
+    /// <b>분류색 테두리</b>를 켠다. 칸이 비었든 찼든 <b>항상</b> 그린다 (D90).
+    ///
+    /// <para>🔑 <b>왜 자식으로 뽑았나</b> — 예전에는 <see cref="icon"/> 한 장이
+    /// 아이콘도 그리고 테두리도 그렸다. 두 일을 동시에 못 하니 아이템이 들어오는 순간
+    /// 테두리가 사라졌고, <b>찬 칸만 줄에서 튀어 보였다</b>. 겹쳐 그릴 것이 둘이면 Image 도 둘이어야 한다.</para>
+    ///
+    /// <para>애셋은 여전히 0개다 — 오브젝트는 <b>런타임에 한 번</b> 만들고 재사용한다.
+    /// 형제 순서를 <b>맨 뒤</b>로 두어 아이콘 위에 얹는다(가운데가 뚫려 있어 그림을 가리지 않는다).</para>
+    /// </summary>
+    private void ShowFrame(ItemCategory category, float alpha)
+    {
+        if (_frame == null)
+        {
+            var go = new GameObject("Frame", typeof(RectTransform), typeof(UnityEngine.UI.Image));
+            var rt = go.GetComponent<RectTransform>();
+            rt.SetParent(transform, false);
+            rt.anchorMin = Vector2.zero;
+            rt.anchorMax = Vector2.one;
+            rt.offsetMin = Vector2.zero;
+            rt.offsetMax = Vector2.zero;
+            rt.SetAsLastSibling();
+
+            _frame = go.GetComponent<UnityEngine.UI.Image>();
+            _frame.sprite        = FrameSprite;
+            _frame.type          = UnityEngine.UI.Image.Type.Sliced;
+            _frame.raycastTarget = false;
+        }
+
+        var tint = category switch
+        {
+            ItemCategory.Weapon   => WeaponTint,
+            ItemCategory.Building => BuildingTint,
+            _                     => PassiveTint
+        };
+        _frame.color = new Color(tint.r, tint.g, tint.b, alpha);
+        _frame.gameObject.SetActive(true);
     }
 
     // ── 빈 칸 테두리 (D86) ───────────────────────────────────────
