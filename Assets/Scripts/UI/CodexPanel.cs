@@ -30,7 +30,7 @@ using UnityEngine.UI;
 public class CodexPanel : MonoBehaviour
 {
     // 🔴 컴파일 반영 확인용 (D27).
-    public const int Version = 6;   // 6 = 우측 상단 X + ESC (D57)
+    public const int Version = 7;   // 7 = CLASSES 조건 줄에 선행 직업 (B19) · 6 = 우측 상단 X + ESC (D57)
 
     public enum Tab { Weapons, Items, Evolution, Classes, Enemies }
 
@@ -525,11 +525,27 @@ public class CodexPanel : MonoBehaviour
             string name = found ? Display(cls.ClassName, cls.name) : Unknown;
 
             // 승급 직업이면 그 승급 조건을 조건 줄에 그대로 쓴다.
+            //
+            // 🔴 <b>선행 직업을 빼먹으면 조건이 거짓말이 된다</b> (B19 · 사용자 지적).
+            //    `Aegis` 는 <c>Sentinel</c> 이어야만 승급되는데 조건 줄이 재료 둘만 보여 줬다 —
+            //    사용자가 *"터렛 5 아머 5 인데 안 되는데 잘못 적혀있는거야?"* 라고 물었다.
+            //    **틀린 게 아니라 모자랐다.** `EVOLUTION` 탭은 본문에 이 줄이 있는데
+            //    `CLASSES` 탭에만 없었다 — 같은 사실을 두 곳에서 따로 만들다 한쪽이 빠졌다.
             string recipe = "";
             if (em != null)
                 foreach (var ce in em.ClassEvolutions)
                     if (ce != null && ce.ResultClass == cls)
-                    { recipe = Recipe(ce.Ingredients, ce.GetRequiredLevel); break; }
+                    {
+                        recipe = Recipe(ce.Ingredients, ce.GetRequiredLevel);
+                        if (ce.FromClass != null)
+                        {
+                            // 미발견 직업은 이름을 가린다 — 조건 줄에서도 도감 규칙을 지킨다.
+                            string from = Found(CodexKind.Class, ce.FromClass)
+                                        ? Display(ce.FromClass.ClassName, ce.FromClass.name) : Unknown;
+                            recipe = from + "  >  " + recipe;
+                        }
+                        break;
+                    }
 
             _entries.Add(new Entry
             {
