@@ -6,8 +6,17 @@ using TMPro;
 // ────────────────────────────────────────────────────────────────────────────
 //  LevelUpManager  —  레벨업 패널 표시 및 선택 처리
 // ────────────────────────────────────────────────────────────────────────────
+/// <summary>
+/// 아이템 칸이 꽉 찼을 때 대신 주는 보상 (D98 · 사용자 요구).
+/// <b>상점의 <c>ShopSlotKind</c> 와 같은 발상</b>이다 — 살 게 없으면 <b>다른 걸 판다</b>(D71).
+/// </summary>
+public enum LevelUpBonusKind { Gold, Heal, Time }
+
 public class LevelUpManager : MonoBehaviour
 {
+    // 🔴 컴파일 반영 확인용 (D27).
+    public const int Version = 1;   // 1 = 칸이 꽉 찼을 때 대체 보상 (D98)
+
     [Header("UI 참조")]
     [SerializeField] private GameObject       levelUpPanel;
     [SerializeField] private ItemCardUI[]      cards;          // 3장 고정
@@ -25,6 +34,19 @@ public class LevelUpManager : MonoBehaviour
     [Header("리롤 설정")]
     [Tooltip("리롤 1회 비용(골드). 레벨업 1회당 리롤은 한 번만 가능하다.")]
     [SerializeField] private int rerollCost = 1;
+
+    // ── 칸이 꽉 찼을 때의 대체 보상 (D98) — 값은 Economy.csv 가 덮는다 ──
+    [Tooltip("고를 아이템이 없을 때 주는 런 골드")]
+    [SerializeField] private int   fullGoldReward = 60;
+
+    [Tooltip("고를 아이템이 없을 때 회복하는 체력")]
+    [SerializeField] private int   fullHealAmount = 40;
+
+    [Tooltip("고를 아이템이 없을 때 줄여 주는 남은 웨이브 시간(초). 킬 목표 웨이브에는 안 뜬다")]
+    [SerializeField] private float fullTimeCut    = 5f;
+
+    /// <summary>이번 패널에서 아이템 뒤에 채운 대체 보상들.</summary>
+    private readonly System.Collections.Generic.List<LevelUpBonusKind> _bonuses = new();
 
     // 런타임 인벤토리 (현재 런에서 보유 중인 아이템)
     private readonly Dictionary<ItemData, int> _inventory = new();  // item → level
@@ -112,6 +134,7 @@ public class LevelUpManager : MonoBehaviour
         _panelIsForced  = false;
         _rerollUsed     = false;       // 리롤 횟수는 레벨업 1회마다 초기화된다
         _currentChoices = PickItems(cards.Length);
+        BuildBonuses();                      // 🔴 모자란 자리를 대체 보상으로 채운다 (D98)
         RefreshPanel();
         if (levelUpPanel != null) levelUpPanel.SetActive(true);
     }
@@ -126,6 +149,7 @@ public class LevelUpManager : MonoBehaviour
     public void ShowForcedChoices(List<ItemData> choices, System.Action<ItemData> onSelected)
     {
         _forcedChoiceHandler = onSelected;
+        _bonuses.Clear();                    // 🔴 진화 제안에는 대체 보상을 섞지 않는다
         _panelIsForced       = true;   // 이건 레벨업이 아니다 — 빚으로 세지 않는다 (B10)
         _rerollUsed          = true;
         _currentChoices      = choices;
@@ -335,9 +359,19 @@ public class LevelUpManager : MonoBehaviour
     {
         for (int i = 0; i < cards.Length; i++)
         {
-            bool hasItem = i < _currentChoices.Count;
-            cards[i].gameObject.SetActive(hasItem);
-            if (hasItem) cards[i].Setup(_currentChoices[i], this);
+            if (i < _currentChoices.Count)
+            {
+                cards[i].gameObject.SetActive(true);
+                cards[i].Setup(_currentChoices[i], this);
+                continue;
+            }
+
+            // 🔴 아이템이 모자란 자리는 <b>대체 보상</b>으로 채운다 (D98).
+            //    예전에는 그냥 껐다 — 칸이 꽉 차면 <b>카드가 한 장도 없는 빈 패널</b>이 떴다.
+            int b = i - _currentChoices.Count;
+            bool hasBonus = b < _bonuses.Count;
+            cards[i].gameObject.SetActive(hasBonus);
+            if (hasBonus) cards[i].SetupBonus(_bonuses[b], BonusAmount(_bonuses[b]), this);
         }
         // 🔴 색을 코드가 정한다 (D65 · 사용자 요구 1). 씬에 회색으로 박혀 있어서
         //    **누를 수 있는 버튼인지 아닌지가 안 보였다.** 씬 값이 이기면 또 회색이 된다(B11).
@@ -355,6 +389,79 @@ public class LevelUpManager : MonoBehaviour
             rerollCostText.color      = can ? RerollOn : RerollOff;
             rerollButton.interactable = can;
         }
+    }
+
+    // ── 칸이 꽉 찼을 때의 대체 보상 (D98) ───────────────────────
+
+    /// <summary>
+    /// 아이템이 모자란 자리를 채울 보상을 정한다.
+    ///
+    /// <para>🔴 <b>사용자가 본 것은 빈 패널이었다</b> — 칸이 꽉 차면 <see cref="PickItems"/> 가
+    /// 0장을 돌려주고 <see cref="RefreshPanel"/> 이 카드를 전부 꺼서
+    /// <c>LEVEL UP</c> 글자와 리롤 버튼만 남았다. 레벨업을 했는데 <b>아무것도 못 받는다.</b></para>
+    ///
+    /// <para>🔑 <b>상점이 이미 같은 문제를 풀었다</b> (D71) — 살 게 없으면 휴식·환전을 판다.
+    /// 여기도 같은 발상이다: <b>고를 게 없으면 다른 걸 준다.</b></para>
+    ///
+    /// <para>🔴 <b>시간 단축은 조건부다.</b> 킬 목표 웨이브에는 타이머가 아예 없어서
+    /// 줄일 것이 없다 — 그런 웨이브에서는 <b>내놓지 않는다.</b> 못 쓰는 선택지를 보여 주는 건
+    /// 아무것도 안 주는 것보다 나쁘다.</para>
+    /// </summary>
+    private void BuildBonuses()
+    {
+        _bonuses.Clear();
+
+        int missing = cards.Length - _currentChoices.Count;
+        if (missing <= 0) return;
+
+        _bonuses.Add(LevelUpBonusKind.Gold);
+        _bonuses.Add(LevelUpBonusKind.Heal);
+
+        var wm = GameManager.Instance != null ? GameManager.Instance.WaveManager : null;
+        if (wm != null && wm.HasWaveTimer) _bonuses.Add(LevelUpBonusKind.Time);
+
+        // 카드 수보다 많이 만들지 않는다
+        while (_bonuses.Count > missing) _bonuses.RemoveAt(_bonuses.Count - 1);
+    }
+
+    /// <summary>카드에 적힐 숫자. 화면과 실제 지급이 <b>같은 값</b>을 쓰게 한 곳에서 낸다.</summary>
+    private int BonusAmount(LevelUpBonusKind kind) => kind switch
+    {
+        LevelUpBonusKind.Gold => fullGoldReward,
+        LevelUpBonusKind.Heal => fullHealAmount,
+        _                     => Mathf.RoundToInt(fullTimeCut)
+    };
+
+    /// <summary>
+    /// 대체 보상 카드를 골랐다. <see cref="SelectItem"/> 과 <b>같은 마무리</b>를 탄다 —
+    /// 그래야 대기 중인 레벨업(<c>B10</c>)이 이어서 뜬다.
+    /// </summary>
+    public void SelectBonus(LevelUpBonusKind kind)
+    {
+        var gm = GameManager.Instance;
+
+        switch (kind)
+        {
+            case LevelUpBonusKind.Gold:
+                if (gm != null) gm.AddRunGold(fullGoldReward);
+                break;
+
+            case LevelUpBonusKind.Heal:
+                // 🔴 ?. 를 쓰지 않는다 (I-24). 죽는 순간과 겹치면 null 일 수 있다.
+                var ps = PlayerStats.Current;
+                if (ps != null) ps.Heal(fullHealAmount);
+                break;
+
+            case LevelUpBonusKind.Time:
+                var wm = gm != null ? gm.WaveManager : null;
+                // 🔴 고르는 사이에 웨이브가 끝났을 수 있다 — 실패하면 조용히 넘어간다.
+                if (wm != null && !wm.TryCutRemainingTime(fullTimeCut))
+                    Debug.LogWarning("[LevelUp] 시간 단축을 못 넣었다 — 타이머 웨이브가 아니다 (D98)");
+                break;
+        }
+
+        Debug.Log($"[LevelUp] 대체 보상 — {kind} {BonusAmount(kind)}");
+        HidePanel();
     }
 
     // ── 상점 공개 API ────────────────────────────────────────────

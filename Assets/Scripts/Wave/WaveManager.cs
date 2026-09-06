@@ -881,6 +881,27 @@ public class WaveManager : MonoBehaviour
     public bool HasWaveTimer => _waveActive && _timerRoutine != null;
 
     /// <summary>
+    /// 남은 웨이브 시간을 <paramref name="seconds"/> 만큼 <b>깎는다</b>. 성공하면 <c>true</c> (D98).
+    ///
+    /// <para>🔴 <see cref="DevSetRemainingTime"/> 와 <b>따로 둔다.</b> 그쪽은
+    /// <c>#if UNITY_EDITOR</c> 로 감싸는 치트 입구고, 이건 <b>레벨업 보상</b>이라 릴리즈에도 있어야 한다.
+    /// 같은 함수를 쓰면 치트와 게임 규칙이 한 줄에서 얽힌다.</para>
+    ///
+    /// <para>🔴 <b>킬 목표 웨이브에는 안 먹는다</b> — 타이머가 아예 없어서 여기에 값을 넣으면
+    /// HUD 에 없던 숫자가 생기고 클리어 조건과도 어긋난다. <c>false</c> 를 돌려주고
+    /// <b>부르는 쪽이 그 선택지를 아예 안 내놓게</b> 한다.</para>
+    /// </summary>
+    public bool TryCutRemainingTime(float seconds)
+    {
+        if (!HasWaveTimer) return false;
+
+        _timerRemaining   = Mathf.Max(0f, _timerRemaining - Mathf.Abs(seconds));
+        WaveRemainingTime = _timerRemaining;
+        OnTimerUpdated?.Invoke(_timerRemaining);
+        return true;
+    }
+
+    /// <summary>
     /// 개발용 — 지금 웨이브를 <b>즉시 클리어 처리</b>한다 (D63). <see cref="DevPanel"/> 만 부른다.
     ///
     /// <para>🔴 <c>#if UNITY_EDITOR || DEVELOPMENT_BUILD</c> 안에 둔다.
