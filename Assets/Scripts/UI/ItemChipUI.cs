@@ -19,7 +19,7 @@ using UnityEngine.UI;
 public class ItemChipUI : MonoBehaviour
 {
     // 🔴 컴파일 반영 확인용 (D27).
-    public const int Version = 1;   // 1 = 테두리를 별도 자식으로 분리 (D90)
+    public const int Version = 2;   // 2 = 아이콘을 칸 안으로 · TAB 은 테두리 없음 (D91) · 1 = 테두리를 별도 자식으로 분리 (D90)
 
     [SerializeField] private Image           icon;
     [SerializeField] private TextMeshProUGUI label;
@@ -40,7 +40,8 @@ public class ItemChipUI : MonoBehaviour
         // 🔑 <b>아이템이 들어와도 테두리는 남는다</b> (D90 · 사용자 요구).
         //    예전에는 <see cref="icon"/> 하나가 테두리 노릇도 했기 때문에 아이콘을 그리는 순간
         //    <b>테두리가 사라져</b> 찬 칸만 줄에서 튀어 보였다. 테두리를 별도 자식으로 뽑았다.
-        ShowFrame(item.Category, 0.95f);
+        //    🔴 <b>HUD 줄에서만</b> 그린다 (D91) — TAB 창에는 두지 않는다.
+        if (_useFrame) ShowFrame(item.Category, 0.95f);
 
         if (icon != null)
         {
@@ -97,12 +98,47 @@ public class ItemChipUI : MonoBehaviour
     public void SetCompact(bool on)
     {
         if (label != null) label.gameObject.SetActive(!on);
+
+        // 🔑 <b>이 스위치가 "HUD 줄이냐"를 뜻한다</b> (D91). TAB 스탯 창은 이걸 안 부른다 —
+        //    사용자 요구가 *"TAB 에는 두지 말고"* 였으므로 <b>테두리도 여기서만 켠다.</b>
+        _useFrame = on;
+        if (!on)
+        {
+            if (_frame != null) _frame.gameObject.SetActive(false);
+            return;
+        }
+
+        // 🔴 <b>프리팹의 Icon 은 고정 64x64 에 위쪽 정렬이다</b> (`anchor (0.5,1)` · `y -4`).
+        //    TAB 창의 <b>76x96</b> 칸(아이콘 위 · 글자 아래)에 맞춘 값이라
+        //    <b>50x50</b> HUD 칸에서는 <b>아이콘이 칸보다 크다</b> — 테두리를 넘어 삐져나온다.
+        //    사용자 판정이 *"아이템이 제대로 테두리 안에 안들어가"* 였고, 그게 이것이다.
+        //    ⇒ 칸에 <b>맞춰 늘리고</b> 테두리 두께(4) 만큼 더 안쪽으로 넣는다.
+        if (icon != null)
+        {
+            var rt = icon.rectTransform;
+            rt.anchorMin = Vector2.zero;
+            rt.anchorMax = Vector2.one;
+            rt.pivot     = new Vector2(0.5f, 0.5f);
+            rt.offsetMin = new Vector2( IconPadding,  IconPadding);
+            rt.offsetMax = new Vector2(-IconPadding, -IconPadding);
+            icon.preserveAspect = true;   // 세로로 긴 그림이 눌리지 않게
+        }
     }
+
+    /// <summary>
+    /// 칸 안쪽 여백(px). 칸 50 · 테두리 4 이므로 구멍이 42 고,
+    /// 8 을 주면 아이콘이 <b>34x34</b> 로 테두리에서 4px 떨어져 앉는다.
+    /// </summary>
+    private const float IconPadding = 8f;
+
+    /// <summary>HUD 줄에서만 테두리를 그린다 — TAB 스탯 창은 안 그린다 (D91 · 사용자 요구).</summary>
+    private bool _useFrame;
 
     public void BindEmpty(ItemCategory category)
     {
         // 빈 칸은 <b>같은 테두리를 더 옅게</b> 그린다 — 찬 칸과 한눈에 갈린다.
-        ShowFrame(category, 0.55f);
+        // (빈 칸은 HUD 줄에만 있지만, 부르는 쪽이 늘어도 안전하게 같은 조건을 건다.)
+        if (_useFrame) ShowFrame(category, 0.55f);
 
         if (icon != null)
         {
