@@ -613,7 +613,13 @@ Shuriken 은 Sword 와 같은 6.7 로 맞췄다 — **관통은 단일 대상에
 - 건물이 **없으면** → 보물상자를 열 때 **확정으로** 그 카드 하나만 뜬다
   (`ExperienceManager.GrantChestReward` 가 진화를 평범한 카드보다 **먼저** 준다)
 - 건물이 **있으면** → 그 건물이 **제단**이다. 필드에 실제로 세워 둔 건물 반경
-  `EvolutionManager.altarRadius`(**2.2**) 안에서 **E** 를 눌러야 완성된다
+  `EvolutionManager.altarRadius`(**3** · `Economy.csv`) 안에서 **E** 를 눌러야 완성된다
+
+  > 🔴 **`2.2` 였을 때 이게 `B18` 이었다** (`D101` 이 닫음). `BuildingManager.placeDistance 1.8` 의
+  > 링 위 실측 거리가 **1.18 ~ 2.51** 인데 반경이 2.2 라, 갓 세운 건물이 **자리에 따라 E 에 안 닿았다** —
+  > 같은 조작이 될 때도 안 될 때도 있었다. 사용자가 `Aegis` 만 못 승급한 것도 조작이 아니라 **운**이었다.
+  > 🔑 **두 값은 서로를 알아야 한다** — `altarRadius` 는 `placeDistance` 링을 **전부 덮어야** 한다.
+  > 그래서 `D101` 이 이 값을 씬에서 `Economy.csv` 로 끌어올렸다. **나란히 놓고 볼 수 없으면 또 어긋난다.**
 
 > 왜 열을 안 뒀나 — 열을 두면 "건물이 재료인데 상자 경로"라는 **데이터로만 깨질 수 있는 상태**가
 > 생긴다. 제단이 될 건물이 없는데 제단에서 기다리게 되는 것이다. 재료에서 유도하면 그 상태가
@@ -749,7 +755,11 @@ Zombie `12×4=48 < 50`, Demon `6×8=48 < 53−5`. `KillTarget=19` = 보스 1 + �
 이 표에 줄이 있어야 `WaveManager` 가 `BossBrain` 을 붙인다. 없으면 보스는 **HP 7배짜리 잡몹**이다.
 `EnemyId` 가 `EnemyData.BossPattern` 을 되꽂으므로 **`Enemies.csv` 는 안 건드린다.**
 
-**먼저 알아야 할 실제 수치** — `Enemies.csv` 의 Ogre 에 보스 배수를 곱한 값이다:
+> ℹ️ **`EnemyId` 는 이제 `Bonecaller` 다** (`D48` 이 보스 전용 그림·`EnemyData` 를 만들었다).
+> 🔑 **아래 계산은 그대로 유효하다** — `Bonecaller` 의 수치가 `Ogre` 와 **한 자리도 다르지 않다**
+> (HP 220 · 이동 1.2 · 접촉 25 · 배수 7/0.9/2). 그림만 갈렸고 밸런스 변화는 0 이다. *(C52 확인)*
+
+**먼저 알아야 할 실제 수치** — `Enemies.csv` 의 `Bonecaller`(= 옛 Ogre 수치) 에 보스 배수를 곱한 값이다:
 
 | | 계산 | 값 |
 |---|---|---|
@@ -813,6 +823,38 @@ Zombie `12×4=48 < 50`, Demon `6×8=48 < 53−5`. `KillTarget=19` = 보스 1 + �
 > ℹ️ `Summon` 이 `MaxAlive` 에 막힐 걱정은 **기우다.** `Boss1` 웨이브가 실제로 뿌리는 건
 > Zombie 12 + Demon 6 = **18마리**뿐이라 상한 90 중 **72칸이 비어 있다.**
 > 넘치더라도 `SpawnMinion` 이 상한을 지켜 조용히 안 나올 뿐 깨지지 않는다.
+
+#### 🔴 기술이 둘에서 **넷**으로 늘었다 (`D73` · 열 12개 추가) *(C52 가 문서에 반영)*
+
+사용자 요구 *"쫄 소환 + 돌진 패턴, 예고 범위 일직선 공격"*. **위의 `Slam`·`Summon` 표만 보면 낡았다.**
+
+**③ 소환 + 돌진 — 🔑 둘을 하나로 묶은 게 설계의 전부다.**
+따로 두면 각각 *"가끔 일어나는 일"* 인데, 묶으면 **쫄이 나타난 것 자체가 돌진의 예고**가 되고
+쫄이 길을 막아 피할 자리를 좁힌다.
+
+`쫄 소환(예고) → 노려보기 0.75s → 돌진 11 × 0.55s → 경직 0.9s`
+
+| 열 | 값 | 뜻 |
+|---|---|---|
+| `ChargeWindup` | `0.75` | 노려보기. 🔴 **방향은 이 끝에서 한 번만 정한다** — 매 프레임 겨누면 유도탄이 되어 못 피한다 |
+| `ChargeSpeed` · `ChargeDuration` | `11` · `0.55` | 이동 거리 약 **6유닛** |
+| `ChargeRecover` | `0.9` | 🔴 **경직. 플레이어의 반격 자리다** — 없으면 계속 밀리기만 한다. 임포터가 `0` 이면 경고 |
+| `ChargeCooldown` | `9\|7\|5` | 페이즈별 |
+| `ChargeSummonCount` | `2\|3\|4` | 돌진 앞에 까는 쫄 수 |
+
+**④ 예고 범위 일직선 — 🔑 새 시스템을 안 만들었다.**
+`BossSlam`(예고 → 폭발 → 풀 반환)을 **줄 세워** 놓는다. `D37` 지뢰밭이 같은 부품을 썼다.
+
+| 열 | 값 | 뜻 |
+|---|---|---|
+| `LineWindup` | `1.1` | 예고. `SlamWindup 1.15` 와 비슷하게 뒀다 |
+| `LineLength` · `LineRadius` · `LineSegments` | `12` · `1.4` · `7` | 마디 7개를 12유닛에 깐다 |
+| `LineDamage` | **`14`** | 🔴 **`SlamDamage 18` 보다 낮다** — 마디가 겹쳐 **한 번에 여러 마디에 맞을 수 있어서**다 |
+| `LineCooldown` | `8\|6\|4.5` | 페이즈별 |
+
+🟡 **이 12개 값은 `D73` 이 넣은 자리표시다** — 체감 판정은 [`TUNING.md`](TUNING.md) §J.
+`SlamWindup` 처럼 **계산으로 정해지는 값이 아니다**(돌진은 *"맞으면 아프다"* 가 아니라
+*"피할 자리가 있나"* 라 쫄 배치와 얽힌다).
 
 ### `Events.csv` — 이벤트 노드
 
@@ -926,6 +968,29 @@ Zombie `12×4=48 < 50`, Demon `6×8=48 < 53−5`. `KillTarget=19` = 보스 1 + �
 `SlotLimit` 은 **직업 사슬이 비면 `int.MaxValue`** 를 돌려준다. 실제 런은 반드시 직업을 받으므로
 이 경로는 직업 없이 씬을 직접 재생할 때만 탄다 — 거기서 상한을 걸면 원인 모를 "카드가 안 뜬다"가 된다.
 
+#### 🔴 `ArtFacesRight` — 걷기 그림이 어느 쪽을 보고 있나 (`D100` · 19번째 열)
+
+**수치가 아니라 그림의 성질이다.** 걷기 시트가 전부 **정면 그림**이라 *"향하는 쪽"* 이 없고,
+`flipX` 는 좌우를 통째로 뒤집을 뿐이라 **무기를 어느 손에 그렸는지**가 곧 기본 방향이 된다.
+그런데 그게 직업마다 엇갈려서, `flipX = input.x < 0` 한 줄로는 둘 다 못 맞춘다.
+
+| 값 | 뜻 | 직업 |
+|:---:|---|---|
+| `1` | 무기가 **그림 오른쪽** | Ranger(활) · Sentinel(총구) · Aegis(총구) — **3종** |
+| `0` | 무기가 **그림 왼쪽** | Warrior(칼) · Warden · Mage · Doomlord · Demolitionist · Assassin · Summoner — **7종** |
+
+읽는 쪽은 `PlayerController` 의 `flipX = _artFacesRight ? input.x < 0 : input.x > 0` 이다.
+
+> 🔴 **새 직업 그림을 만들면 이 열도 같이 정해야 한다. 코드는 그림만 보고 못 안다.**
+> **자동 판정을 시도하지 말 것** — `D100`(무게중심)과 `C52`(꼬리 길이)가 **서로 다른 지표로 각각 실패했다.**
+> 둘 다 *무기*가 아니라 몸통 질량·아무 돌출물을 쟀고, `C52` 는 10종 중 8종을 맞히고
+> **하필 사용자가 지적한 `Warrior` 를 틀렸다**(오른쪽 꼬리 13.9 는 칼이 아니라 **망토와 어깨**였다).
+> ⇒ **그림을 연다.** 방법은 [`DESIGN_ART.md`](DESIGN_ART.md) §8 (마젠타 배경에 프레임 하나).
+
+> 🟡 **무기가 둘이면 승급 사슬로 정한다.** `Warden` 은 **방패 왼쪽 · 칼 오른쪽**이라 규칙이
+> 한 답을 안 준다. 그럴 땐 `Warrior`(`0`) → `Warden` 이 **한 판 안에서** 갈아 끼운다는 걸 본다 —
+> 값이 다르면 **승급하는 순간 캐릭터가 좌우로 뒤집힌다.** ⇒ 사슬 안에서는 값을 유지한다.
+
 ### `ClassEvolutions.csv` — 직업 승급 레시피 (19차 / I-56)
 
 **조합을 결과별로 갈라 둔 표다.**
@@ -1026,6 +1091,55 @@ SO가 아니라 **씬 컴포넌트의 직렬화 필드**를 직접 쓴다.
 
 > ⚠️ **C# 필드를 지우면 `Economy.csv` 의 해당 행도 같이 지울 것.** 임포터가 잡을 대상이 없어진다.
 > 실제로 `LevelUpManager,rerollCostIncrease` 를 이렇게 정리했다 (I-24).
+
+#### 🔴 이 규칙은 실제로 한 번 새어 나갔다 — **찾는 법을 적어 둔다** *(C52 · 2026-09-06)*
+
+`D92` 가 TAB 저배속 창을 버리고 ESC 일시정지 화면으로 옮기면서 `StatsPanelUI.slowTimeScale`
+C# 필드가 사라졌는데 **`Economy.csv` 의 그 행만 남아 있었다.** 그 상태로 2주 가까이 지났다.
+
+🔴 **임포터는 조용히 넘어가지 않는다** — `BalanceImporter.cs:799` 가
+`! StatsPanelUI.slowTimeScale 필드 없음` 을 찍는다. **그런데 아무도 안 봤다.**
+임포트 보고가 수십 줄이라 경고 한 줄이 묻힌다. ⇒ **로그에 의존하지 말고 주기적으로 훑는다.**
+
+```bash
+python - <<'EOF'
+import csv, io, os, re, glob
+rows = [(r[0].strip(), r[1].strip())
+        for r in csv.reader(io.open('Assets/Game/Balance/Economy.csv', encoding='utf-8'))
+        if r and r[0].strip() and not r[0].lstrip().startswith('#')
+        and not r[0].startswith('Component') and len(r) >= 2]
+src = {os.path.basename(p)[:-3]: io.open(p, encoding='utf-8', errors='replace').read()
+       for p in glob.glob('Assets/Scripts/**/*.cs', recursive=True)}
+sb  = io.open('Assets/Scripts/Player/StatBlock.cs', encoding='utf-8', errors='replace').read()
+for comp, field in rows:                       # 중첩 경로(baseStats.MaxHp)는 앞뒤를 따로 본다
+    t = src.get(comp)
+    head, tail = field.split('.')[0], field.split('.')[-1]
+    if t is None or not re.search(r'' + re.escape(head) + r'', t)        or ('.' in field and not re.search(r'' + re.escape(tail) + r'', sb)):
+        print('  ORPHAN', comp, field)
+EOF
+```
+
+🔑 **중첩 경로를 통째로 찾으면 안 된다** — `baseStats.MaxHp` 는 `PlayerStats` 에 `baseStats`,
+`StatBlock` 에 `MaxHp` 로 나뉘어 있다. 통째로 찾으면 **13행이 전부 거짓 양성**으로 뜬다.
+(실제로 처음 돌렸을 때 그랬다. **대조군 없이 "14건 발견" 을 그대로 믿을 뻔했다.**)
+
+**2026-09-06 기준 84행 · 고아 0.** 애셋 경로도 전 CSV **200개 전부 존재**한다
+(`SceneWiring` 64개 포함). 경로 검사는 `|` 로 **먼저 쪼개고** 봐야 한다 — 안 그러면
+배열 한 칸이 통째로 "없는 파일" 로 잡힌다.
+
+#### `LevelUpManager` — 칸이 꽉 찼을 때의 대체 보상 3줄 (`D98`)
+
+아이템 칸이 다 차면 레벨업 패널이 **빈 화면**이던 것을 메운 값들이다.
+
+| Field | 기본값 | 무엇 |
+|---|---:|---|
+| `fullGoldReward` | `60` | 대신 주는 **런 골드** |
+| `fullHealAmount` | `40` | 대신 **회복하는 체력** |
+| `fullTimeCut` | `5` | 대신 **줄여 주는 남은 웨이브 시간(초)**. 🔴 킬 목표 웨이브에는 안 뜬다 |
+
+🟡 **셋 다 감으로 넣은 자리표시다** — 판정은 [`TUNING.md`](TUNING.md) 몫이다.
+🔑 값을 비교할 기준선: `fullGoldReward 60` 은 **영구 강화 최저가와 같은 수**고
+(§3-5), `fullHealAmount 40` 은 **기본 체력 100 의 40 %**다.
 
 🔴 **여기 쓰려면 그 컴포넌트가 씬에 있어야 한다.**
 임포터는 `Object.FindObjectsByType<MonoBehaviour>` 로 **씬만** 뒤진다 (`BalanceImporter.FindSceneComponent`).

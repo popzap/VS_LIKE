@@ -83,14 +83,19 @@ Sword,Sword,Assets/Prefabs/Weapon_Sword.prefab,...,Proj_Bullet.prefab,,8,...,Ran
 ⑤가 가장 크다. **`EnemyBase` 는 DEV 소유이고 적 전체가 공유한다** — 여기 손대는 건
 독 장판 하나가 아니라 앞으로의 모든 디버프(빙결·화상·취약)의 기반을 까는 일이다.
 
-### 그림은 거의 없다
+### ~~그림은 거의 없다~~ → ✅ **다 채웠다** *(C52 갱신 · 2026-09-06)*
 
-`Assets/Game/Sprites/Effects/` 에 **`Explosion.png` 단 한 장**이다.
-휘두름 · 화살 · 수리검 · 독 장판 · 드래곤 · 문어 — **전부 새로 그려야 한다.**
+> 🔴 **아래 원문은 `C6`(2026-08-30) 시점이다. 지금은 사실이 아니라 이력으로 읽을 것.**
 
-> 📌 **덤으로 찾은 것** — `Weapons/Excalibur.png` · `Windforce.png` · `Devastator.png` 가
-> **이미 있는데** `Weapons.csv` 는 아직 재료 무기 아이콘(Sword/Bow/Gun)을 가리킨다.
-> `TODO.md` §4 의 "전용 스프라이트가 없다"는 **낡았다.** 3줄짜리 CSV 수정으로 닫힌다 (→ §6 0단계).
+**당시:** `Assets/Game/Sprites/Effects/` 에 **`Explosion.png` 단 한 장**이었고
+휘두름 · 화살 · 수리검 · 독 장판 · 드래곤 · 문어를 전부 새로 그려야 했다.
+
+**지금(2026-09-06):** `Effects/` **8장** — `Explosion` · `SwingArc` · `BombGround` ·
+`ToxinField` · `TentacleLash` · `BossSlamRing`(C33) · `Fx_ShockRing`(C46) · `Fx_Burst`(C46).
+투사체·소환수·아이콘도 §5 표가 **전부 ✅** 다. **이 절이 요구한 그림은 하나도 안 남았다.**
+
+> ✅ **`Weapons/Excalibur`·`Windforce`·`Devastator` 도 닫혔다** — `Weapons.csv` 가 이제
+> **각자의 전용 아이콘**을 가리킨다(재료 무기 아이콘이 아니다). 확인함, 2026-09-06.
 
 ---
 
@@ -259,7 +264,7 @@ Sword,Sword,Assets/Prefabs/Weapon_Sword.prefab,...,Proj_Bullet.prefab,,8,...,Ran
 | ✅ 드래곤 | 비행 시트 4×4 | **C13 완료** — `_Incoming/Summons/Dragon_Fly.png`. 규격은 아래 §5-A |
 | ✅ 문어 | 대기 시트 4×4 + 촉수 공격 시트 | **C14 완료** — `_Incoming/Summons/Octopus_Idle.png` · `_Incoming/Effects/TentacleLash.png` |
 | 아이콘 4종 | 낱장 | ✅ Shuriken(C8) · ✅ Toxin(C9) · ✅ Dragon(C13) · ✅ Octopus(C14) |
-| 직업 초상 3종 + 걷기 시트 3종 | 4×4 | 폭발광 · 어쎄신 · 소환사 |
+| ✅ 직업 초상 3종 + 걷기 시트 3종 | 4×4 | **완료** — 폭발광 · 어쎄신 · 소환사. 초상·걷기 6장 전부 있고 **걷기 PPU 10종 다 256** (C52 실측) |
 
 🔴 **걷기 시트의 PPU 는 부류마다 다르다. "512" 는 적·소환수 규격이다** *(C26 정정)*
 
@@ -276,8 +281,10 @@ Sword,Sword,Assets/Prefabs/Weapon_Sword.prefab,...,Proj_Bullet.prefab,,8,...,Ran
 > `C26` 이 그걸 그대로 믿고 직업 그림 요청서에 512 를 적었다가,
 > `.meta` 를 실제로 읽고 잡았다. **문서가 아니라 실물을 잰다.**
 
-> ⚠️ **B1 이 아직 안 고쳐졌다** — 셰이더 uv 문제로 스프라이트 가장자리가 번진다.
-> 지금 규격대로면 **여백 30px 이상**을 둬야 안전하다. B1 이 닫히면 이 제약은 사라진다.
+> ✅ **`B1` 은 닫혔다 (`D15`)** — *"여백 30px 이상"* 제약은 **더 이상 없다.**
+> *(원문: 셰이더 uv 문제로 가장자리가 번지니 여백을 두라 — `C6` 시점 · `C52` 가 갱신)*
+> 🔴 **이 줄이 2주 넘게 낡은 채로 남아 있었다.** 규격 제약은 **지킨 사람이 손해**를 보므로
+> 닫힌 버그의 제약은 **닫는 순간 지워야 한다.** 그림을 30px 씩 작게 그릴 뻔했다.
 
 ### 5-A. 이미 그려 둔 것 — 코드가 지켜야 할 약속
 
