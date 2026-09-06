@@ -10,7 +10,7 @@ using TMPro;
 public class PauseMenuUI : MonoBehaviour
 {
     // 🔴 컴파일 반영 확인용 (D27).
-    public const int Version = 1;   // 1 = 스탯·아이템·조작을 한 화면에 (D92)
+    public const int Version = 2;   // 2 = 한 상자 + 하단 버튼 4개 (D93) · 1 = 스탯·아이템·조작을 한 화면에 (D92)
 
     public static PauseMenuUI Instance { get; private set; }
 
@@ -29,6 +29,9 @@ public class PauseMenuUI : MonoBehaviour
     [SerializeField] private Button resumeButton;
     [SerializeField] private Button optionButton;
     [SerializeField] private Button quitButton;
+
+    [Tooltip("런을 포기하고 메인 메뉴로. 🔴 씬을 다시 로드한다 — 진행 중인 런은 사라진다.")]
+    [SerializeField] private Button mainMenuButton;
 
     [Header("옵션 서브 패널 (별도 패널 연결)")]
     [SerializeField] private GameObject optionSubPanel;
@@ -57,6 +60,9 @@ public class PauseMenuUI : MonoBehaviour
         optionButton.onClick.AddListener(OpenOption);
         quitButton  .onClick.AddListener(QuitGame);
 
+        // 🔴 <c>?.</c> 를 쓰지 않는다 (I-24). 새로 추가한 버튼이라 배선이 빠져 있을 수 있다.
+        if (mainMenuButton != null) mainMenuButton.onClick.AddListener(ReturnToMainMenu);
+
         pausePanel.SetActive(false);
         if (canvasGroup) canvasGroup.alpha = 0;
 
@@ -73,13 +79,25 @@ public class PauseMenuUI : MonoBehaviour
     /// <para>🔴 문자열은 영문이다 — 폰트가 Static 115자라 한글 글리프가 없다 (I-60).
     /// 가운뎃점(· U+00B7)은 문자표에 있으므로 써도 된다.</para>
     /// </summary>
+    /// <remarks>
+    /// 🔴 <b>키와 설명을 <c>&lt;pos&gt;</c> 로 한 줄에 붙이지 않는다</b> (D93).
+    /// 한 상자로 합치면서 이 단이 <b>488 → 390</b> 으로 좁아졌는데,
+    /// *"WASD · Arrow keys"* 만으로 26pt 에서 약 200px 이라 <c>&lt;pos=52%&gt;</c>(203px) 와 부딪힌다.
+    /// <see cref="HelpPanel"/> 이 이미 쓰는 <b>키 한 줄 · 설명 들여쓰기</b> 방식으로 바꾸면
+    /// <b>단 너비와 무관</b>해진다 — 그쪽도 같은 이유로 그렇게 바꿨다 (D85).
+    /// </remarks>
     private const string ControlsBody =
         "<color=#F0C040>CONTROLS</color>\n" +
-        "WASD  ·  Arrow keys<pos=52%>Move\n" +
-        "1   2   3<pos=52%>Pick a card\n" +
-        "Z<pos=52%>Place a building\n" +
-        "F7  ·  F8<pos=52%>Zoom in  ·  out\n" +
-        "ESC<pos=52%>Pause  ·  Resume";
+        "WASD  ·  Arrow keys\n" +
+        "<indent=10%>Move</indent>\n" +
+        "1   2   3\n" +
+        "<indent=10%>Pick a card</indent>\n" +
+        "Z\n" +
+        "<indent=10%>Place a building</indent>\n" +
+        "F7  ·  F8\n" +
+        "<indent=10%>Zoom in  ·  out</indent>\n" +
+        "ESC\n" +
+        "<indent=10%>Pause  ·  Resume</indent>";
 
     private void ApplyControlsText()
     {
@@ -87,8 +105,8 @@ public class PauseMenuUI : MonoBehaviour
         controlsText.text             = ControlsBody;
         controlsText.alignment        = TextAlignmentOptions.TopLeft;
         controlsText.enableAutoSizing = false;
-        controlsText.fontSize         = 24f;
-        controlsText.lineSpacing      = 14f;
+        controlsText.fontSize         = 26f;
+        controlsText.lineSpacing      = 10f;
         controlsText.overflowMode     = TextOverflowModes.Overflow;
         controlsText.richText         = true;
     }
@@ -161,6 +179,29 @@ public class PauseMenuUI : MonoBehaviour
     private void CloseOption()
     {
         if (optionSubPanel != null) optionSubPanel.SetActive(false);
+    }
+
+    // ── 메인 메뉴 ────────────────────────────────────────────
+
+    /// <summary>
+    /// 런을 포기하고 메인 메뉴로 (D93 · 사용자 요구 — 참고 이미지의 *"타이틀 화면"*).
+    ///
+    /// <para>🔑 <b><see cref="RunEndUI"/> 와 같은 경로를 쓴다</b> — <c>GameManager.ReloadScene(false)</c>.
+    /// 흉내 내지 않는다: 그 안에 <c>timeScale</c> 복구와 <c>_autoStartRunOnLoad = false</c> 가 들어 있다.</para>
+    ///
+    /// <para>🔴 <b>나가기 전에 메타를 저장한다</b> — <see cref="QuitGame"/> 와 같은 이유다.
+    /// 씬을 다시 로드하면 <b>이번 런에서 번 메타 골드가 그냥 사라진다.</b></para>
+    ///
+    /// <para>⚠️ <b>진행 중인 런은 버려진다.</b> 확인 창은 두지 않았다 — 참고 이미지도 바로 나간다.
+    /// 되돌릴 수 없는 버튼이므로 <b>Quit 옆이 아니라 끝자리</b>에 뒀다.</para>
+    /// </summary>
+    private void ReturnToMainMenu()
+    {
+        var gm = GameManager.Instance;
+        if (gm != null && gm.MetaProgression != null) gm.MetaProgression.Save();
+
+        Time.timeScale = 1f;
+        GameManager.ReloadScene(false);
     }
 
     // ── 종료 ────────────────────────────────────────────────

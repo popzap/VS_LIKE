@@ -19,7 +19,7 @@ using UnityEngine.UI;
 public class ItemChipUI : MonoBehaviour
 {
     // 🔴 컴파일 반영 확인용 (D27).
-    public const int Version = 2;   // 2 = 아이콘을 칸 안으로 · TAB 은 테두리 없음 (D91) · 1 = 테두리를 별도 자식으로 분리 (D90)
+    public const int Version = 3;   // 3 = 글자 있는 칸도 칸을 따라간다 (D93) · 2 = 아이콘을 칸 안으로 · TAB 은 테두리 없음 (D91) · 1 = 테두리를 별도 자식으로 분리 (D90)
 
     [SerializeField] private Image           icon;
     [SerializeField] private TextMeshProUGUI label;
@@ -105,6 +105,35 @@ public class ItemChipUI : MonoBehaviour
         if (!on)
         {
             if (_frame != null) _frame.gameObject.SetActive(false);
+
+            // 🔴 <b>여기서도 프리팹의 고정 64x64 를 풀어 준다</b> (D93 · `B16` 의 나머지 반쪽).
+            //    <c>D91</c> 은 HUD 쪽만 고쳤다. 격자 칸을 키워도 <b>아이콘은 64 에서 안 자란다</b> —
+            //    사용자 요구가 *"아이템 크기 키워"* 인데 칸만 키우면 <b>여백만 늘어난다.</b>
+            //    ⇒ 위 <b>74 %</b> 를 아이콘, 아래 <b>26 %</b> 를 <c>Lv.N</c> 글자에 준다.
+            //    비율이라 칸 크기가 얼마든 따라간다.
+            if (icon != null)
+            {
+                var irt = icon.rectTransform;
+                irt.anchorMin = new Vector2(0f, 0.26f);
+                irt.anchorMax = new Vector2(1f, 1f);
+                irt.pivot     = new Vector2(0.5f, 0.5f);
+                irt.offsetMin = new Vector2( LabelIconPadding,  LabelIconPadding);
+                irt.offsetMax = new Vector2(-LabelIconPadding, -LabelIconPadding);
+                icon.preserveAspect = true;
+            }
+            if (label != null)
+            {
+                var lrt = label.rectTransform;
+                lrt.anchorMin = Vector2.zero;
+                lrt.anchorMax = new Vector2(1f, 0.26f);
+                lrt.pivot     = new Vector2(0.5f, 0.5f);
+                lrt.offsetMin = Vector2.zero;
+                lrt.offsetMax = Vector2.zero;
+                label.alignment        = TMPro.TextAlignmentOptions.Center;
+                label.enableAutoSizing = true;
+                label.fontSizeMin      = 10f;
+                label.fontSizeMax      = 22f;
+            }
             return;
         }
 
@@ -130,6 +159,9 @@ public class ItemChipUI : MonoBehaviour
     /// 8 을 주면 아이콘이 <b>34x34</b> 로 테두리에서 4px 떨어져 앉는다.
     /// </summary>
     private const float IconPadding = 8f;
+
+    /// <summary>글자를 같이 쓰는 칸(스탯 창·클리어 화면)의 아이콘 여백. 칸이 커서 조금 더 준다.</summary>
+    private const float LabelIconPadding = 10f;
 
     /// <summary>HUD 줄에서만 테두리를 그린다 — TAB 스탯 창은 안 그린다 (D91 · 사용자 요구).</summary>
     private bool _useFrame;

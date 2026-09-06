@@ -26,7 +26,7 @@ using UnityEngine;
 public class StatsPanelUI : MonoBehaviour
 {
     // 🔴 컴파일 반영 확인용 (D27).
-    public const int Version = 5;   // 5 = 꺼진 채 저장된 카드 자가복구 (D92) · 4 = ESC 화면으로 이사 · TAB 폐지 (D92) · 3 = 글자 25 + 코드가 배치 (D87) · 2 = 2단 + 값 정렬 (D87) · 1 = 최초
+    public const int Version = 7;   // 7 = 값 위치 58% (D93) · 6 = 글자 30 (D93) · 5 = 꺼진 채 저장된 카드 자가복구 (D92) · 4 = ESC 화면으로 이사 · TAB 폐지 (D92) · 3 = 글자 25 + 코드가 배치 (D87) · 2 = 2단 + 값 정렬 (D87) · 1 = 최초
 
     [Header("배선")]
     [Tooltip("내용이 담긴 카드. 여닫는 주인은 PauseMenuUI 다 — 이 스크립트는 켜고 끄지 않는다 (D92).")]
@@ -166,8 +166,9 @@ public class StatsPanelUI : MonoBehaviour
     /// <summary>
     /// 글자 배치도 코드가 정한다 — 씬 값이면 다음에 캔버스를 만질 때 조용히 돌아간다 (B11).
     ///
-    /// <para>단 하나가 300 x 340 이고 실측 필요 높이가 <b>279</b>(오른쪽) 였다.
-    /// 25 로 키우면 <c>279 x 25/22 = 317</c> 이라 아직 들어간다 — <b>재고 나서 키운다.</b></para>
+    /// <para>🔴 <b>재고 나서 키운다.</b> 단이 300x340 이던 시절엔 25 가 상한이었다
+    /// (오른쪽 단 실측 316/340). D93 에서 한 상자로 합치며 단이 <b>460x420</b> 이 됐으므로
+    /// <c>316 x 30/25 = 379 ≤ 420</c> — <b>30 까지 올릴 수 있다</b>(사용자: *"스탯 글씨 키워"*).</para>
     ///
     /// <para>🔴 <b>자동 축소는 끈다.</b> 켜 두면 스탯이 늘 때 글자가 스스로 작아져
     /// 어느 날 갑자기 안 읽히는데, 그게 언제 시작됐는지 알 방법이 없다.</para>
@@ -178,7 +179,7 @@ public class StatsPanelUI : MonoBehaviour
         t.text             = body;
         t.alignment        = TextAlignmentOptions.TopLeft;
         t.enableAutoSizing = false;
-        t.fontSize         = 25f;
+        t.fontSize         = 30f;
         t.overflowMode     = TextOverflowModes.Overflow;
         t.richText         = true;
     }
@@ -187,11 +188,19 @@ public class StatsPanelUI : MonoBehaviour
     /// 스탯 한 줄. 🔑 <b>값을 <c>&lt;pos&gt;</c> 로 같은 자리에 세운다</b> (D87 · 참고 이미지).
     ///
     /// <para>예전에는 <c>이름 	 값</c> 이었는데 TMP 의 탭 정지 위치는 기본값이라
-    /// 이름 길이에 따라 값이 <b>들쭉날쭉했다</b>. <c>&lt;pos=72%&gt;</c> 는 단 너비의 비율이라
+    /// 이름 길이에 따라 값이 <b>들쭉날쭉했다</b>. <c>&lt;pos&gt;</c> 는 단 너비의 비율이라
     /// 단을 넓히거나 좁혀도 <b>줄이 계속 맞는다.</b></para>
+    ///
+    /// <para>🔴 <b>72 % 는 여백이 5px 뿐이었다</b> (D93). 글자를 30 으로 키우자 단 460 에서
+    /// 실측 가로가 <b>455/460</b> 이 됐다. <b>58 %</b> 로 당기니 같은 글이 <b>391/460</b> 이다.</para>
+    ///
+    /// <para>⚠️ <b>정정</b> — 처음에는 *"72 % 면 네 자리 체력에서 넘친다"* 고 적었는데
+    /// <b>재 보니 아니었다</b>(<c>9999 / 9999</c> 로 만든 최악 문자열이 72 % 에서 425, 58 % 에서 439).
+    /// 넘치지는 않는다. 58 % 를 쓰는 이유는 <b>실제 본문의 여백이 5px → 69px 로 늘어서</b>이지
+    /// 72 % 가 깨지기 때문이 아니다.</para>
     /// </summary>
     private static void Row(StringBuilder sb, string label, string value)
-        => sb.Append(label).Append("<pos=72%>").Append(value).Append('\n');
+        => sb.Append(label).Append("<pos=58%>").Append(value).Append('\n');
 
     /// <summary>구역 제목 — 금색. <see cref="HelpPanel"/> 과 같은 배색이라 창끼리 통일된다.</summary>
     private static void Head(StringBuilder sb, string title)
@@ -241,6 +250,12 @@ public class StatsPanelUI : MonoBehaviour
             var go   = Instantiate(chipPrefab, itemGrid);
             var chip = go.GetComponent<ItemChipUI>();
             if (chip == null) chip = go.AddComponent<ItemChipUI>();
+
+            // 🔴 <b>안 부르면 아이콘이 프리팹의 고정 64x64 로 남는다</b> (D93 · `B16`).
+            //    격자 칸을 96x104 로 키웠는데 아이콘만 64 면 <b>여백만 늘어난다</b> —
+            //    사용자 요구는 *"아이템 크기 키워"* 였다. <c>false</c> 는 <b>글자를 켠 채</b>
+            //    아이콘을 칸에 맞추라는 뜻이다(레벨은 여기서 보여 준다).
+            chip.SetCompact(false);
             _chips.Add(chip);
         }
         return _chips[index];
