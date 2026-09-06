@@ -187,9 +187,11 @@ I-14~I-18은 **코드 수정이 끝났다.** 하지만 전부 스모크 테스�
 `border x (Canvas.referencePixelsPerUnit / sprite.pixelsPerUnit)` 로 그려진다).
 숫자는 전부 통과했지만 `ScreenSpaceOverlay` 는 여전히 내가 못 찍는다.
 
-- [ ] **HUD 세 줄** — 칸이 서로 떨어져 보이는가. 화면에서 칸 **22.3px** · 가로틈 **4.5px** · 세로틈 **6.2px** 다.
-      여전히 붙어 보이면 씬 `HUD/PortraitGroup/*Row` 의 `HorizontalLayoutGroup.spacing`(지금 10)을 올리고,
-      칸 크기는 `HUDManager.SlotChipSize`(지금 50)를 고친다. **한 줄 최대는 8칸이라 `8x칸 + 7x간격 ≤ 500` 을 지킬 것.**
+- [x] ✅ **HUD 세 줄 — `D89` 에서 다시 벌렸다.** 화면에서 칸 **22.3px** · 가로틈 **9.8px** · 세로틈 **11.6px**.
+      🔑 `D87` 의 4.5px 로는 안 됐다 — 칸마다 **1.8px 테두리**가 붙어 `선-틈-선` 이 8.1px 안에 뭉쳐 **격자선**으로 읽혔다.
+      **틈이 아니라 테두리를 포함한 덩어리로 봐야 한다.**
+      또 붙어 보이면 씬 `HUD/PortraitGroup/*Row` 의 `HorizontalLayoutGroup.spacing`(지금 **22**)을 올린다.
+      🔴 **줄 폭도 같이 늘릴 것** — 한 줄 최대는 Mage 패시브 8칸이라 `8x50 + 7x간격 ≤ 줄 폭`(지금 **560**)이 깨지면 마지막 칸이 잘린다.
 - [ ] **빈 칸의 분류색** — 무기 파랑 · 패시브 초록 · 건물 주황이 구분되는가.
       흐리면 `ItemChipUI.BindEmpty` 의 알파(지금 **0.55**)를, 선이 얇으면 `FrameSprite` 의 `Border`(지금 **4**)를 올린다.
       🔴 **PPU 는 100 에서 건드리지 말 것** — 캔버스 기준과 어긋나는 순간 테두리가 배율만큼 뻥튀기된다.
