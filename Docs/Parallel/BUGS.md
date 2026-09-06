@@ -27,6 +27,7 @@
 | **B10** | 2026-09-03 | DEV(D29 착수 중) | **DEV** | **레벨이 한 번에 여러 번 오르면 카드를 1장만 받는다.** `ExperienceManager.CollectXp:145` 의 `while` 이 레벨마다 `TriggerLevelUp()` 을 부르는데 `LevelUpManager.ShowLevelUpPanel:53` 에 **큐가 없어** 패널이 덮어써진다. 나머지 레벨의 카드가 **조용히 사라진다** | `수정됨(D29)` |
 | **B11** | 2026-09-04 | DEV(D40 검증 중) | **DEV** | **상점 NPC 대사 5줄이 전부 빈칸(□)으로 나온다.** 코드 기본값은 영문인데 `[SerializeField] npcDialogues` 라 **씬에 직렬화된 옛 한글 값이 코드를 덮는다.** `B4`(D5 에서 씬 6곳 영문화)가 **이 배열을 놓쳤다** | ✅ `수정됨 (D43 — 씬 + 프리팹 원본 둘 다)` |
 
+| **B17** | 2026-09-06 | 사용자 실플레이 | **DEV** | **상점에 오래 있다 레벨업하면 상태 기계가 꼬인다.** 예외는 0 — `Editor.log` 스택으로만 잡힌다. 원인 셋이 겹쳤다: ① `VillageBuilding` 이 상점에서도 XP 를 준다(설계) ② 🔴 `ShopRoot`[2] 가 `LevelUpPanel`[1] **위에 그려져** 카드가 숨고 클릭을 상점이 먹는다 ③ 🔴 `OnLevelUpCompleted` 가 **열 때 찍은** `_stateBeforeLevelUp`(=Shop)을 뒤늦게 되돌려 **`Wave` 에서 `Shop` 으로 끌어낸다** — 상점이 없는데 상태만 `Shop` | `열림` |
 | **B16** | 2026-09-06 | DEV(D88 화면 검증 중) | **DEV** | **HUD 아이템 칸의 아이콘이 테두리 밖으로 삐져나온다.** `Prefab_ItemChip` 의 `Icon` 이 `m_SizeDelta 64x64` **고정**이라 칸 크기를 안 따라간다. `D87` 이 HUD 칸을 36→**50** 으로 바꿔 **50 칸에 64 아이콘**이 됐다 (사방 7 캔버스px = 화면 **3.2px**). 빈 칸은 `icon a=0.00` 이라 안 보일 뿐 **크기는 같다** | `수정됨(D91)` |
 
 > 상태값: `열림` · `확인중` · `수정됨(D3)` · `재현안됨` · `보류(사유)`
@@ -375,6 +376,80 @@ Village 재해금 후 Z 순서 = Farm > Bombard > Village > Turret   (기대값�
 ```
 
 콘솔 Error·Warning **0건**.
+
+---
+
+## B17 — 🔴 **상점에 오래 있다 레벨업하면 게임이 상태 기계째 꼬인다** (사용자 실플레이 · 2026-09-06)
+
+**증상:** 사용자 — *"상점을 키고 오래 있으니까 레벨업하면서 게임이 고장났어"*
+
+**예외는 하나도 안 났다.** 그래서 콘솔만 보면 멀쩡하고, `Editor.log` 의 **스택 트레이스**로만 잡힌다.
+
+### 재현된 사슬 (실제 로그 · 스택 포함)
+
+```
+[ShopManager] 상점 열림 · State → Shop        StageMapUI.OnNodeClicked
+[ShopManager] 구매: Turret (125G 소모)
+State → LevelUp                               ExperienceManager.TriggerLevelUp:179
+                                              <- ExperienceManager.CollectXp:171
+                                              <- VillageBuilding.OnCooldownElapsed:11
+                                              <- BuildingBase.Update:65
+State → StageMap                              ShopManager.CloseShop:140
+[ShopManager] 상점 닫힘
+State → Wave                                  GameManager.OnStageNodeSelected:261
+State → Shop                                  🔴 GameManager.OnLevelUpCompleted:453
+                                              <- LevelUpManager.HidePanel:172
+                                              <- LevelUpManager.SelectItem:221
+```
+
+### 🔴 원인 셋이 겹쳤다
+
+**① `VillageBuilding` 이 상점에서도 XP 를 준다.**
+`BuildingBase.Update` 의 쿨다운이 상점 화면에서도 돌아서 **오래 있을수록** 레벨업이 터진다.
+*"오래 있으니까"* 가 이것이다. (이 자체는 `D54` 주석이 이미 인정한 설계다)
+
+**② 🔴 `ShopRoot` 가 `LevelUpPanel` 보다 위에 그려진다.**
+
+```
+[0] HUD
+[1] LevelUpPanel     <- 레벨업 카드
+[2] ShopRoot         <- 🔴 상점이 그 위를 덮는다
+```
+
+`LevelUpPanel/DimBG` 는 `raycastTarget=True` 지만 **자기보다 아래만** 막는다.
+⇒ 레벨업 카드가 **상점 UI 뒤에 숨고**, 클릭은 **상점이 먼저 먹는다.**
+사용자는 카드를 못 보고 상점의 나가기를 눌렀고, 맵으로 나가 다음 노드까지 골랐다.
+
+**③ 🔴 `OnLevelUpCompleted` 가 낡은 상태를 되돌린다.**
+
+```csharp
+public void OnLevelUpCompleted() => ChangeState(_stateBeforeLevelUp);
+```
+
+`_stateBeforeLevelUp` 은 **열 때** 찍힌다(`Shop`). 그 사이 상점이 닫히고 노드가 진행되고
+웨이브까지 들어갔는데, 뒤늦게 카드를 고르자 **게임을 `Wave` 에서 `Shop` 으로 끌어냈다.**
+⇒ **상점이 없는데 상태만 `Shop`** 이라 HUD·입력·진행이 전부 어긋난다. 이게 *"고장"* 이다.
+
+### 🔑 이 버그의 성질
+
+**세 개 중 하나만 고쳐도 이 사슬은 끊긴다.** 다만 고치는 곳에 따라 게임이 달라진다:
+
+| 안 | 무엇을 고치나 | 대가 |
+|---|---|---|
+| **A** | `LevelUpPanel` 을 맨 위로 올린다(형제 순서 / `sortingOrder`) | 가장 작다. 레벨업 중에는 상점을 못 만진다 — **원래 그래야 맞다** |
+| **B** | `OnLevelUpCompleted` 가 **지금 상태가 아직 `LevelUp` 일 때만** 되돌린다 | 안전망. 다른 경로로 상태가 바뀌어도 안 덮어쓴다 |
+| **C** | 상점·맵에서는 레벨업을 **미뤘다가** 전투 복귀 시 띄운다 | 가장 크다. 큐가 필요하고 `B10`(다중 레벨업)과 얽힌다 |
+
+🔑 **A 와 B 는 성격이 다르다** — A 는 *"그 일이 일어나지 않게"*, B 는 *"일어나도 안 깨지게"* 다.
+`B14`·`B15` 에서 배운 대로 **둘 다 하는 게 맞다.** A 만 하면 다른 입구(예: `DevPanel`,
+이벤트 패널)가 생길 때 같은 사슬이 되살아난다.
+
+⚠️ **①은 고치지 않는 쪽을 권한다.** 상점에서 XP 가 도는 건 마을 건물의 설계 의도고,
+막으면 *"상점에 있는 동안 마을이 논다"* 가 된다. **표시 순서와 복귀 규칙**만 고치면 된다.
+
+### 상태
+
+`열림` — 사용자에게 보고했고 **어느 안으로 갈지 결정 대기**다. 마감이 내일이라 A+B 를 권한다.
 
 ---
 
