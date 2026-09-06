@@ -10,6 +10,9 @@ using UnityEngine;
 /// </summary>
 public class BuildingBase : MonoBehaviour
 {
+    // 🔴 컴파일 반영 확인용 (D27).
+    public const int Version = 1;   // 1 = 전투 노드에서만 쿨다운이 돈다 (B17)
+
     protected BuildingData Data;
     protected int          Level;
     protected ObjectPool   Pool;
@@ -54,9 +57,37 @@ public class BuildingBase : MonoBehaviour
     /// <summary>false 면 쿨다운 타이머가 멈춘다 (식당이 힐템 회수를 기다릴 때).</summary>
     protected virtual bool CooldownActive => true;
 
+    /// <summary>
+    /// 🔴 <b>전투 노드에서만 건물이 돈다</b> (B17 · 사용자 판단).
+    ///
+    /// <para>예전에는 <see cref="Update"/> 가 <b>무조건</b> 돌았다. 그래서 상점에 오래 앉아 있으면
+    /// <see cref="VillageBuilding"/> 이 쿨다운마다 XP 를 얹어 <b>상점 화면에서 레벨업이 터졌고</b>,
+    /// 그 레벨업 패널이 상점 UI 뒤에 숨으면서 상태 기계가 통째로 꼬였다 (`B17`).</para>
+    ///
+    /// <para>🔑 <b>사용자 판단이 옳았다.</b> 나는 *"막으면 상점에 있는 동안 마을이 논다"* 며
+    /// 그대로 두자고 했는데, 애초에 <b>마을·농장이 전투 밖에서 도는 것 자체가 이상하다.</b>
+    /// 터렛·곡사포도 마찬가지다 — 맵 화면에서 쏠 적이 없다.</para>
+    ///
+    /// <para>⚠️ <c>Paused</c>·<c>LevelUp</c> 은 어차피 <c>timeScale = 0</c> 이라 타이머가 안 흐른다.
+    /// 여기서 막는 것은 <b>상점·맵·이벤트·결과창</b> 처럼 <b>시간은 흐르는데 전투가 아닌</b> 화면이다.</para>
+    ///
+    /// <para>🔑 타이머를 <b>되돌리지 않고 멈춘다</b> — 전투로 돌아오면 멈춘 자리에서 이어진다.
+    /// 리셋하면 상점을 들를 때마다 건물이 한 박자씩 손해를 본다.</para>
+    /// </summary>
+    private static bool InCombat
+    {
+        get
+        {
+            // 🔴 GameManager.Instance 를 Awake 에서 캐시하지 않는다 (I-8 · I-38).
+            var gm = GameManager.Instance;
+            return gm != null && gm.CurrentState == GameState.Wave;
+        }
+    }
+
     private void Update()
     {
         if (Data == null || !CooldownActive) return;
+        if (!InCombat) return;
 
         _timer -= Time.deltaTime;
         if (_timer > 0f) return;

@@ -450,6 +450,23 @@ public class GameManager : MonoBehaviour
     /// <summary>레벨업 선택 완료 후 LevelUpManager에서 호출.</summary>
     public void OnLevelUpCompleted()
     {
+        // 🔴 <b>아직 레벨업 중일 때만 되돌린다</b> (B17 안전망).
+        //    <c>_stateBeforeLevelUp</c> 은 패널을 <b>열 때</b> 찍힌다. 그 사이에 다른 경로가
+        //    상태를 바꿔 놨다면 그건 <b>더 최신 사실</b>이라 덮어쓰면 안 된다.
+        //
+        //    🔴 실제로 그렇게 깨졌다 — 상점에서 레벨업이 뜬 채 상점을 닫고 맵에서 노드를 골라
+        //    <c>Wave</c> 로 들어갔는데, 뒤늦게 카드를 고르자 여기가 <b>게임을 다시 `Shop` 으로</b>
+        //    끌어냈다. 상점은 이미 닫혔으니 <b>상태만 `Shop` 인 유령</b>이 된다.
+        //
+        //    ⚠️ 이 가드가 걸리면 <c>timeScale</c> 은 건드리지 않는다 — 지금 상태의 주인이
+        //    따로 있다는 뜻이고, 남의 시간을 되돌리면 그쪽이 깨진다 (`DoHitstop` 과 같은 계약).
+        if (CurrentState != GameState.LevelUp)
+        {
+            Debug.LogWarning($"[GameManager] 레벨업이 끝났는데 상태가 이미 {CurrentState} 다 — "
+                           + $"'{_stateBeforeLevelUp}' 로 되돌리지 않는다 (B17)");
+            return;
+        }
+
         ChangeState(_stateBeforeLevelUp);
 
         // ResumeWave 는 웨이브가 돌고 있지 않으면 아무것도 하지 않는다 (timeScale 도 안 돌린다).
