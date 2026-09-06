@@ -55,7 +55,13 @@ public class UpgradeCardUI : MonoBehaviour
 
         if (priceText != null)
         {
-            priceText.text  = maxed ? "MAX" : $"{cost} G";
+            // 🔴 <b>다 키웠으면 가격 칸을 비운다</b> (D104 · C51 요청-42 ①-3).
+            //    예전에는 여기도 "MAX" 였는데, `MaxedText` 도장이 <b>카드 한가운데</b>에 있어서
+            //    <c>LevelText</c> 의 62 % · <c>DescText</c> 의 57 % 를 덮고 있었다.
+            //    도장을 <b>죽어 있는 BuyButton 자리</b>로 내렸더니 이번엔 두 "MAX" 가
+            //    <b>1.8px 간격</b>으로 붙어 한 단어가 겹쳐 찍힌 것처럼 보였다.
+            //    ⇒ 상태는 도장이 말한다. 가격 칸은 <b>낼 값이 없으므로</b> 비운다.
+            priceText.text  = maxed ? "" : $"{cost} G";
             priceText.color = maxed || currency >= cost ? affordColor : pricyColor;
         }
 

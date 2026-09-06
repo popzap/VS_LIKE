@@ -152,7 +152,16 @@ public class ShopManager : MonoBehaviour
     {
         if (!CanReroll()) return;
 
-        GameManager.Instance.SpendRunGold(_currentRerollCost);
+        // 🔴 <b>올리기 전 값을 붙잡아 둔다</b> (D104 · C51 요청-42 ②).
+        //    아래에서 _currentRerollCost 를 <b>올린 뒤</b> 찍고 있었는데 문구가 "비용 누계" 였다.
+        //    그래서 로그가 <b>다음 리롤 가격</b>을 "누계"라고 부르고 있었다 —
+        //    실제로 낸 값은 25·40·55·70(합 190G)인데 로그는 40·55·70·85 를 찍었다.
+        //    🔑 <b>값이 아니라 이름이 틀린 것</b>이라 동작은 안 바뀐다. 그런데 이미
+        //    D96 이 이걸 누계로 읽어 그 판 수입 추정을 377G → 482G(+28 %)로 어긋냈다.
+        //    ⇒ 이름만 고치면 "낸 값"은 여전히 로그에 없다. <b>둘 다 찍는다.</b>
+        int paid = _currentRerollCost;
+
+        GameManager.Instance.SpendRunGold(paid);
         _rerollCount++;
         _currentRerollCost = baseRerollCost + _rerollCount * rerollCostIncrease;
 
@@ -162,7 +171,7 @@ public class ShopManager : MonoBehaviour
         // 구매(UiSelect)와 갈라 놓는다. 골드를 썼는데 확정이 아니라는 게 소리로 구분돼야 한다.
         AudioManager.Play(SfxId.UiCancel);
 
-        Debug.Log($"[ShopManager] 리롤 (비용 누계: {_currentRerollCost}G)");
+        Debug.Log($"[ShopManager] 리롤 (낸 값: {paid}G · 다음 리롤: {_currentRerollCost}G)");
     }
 
     // ─────────────────────────────────────────────────────────────

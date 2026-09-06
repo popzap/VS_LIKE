@@ -62,12 +62,31 @@ public class BossHealthBarUI : MonoBehaviour
         Refresh();
     }
 
+    /// <summary>컴파일 반영 확인용 (D27). 값을 바꿨으면 이 숫자를 올린다.</summary>
+    public const int Version = 1;
+
     private void Update()
     {
         if (_boss == null) return;
 
         // 죽었거나 풀로 돌아가 비활성이면 내린다.
         if (_boss.Dead || !_boss.gameObject.activeInHierarchy) { Hide(); return; }
+
+        // 🔴 <b>전투 화면이 아닐 때는 내린다</b> (D104 · 사용자: "ESC 눌렀을때 맨위에 보이는데").
+        //    씬 형제 순서가 <c>BossHealthBar</c>[11] > <c>PausePanel</c>[8] > <c>LevelUpPanel</c>[7] 이라
+        //    체력 바가 <b>두 화면 위로 뚫고 올라온다.</b> 사용자는 ESC 에서 봤지만
+        //    <b>보스전 중 레벨업에서도 같은 일이 난다</b> — 원인이 하나다.
+        //
+        //    🔑 <b>형제 순서를 바꾸지 않았다.</b> <c>PausePanel</c> 을 위로 올리면 그 위에 있어야 하는
+        //    <c>OptionSubPanel</c>[9] 이 뒤로 밀려 옵션 창이 가려진다. 순서를 만지면 다른 짝이 깨진다.
+        //    ⇒ <see cref="BossOffscreenArrowUI"/> 와 <b>같은 방식</b>으로 상태를 본다.
+        //
+        //    🔴 <see cref="Hide"/> 를 쓰면 안 된다 — 거긴 <c>_boss</c> 를 지워서 <b>영구히</b> 내린다.
+        //    일시정지를 풀면 다시 떠야 하므로 <b>보이기만</b> 끈다.
+        var gm = GameManager.Instance;
+        bool inCombat = gm != null && gm.CurrentState == GameState.Wave;
+        if (panel != null && panel.activeSelf != inCombat) panel.SetActive(inCombat);
+        if (!inCombat) return;
 
         Refresh();
     }
