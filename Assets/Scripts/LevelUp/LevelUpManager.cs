@@ -15,7 +15,7 @@ public enum LevelUpBonusKind { Gold, Heal, Time }
 public class LevelUpManager : MonoBehaviour
 {
     // 🔴 컴파일 반영 확인용 (D27).
-    public const int Version = 1;   // 1 = 칸이 꽉 찼을 때 대체 보상 (D98)
+    public const int Version = 2;   // 2 = 리롤 글자 흰색 (D99) · 1 = 칸이 꽉 찼을 때 대체 보상 (D98)
 
     [Header("UI 참조")]
     [SerializeField] private GameObject       levelUpPanel;
@@ -27,7 +27,10 @@ public class LevelUpManager : MonoBehaviour
     [SerializeField] private ItemData[]       allItems;        // 모든 ItemData 등록
 
     /// <summary>리롤을 누를 수 있을 때의 글자색 (D65). 씬이 아니라 코드가 정본이다.</summary>
-    private static readonly Color RerollOn  = new Color(0.96f, 0.80f, 0.28f, 1f);
+    // 🔴 <b>흰색이다</b> (D99 · 사용자: *"리롤 글자 색을 바꿔 하얀색으로"*).
+    //    금색(0.96, 0.80, 0.28)이었는데 카드의 강조색·`LEVEL UP` 제목과 같은 색이라
+    //    <b>버튼인지 장식인지 안 갈렸다.</b> <see cref="ShopUI"/> 는 이미 흰색을 쓴다 — 맞춘다.
+    private static readonly Color RerollOn  = Color.white;
     /// <summary>못 누를 때. 회색이되 <b>바탕과는 확실히 다른</b> 밝기로 둔다.</summary>
     private static readonly Color RerollOff = new Color(0.48f, 0.50f, 0.55f, 1f);
 
