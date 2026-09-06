@@ -30,7 +30,7 @@ using UnityEngine.UI;
 public class CodexPanel : MonoBehaviour
 {
     // 🔴 컴파일 반영 확인용 (D27).
-    public const int Version = 7;   // 7 = CLASSES 조건 줄에 선행 직업 (B19) · 6 = 우측 상단 X + ESC (D57)
+    public const int Version = 8;   // 8 = EVOLUTION 무기만 · CLASSES 티어별 줄 (D103) · 7 = CLASSES 조건 줄에 선행 직업 (B19) · 6 = 우측 상단 X + ESC (D57)
 
     public enum Tab { Weapons, Items, Evolution, Classes, Enemies }
 
@@ -103,6 +103,15 @@ public class CodexPanel : MonoBehaviour
         public bool   Found;
         public string Recipe;    // 진화 조건 한 줄. 없으면 빈 문자열
         public string Body;      // 수치
+
+        /// <summary>
+        /// 고를 수 없는 칸 (D103). <b>티어 제목</b>이거나 <b>줄을 맞추는 빈 칸</b>이다.
+        /// 진행률(<c>n / m</c>)에서도 빠지고 클릭도 안 먹는다.
+        /// </summary>
+        public bool   Filler;
+
+        /// <summary>제목 칸이면 그 글자. 빈 칸이면 <c>null</c>.</summary>
+        public string Label;
     }
 
     // ── 수명 ────────────────────────────────────────────────────
@@ -194,7 +203,11 @@ public class CodexPanel : MonoBehaviour
         // 새 목록의 중간이 보이고 "왜 비었지?" 가 된다.
         if (gridContent != null) gridContent.anchoredPosition = Vector2.zero;
 
-        Pick(_entries.Count > 0 ? 0 : -1);
+        // 🔴 첫 칸이 티어 제목일 수 있다 (D103) — 고를 수 있는 첫 칸을 찾는다.
+        int first = -1;
+        for (int i = 0; i < _entries.Count; i++)
+            if (!_entries[i].Filler) { first = i; break; }
+        Pick(first);
     }
 
     private void DrawTabHighlight()
@@ -211,9 +224,15 @@ public class CodexPanel : MonoBehaviour
     private void DrawProgress()
     {
         if (progressText == null) return;
-        int found = 0;
-        foreach (var e in _entries) if (e.Found) found++;
-        progressText.text = $"{found} / {_entries.Count} discovered";
+        // 🔴 티어 제목·빈 칸은 세지 않는다 (D103) — 안 그러면 10/16 처럼 나온다.
+        int found = 0, total = 0;
+        foreach (var e in _entries)
+        {
+            if (e.Filler) continue;
+            total++;
+            if (e.Found) found++;
+        }
+        progressText.text = $"{found} / {total} discovered";
     }
 
     // ── 격자 ────────────────────────────────────────────────────
@@ -240,6 +259,12 @@ public class CodexPanel : MonoBehaviour
             if (!used) continue;
 
             var e    = _entries[i];
+
+            // 🔴 제목·빈 칸은 고를 수 없다 (D103). 누르면 상세가 비어 버리고
+            //    "눌렀는데 아무 일도 없다" 가 된다.
+            var cellBtn = _cells[i].GetComponent<Button>();
+            if (cellBtn != null) cellBtn.interactable = !e.Filler;
+
             var icon = FindIcon(_cells[i]);
             if (icon != null)
             {
@@ -259,9 +284,18 @@ public class CodexPanel : MonoBehaviour
                 fallback.gameObject.SetActive(needText);
                 if (needText)
                 {
-                    fallback.text = e.Found ? Short(e.Name) : Unknown;
-                    // 미발견 칸은 밝으므로 글자도 검어야 읽힌다 (아이콘과 같은 규칙).
-                    fallback.color = e.Found ? Color.white : HiddenTint;
+                    // 제목 칸은 티어 글자를, 빈 칸은 아무것도 안 쓴다 (D103).
+                    if (e.Filler)
+                    {
+                        fallback.text  = e.Label ?? "";
+                        fallback.color = CellPicked;      // 금색 — 칸이 아니라 제목이라는 신호
+                    }
+                    else
+                    {
+                        fallback.text = e.Found ? Short(e.Name) : Unknown;
+                        // 미발견 칸은 밝으므로 글자도 검어야 읽힌다 (아이콘과 같은 규칙).
+                        fallback.color = e.Found ? Color.white : HiddenTint;
+                    }
                 }
             }
         }
@@ -280,6 +314,13 @@ public class CodexPanel : MonoBehaviour
             // 🔑 칸 배경도 발견 여부로 가른다. 밝은 실루엣만으로는
             //    "아직 못 먹은 것"인지 "무채색 아이템"인지 헷갈릴 수 있다.
             //    미발견 칸을 더 어둡게 깔면 실루엣의 대비도 같이 올라간다.
+            // 제목·빈 칸은 판을 안 그린다 — 그려 두면 고를 수 있는 칸처럼 보인다 (D103).
+            if (i < _entries.Count && _entries[i].Filler)
+            {
+                bg.color = new Color(0f, 0f, 0f, 0f);
+                continue;
+            }
+
             bool found = i < _entries.Count && _entries[i].Found;
             bg.color = (i == _picked) ? CellPicked : (found ? CellNormal : CellHidden);
         }
@@ -308,7 +349,7 @@ public class CodexPanel : MonoBehaviour
         _picked = index;
         DrawCellSelection();
 
-        bool ok = index >= 0 && index < _entries.Count;
+        bool ok = index >= 0 && index < _entries.Count && !_entries[index].Filler;
         var  e  = ok ? _entries[index] : default;
 
         if (detailTitle  != null) detailTitle.text  = ok ? e.Name   : "";
@@ -425,34 +466,10 @@ public class CodexPanel : MonoBehaviour
             });
         }
 
-        foreach (var ce in em.ClassEvolutions)
-        {
-            if (ce == null) continue;
-            bool found  = Found(CodexKind.Class, ce.ResultClass);
-            string name = found && ce.ResultClass != null
-                        ? Display(ce.ResultClass.ClassName, ce.ResultClass.name) : Unknown;
-            string recipe = Recipe(ce.Ingredients, ce.GetRequiredLevel);
-
-            var sb = new StringBuilder();
-            sb.AppendLine("<b>PROMOTION</b>   Materials are NOT consumed.");
-            if (ce.FromClass != null)
-                sb.AppendLine("Requires class: " + (Found(CodexKind.Class, ce.FromClass)
-                    ? Display(ce.FromClass.ClassName, ce.FromClass.name) : Unknown));
-            if (found && ce.ResultClass != null)
-            {
-                sb.AppendLine();
-                sb.Append(ClassBody(ce.ResultClass));
-            }
-
-            _entries.Add(new Entry
-            {
-                Name   = name,
-                Icon   = ce.ResultClass != null ? ce.ResultClass.Portrait : null,
-                Found  = found,
-                Recipe = recipe,
-                Body   = sb.ToString(),
-            });
-        }
+        // 🔴 <b>직업은 여기 안 넣는다</b> (D103 · 사용자: *"Evolution쪽에는 무기만"*).
+        //    예전에는 승급도 같이 넣어서 `EVOLUTION` 탭에 무기와 직업이 섞여 있었다 —
+        //    <b>같은 것이 두 탭에 뜨고</b>(`CLASSES` 에도 있다) 무엇을 보는 탭인지 흐려진다.
+        //    승급은 <see cref="BuildClasses"/> 가 티어별로 보여 준다.
     }
 
     /// <summary>
@@ -514,13 +531,66 @@ public class CodexPanel : MonoBehaviour
         return false;
     }
 
+    /// <summary>격자의 열 수. 티어를 <b>줄 단위로</b> 끊으려면 이 값이 필요하다 (D103).</summary>
+    private int GridColumns
+    {
+        get
+        {
+            if (gridContent == null) return 6;
+            var g = gridContent.GetComponent<GridLayoutGroup>();
+            if (g == null || g.constraint != GridLayoutGroup.Constraint.FixedColumnCount) return 6;
+            return Mathf.Max(1, g.constraintCount);
+        }
+    }
+
+    /// <summary>다음 티어가 새 줄에서 시작하도록 빈 칸을 채운다 (D103).</summary>
+    private void PadRow()
+    {
+        int cols = GridColumns;
+        while (_entries.Count % cols != 0)
+            _entries.Add(new Entry { Filler = true });
+    }
+
+    /// <summary>
+    /// 직업 탭 — <b>티어별로 줄을 나눠</b> 쌓는다 (D103 · 사용자 요구).
+    ///
+    /// <para>사용자가 스크린샷에 <c>tier 2</c>·<c>tier 3</c> 를 손으로 적어 보냈다 —
+    /// <b>어느 것이 상위인지 화면에서 알 수 없었다.</b> 예전에는 10종이 한 덩어리로 흘러
+    /// 티어 2와 3이 <b>같은 줄에 섞여</b> 있었다.</para>
+    ///
+    /// <para>🔑 제목 칸을 <b>자기 줄에</b> 두고 그 줄의 나머지를 빈 칸으로 채운다.
+    /// <c>GridLayoutGroup</c> 은 칸을 순서대로 흘리므로 <b>줄을 끊는 방법이 이것뿐</b>이다.</para>
+    /// </summary>
     private void BuildClasses()
     {
         var em = EvolutionManager.Instance;
 
-        foreach (var cls in AllKnownClasses())
+        // 티어 오름차순 — 시작 직업이 먼저, 상위가 뒤로.
+        var all = AllKnownClasses();
+        all.Sort((a, b) =>
+        {
+            if (a == null || b == null) return 0;
+            int t = a.Tier.CompareTo(b.Tier);
+            return t != 0 ? t : string.CompareOrdinal(a.name, b.name);
+        });
+
+        int lastTier = int.MinValue;
+        foreach (var cls in all)
         {
             if (cls == null) continue;
+
+            if (cls.Tier != lastTier)
+            {
+                lastTier = cls.Tier;
+                PadRow();                                   // 앞 티어의 줄을 닫는다
+                _entries.Add(new Entry
+                {
+                    Filler = true,
+                    Label  = "TIER " + cls.Tier,
+                });
+                PadRow();                                   // 제목이 줄을 혼자 쓴다
+            }
+
             bool found  = Found(CodexKind.Class, cls);
             string name = found ? Display(cls.ClassName, cls.name) : Unknown;
 

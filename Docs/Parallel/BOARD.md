@@ -527,7 +527,7 @@ CONTENT 는 **읽기만** 한다 — 내 요청이 언제 처리될지 가늠하
 
 | 세션 | 다음 이슈 번호 |
 |---|---|
-| DEV | `D103` |
+| DEV | `D104` |
 | CONTENT | `C53` |
 | 버그(공용) | `B20` |
 
@@ -546,6 +546,7 @@ CONTENT 는 **읽기만** 한다 — 내 요청이 언제 처리될지 가늠하
 
 | 세션 | 이슈 | 건드린 것 | 날짜 | 결과 |
 |---|---|---|---|---|
+| DEV | `D103` | `Assets/Scripts/UI/CodexPanel.cs` · `Docs/**` | 2026-09-06 | `완료` — 사용자 요구 2건. ① **`EVOLUTION` 은 무기만** — 승급 4종이 같이 들어가 있어서 `CLASSES` 와 **겹쳐 뜨고** 무엇을 보는 탭인지 흐렸다. 3/3 (무기)로 깔끔해졌다. ② **`CLASSES` 를 티어별 줄로** — 사용자가 스크린샷에 `tier 2`·`tier 3` 를 손으로 적어 보냈다(화면만으로는 상위를 알 수 없었다). 예전엔 10종이 한 덩어리로 흘러 **티어 2와 3이 같은 줄에 섞였다.** `Entry.Filler`/`Label` 신설 + `GridColumns`·`PadRow` 로 제목이 자기 줄을 쓰게 했다 — `GridLayoutGroup` 은 칸을 순서대로 흘리므로 **줄을 끊는 방법이 이것뿐**이다. 제목·빈 칸은 **진행률에서 빼고 클릭도 막았다**(안 그러면 10/16 이 되고 눌러도 아무 일이 없다) | 판정 — `Evolution 3/3` · `Classes 10/10` 유지 · 격자가 `[TIER 1] / 6종 / [TIER 2] / 3종 / [TIER 3] / Aegis` 로 끊긴다. 🔴 **중괄호를 하나 남겨 파일을 깼다** — `Version` 이 7 에서 안 오르길래 `Editor.log` 를 봤더니 `CS8803` 25건이었다. 🔑 **컴파일 확인이 이걸 잡았다**(콘솔 에러 0 · `isCompilationSuccessful` 도 true 였다) |
 | DEV | `D102` | `Assets/Scripts/UI/CodexPanel.cs` · `Docs/**` | 2026-09-06 | `완료` · 🟢 **`B19` 닫음** — 사용자: *"터렛 5 아머 5 레벨인데 안되는데 잘못 적혀있는거야?"*. 🔑 **틀린 게 아니라 모자랐다** — 도감 `CLASSES` 탭이 `Aegis` 조건을 *"Turret Lv.5 + Armor Lv.3"* 로만 적고 **선행 직업 `Sentinel` 을 빼먹었다.** `EVOLUTION` 탭 본문에는 `"Requires class:"` 줄이 있는데 `CLASSES` 탭에만 없었다 — **같은 사실을 두 곳에서 따로 만들다** 한쪽이 빠졌다(`Recipe()` 가 재료 배열만 받아 `FromClass` 를 모른다). ⇒ 조건 줄 앞에 선행 직업을 붙이고, 미발견이면 `???` 로 가려 도감 규칙을 지켰다 | 판정 — `Aegis` 조건이 `Sentinel > Turret Lv.5 + Armor Lv.3` 로 · **대조군: 선행이 없는 나머지 셋은 그대로**. ⚠️ `B18` 과 **원인이 둘 겹쳐 있었다**(반경 + 표시) — 하나만 고쳤으면 사용자는 여전히 못 했다. 사용자가 *"터렛 5 아머 5"* 라고 **자기 상태를 숫자로** 준 덕에 두 번째가 드러났다 |
 | DEV | `D101` | `Assets/Game/Balance/Economy.csv` · `Assets/Scenes/SampleScene.unity` · `Docs/**` | 2026-09-06 | `완료` · 🟢 **`B18` 닫음** — 사용자: *"이직업이 진화가 안되네"*(도감 9/10 · `Aegis` 만 미발견). 🔑 **레시피는 멀쩡했다** — `Aegis`(Sentinel 선행 · Turret Lv5 + Armor Lv3 · 제단 Turret)로 **끝까지 승급시켜 봤다**. 🔴 **숫자 둘이 안 맞았다**: 건물은 `placeDistance 1.8` 링 위에 놓이는데 실측 거리가 **1.18~2.51** 로 흩어지고, 제단 반경은 **2.2** 였다. ⇒ **갓 세운 건물이 자리에 따라 E 에 닿기도 안 닿기도 한다** — 같은 조작이 될 때도 안 될 때도 있었다. `altarRadius` 를 `Economy.csv` 로 올리고 **2.2 → 3** (링 최대 2.51 을 덮는다) | 판정 — 거리 2.40 에서 `FindAltarClassEvolution = null`(재현) · 0.80 으로 옮기니 `Sentinel > Aegis` 승급 성공 · 반경 3 이 실측 링 거리 전부를 덮는다 · 씬 저장 확인. 🔴 **시험이 한 번 오염됐다** — 앞 판정의 잔여 상태(직업·터렛 3개)가 남아 `False` 와 `Sentinel > Aegis` 가 동시에 나왔다. 판을 새로 켜고 다시 쟀다 |
 | DEV | `D100` | `Assets/Scripts/Player/{CharacterClassData,PlayerController,PlayerStats}.cs` · `Assets/Editor/BalanceImporter.cs` · `Assets/Game/Balance/Classes.csv` · `Assets/Game/ClassData/*.asset` · `Docs/**` | 2026-09-06 | `완료` — 사용자: *"warrior 오른쪽으로 이동할때 칼이 왼쪽을 향해"*. 🔴 **코드 버그가 아니라 그림이 엇갈렸다** — 걷기 시트가 전부 **정면 그림**이라 "향하는 쪽"이 없고 **무기를 어느 손에 그렸는지**가 곧 기본 방향인데, 그게 직업마다 다르다. `flipX = input.x < 0` 한 줄로는 둘 다 못 맞춘다. ⇒ `CharacterClassData.ArtFacesRight` 신설 + `Classes.csv` 열 + 임포터/익스포터 + `PlayerController` 배선. 🔑 **자동 판정을 포기하고 사람 눈으로 표를 만들었다** — 불투명 픽셀 무게중심으로 재 봤더니 Ranger 가 *"중앙"* 으로 나왔다(몸통 질량이지 무기 위치가 아니다). 사용자 관찰 8종 + 내가 그림을 연 4종이 **4/4 일치**했고, 목록에 없던 `Aegis`(총구 오른쪽) · `Warden`(방패 왼쪽)만 내가 채웠다 | 판정 — 10종 값이 Import 로 애셋에 들어감(**오른쪽 3 / 왼쪽 7**) · 직업을 갈아 끼우면 규칙이 따라온다(Warrior→뒤집는다 / Ranger→그대로) · 씬 저장 확인. 🔵 `ArtFacesRight` = 무기가 **그림 오른쪽**인가 — Ranger·Sentinel·Aegis 만 `1` |
