@@ -27417,7 +27417,7 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 5384c7e8e3121a149b294da81f1ac760, type: 2}
   - {fileID: 11400000, guid: 6dcff189fae37f7468f1e0cc7df7c4ab, type: 2}
   - {fileID: 11400000, guid: 8d0701fd0e204eb4c9ec91f2c2d72137, type: 2}
-  altarRadius: 2.2
+  altarRadius: 3
   promoteEffect: {fileID: 1169142809547007888, guid: cf36263f13c7265419e8e7f72cbb4a77, type: 3}
   promotePulseCount: 1
   promotePulseInterval: 0.13

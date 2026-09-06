@@ -527,9 +527,9 @@ CONTENT 는 **읽기만** 한다 — 내 요청이 언제 처리될지 가늠하
 
 | 세션 | 다음 이슈 번호 |
 |---|---|
-| DEV | `D101` |
+| DEV | `D102` |
 | CONTENT | `C53` |
-| 버그(공용) | `B18` |
+| 버그(공용) | `B19` |
 
 > 번호를 쓸 때 이 표를 **즉시** 올린다. 선점이 곧 예약이다.
 > ℹ️ 과거 이력의 `I-1`~`I-61` 은 그대로 둔다. 새 번호만 접두어 방식이다.
@@ -546,6 +546,7 @@ CONTENT 는 **읽기만** 한다 — 내 요청이 언제 처리될지 가늠하
 
 | 세션 | 이슈 | 건드린 것 | 날짜 | 결과 |
 |---|---|---|---|---|
+| DEV | `D101` | `Assets/Game/Balance/Economy.csv` · `Assets/Scenes/SampleScene.unity` · `Docs/**` | 2026-09-06 | `완료` · 🟢 **`B18` 닫음** — 사용자: *"이직업이 진화가 안되네"*(도감 9/10 · `Aegis` 만 미발견). 🔑 **레시피는 멀쩡했다** — `Aegis`(Sentinel 선행 · Turret Lv5 + Armor Lv3 · 제단 Turret)로 **끝까지 승급시켜 봤다**. 🔴 **숫자 둘이 안 맞았다**: 건물은 `placeDistance 1.8` 링 위에 놓이는데 실측 거리가 **1.18~2.51** 로 흩어지고, 제단 반경은 **2.2** 였다. ⇒ **갓 세운 건물이 자리에 따라 E 에 닿기도 안 닿기도 한다** — 같은 조작이 될 때도 안 될 때도 있었다. `altarRadius` 를 `Economy.csv` 로 올리고 **2.2 → 3** (링 최대 2.51 을 덮는다) | 판정 — 거리 2.40 에서 `FindAltarClassEvolution = null`(재현) · 0.80 으로 옮기니 `Sentinel > Aegis` 승급 성공 · 반경 3 이 실측 링 거리 전부를 덮는다 · 씬 저장 확인. 🔴 **시험이 한 번 오염됐다** — 앞 판정의 잔여 상태(직업·터렛 3개)가 남아 `False` 와 `Sentinel > Aegis` 가 동시에 나왔다. 판을 새로 켜고 다시 쟀다 |
 | DEV | `D100` | `Assets/Scripts/Player/{CharacterClassData,PlayerController,PlayerStats}.cs` · `Assets/Editor/BalanceImporter.cs` · `Assets/Game/Balance/Classes.csv` · `Assets/Game/ClassData/*.asset` · `Docs/**` | 2026-09-06 | `완료` — 사용자: *"warrior 오른쪽으로 이동할때 칼이 왼쪽을 향해"*. 🔴 **코드 버그가 아니라 그림이 엇갈렸다** — 걷기 시트가 전부 **정면 그림**이라 "향하는 쪽"이 없고 **무기를 어느 손에 그렸는지**가 곧 기본 방향인데, 그게 직업마다 다르다. `flipX = input.x < 0` 한 줄로는 둘 다 못 맞춘다. ⇒ `CharacterClassData.ArtFacesRight` 신설 + `Classes.csv` 열 + 임포터/익스포터 + `PlayerController` 배선. 🔑 **자동 판정을 포기하고 사람 눈으로 표를 만들었다** — 불투명 픽셀 무게중심으로 재 봤더니 Ranger 가 *"중앙"* 으로 나왔다(몸통 질량이지 무기 위치가 아니다). 사용자 관찰 8종 + 내가 그림을 연 4종이 **4/4 일치**했고, 목록에 없던 `Aegis`(총구 오른쪽) · `Warden`(방패 왼쪽)만 내가 채웠다 | 판정 — 10종 값이 Import 로 애셋에 들어감(**오른쪽 3 / 왼쪽 7**) · 직업을 갈아 끼우면 규칙이 따라온다(Warrior→뒤집는다 / Ranger→그대로) · 씬 저장 확인. 🔵 `ArtFacesRight` = 무기가 **그림 오른쪽**인가 — Ranger·Sentinel·Aegis 만 `1` |
 | DEV | `D99` | `Assets/Scripts/LevelUp/LevelUpManager.cs` · `Assets/Scenes/SampleScene.unity` · `Docs/**` | 2026-09-06 | `완료(2/3)` — 사용자 잔손. ① **레벨업 리롤 글자 흰색** — `ShopUI` 는 이미 `Color.white` 인데 `LevelUpManager` 만 금색(0.96,0.80,0.28)이었다. 카드 강조색·`LEVEL UP` 제목과 같은 색이라 **버튼인지 장식인지 안 갈렸다.** ② **`[Z] Build` 를 아래로** — 유효 위치 **30 % → 17 %**(336→190px). 🔴 **처음에 앵커만 보고 계산이 틀렸다** — `anchoredPosition y=90` 이 더해지는 걸 놓쳤다. ⇒ 오프셋을 **0 으로 만들고 앵커 하나로만** 자리를 정했다(둘이 섞이면 또 틀린다). ③ 🟡 **칼 방향은 못 고쳤다 — 코드 문제가 아니다** → `요청-60` |
 | DEV | `D98` | `Assets/Scripts/{LevelUp/LevelUpManager,LevelUp/ItemCardUI,Wave/WaveManager}.cs` · `Assets/Game/Balance/Economy.csv` · `Assets/Scenes/SampleScene.unity` · `Docs/**` | 2026-09-06 | `완료` — 사용자: *"아이템이 꽉차고 레벨업하면 아무것도 안뜨네 / 골드 일정량 or 체력 회복 or 남은 시간 5초 이렇게 추가해"*. 🔴 **레벨업을 했는데 아무것도 못 받는 구멍**이었다 — `PickItems` 가 0장을 주고 `RefreshPanel` 이 카드를 전부 꺼서 `LEVEL UP` 글자와 리롤 버튼만 남았다. 🔑 **상점이 이미 같은 문제를 풀었다**(`D71` — 살 게 없으면 다른 걸 판다). `LevelUpBonusKind {Gold, Heal, Time}` 신설 · `ItemCardUI.SetupBonus` (같은 카드 재사용 · 아이콘만 끈다) · `WaveManager.TryCutRemainingTime`(🔴 치트용 `DevSetRemainingTime` 과 **따로** 뒀다 — 그쪽은 `#if UNITY_EDITOR` 다). 🔴 **시간 카드는 조건부다** — 킬 목표 웨이브엔 타이머가 없어 줄일 게 없으므로 **아예 안 내놓는다**. 수치 3행은 `Economy.csv` (CONTENT 소유) → 요청-59 | 판정 **7/7** — 꽉 찬 상태(3/3·5/5·5/5)에서 **카드 3장**(예전 0장) · 골드 23→83(+60) · HP 89→129(+40) · 시간 35.9→30.9(−5) · Import 가 씬에 60/40/5 를 넣음 · 실제 경로 `Wave→LevelUp→선택→Wave` 에서 `timeScale 1` 복귀. 🔑 **시험 중 `B17` 가드 경고가 떠서 갈라 봤다** — 내 시험이 `ChangeState(LevelUp)` 을 건너뛴 탓이고 **실제 경로에선 안 뜬다** |

@@ -84,6 +84,9 @@ PlayerStats,baseStats.BuildingCooldown,1,건물 작동 주기 배율 (낮을수�
 # 건물 프리팹은 scale 2.6 · 콜라이더 반경 0.2222 → 실제 반경 ≈ 0.58 (월드 1.3유닛)
 # placeDistance 는 링 위 이웃 칸 간격(= 0.765 × placeDistance)이 건물 지름(1.16)보다 커야 한다
 BuildingManager,placeDistance,1.8,플레이어에게서 떨어뜨려 세우는 거리
+# 🔴 altarRadius 는 placeDistance 링을 전부 덮어야 한다 (B18). 링 위 실측 1.18~2.51 인데
+#    2.2 였어서, 갓 세운 건물이 자리에 따라 E 에 안 닿았다 — 같은 조작이 될 때도 안 될 때도 있었다
+EvolutionManager,altarRadius,3,제단(건물 앞 E)이 닿는 거리. placeDistance 링(최대 약 2.5)보다 커야 한다
 BuildingManager,placeClearRadius,0.6,이 반경 안에 막는 콜라이더가 없어야 세운다
 # ── 피격 반응 (넉백 / 무적 / 연출) ───────────────────────────────
 # 접촉 피해는 "한 방"이다. 적 하나가 계속 붙어 있을 때 초당 피해 = ContactDamage / invincibleTime
@@ -118,7 +121,9 @@ WaveManager,layerHpGrowth,0.10,"층당 적 최대체력 +10% (9층 x1.90). D45 �
 WaveManager,layerDamageGrowth,0.06,"층당 적 접촉 피해 +6% (9층 x1.54). D45 값 유지. 🔴 방어력이 정액 감산(Max(1,raw-Armor))이라 방어 11 이면 9층 고블린(12.3)도 바닥값 1 이 된다 — 이 성장률로는 방어 빌드를 절대 못 따라잡는다. 그건 빌드 선택이지 이 값의 문제가 아니다"
 WaveManager,layerSpawnGrowth,0.17,"층당 소환량·동시 생존 상한 +17% (9층 x2.53). 🔴 C43 이 실플레이 답(''허전하다'')을 받고 0.14 에서 올렸다 — 9층 최대가 Elite2 130 -> 328 이 된다. D58 이 294마리에서 111 fps 를 쟀으니 328 도 여유가 있고, 성능 위험선 400 아래다"
 WaveManager,maxAliveCeiling,360,"동시 생존 상한의 천장. 🔴 400 을 넘기면 안 된다 — EnemyBase.NeighborBufSize(64) 가 적 400 이상에서 재판단 대상이고(B8), 성능 실측도 130=프레임의 1% / 400=7% / 800=40%(붕괴)다(PERF.md §8-4). 🔴 C43 이 320 -> 360 으로 올렸다 — layerSpawnGrowth 0.17 이면 9층 최대가 Elite2 329 라 320 에서 조용히 잘린다. 천장은 늘 ''지금 최대 위, 위험선 아래'' 여야 한다"
-StatsPanelUI,slowTimeScale,0.25,"TAB 스탯창을 보는 동안의 시간 배속 (D46). D46 값 유지 — 실제 4초를 읽으면 게임 1초가 흐르고, 가장 빠른 적(Wolf 4.2)이 4.2유닛, 고블린(2.2)이 2.2유닛 다가온다. 플레이어 키가 1유닛이니 ""두 몸 거리""가 좁혀지는 셈이라 압박은 있고 즉사는 아니다"
+# 🔴 StatsPanelUI,slowTimeScale 은 지웠다 (C52). D92 가 TAB 저배속 창을 버리고 ESC 일시정지 화면으로
+#    옮기면서 C# 필드가 사라졌는데 이 행만 남아 있었다. 임포터가 "필드 없음" 을 찍지만
+#    긴 임포트 보고 한 줄이라 아무도 안 봤다 (BalanceImporter.cs:799). 필드를 지우면 행도 지운다.
 GroundTiler,depthTheme,1,층이 깊어질수록 바닥 타일 비중이 풀밭에서 돌바닥으로 옮겨간다 (D49). 0 이면 끈다
 GroundTiler,deepestLayer,9,가중치가 완전히 뒤집히는 층 번호(0부터). 맵이 10층이라 9
 WaveManager,ringBatch,8,Ring 패턴이 한 번에 원 위에 놓는 마리수 (D50). 임시값
