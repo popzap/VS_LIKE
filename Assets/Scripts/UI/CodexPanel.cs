@@ -646,6 +646,15 @@ public class CodexPanel : MonoBehaviour
         Curve(sb, "Gold Gain",    p.BonusGoldGain);
         Curve(sb, "Bld Cooldown", p.BonusBuildingCooldown);
         Curve(sb, "Luck",         p.BonusLuck);
+
+        // 🔴 <b>이 줄이 없어서 `Regeneration` 상세의 NUMBERS 가 통째로 비어 있었다</b>
+        //    (D94 · CONTENT `C49` 가 사용자 스크린샷에서 찾았다).
+        //    🔑 <b>`B13`(Luck)과 같은 모양이고 증상만 다르다</b> — `B13` 은 최종 스탯에서 빠져
+        //    <b>효과가 안 났고</b>, 이건 표시에서 빠져 <b>효과는 나는데 안 보인다.</b>
+        //    그래서 로그로는 안 잡히고 <b>화면을 봐야만</b> 드러난다.
+        //    ⇒ 새 스탯을 넣을 때 고쳐야 하는 소비처: `PassiveData`(배열+Get) · `PassiveEffect` ·
+        //      `StatBlock` · `PlayerStats` · <b>여기</b> · `Economy.csv`(baseStats).
+        Curve(sb, "HP Regen",     p.BonusHpRegen);
     }
 
     private static string EnemyBody(EnemyData e)

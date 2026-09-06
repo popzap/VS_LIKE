@@ -51,6 +51,9 @@ public enum SfxId
     WaveClear     = 31,
     BuildingFire  = 32,   // 터렛·곡사포 발사 (공용)
     BossAppear    = 33,   // 보스 등장 — 처치음이 아니다
+    // 🔑 30번대가 "사건 알림" 블록이라 BossAppear 옆에 붙였다 (C48 이 34 를 권했다).
+    //    CONTENT 가 대역을 일부러 갈라 구웠다 — 보스와 연달아 들어도 안 헷갈린다.
+    AmbushStart   = 34,   // 기습 이벤트 시작 — 노말 웨이브와 갈라야 한다
 
     // UI
     UiSelect    = 40,

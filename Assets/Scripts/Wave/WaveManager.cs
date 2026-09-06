@@ -247,6 +247,17 @@ public class WaveManager : MonoBehaviour
         //    적이 Initialize 될 때 LayerScaling 을 읽으므로 첫 소환보다 먼저여야 한다.
         LayerScaling.Set(node.Layer, layerHpGrowth, layerDamageGrowth, layerSpawnGrowth);
 
+        // 🔊 기습 스팅어 (D94 · CONTENT `C48` · 요청-40).
+        //    🔴 <b>소환 코루틴보다 먼저</b> 울려야 한다 — 이 소리의 목적이 *"지금부터 다르다"* 라서
+        //    적이 이미 몰려온 뒤에 울리면 <b>경고가 아니라 설명</b>이 된다.
+        //
+        //    🔑 <b>판정 기준은 "이벤트가 전투를 직접 골랐나"</b>(<c>overrideWave != null</c>) 다.
+        //    웨이브 이름을 문자열로 비교하면 애셋 이름을 바꾸는 순간 조용히 죽는다.
+        //    ⚠️ <b>오늘은 그 경로가 `Ambush1` 하나뿐이다</b>(`EventManager` 의 `GameEvent.WaveId`).
+        //    이벤트 전용 웨이브가 하나 더 생기면 <b>그것도 이 소리를 물려받는다</b> —
+        //    그때는 <c>WaveData</c> 에 깃발을 하나 두고 갈라야 한다.
+        if (overrideWave != null) AudioManager.Play(SfxId.AmbushStart);
+
         // 소환 항목마다 코루틴을 따로 띄운다 = 병렬 소환.
         foreach (var entry in _currentWaveData.Spawns)
             _routines.Add(StartCoroutine(SpawnEntryRoutine(entry)));
