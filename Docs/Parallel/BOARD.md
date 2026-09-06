@@ -60,6 +60,8 @@
 
 | CONTENT | `C49` | `REQ/DEV.md` (애셋 변경 0) | 2026-09-06 | `대기(REQ→DEV)` — ✅ **`Regeneration` 판정 5/5**(사용자 스크린샷에서 **빨간 하트 ↔ 초록 고리** 확인 · 내 손 `.meta` 도 살아남았다). 🟢 `spriteID` 가 빈 건 무해 — 참조가 `fileID 21300000`(Single 표준)이라 무관. 🔑 `C47` 판정 ③에 *"손으로 만든 `.meta` 는 처음이니 봐 달라"* 를 적어 둔 게 답을 받았다 — **모르는 것을 감추면 아무도 안 본다.** 🔴 **그 화면에서 결함을 찾았다: `NUMBERS` 가 비어 있다.** `CodexPanel.cs:637-648` 이 스탯 12줄을 나열하는데 **`BonusHpRegen` 만 없다**(한 줄이면 된다). 데이터도 효과도 정상이라 **표시만 빠진 것**이다. 🔑 `B13`(Luck)과 같은 모양인데 **증상이 다르다** — B13 은 효과가 안 났고(수치로 드러난다) 이번엔 **효과는 나는데 안 보인다**(화면을 봐야 안다). ⇒ **표시 경로도 소비처 목록에 넣어야 한다** → [`REQ/DEV.md`](REQ/DEV.md) **요청-41** · [`DONE/C49.md`](DONE/C49.md) |
 
+| DEV | `D88` | `.claude/skills/screen-check/`(신설) · `Docs/{SETUP_STATUS,TODO}.md` | 2026-09-06 | `검증대기` — **`/screen-check` 스킬**: `computer-use` MCP 로 데스크톱을 직접 찍어 UI 를 판정한다. **게임 코드 변경 0 · 애셋 0.** 🔴 **번호를 한 번 물렸다** — `BOARD` §3 이 `D87` 이라 그걸 선점했는데, `git status` 에 내가 안 건드린 `HUDManager.cs`·`ItemChipUI.cs` 가 떠 있었고 **그 안에 이미 `D87` 이 적혀 있었다**(다른 DEV 세션이 §3 을 안 올리고 착수). 내 쪽을 `D88` 로 물리고 §3 을 `D89` 로. ⇒ **§3 은 선점 즉시 올려야 한다 — 안 올리면 다음 세션이 같은 번호를 가져간다.** 🟡 실캡처 **0회**(권한 미승인) · Unity 창 tier 미확인 → [`TODO.md`](../TODO.md) §1 |
+
 > 상태값: `진행중` · `대기(REQ→DEV)` · `검증대기` · `막힘(B1)`
 > 끝나면 **자기 줄을 지운다.**
 >
@@ -506,7 +508,7 @@ CONTENT 는 **읽기만** 한다 — 내 요청이 언제 처리될지 가늠하
 
 | 세션 | 다음 이슈 번호 |
 |---|---|
-| DEV | `D87` |
+| DEV | `D89` |
 | DEV | `D41` | `Assets/Scripts/Fx/PulseFx.cs` · `Assets/Prefabs/Fx_{Promote,LevelUp}.prefab` · `Assets/Scripts/Evolution/EvolutionManager.cs` · `Assets/Game/Balance/SceneWiring.csv` · `Assets/Scenes/SampleScene.unity` · `Docs/**` | 2026-09-04 | `완료` — **요청-26 (C34)**: 메타 아이콘 **7/7** + 승급·레벨업 파동. 🔴 **검증 중 내 결함을 잡았다** — 이 연출이 뜨는 두 순간이 **둘 다 `timeScale = 0`** 이라 `Time.deltaTime` 이면 **얼어붙은 링이 화면에 붙어 있다**. `unscaledDeltaTime` 으로 고침. 🟡 **판정 ⑤ 보류** — 레벨업 파동은 뜨지만 `ScreenSpaceOverlay` 패널이 덮어 **안 보인다** → `TODO.md` 결정 3안. 🟡 고아 애셋 `UpGoldGain.asset` 발견 |
 | DEV | `D42` | `Assets/Game/Sprites/UI/{ShopKeeper,MainMenuBG}.png` · `Assets/Scenes/SampleScene.unity` · `Docs/**` | 2026-09-04 | `완료` — **요청-27 (C35)**: Unity AI 그림 2장. 판정 **7/7** (알파 0 · 배경 밝기 **0.150** · 세로 점유 **86.1 %**). **코드 0줄.** 🔴 **`I-41` 가짜 투명이 또 났다** — 프롬프트에 명시해도 알파가 전부 255 였다. 🔴 CONTENT 의 *"형제 순서 0"* 지시를 일부러 안 따랐다 — 그 자리 `DimBG` 가 **알파 1.00 불투명**이라 배경이 가린다. 🟡 `pivot` 이 위쪽이라 배치를 한 번 틀렸다 |
 | DEV | `D43` | `Assets/Scripts/{UI/HUDManager,LevelUp/LevelUpManager}.cs` · `Assets/GameObjects/UI Canvas.prefab` · `Assets/Scenes/SampleScene.unity` · `Docs/**` | 2026-09-04 | `완료` — 사용자 결정 2건. ① **`B11` 닫음** — 씬 **과 프리팹 원본** 둘 다 영문화. 🔴 씬만 고쳤으면 오버라이드라 **부활했다**. 전수 조사(씬 263 · 프리팹 69) 한글 **0건**, 스캐너에 **대조군**을 넣어 배열까지 보는 걸 증명했다 ② **레벨업 파동 A안** — 패널 닫힘 시점으로 옮김. 판정 3/3 |
