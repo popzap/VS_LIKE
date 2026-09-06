@@ -69,6 +69,7 @@ MonoBehaviour:
   weaponColor: {r: 0.33, g: 0.53, b: 0.8, a: 1}
   passiveColor: {r: 0.33, g: 0.67, b: 0.33, a: 1}
   buildingColor: {r: 0.8, g: 0.53, b: 0.2, a: 1}
+  serviceColor: {r: 0.85, g: 0.72, b: 0.35, a: 1}
 --- !u!1 &692840754928425936
 GameObject:
   m_ObjectHideFlags: 0
@@ -1034,7 +1035,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 1}
   m_AnchorMax: {x: 0.5, y: 1}
-  m_AnchoredPosition: {x: 0, y: -208}
+  m_AnchoredPosition: {x: 0, y: -220}
   m_SizeDelta: {x: 230, y: 26}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &5360319784936394974
@@ -1171,8 +1172,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 1}
   m_AnchorMax: {x: 0.5, y: 1}
-  m_AnchoredPosition: {x: 0, y: -270}
-  m_SizeDelta: {x: 230, y: 96}
+  m_AnchoredPosition: {x: 0, y: -276}
+  m_SizeDelta: {x: 230, y: 84}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &7552179943978909383
 CanvasRenderer:
@@ -1308,8 +1309,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 1}
   m_AnchorMax: {x: 0.5, y: 1}
-  m_AnchoredPosition: {x: 0, y: -182}
-  m_SizeDelta: {x: 230, y: 26}
+  m_AnchoredPosition: {x: 0, y: -188}
+  m_SizeDelta: {x: 230, y: 38}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &9215951626342768838
 CanvasRenderer:

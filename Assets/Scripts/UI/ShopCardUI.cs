@@ -7,6 +7,9 @@ using TMPro;
 /// </summary>
 public class ShopCardUI : MonoBehaviour
 {
+    // 🔴 컴파일 반영 확인용 (D27).
+    public const int Version = 1;   // 1 = 서비스 칸 글자 축약 + 숫자 강조 (D97)
+
     [Header("UI 요소")]
     [SerializeField] private Image            iconImage;
     [SerializeField] private TextMeshProUGUI  nameText;
@@ -108,11 +111,21 @@ public class ShopCardUI : MonoBehaviour
         priceText.text    = $"{slot.Price} G";
         categoryTag.text  = "SERVICE";
         categoryTag.color = serviceColor;
-        levelText.text    = heal ? $"<color=#F0C040>+{slot.Amount} HP</color>"
-                                 : $"<color=#F0C040>+{slot.Amount} meta G</color>";
+
+        // 🔑 <b>숫자를 먼저 읽게 한다</b> (D97 · 사용자: *"글자가 너무 많아 직관적이게"*).
+        //    이 두 칸에서 사람이 알고 싶은 건 <b>얼마를 주고 뭘 얼마나 받나</b> 하나뿐이다.
+        //    <c>&lt;size=160%&gt;</c> 로 효과값을 카드에서 가장 큰 글자로 만든다.
+        levelText.text    = heal
+            ? $"<size=160%><color=#F0C040>+{slot.Amount} HP</color></size>"
+            : $"<size=160%><color=#F0C040>+{slot.Amount}</color></size> <size=90%>meta G</size>";
+
+        // 🔴 <b>산문을 반으로 줄였다.</b> 예전 Exchange 는 두 줄짜리 설명이었다 —
+        //    *"Run gold vanishes when the run ends. / Carry some of it home instead."*
+        //    <b>두 문장이 같은 말을 두 번</b> 한다. 뒤 문장은 이미 <c>+40 meta G</c> 가 말하고 있으므로
+        //    <b>남는 건 이유 한 줄</b>이다 — *"왜 100을 주고 40을 받나"* 에만 답하면 된다.
         descText.text     = heal
-            ? "Patch yourself up before the next fight."
-            : "Run gold vanishes when the run ends.\nCarry some of it home instead.";
+            ? "Heal up before the next fight."
+            : "Run gold vanishes at the end.";
 
         soldOutOverlay.SetActive(false);
         buyButton.onClick.RemoveAllListeners();
