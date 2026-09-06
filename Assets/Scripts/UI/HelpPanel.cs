@@ -20,7 +20,7 @@ using UnityEngine.UI;
 public class HelpPanel : MonoBehaviour
 {
     // 🔴 컴파일 반영 확인용 (D27).
-    public const int Version = 4;   // 4 = 넓힌 카드 + 글자 27 (D86) · 3 = 2단 배치 · 2 = 여백
+    public const int Version = 5;   // 5 = TAB 폐지 (D92) · 4 = 넓힌 카드 + 글자 27 (D86) · 3 = 2단 배치 · 2 = 여백
 
     [Tooltip("왼쪽 단 — CONTROLS")]
     [SerializeField] private TextMeshProUGUI bodyText;
@@ -55,12 +55,9 @@ public class HelpPanel : MonoBehaviour
         "Z\n" +
         "<indent=8%>Place a building.</indent>\n" +
         "\n" +
-        "TAB\n" +
-        "<indent=8%>Stats and items.</indent>\n" +
-        "<indent=8%>Time slows down.</indent>\n" +
-        "\n" +
         "ESC\n" +
-        "<indent=8%>Pause.</indent>";
+        "<indent=8%>Pause. The game fully stops.</indent>\n" +
+        "<indent=8%>Shows your stats and items.</indent>";
 
     /// <summary>오른쪽 단 — 화면 설정과 알아 둘 것.</summary>
     private const string BodyRight =

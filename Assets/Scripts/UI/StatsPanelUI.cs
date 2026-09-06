@@ -2,42 +2,34 @@ using System.Collections.Generic;
 using System.Text;
 using TMPro;
 using UnityEngine;
-using UnityEngine.InputSystem;
 
 // ────────────────────────────────────────────────────────────────────────────
-//  StatsPanelUI  —  전투 중 TAB 으로 여는 스탯 · 보유 아이템 창
+//  StatsPanelUI  —  일시정지(ESC) 화면에 뜨는 스탯 · 보유 아이템
 // ────────────────────────────────────────────────────────────────────────────
 /// <summary>
 /// <b>뭘 들고 있는지 인게임에서 확인할 방법이 없었다</b>(`ROADMAP` §3-1).
 /// 레벨업 카드는 고르는 순간만 보이고, 상점은 파는 것만 보여 준다.
 ///
-/// <para>🔑 <b>멈추지 않고 느려진다.</b> 사용자 요구 — *"보는 도중에도 게임은 플레이 되게"*.
-/// 그래서 일시정지(<c>timeScale = 0</c>)가 아니라 <b>저배속</b>이다. 대가가 있다:
-/// 창을 보는 동안에도 <b>적은 계속 다가오고 무기는 계속 나간다.</b>
-/// 그래서 창은 <b>화면 왼쪽만</b> 덮고 전투는 계속 보이게 둔다.</para>
+/// <para>🔑 <b>D92 에서 <c>ESC</c> 일시정지 화면으로 옮겼다.</b> 원래는 <c>TAB</c> 을 누르는 동안
+/// <c>timeScale 0.25</c> 저배속으로 띄웠는데(*"보는 도중에도 플레이 되게"*), 사용자 판정이
+/// *"뒤랑 겹쳐 보이는 게 쎄다"* 였다 — 카드가 반투명(<c>UI_Panel</c> 채움 알파 <b>0.92</b>)인 데다
+/// <b>가림막이 없어서</b> 전투 화면과 HUD 아이템 줄이 글자 위로 그대로 비쳤다.
+/// 요구는 *"ESC 로 게임도 멈추고 한 번에 보여 달라"*.</para>
 ///
-/// <para>🔴 <b><c>Time.timeScale</c> 은 이 프로젝트에서 여러 곳이 공유한다</b> —
-/// <c>WaveManager.PauseWave</c> 가 0, 레벨업·상점·결과창이 각각 0/1 을 쓰고
-/// <c>GameManager.DoHitstop</c> 도 끼어든다. 아무 때나 1f 로 되돌리면 일시정지가 저절로 풀린다.
-/// 그래서 <see cref="GameManager.DoHitstop"/> 이 쓰는 것과 <b>같은 계약</b>을 따른다:</para>
-/// <list type="number">
-///   <item><b>웨이브 중일 때만</b> 연다</item>
-///   <item>이미 <c>timeScale</c> 이 1 이 아니면(누가 멈춰 놨으면) <b>아예 안 연다</b></item>
-///   <item>닫을 때도 <b>여전히 웨이브인지 다시 확인</b>하고, 아니면 손대지 않는다 —
-///         그 사이에 레벨업 패널이 떴다면 <c>timeScale</c> 의 주인이 바뀐 것이다</item>
-/// </list>
+/// <para>🟢 <b>그래서 <c>timeScale</c> 을 다투는 코드가 통째로 사라졌다.</b>
+/// 저배속을 스스로 걸던 시절엔 히트스톱·레벨업·웨이브와 주인을 다투느라
+/// <see cref="GameManager.DoHitstop"/> 과 같은 <b>3단 계약</b>이 필요했다.
+/// 이제 멈추는 일은 <see cref="PauseMenuUI"/> 한 곳만 하고, 이 스크립트는 <b>값만 채운다.</b></para>
 ///
-/// <para>⚠️ <b>알려진 부작용</b> — 창이 열려 있는 동안에는 히트스톱이 안 걸린다.
-/// <c>DoHitstop</c> 이 <c>timeScale != 1</c> 이면 스스로 물러나기 때문이다.
-/// 저배속 중에 히트스톱까지 겹치면 어차피 뭐가 뭔지 안 보인다 — 그대로 둔다.</para>
+/// <para>🔴 <c>?.</c> 를 쓰지 않는다 — 미할당 직렬화 필드는 "가짜 null" 이라 예외가 샌다 (I-24).</para>
 /// </summary>
 public class StatsPanelUI : MonoBehaviour
 {
     // 🔴 컴파일 반영 확인용 (D27).
-    public const int Version = 3;   // 3 = 글자 25 + 코드가 배치 (D87) · 2 = 2단 + 값 정렬 (D87) · 1 = 최초
+    public const int Version = 5;   // 5 = 꺼진 채 저장된 카드 자가복구 (D92) · 4 = ESC 화면으로 이사 · TAB 폐지 (D92) · 3 = 글자 25 + 코드가 배치 (D87) · 2 = 2단 + 값 정렬 (D87) · 1 = 최초
 
     [Header("배선")]
-    [Tooltip("TAB 을 누르는 동안 켜지는 루트. 이 스크립트가 붙은 오브젝트는 항상 활성이어야 한다.")]
+    [Tooltip("내용이 담긴 카드. 여닫는 주인은 PauseMenuUI 다 — 이 스크립트는 켜고 끄지 않는다 (D92).")]
     [SerializeField] private GameObject      panelRoot;
     [SerializeField] private TextMeshProUGUI classText;
     [Tooltip("왼쪽 단 — SURVIVAL + OFFENSE")]
@@ -50,82 +42,49 @@ public class StatsPanelUI : MonoBehaviour
     [SerializeField] private Transform       itemGrid;
     [SerializeField] private GameObject      chipPrefab;
 
-    [Header("저배속 — 값은 Economy.csv 가 덮는다")]
-    [Tooltip("창을 보는 동안의 시간 배속. 0 이면 완전 정지라 요구와 어긋난다 — 최소 0.02 로 묶는다.")]
-    [SerializeField] private float slowTimeScale = 0.25f;
+    [Tooltip("카드 아래 한 줄 안내. 🔴 글자는 코드가 정한다 — 씬에 두면 낡는다 (B11).")]
+    [SerializeField] private TextMeshProUGUI hintText;
 
     private readonly List<ItemChipUI> _chips = new();
-    private bool _open;
 
     // ─────────────────────────────────────────────────────────────
 
-    private void Awake()
+    // 🔴 <b>Awake 에서 panelRoot 를 끄지 않는다</b> (D92).
+    //    이제 이 내용은 <see cref="PauseMenuUI"/> 의 <c>PausePanel</c> 안에 들어 있고,
+    //    여닫는 주인은 그쪽이다. 여기서 끄면 <b>일시정지 화면을 열어도 영영 안 보인다</b>
+    //    — PausePanel 은 자기 루트만 켜지 이 자식까지 다시 켜 주지 않는다.
+
+    /// <summary>
+    /// 화면에 값을 다시 채운다. <b>부르는 쪽은 <see cref="PauseMenuUI.Open"/> 하나다</b> (D92).
+    ///
+    /// <para>🔑 <b>스스로 열지 않는다.</b> 예전에는 TAB 을 눌러 <c>timeScale 0.25</c> 로
+    /// 저배속을 걸었는데, 사용자 판정이 *"뒤랑 겹쳐 보이는 게 쎄다"* 였다 —
+    /// 창이 반투명(<c>UI_Panel</c> 채움 알파 <b>0.92</b> · I-53/D47)인 데다
+    /// <b>가림막이 아예 없어서</b> 게임과 HUD 가 그대로 비쳤다.
+    /// 요구는 *"ESC 로 게임도 멈추고 한 번에 보여 달라"* 였다.</para>
+    ///
+    /// <para>🟢 <b>덕분에 <c>timeScale</c> 계약이 통째로 사라졌다.</b> 저배속을 스스로 걸던 시절엔
+    /// 히트스톱·레벨업·웨이브와 <c>timeScale</c> 주인을 다투느라 3단 계약이 필요했다.
+    /// 이제 멈추는 일은 <see cref="PauseMenuUI"/> 한 곳만 한다.</para>
+    /// </summary>
+    public void Refresh()
     {
-        // 🔴 GameManager.Instance.XxxMgr 를 여기서 캐시하지 않는다 (I-8 · I-38).
-        //    그 참조는 GameManager.Start() 에서 채워지는데 모든 Awake 는 모든 Start 보다 먼저 돈다.
-        if (panelRoot != null) panelRoot.SetActive(false);
-    }
+        // 🔴 <b>실제로 이것 때문에 한 번 안 보였다</b> (D92 검증).
+        //    예전 <c>Awake</c> 가 <c>panelRoot.SetActive(false)</c> 를 하고 있어서 씬에도
+        //    <b>꺼진 채로 저장</b>돼 있었다. 그 <c>Awake</c> 를 없애자 아무도 다시 켜 주지 않아
+        //    값은 전부 채워졌는데 <b>화면에는 아무것도 안 떴다</b> — 로그로만 보면 정상이다.
+        //    씬 값도 켜 뒀지만, 누가 또 꺼서 저장해도 여기서 스스로 복구한다.
+        if (panelRoot != null && !panelRoot.activeSelf) panelRoot.SetActive(true);
 
-    private void Update()
-    {
-        var kb = Keyboard.current;
-        if (kb == null) return;
-
-        if (!_open && kb.tabKey.wasPressedThisFrame) TryOpen();
-        else if (_open && kb.tabKey.wasReleasedThisFrame) Close();
-
-        // 창이 열린 사이에 레벨업 패널이 뜨거나 웨이브가 끝났을 수 있다.
-        // 그러면 timeScale 의 주인이 바뀐 것이라 내가 붙잡고 있으면 안 된다.
-        if (_open && !CanBeOpen()) Close();
-    }
-
-    private void OnDisable()
-    {
-        // 창을 연 채로 씬이 바뀌거나 이 오브젝트가 꺼지면 저배속이 그대로 남는다.
-        if (_open) Close();
-    }
-
-    private bool CanBeOpen()
-    {
-        var gm = GameManager.Instance;
-        return gm != null && gm.CurrentState == GameState.Wave;
-    }
-
-    // ─────────────────────────────────────────────────────────────
-
-    private void TryOpen()
-    {
-        if (!CanBeOpen()) return;
-
-        // 🔴 누가 이미 멈춰 놨으면 손대지 않는다 (DoHitstop 과 같은 계약).
-        //    이걸 빼면 히트스톱 도중에 TAB 을 눌렀다가 놓는 순간 히트스톱이 저절로 풀린다.
-        if (!Mathf.Approximately(Time.timeScale, 1f)) return;
-
-        _open = true;
-        Time.timeScale = Mathf.Clamp(slowTimeScale, 0.02f, 1f);
-
-        Refresh();
-        if (panelRoot != null) panelRoot.SetActive(true);
-    }
-
-    private void Close()
-    {
-        _open = false;
-        if (panelRoot != null) panelRoot.SetActive(false);
-
-        // 닫는 시점에도 여전히 웨이브인지 본다. 아니면 timeScale 은 새 주인 것이다.
-        if (CanBeOpen()) Time.timeScale = 1f;
-    }
-
-    // ─────────────────────────────────────────────────────────────
-
-    private void Refresh()
-    {
         var ps = PlayerStats.Current;
 
         BuildClassLine(ps);
         BuildStats(ps);
         BuildItems();
+
+        // 🔴 씬에 박아 두면 낡는다 (B11) — 실제로 여기엔 *"Hold [TAB] — time runs slow"* 가
+        //    남아 있었고, D92 로 조작이 바뀐 뒤에도 그대로였을 것이다.
+        if (hintText != null) hintText.text = "[ESC] Resume  ·  The game is fully paused.";
     }
 
     private void BuildClassLine(PlayerStats ps)

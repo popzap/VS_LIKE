@@ -13,7 +13,7 @@ public class HUDManager : MonoBehaviour
     public static HUDManager Instance { get; private set; }
 
     // 🔴 컴파일 반영 확인용 (D27).
-    public const int Version = 6;   // 6 = 간격 22 (D89) · 5 = 칸 키우고 분류색 테두리 (D87) · 4 = 아이템 줄을 분류별 3줄로 (D85) · 3 = 초상화+아이템 줄 (D82) · 2 = 레벨업 파동 (D43)
+    public const int Version = 7;   // 7 = 칸 64 (D92) · 6 = 간격 22 (D89) · 5 = 칸 키우고 분류색 테두리 (D87) · 4 = 아이템 줄을 분류별 3줄로 (D85) · 3 = 초상화+아이템 줄 (D82) · 2 = 레벨업 파동 (D43)
 
     // ── 포트레이트 (좌측 상단) ───────────────────────────────
     [Header("포트레이트")]
@@ -254,7 +254,11 @@ public class HUDManager : MonoBehaviour
     /// 간격 10(화면 4.5px) 양옆에 테두리가 1.8px 씩 붙으니 <b>선-틈-선</b> 셋이 뭉쳐
     /// <b>표의 격자선</b>처럼 읽혔다. 간격을 <b>22</b>(화면 9.8px)로 벌리고 줄 폭을
     /// 500 → <b>560</b> 으로 넓혔다 — <c>8x50 + 7x22 = 554</c>.</para>
-    private const float SlotChipSize = 50f;
+    ///
+    /// <para>🔴 <b>창을 키우면 같이 커지지만 그래도 작았다</b> (D92 · 사용자: *"아직도 작아"*).
+    /// 참고 이미지(대전략)의 칸은 창 가로의 <b>3.7 %</b> 인데 50 은 <b>2.6 %</b> 였다.
+    /// 64 로 올리면 <b>3.3 %</b> 다. 줄 폭도 같이 넓힌다 — <c>8x64 + 7x24 = 680</c>.</para>
+    private const float SlotChipSize = 64f;
 
     /// <summary>
     /// 한 분류에 그릴 수 있는 최대 칸 수 — <b>안전망이다</b> (D83).

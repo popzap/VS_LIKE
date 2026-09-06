@@ -508,7 +508,7 @@ CONTENT 는 **읽기만** 한다 — 내 요청이 언제 처리될지 가늠하
 
 | 세션 | 다음 이슈 번호 |
 |---|---|
-| DEV | `D92` |
+| DEV | `D93` |
 | CONTENT | `C50` |
 | 버그(공용) | `B17` |
 
@@ -527,6 +527,7 @@ CONTENT 는 **읽기만** 한다 — 내 요청이 언제 처리될지 가늠하
 
 | 세션 | 이슈 | 건드린 것 | 날짜 | 결과 |
 |---|---|---|---|---|
+| DEV | `D92` | `Assets/Scripts/UI/{HUDManager,StatsPanelUI,PauseMenuUI,HelpPanel}.cs` · `Assets/Scenes/SampleScene.unity` · `Docs/**` | 2026-09-06 | `완료` — 사용자 요구 2건. ① 칸 50→**64**(창 가로의 2.6 %→**3.3 %**, 참고 이미지 3.7 %) · 간격 24 · 줄 폭 690. ② **TAB 스탯 창을 ESC 일시정지 화면으로 옮겼다.** 🔴 *"뒤랑 겹쳐 보인다"* 의 원인은 **가림막이 아예 없던 것** — `StatsPanel` 에는 `DimBG` 가 없고 `UI_Panel` 채움 알파가 **0.92**(D47)라 전투와 HUD 가 글자 위로 비쳤다. `Body` 를 `PausePanel` 안으로 옮기고 `DimBG` 0.65→**0.92**. 조작 안내도 같은 화면에 넣었다(참고 이미지처럼). 🟢 **`timeScale` 3단 계약이 통째로 사라졌다** — 저배속을 스스로 걸던 코드가 없어져 멈추는 일은 `PauseMenuUI` 한 곳만 한다. 🔴 **검증이 결함을 잡았다** — `Awake` 의 `SetActive(false)` 를 없앴더니 씬에 **꺼진 채 저장돼 있던** `Body` 를 아무도 안 켜서 **값은 다 채워졌는데 화면이 비었다**(로그로는 정상). 씬을 켜고 `Refresh()` 에 자가복구를 넣었다 | 판정 **8/8** — 손 안 대고 `Body=True` · state `Wave→Paused→Wave` · `timeScale 1→0→1` · Body x[134..446] / Card x[473..722] 틈 27px · 세 글자 블록 다 안 넘침(316/340 · 316/340 · 189/334) · 뒤가 8 %만 비친다 |
 | DEV | `D41` | `Assets/Scripts/Fx/PulseFx.cs` · `Assets/Prefabs/Fx_{Promote,LevelUp}.prefab` · `Assets/Scripts/Evolution/EvolutionManager.cs` · `Assets/Game/Balance/SceneWiring.csv` · `Assets/Scenes/SampleScene.unity` · `Docs/**` | 2026-09-04 | `완료` — **요청-26 (C34)**: 메타 아이콘 **7/7** + 승급·레벨업 파동. 🔴 **검증 중 내 결함을 잡았다** — 이 연출이 뜨는 두 순간이 **둘 다 `timeScale = 0`** 이라 `Time.deltaTime` 이면 **얼어붙은 링이 화면에 붙어 있다**. `unscaledDeltaTime` 으로 고침. 🟡 **판정 ⑤ 보류** — 레벨업 파동은 뜨지만 `ScreenSpaceOverlay` 패널이 덮어 **안 보인다** → `TODO.md` 결정 3안. 🟡 고아 애셋 `UpGoldGain.asset` 발견 |
 | DEV | `D42` | `Assets/Game/Sprites/UI/{ShopKeeper,MainMenuBG}.png` · `Assets/Scenes/SampleScene.unity` · `Docs/**` | 2026-09-04 | `완료` — **요청-27 (C35)**: Unity AI 그림 2장. 판정 **7/7** (알파 0 · 배경 밝기 **0.150** · 세로 점유 **86.1 %**). **코드 0줄.** 🔴 **`I-41` 가짜 투명이 또 났다** — 프롬프트에 명시해도 알파가 전부 255 였다. 🔴 CONTENT 의 *"형제 순서 0"* 지시를 일부러 안 따랐다 — 그 자리 `DimBG` 가 **알파 1.00 불투명**이라 배경이 가린다. 🟡 `pivot` 이 위쪽이라 배치를 한 번 틀렸다 |
 | DEV | `D43` | `Assets/Scripts/{UI/HUDManager,LevelUp/LevelUpManager}.cs` · `Assets/GameObjects/UI Canvas.prefab` · `Assets/Scenes/SampleScene.unity` · `Docs/**` | 2026-09-04 | `완료` — 사용자 결정 2건. ① **`B11` 닫음** — 씬 **과 프리팹 원본** 둘 다 영문화. 🔴 씬만 고쳤으면 오버라이드라 **부활했다**. 전수 조사(씬 263 · 프리팹 69) 한글 **0건**, 스캐너에 **대조군**을 넣어 배열까지 보는 걸 증명했다 ② **레벨업 파동 A안** — 패널 닫힘 시점으로 옮김. 판정 3/3 |
