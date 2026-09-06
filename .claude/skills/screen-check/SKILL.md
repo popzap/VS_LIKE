@@ -148,13 +148,46 @@ internal class CommandScript : IRunCommand
 }
 ```
 
-그 다음 **게임 카메라를 명시해서** 찍는다 — 인자 없이 부르면 **씬 뷰**가 찍힌다:
+### 🔴 그리고 **`Unity_Camera_Capture` 를 그냥 쓰지 말 것**
 
 ```
 Unity_Camera_Capture(cameraInstanceID: <Camera.main.gameObject.GetInstanceID()>)
 ```
 
+인자 없이 부르면 **씬 뷰**가 찍히므로 카메라 ID 는 반드시 넘긴다. 하지만 —
+**이 툴은 크기 인자가 없고 `1920×1080` 을 뱉는다.** 게임뷰가 856×498 이면
+나온 그림은 **2.2배 확대판**이다. 그걸로 *"붙어 보이나 · 작아서 안 보이나"* 를 판정하면
+`D86` 과 **정확히 같은 실수**가 된다. 빠르게 눈으로 훑을 때만 쓴다.
+
+### ✅ 실해상도로 찍는 법 — RenderTexture 를 게임뷰 크기로 물린다
+
+```csharp
+int W = Screen.width, H = Screen.height;      // 게임뷰 실크기
+var cam = Camera.main;
+var rt  = new RenderTexture(W, H, 24, RenderTextureFormat.ARGB32); rt.Create();
+
+var prevT = cam.targetTexture; var prevA = RenderTexture.active;
+cam.targetTexture = rt;
+cam.Render();                                  // RT 로 그리면 포커스와 무관하게 새로 그린다
+RenderTexture.active = rt;
+
+var tex = new Texture2D(W, H, TextureFormat.RGB24, false);
+tex.ReadPixels(new Rect(0, 0, W, H), 0, 0); tex.Apply();
+cam.targetTexture = prevT; RenderTexture.active = prevA;
+
+File.WriteAllBytes(path, tex.EncodeToPNG());
+```
+
+PNG 를 `Read` 로 읽으면 **사용자가 보는 것과 같은 그림**이 된다.
+🔑 **저장할 때 픽셀 해시도 같이 찍는다** — 같은 그림이 반복해 나오는 함정을 잡는다 (기록 #230).
+
 끝나면 `git diff --stat` 으로 **씬에 안 남았는지 확인한다.**
+
+### 🔴 B 로 못 하는 것 — 키 입력이 필요한 화면
+
+`StatsPanelUI`(TAB) 처럼 **여는 메서드가 `private`** 이고 `timeScale == 1` 을 요구하면
+B 로는 열 수 없다 — 리플렉션은 이 프로젝트에서 금지고 키 주입은 기록 #114 로 막혀 있다.
+**이런 화면은 경로 A 만 열 수 있다.** 못 열었으면 "못 봤다"고 적고 넘어간다.
 
 ---
 
