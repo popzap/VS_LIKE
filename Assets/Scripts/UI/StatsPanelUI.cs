@@ -34,13 +34,17 @@ using UnityEngine.InputSystem;
 public class StatsPanelUI : MonoBehaviour
 {
     // 🔴 컴파일 반영 확인용 (D27).
-    public const int Version = 1;
+    public const int Version = 3;   // 3 = 글자 25 + 코드가 배치 (D87) · 2 = 2단 + 값 정렬 (D87) · 1 = 최초
 
     [Header("배선")]
     [Tooltip("TAB 을 누르는 동안 켜지는 루트. 이 스크립트가 붙은 오브젝트는 항상 활성이어야 한다.")]
     [SerializeField] private GameObject      panelRoot;
     [SerializeField] private TextMeshProUGUI classText;
+    [Tooltip("왼쪽 단 — SURVIVAL + OFFENSE")]
     [SerializeField] private TextMeshProUGUI statsText;
+
+    [Tooltip("오른쪽 단 — CRITICAL + UTILITY. 🔴 없으면 왼쪽 단에 전부 이어 붙인다(예전 모양).")]
+    [SerializeField] private TextMeshProUGUI statsRightText;
     [SerializeField] private TextMeshProUGUI itemsTitleText;
     [Tooltip("칩이 채워지는 격자. GridLayoutGroup 이 붙어 있어야 한다.")]
     [SerializeField] private Transform       itemGrid;
@@ -152,38 +156,95 @@ public class StatsPanelUI : MonoBehaviour
     private void BuildStats(PlayerStats ps)
     {
         if (statsText == null) return;
-        if (ps == null) { statsText.text = "-"; return; }
+        if (ps == null)
+        {
+            statsText.text = "-";
+            if (statsRightText != null) statsRightText.text = string.Empty;
+            return;
+        }
 
-        var s  = ps.Final;
-        var sb = new StringBuilder(512);
+        var s = ps.Final;
 
-        Row(sb, "Health",        $"{ps.CurrentHp:F0} / {s.MaxHp:F0}");
-        Row(sb, "Armor",         $"{s.Armor:F0}");
-        Row(sb, "Move Speed",    $"{s.MoveSpeed:F2}");
-        sb.Append('\n');
-        Row(sb, "Damage",        Pct(s.Damage));
-        Row(sb, "Attack Speed",  Pct(Inverse(s.AttackSpeed)));
-        Row(sb, "Projectile",    Pct(s.ProjectileSize));
-        Row(sb, "Crit Chance",   $"{s.CritChance * 100f:F0}%");
-        Row(sb, "Crit Damage",   $"{s.CritMultiplier:F2}x");
-        sb.Append('\n');
-        Row(sb, "Pickup Range",  $"{s.PickupRadius:F1}");
-        Row(sb, "XP Gain",       Pct(s.XpGain));
-        Row(sb, "Gold Gain",     Pct(s.GoldGain));
-        Row(sb, "Luck",          $"{s.Luck:F2}");
-        Row(sb, "Build Speed",   Pct(Inverse(s.BuildingCooldown)));
+        // ── 왼쪽 단 ──────────────────────────────────────────
+        var l = new StringBuilder(384);
+        Head(l, "SURVIVAL");
+        Row(l, "Health",       ps.CurrentHp.ToString("F0") + " / " + s.MaxHp.ToString("F0"));
+        Row(l, "Armor",        s.Armor.ToString("F0"));
+        Row(l, "Move Speed",   s.MoveSpeed.ToString("F2"));
+        Gap(l);
+        Head(l, "OFFENSE");
+        Row(l, "Damage",       Pct(s.Damage));
+        Row(l, "Attack Speed", Pct(Inverse(s.AttackSpeed)));
+        Row(l, "Projectile",   Pct(s.ProjectileSize));
 
-        statsText.text = sb.ToString();
+        // ── 오른쪽 단 ────────────────────────────────────────
+        var r = new StringBuilder(384);
+        Head(r, "CRITICAL");
+        Row(r, "Crit Chance",  (s.CritChance * 100f).ToString("F0") + "%");
+        Row(r, "Crit Damage",  s.CritMultiplier.ToString("F2") + "x");
+        Gap(r);
+        Head(r, "UTILITY");
+        Row(r, "Pickup Range", s.PickupRadius.ToString("F1"));
+        Row(r, "XP Gain",      Pct(s.XpGain));
+        Row(r, "Gold Gain",    Pct(s.GoldGain));
+        Row(r, "Luck",         s.Luck.ToString("F2"));
+        Row(r, "Build Speed",  Pct(Inverse(s.BuildingCooldown)));
+
+        // 🔴 오른쪽 단이 배선 안 됐으면 <b>버리지 않고</b> 왼쪽에 이어 붙인다.
+        //    스탯이 조용히 사라지는 것보다 못생긴 게 낫다.
+        if (statsRightText != null)
+        {
+            Style(statsText,      l.ToString());
+            Style(statsRightText, r.ToString());
+        }
+        else
+        {
+            Gap(l);
+            Style(statsText, l.Append(r).ToString());
+        }
     }
+
+    /// <summary>
+    /// 글자 배치도 코드가 정한다 — 씬 값이면 다음에 캔버스를 만질 때 조용히 돌아간다 (B11).
+    ///
+    /// <para>단 하나가 300 x 340 이고 실측 필요 높이가 <b>279</b>(오른쪽) 였다.
+    /// 25 로 키우면 <c>279 x 25/22 = 317</c> 이라 아직 들어간다 — <b>재고 나서 키운다.</b></para>
+    ///
+    /// <para>🔴 <b>자동 축소는 끈다.</b> 켜 두면 스탯이 늘 때 글자가 스스로 작아져
+    /// 어느 날 갑자기 안 읽히는데, 그게 언제 시작됐는지 알 방법이 없다.</para>
+    /// </summary>
+    private static void Style(TMPro.TextMeshProUGUI t, string body)
+    {
+        if (t == null) return;
+        t.text             = body;
+        t.alignment        = TextAlignmentOptions.TopLeft;
+        t.enableAutoSizing = false;
+        t.fontSize         = 25f;
+        t.overflowMode     = TextOverflowModes.Overflow;
+        t.richText         = true;
+    }
+
+    /// <summary>
+    /// 스탯 한 줄. 🔑 <b>값을 <c>&lt;pos&gt;</c> 로 같은 자리에 세운다</b> (D87 · 참고 이미지).
+    ///
+    /// <para>예전에는 <c>이름 	 값</c> 이었는데 TMP 의 탭 정지 위치는 기본값이라
+    /// 이름 길이에 따라 값이 <b>들쭉날쭉했다</b>. <c>&lt;pos=72%&gt;</c> 는 단 너비의 비율이라
+    /// 단을 넓히거나 좁혀도 <b>줄이 계속 맞는다.</b></para>
+    /// </summary>
+    private static void Row(StringBuilder sb, string label, string value)
+        => sb.Append(label).Append("<pos=72%>").Append(value).Append('\n');
+
+    /// <summary>구역 제목 — 금색. <see cref="HelpPanel"/> 과 같은 배색이라 창끼리 통일된다.</summary>
+    private static void Head(StringBuilder sb, string title)
+        => sb.Append("<size=108%><color=#F0C040>").Append(title).Append("</color></size>\n");
+
+    private static void Gap(StringBuilder sb) => sb.Append('\n');
 
     /// <summary>낮을수록 빠른 값을 "빠르기"로 뒤집는다. 0 이하는 나눗셈이 터지므로 막는다.</summary>
     private static float Inverse(float cooldownMult)
         => cooldownMult > 0.01f ? 1f / cooldownMult : 1f;
 
     private static string Pct(float mult) => $"{mult * 100f:F0}%";
-
-    private static void Row(StringBuilder sb, string label, string value)
-        => sb.Append(label).Append('\t').Append(value).Append('\n');
 
     // ─────────────────────────────────────────────────────────────
 

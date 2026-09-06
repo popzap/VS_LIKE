@@ -13,7 +13,7 @@ public class HUDManager : MonoBehaviour
     public static HUDManager Instance { get; private set; }
 
     // 🔴 컴파일 반영 확인용 (D27).
-    public const int Version = 4;   // 4 = 아이템 줄을 분류별 3줄로 (D85) · 3 = 초상화+아이템 줄 (D82) · 2 = 레벨업 파동 (D43)
+    public const int Version = 5;   // 5 = 칸 키우고 분류색 테두리 (D87) · 4 = 아이템 줄을 분류별 3줄로 (D85) · 3 = 초상화+아이템 줄 (D82) · 2 = 레벨업 파동 (D43)
 
     // ── 포트레이트 (좌측 상단) ───────────────────────────────
     [Header("포트레이트")]
@@ -218,7 +218,7 @@ public class HUDManager : MonoBehaviour
             {
                 var chip = GetSlotChip(ci, used++);
                 chip.gameObject.SetActive(true);
-                chip.BindEmpty();
+                chip.BindEmpty(cat);
             }
             }
 
@@ -244,7 +244,12 @@ public class HUDManager : MonoBehaviour
     /// <summary>HUD 줄에 쓸 칩 한 칸의 크기(px). 아래 주석의 계산이 이 값을 정한다.</summary>
     /// 🔴 <b>줄 간격보다 작아야 한다</b> (D86). 44 였는데 줄 간격도 44 라 여백이 0 이었고,
     /// 행 높이(40)보다도 커서 <b>위아래 줄로 삐져나왔다</b> — 사용자 판정이 *"빈 박스끼리 겹쳐"* 였다.
-    private const float SlotChipSize = 36f;
+    ///
+    /// <para>🔴 <b>화면 픽셀로 재야 한다</b> (D87). 36 은 캔버스 기준이고, 창이 858px 이면
+    /// 배율이 0.447 이라 <b>실제로는 16px</b> 이다. 칸 사이 틈 4 는 <b>1.8px</b> 이었다 —
+    /// 사람 눈에는 그냥 <b>붙어 있다</b>. 캔버스 숫자만 보고 "안 겹친다" 고 판정했던 게 실수였다.
+    /// 한 줄 최대는 Mage 패시브 8칸이고 자리는 500 이므로 <c>8x50 + 7x10 = 470</c> 으로 들어간다.</para>
+    private const float SlotChipSize = 50f;
 
     /// <summary>
     /// 한 분류에 그릴 수 있는 최대 칸 수 — <b>안전망이다</b> (D83).

@@ -91,7 +91,7 @@ public class ItemChipUI : MonoBehaviour
         if (label != null) label.gameObject.SetActive(!on);
     }
 
-    public void BindEmpty()
+    public void BindEmpty(ItemCategory category)
     {
         if (icon != null)
         {
@@ -100,7 +100,16 @@ public class ItemChipUI : MonoBehaviour
             //    ⇒ 테두리만 있는 스프라이트를 넣고 9-슬라이스로 늘린다.
             icon.sprite = FrameSprite;
             icon.type   = UnityEngine.UI.Image.Type.Sliced;
-            icon.color  = new Color(1f, 1f, 1f, 0.30f);   // 자리만 알려 주는 옅은 테두리
+
+            // 🔑 <b>분류색 테두리</b> (D87 · 참고 이미지). 줄이 셋이라 색까지 다르면
+            //    무기/패시브/건물이 <b>한눈에</b> 갈린다. 알파 0.30 은 화면에서 안 보였다.
+            var tint = category switch
+            {
+                ItemCategory.Weapon   => WeaponTint,
+                ItemCategory.Building => BuildingTint,
+                _                     => PassiveTint
+            };
+            icon.color = new Color(tint.r, tint.g, tint.b, 0.55f);
         }
         if (label != null) label.text = string.Empty;
         name = "Chip_Empty";
@@ -126,7 +135,14 @@ public class ItemChipUI : MonoBehaviour
         {
             if (_frameSprite != null) return _frameSprite;
 
-            const int N = 8;
+            // 🔴 <b>PPU 를 100 으로 맞춘다</b> (D87 — 이걸 몰라서 테두리가 12.5배로 그려졌다).
+            //    9-슬라이스 테두리는 <c>border x (캔버스 referencePixelsPerUnit / sprite.pixelsPerUnit)</c>
+            //    만큼 그려진다. 캔버스 기준이 100 인데 스프라이트를 PPU 8 로 만들었더니
+            //    <b>1px 테두리가 12.5 캔버스px</b> 가 됐다 — 칩이 36px 이라 양쪽 25px 를 먹고
+            //    가운데 11px 만 남았다. <b>사실상 꽉 찬 박스</b>였고, 사용자가 본 게 그것이다.
+            const int N      = 16;
+            const int Border = 4;    // PPU 100 이므로 그대로 4 캔버스px
+
             var tex = new Texture2D(N, N, TextureFormat.RGBA32, false)
             {
                 filterMode = FilterMode.Point,
@@ -137,14 +153,15 @@ public class ItemChipUI : MonoBehaviour
             for (int y = 0; y < N; y++)
                 for (int x = 0; x < N; x++)
                 {
-                    bool edge = x == 0 || y == 0 || x == N - 1 || y == N - 1;
+                    bool edge = x < Border || y < Border || x >= N - Border || y >= N - Border;
                     px[y * N + x] = new Color32(255, 255, 255, (byte)(edge ? 255 : 0));
                 }
             tex.SetPixels32(px);
             tex.Apply();
 
             _frameSprite = Sprite.Create(tex, new Rect(0f, 0f, N, N), new Vector2(0.5f, 0.5f),
-                                         N, 0, SpriteMeshType.FullRect, new Vector4(1f, 1f, 1f, 1f));
+                                         100f, 0, SpriteMeshType.FullRect,
+                                         new Vector4(Border, Border, Border, Border));
             _frameSprite.name = "ItemChipFrame";
             return _frameSprite;
         }

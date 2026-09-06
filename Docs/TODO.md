@@ -181,6 +181,22 @@ I-14~I-18은 **코드 수정이 끝났다.** 하지만 전부 스모크 테스�
 ⇒ **멀면(7유닛 초과) 화면 안이어도 뜬다.** 가까우면 여전히 안 뜬다.
 판정 — 거리 9.0 뜬다 / 3.0 안 뜬다(대조군). 기준값은 `BossOffscreenArrowUI.showBeyondDistance`.
 
+### 🟡 D87 이후 — 사람 눈이 필요한 것 (2026-09-06)
+
+`D87` 이 **테두리가 12.5배로 그려지던 결함**을 고쳤다(9-슬라이스는
+`border x (Canvas.referencePixelsPerUnit / sprite.pixelsPerUnit)` 로 그려진다).
+숫자는 전부 통과했지만 `ScreenSpaceOverlay` 는 여전히 내가 못 찍는다.
+
+- [ ] **HUD 세 줄** — 칸이 서로 떨어져 보이는가. 화면에서 칸 **22.3px** · 가로틈 **4.5px** · 세로틈 **6.2px** 다.
+      여전히 붙어 보이면 씬 `HUD/PortraitGroup/*Row` 의 `HorizontalLayoutGroup.spacing`(지금 10)을 올리고,
+      칸 크기는 `HUDManager.SlotChipSize`(지금 50)를 고친다. **한 줄 최대는 8칸이라 `8x칸 + 7x간격 ≤ 500` 을 지킬 것.**
+- [ ] **빈 칸의 분류색** — 무기 파랑 · 패시브 초록 · 건물 주황이 구분되는가.
+      흐리면 `ItemChipUI.BindEmpty` 의 알파(지금 **0.55**)를, 선이 얇으면 `FrameSprite` 의 `Border`(지금 **4**)를 올린다.
+      🔴 **PPU 는 100 에서 건드리지 말 것** — 캔버스 기준과 어긋나는 순간 테두리가 배율만큼 뻥튀기된다.
+- [ ] **TAB 창** — 2단이 답답하지 않은가. 글자 **25pt**(화면 약 11px)는 `D56` 이 *"작아서 안 읽힌다"* 로 한 번 걸렸던 크기다.
+      키우려면 `StatsPanelUI.Style()` 의 `fontSize` — 지금 오른쪽 단이 **316/340** 이라 **27 이상은 넘친다.**
+      더 키우려면 씬 `StatsPanel/Body/StatsText`·`StatsRightText` 의 세로(340)를 먼저 늘려야 한다.
+
 ### CONTENT 요청 중 남은 것
 
 - [x] ✅ **`Pickup_Swift.prefab` 배선 — 끝났다** (`D80` · 요청-38). 판정 5/5.
