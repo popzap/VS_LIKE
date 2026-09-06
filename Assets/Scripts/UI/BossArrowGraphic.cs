@@ -13,7 +13,13 @@ using UnityEngine.UI;
 ///
 /// <para>모양은 <b>+x(오른쪽)를 가리키는</b> 삼각형이다. 방향은 부모가
 /// <c>rectTransform.rotation</c> 으로 돌린다 — 여기서 각도를 알 필요가 없다.</para>
+/// <para>🔴 <b><c>CanvasRenderer</c> 를 직접 요구한다</b> (D104 · 사용자가 세 번 지적한 건의 진짜 원인).
+/// <c>Graphic</c> 이 이미 같은 속성을 달고 있지만, <b>파생 클래스를 <c>AddComponent</c> 할 때는 그게 안 따라왔다.</b>
+/// 그 결과 화살표는 <b>켜지고 · 위치도 각도도 정확한데 한 픽셀도 안 그려졌다</b> —
+/// <c>activeSelf</c> 만 본 검증은 전부 통과했다. 버텍스를 담을 <c>CanvasRenderer</c> 가 없으면
+/// <c>Graphic</c> 은 <b>조용히 아무것도 안 한다.</b></para>
 /// </summary>
+[RequireComponent(typeof(CanvasRenderer))]
 public class BossArrowGraphic : Graphic
 {
     protected override void OnPopulateMesh(VertexHelper vh)

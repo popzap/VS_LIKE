@@ -16,6 +16,9 @@ using UnityEngine;
 /// </summary>
 public class BossOffscreenArrowUI : MonoBehaviour
 {
+    /// <summary>컴파일 반영 확인용 (D27). 값을 바꿨으면 이 숫자를 올린다.</summary>
+    public const int Version = 1;
+
     [Tooltip("화면 테두리에서 안쪽으로 이만큼 띄운다(px). 화살표가 잘리지 않을 만큼.")]
     [SerializeField] private float edgeMargin = 56f;
 
@@ -59,7 +62,13 @@ public class BossOffscreenArrowUI : MonoBehaviour
         _canvasRt = canvas.rootCanvas.transform as RectTransform;
         if (_canvasRt == null) return;
 
-        var go = new GameObject("BossOffscreenArrow", typeof(RectTransform));
+        // 🔴 <b>CanvasRenderer 를 여기서 같이 만든다</b> (D104).
+        //    Graphic 이 [RequireComponent(typeof(CanvasRenderer))] 를 달고 있어도
+        //    <b>파생 클래스를 AddComponent 할 때 그게 안 따라왔다</b> — 실측으로 확인했다.
+        //    그러면 화살표는 켜지고 위치·각도까지 정확한데 <b>한 픽셀도 안 그려진다.</b>
+        //    activeSelf 로는 절대 안 잡히는 고장이라 세 번을 놓쳤다.
+        //    ⇒ 속성에 기대지 말고 생성 시점에 못박는다.
+        var go = new GameObject("BossOffscreenArrow", typeof(RectTransform), typeof(CanvasRenderer));
         go.transform.SetParent(_canvasRt, false);
 
         _arrowRt = (RectTransform)go.transform;

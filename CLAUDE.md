@@ -110,6 +110,16 @@ Unity MCP 릴레이로 **켜져 있는 에디터**를 직접 조작한다.
   if (kb[UnityEngine.InputSystem.Key.F7].wasPressedThisFrame) { ... }
   ```
   `DevPanel`·`LevelUpManager` 가 이미 이 방식을 쓴다. **새로 쓰기 전에 기존 코드를 먼저 볼 것.**
+- 🔴 **`Graphic` 을 상속했으면 `[RequireComponent(typeof(CanvasRenderer))]` 를 그 클래스에 직접 달 것** (D104).
+  `Graphic` 이 이미 달고 있지만 **파생 클래스를 `AddComponent` 할 때는 안 따라온다.**
+  `CanvasRenderer` 가 없으면 `Graphic` 은 **예외도 경고도 없이 한 픽셀도 안 그린다** —
+  오브젝트는 생기고 · `activeSelf` 도 `True` 고 · 위치와 각도까지 정확하다.
+  보스 화살표가 이 상태로 **세 번의 검증을 통과했다.**
+  ⇒ 런타임에 만든다면 생성 시점에도 같이 붙인다:
+  `new GameObject("X", typeof(RectTransform), typeof(CanvasRenderer))`
+- 🔴 **UI 가 "보이나"를 `activeSelf` 로 판정하지 말 것** (D104).
+  실제로 그려졌는지는 `CanvasRenderer.materialCount` 가 답한다 (`0` = 안 그려짐).
+  **확실히 보이는 요소(HUD `Fill` 등)를 대조군으로 나란히 잰다.**
 - UI에 표시되는 **문자열은 영문**으로 쓴다. 주석·문서는 한국어.
 
 ---
