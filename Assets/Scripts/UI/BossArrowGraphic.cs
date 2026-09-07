@@ -22,25 +22,60 @@ using UnityEngine.UI;
 [RequireComponent(typeof(CanvasRenderer))]
 public class BossArrowGraphic : Graphic
 {
+    /// <summary>
+    /// 외곽선 두께(캔버스px). 0 이면 안 그린다 (<c>B21</c>).
+    ///
+    /// <para>🔴 <b>화살표가 보스 체력 바에 묻혔다</b> — 둘 다 빨강이라 윗부분이 섞였다.
+    /// 색을 바꾸는 건 CONTENT 판단이라(<c>요청-61</c>) 건드리지 않고,
+    /// <b>어떤 배경 위에서도 윤곽이 남도록</b> 어두운 테두리를 깐다.
+    /// 붉은색이 지고 있는 "위험" 이라는 뜻도 그대로 남는다.</para>
+    /// </summary>
+    public float OutlineWidth { get; set; }
+
+    /// <summary>외곽선 색. 알파는 <see cref="Graphic.color"/> 의 맥동을 따라간다.</summary>
+    public Color OutlineColor { get; set; } = new(0f, 0f, 0f, 0.85f);
+
+    /// <summary>
+    /// 외곽선까지 포함한 배율. <see cref="BossOffscreenArrowUI"/> 가 <b>테두리 여유를 계산할 때</b>
+    /// 쓴다 — 외곽선은 <c>rect</c> 밖으로 나가므로 이걸 빼먹으면 <c>B20</c> 이 다시 열린다.
+    /// </summary>
+    public float OutlineScale(Rect r) =>
+        OutlineWidth <= 0f ? 1f : 1f + 2f * OutlineWidth / Mathf.Min(r.width, r.height);
+
     protected override void OnPopulateMesh(VertexHelper vh)
     {
         vh.Clear();
 
         var r = GetPixelAdjustedRect();
-        float hx = r.width  * 0.5f;
-        float hy = r.height * 0.5f;
-        var c = color;
 
-        // 꼭짓점이 +x 를 향한다. 뒤쪽 두 점은 살짝 안으로 넣어 뾰족함을 남긴다.
+        // 🔑 외곽선을 <b>먼저</b> 넣는다. 같은 메시 안에서는 나중 삼각형이 위에 그려지므로
+        //    이 순서 하나로 "뒤에 깔린 테두리"가 된다 (오브젝트를 하나 더 만들 필요가 없다).
+        if (OutlineWidth > 0f)
+        {
+            var oc = OutlineColor;
+            oc.a *= color.a;                       // 맥동을 같이 탄다
+            Emit(vh, r, OutlineScale(r), oc);
+        }
+        Emit(vh, r, 1f, color);
+    }
+
+    /// <summary>꼭짓점이 +x 를 향하는 삼각형 둘. 방향은 부모가 회전으로 준다.</summary>
+    private static void Emit(VertexHelper vh, Rect r, float s, Color c)
+    {
+        float hx = r.width  * 0.5f * s;
+        float hy = r.height * 0.5f * s;
+
+        int i0 = vh.currentVertCount;
         var v = UIVertex.simpleVert;
         v.color = c;
 
+        // 뒤쪽 두 점은 살짝 안으로 넣어 뾰족함을 남긴다.
         v.position = new Vector3(r.center.x + hx,        r.center.y,      0f); vh.AddVert(v);
         v.position = new Vector3(r.center.x - hx * 0.7f, r.center.y + hy, 0f); vh.AddVert(v);
         v.position = new Vector3(r.center.x - hx * 0.2f, r.center.y,      0f); vh.AddVert(v);
         v.position = new Vector3(r.center.x - hx * 0.7f, r.center.y - hy, 0f); vh.AddVert(v);
 
-        vh.AddTriangle(0, 1, 2);
-        vh.AddTriangle(0, 2, 3);
+        vh.AddTriangle(i0 + 0, i0 + 1, i0 + 2);
+        vh.AddTriangle(i0 + 0, i0 + 2, i0 + 3);
     }
 }

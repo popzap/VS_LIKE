@@ -17,7 +17,7 @@ using UnityEngine;
 public class BossOffscreenArrowUI : MonoBehaviour
 {
     /// <summary>컴파일 반영 확인용 (D27). 값을 바꿨으면 이 숫자를 올린다.</summary>
-    public const int Version = 4;   // 4 = 띠를 글리프로 재서 210 (B20) · 3 = 212 · 2 = 띠 회피 최초 · 1 = 최초
+    public const int Version = 5;   // 5 = 외곽선 (B21) · 4 = 띠 210 (B20) · 3 = 212 · 2 = 띠 회피 · 1 = 최초
 
     [Tooltip("화면 테두리에서 안쪽으로 이만큼 띄운다(px). 화살표가 잘리지 않을 만큼.")]
     [SerializeField] private float edgeMargin = 56f;
@@ -26,6 +26,11 @@ public class BossOffscreenArrowUI : MonoBehaviour
     [SerializeField] private float arrowSize = 44f;
 
     [SerializeField] private Color arrowColor = new(0.90f, 0.24f, 0.24f, 0.92f);
+
+    [Tooltip("화살표 외곽선 두께(캔버스px). 0 이면 안 그린다. 보스 체력 바와 같은 빨강 위에서도 갈리게 한다 (B21).")]
+    [SerializeField] private float arrowOutline = 6f;
+
+    [SerializeField] private Color arrowOutlineColor = new(0f, 0f, 0f, 0.85f);
 
     [Tooltip("0 이면 깜빡이지 않는다. 초당 맥동 횟수.")]
     [SerializeField] private float pulsePerSecond = 1.6f;
@@ -98,6 +103,8 @@ public class BossOffscreenArrowUI : MonoBehaviour
 
         _arrow = go.AddComponent<BossArrowGraphic>();
         _arrow.color = arrowColor;
+        _arrow.OutlineWidth = arrowOutline;      // B21 — 같은 빨강 위에서도 갈리게
+        _arrow.OutlineColor = arrowOutlineColor;
         _arrow.raycastTarget = false;   // 화살표가 버튼을 먹으면 안 된다
     }
 
@@ -138,8 +145,9 @@ public class BossOffscreenArrowUI : MonoBehaviour
         //    🔑 <b>여유를 arrowSize 에서 계산한다.</b> 회전한 사각형의 화면 AABB 는
         //    각도에 따라 커지는데 <b>대각선을 넘지는 못한다</b> ⇒ 그 절반이 최악의 반높이다.
         //    상수로 박아 두면 arrowSize 를 바꿀 때(이미 44 → 96 으로 바뀌었다) 조용히 다시 겹친다.
+        //    ⚠️ <b>외곽선은 rect 밖으로 나간다</b> (B21). 그 배율을 안 곱하면 B20 이 다시 열린다.
         float w = _arrowRt.rect.width, h = _arrowRt.rect.height;
-        float arrowHalfMax = 0.5f * Mathf.Sqrt(w * w + h * h);
+        float arrowHalfMax = 0.5f * Mathf.Sqrt(w * w + h * h) * _arrow.OutlineScale(_arrowRt.rect);
         float halfHTop = size.y * 0.5f - Mathf.Max(edgeMargin, topHudBand + arrowHalfMax);
 
         // 🔴 <b>"화면 밖일 때만" 은 실제로 거의 안 뜬다</b> (D85 · 사용자가 세 번 지적했다).
