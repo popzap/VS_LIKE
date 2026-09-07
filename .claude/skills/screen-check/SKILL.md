@@ -269,6 +269,36 @@ Shrink            → max(W/1920, H/1080)
 `RectTransform` 월드 코너로 사각형 교차를 세고 **겹치는 쌍 개수**를 적는다.
 화면으로도 같은 자리를 확대해 확인한다. 둘이 어긋나면 화면이 맞다.
 
+#### 🔴 회전하는 것은 **모서리 4개를 다 봐야 한다**
+
+`GetWorldCorners` 는 코너 4개를 주는데, 축에 정렬된 사각형만 생각하고
+`c[0]`(좌하)·`c[2]`(우상) 둘로 AABB 를 만들기 쉽다. **회전한 순간 그건 틀린다** —
+보스 화살표를 그렇게 쟀다가 **19×51 로 나왔고 실제는 54×50** 이었다(폭이 절반).
+그대로 적었으면 겹침을 **5개 중 2개**로 과소보고했을 것이다.
+
+```csharp
+var c = new Vector3[4]; rt.GetWorldCorners(c);
+var cam = cv.renderMode == RenderMode.ScreenSpaceOverlay ? null : cv.worldCamera;
+float x0=float.MaxValue, y0=float.MaxValue, x1=float.MinValue, y1=float.MinValue;
+for (int i = 0; i < 4; i++) {                    // 🔑 넷을 다 돈다
+    var p = RectTransformUtility.WorldToScreenPoint(cam, c[i]);
+    x0 = Mathf.Min(x0, p.x); x1 = Mathf.Max(x1, p.x);
+    y0 = Mathf.Min(y0, p.y); y1 = Mathf.Max(y1, p.y);
+}
+var screenRect = Rect.MinMaxRect(x0, y0, x1, y1);
+```
+
+**잡은 방법은 대조군이었다** — 같은 화살표를 픽셀로도 재 놨는데
+잉크 bbox 가 **39×32** 라 계산값 19×51 과 안 맞았다. 규칙 5 가 규칙 4 를 잡은 것이다.
+⇒ **기하로 잰 값과 픽셀로 잰 값을 항상 나란히 놓는다.**
+
+#### ⚠️ 한 자리만 재지 말 것 — **방향을 돌려 본다**
+
+화면 테두리를 타는 것(오프스크린 화살표 등)은 **방향마다 다른 것과 만난다.**
+한 자리에서 통과해도 다른 각도에서 깨진다 —
+12방향을 돌려 보니 **5방향에서 HUD 글자와 겹쳤고 나머지 7방향은 깨끗했다**(`B20`).
+처음 골랐던 각도가 깨끗한 쪽이었으면 **"문제 없음"으로 닫았을 것이다.**
+
 ### 🔴 규칙 5. 픽셀로 잴 때는 **대조군을 먼저 세운다**
 
 렌더된 픽셀에는 **안티에일리어싱·글로우·그림자**가 섞여 있다. 그걸 모르고 세면
