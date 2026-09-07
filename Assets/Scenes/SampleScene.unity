@@ -29921,6 +29921,22 @@ PrefabInstance:
       value: 
       objectReference: {fileID: 45551137}
     - target: {fileID: 2251716248795094775, guid: dd984b45809b1964d8196ddc77259acd, type: 3}
+      propertyPath: portraitBackColor.a
+      value: 0.95
+      objectReference: {fileID: 0}
+    - target: {fileID: 2251716248795094775, guid: dd984b45809b1964d8196ddc77259acd, type: 3}
+      propertyPath: portraitBackColor.b
+      value: 0.446
+      objectReference: {fileID: 0}
+    - target: {fileID: 2251716248795094775, guid: dd984b45809b1964d8196ddc77259acd, type: 3}
+      propertyPath: portraitBackColor.g
+      value: 0.494
+      objectReference: {fileID: 0}
+    - target: {fileID: 2251716248795094775, guid: dd984b45809b1964d8196ddc77259acd, type: 3}
+      propertyPath: portraitBackColor.r
+      value: 0.48
+      objectReference: {fileID: 0}
+    - target: {fileID: 2251716248795094775, guid: dd984b45809b1964d8196ddc77259acd, type: 3}
       propertyPath: 'itemSlotRows.Array.data[0]'
       value: 
       objectReference: {fileID: 167606554}
@@ -30461,6 +30477,8 @@ MonoBehaviour:
   edgeMargin: 86
   arrowSize: 96
   arrowColor: {r: 1, g: 0.28, b: 0.22, a: 1}
+  arrowOutline: 6
+  arrowOutlineColor: {r: 0, g: 0, b: 0, a: 0.85}
   pulsePerSecond: 2.4
   showBeyondDistance: 7
   topHudBand: 210

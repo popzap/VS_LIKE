@@ -13,7 +13,7 @@ public class HUDManager : MonoBehaviour
     public static HUDManager Instance { get; private set; }
 
     // 🔴 컴파일 반영 확인용 (D27).
-    public const int Version = 9;   // 9 = 초상 액자를 88x88 자리에 (D107) · 8 = 액자 최초(부모 전체를 덮었다) · 7 = 칸 64 (D92) · 6 = 간격 22 (D89) · 5 = 칸 키우고 분류색 테두리 (D87) · 4 = 아이템 줄을 분류별 3줄로 (D85) · 3 = 초상화+아이템 줄 (D82) · 2 = 레벨업 파동 (D43)
+    public const int Version = 11;  // 11 = 뒷판 0.48 (렌더해서 고름) · 10 = 뒷판 0.20 + 확대 · 9 = 액자 88x88 · 8 = 액자 최초 · 7 = 칸 64 (D92) · 6 = 간격 22 (D89) · 5 = 칸 키우고 분류색 테두리 (D87) · 4 = 아이템 줄을 분류별 3줄로 (D85) · 3 = 초상화+아이템 줄 (D82) · 2 = 레벨업 파동 (D43)
 
     // ── 포트레이트 (좌측 상단) ───────────────────────────────
     [Header("포트레이트")]
@@ -23,6 +23,31 @@ public class HUDManager : MonoBehaviour
     [SerializeField] private Sprite  faceWorried;          // HP 25~50%
     [SerializeField] private Sprite  faceCritical;         // HP 25% 이하
     [SerializeField] private Image   statusDot;            // 포트레이트 우하단 상태 점
+
+    /// <summary>
+    /// 초상 뒷판 색 (D107). 🔴 <b>처음엔 0.077 로 거의 검정이었다</b> —
+    /// 게임 바닥(0.234)보다 어두워서 원이 <b>검은 구멍</b>으로 읽혔다(사용자 지적).
+    ///
+    /// <para>🔑 <b>뒷판은 "안 튀게" 가 아니라 "초상이 떠 보이게" 잡는 값이다.</b>
+    /// 초상 대부분이 어두운 갑옷·로브라, 뒷판을 같이 어둡게 하면 원 전체가 한 덩어리로 뭉친다.
+    /// <b>밝게 깔아야 실루엣이 뜬다.</b></para>
+    ///
+    /// <para>0.20 / 0.34 / 0.48 / 0.62 를 <b>실제로 렌더해서 골랐다</b> —
+    /// 가장 어두운 쪽(Warrior)과 가장 밝은 쪽(Summoner) <b>양쪽에서</b> 봤고 <b>0.48</b> 이
+    /// 둘 다 읽혔다. 0.62 는 금색 고리와 경쟁해서 씻긴다.</para>
+    /// </summary>
+    [Tooltip("초상 뒷판 원의 색. 밝게 깔아야 어두운 초상의 실루엣이 뜬다. 0.48 은 렌더해서 고른 값.")]
+    [SerializeField] private Color portraitBackColor = new(0.48f, 0.494f, 0.446f, 0.95f);
+
+    /// <summary>
+    /// 초상 확대 배율 (D107). 🔴 <b>1.0 이면 원 안을 41~71 % 만 채운다</b> —
+    /// 나머지는 뒷판이라 어둡게 보인다. 키워서 원을 채우면 어두운 자리가 줄어든다.
+    /// </summary>
+    [Tooltip("초상을 원 안에서 이만큼 확대한다. 1.0 이면 원 둘레에 빈 곳이 많이 남는다.")]
+    [SerializeField] private float portraitZoom = 1.28f;
+
+    [Tooltip("확대하면 머리가 위로 밀린다. 캔버스px 만큼 내려 준다.")]
+    [SerializeField] private float portraitDropY = 6f;
 
     // ── 보유 아이템 줄 (D82 · 사용자 요구 2) ──────────────────
     [Header("보유 아이템 줄 — HP 바 아래")]
@@ -517,7 +542,7 @@ public class HUDManager : MonoBehaviour
         var aPos = pr.anchoredPosition; var sd = pr.sizeDelta; var piv = pr.pivot;
 
         // ① 뒷판 — 어두운 원. 초상이 바닥에 떠 있지 않고 "칸 안에" 있어 보이게 한다.
-        var disc = NewCircleChild(host, "PortraitDisc", Disc(), new Color(0.07f, 0.08f, 0.07f, 0.85f));
+        var disc = NewCircleChild(host, "PortraitDisc", Disc(), portraitBackColor);
         Place(disc, aMin, aMax, aPos, sd, piv);
         disc.SetSiblingIndex(order);
 
@@ -537,6 +562,11 @@ public class HUDManager : MonoBehaviour
 
         pr.SetParent(mrt, false);      // 초상을 마스크 안으로 — 여기서만 늘린다
         Stretch(pr);
+
+        // 🔑 원을 채우도록 키운다. 1.0 이면 둘레에 뒷판이 많이 남아 어둡게 보인다.
+        //    마스크가 넘치는 부분을 잘라 주므로 확대해도 원 밖으로 안 나간다.
+        pr.localScale = new Vector3(portraitZoom, portraitZoom, 1f);
+        pr.anchoredPosition = new Vector2(0f, -portraitDropY);
 
         // ③ 고리 — 액자. 마스크 위에 얹어야 테두리가 안 잘린다.
         var ring = NewCircleChild(host, "PortraitRing", Ring(), new Color(0.78f, 0.70f, 0.45f, 0.95f));
