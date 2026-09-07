@@ -26656,7 +26656,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
   m_Material: {fileID: 0}
-  m_Color: {r: 0.25, g: 0.28, b: 0.34, a: 1}
+  m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
@@ -29926,15 +29926,15 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2251716248795094775, guid: dd984b45809b1964d8196ddc77259acd, type: 3}
       propertyPath: portraitBackColor.b
-      value: 0.446
+      value: 0.316
       objectReference: {fileID: 0}
     - target: {fileID: 2251716248795094775, guid: dd984b45809b1964d8196ddc77259acd, type: 3}
       propertyPath: portraitBackColor.g
-      value: 0.494
+      value: 0.35
       objectReference: {fileID: 0}
     - target: {fileID: 2251716248795094775, guid: dd984b45809b1964d8196ddc77259acd, type: 3}
       propertyPath: portraitBackColor.r
-      value: 0.48
+      value: 0.34
       objectReference: {fileID: 0}
     - target: {fileID: 2251716248795094775, guid: dd984b45809b1964d8196ddc77259acd, type: 3}
       propertyPath: 'itemSlotRows.Array.data[0]'
