@@ -17,7 +17,7 @@ using UnityEngine;
 public class BossOffscreenArrowUI : MonoBehaviour
 {
     /// <summary>컴파일 반영 확인용 (D27). 값을 바꿨으면 이 숫자를 올린다.</summary>
-    public const int Version = 1;
+    public const int Version = 4;   // 4 = 띠를 글리프로 재서 210 (B20) · 3 = 212 · 2 = 띠 회피 최초 · 1 = 최초
 
     [Tooltip("화면 테두리에서 안쪽으로 이만큼 띄운다(px). 화살표가 잘리지 않을 만큼.")]
     [SerializeField] private float edgeMargin = 56f;
@@ -32,6 +32,26 @@ public class BossOffscreenArrowUI : MonoBehaviour
 
     [Tooltip("🔴 이 거리(월드 유닛)보다 멀면 화면 안이어도 화살표를 띄운다. 0 이면 예전처럼 화면 밖에서만.")]
     [SerializeField] private float showBeyondDistance = 7f;
+
+    /// <summary>
+    /// 화면 위쪽 HUD 글자 띠의 높이(캔버스px). 화살표는 이 아래로만 다닌다 (B20).
+    ///
+    /// <para>🔴 <b>보스가 있는 상태에서 재야 한다.</b> 처음엔 100 으로 넣었다가 그대로 겹쳤다 —
+    /// 보스 없이 쟀기 때문이다. 화살표는 <b>보스가 있을 때만</b> 뜨고 그때는
+    /// <c>BossNameText</c>·<c>BossPhaseText</c> 가 화면 위쪽에 추가로 뜬다.</para>
+    ///
+    /// <para>🔑 <b>글리프로 쟀다. 글자의 <c>RectTransform</c> 이 아니다.</b>
+    /// <c>BossNameText</c> 의 rect 는 가로로 넓은데 글자는 왼쪽에만 있어서,
+    /// rect 로 재면 <b>안 겹치는 것도 겹친다고 나온다</b>(12방향 중 하나가 헛경보였다).
+    /// <c>ForceMeshUpdate</c> 뒤 <c>characterInfo[i].isVisible</c> 인 것만 모아 외곽을 냈다.</para>
+    ///
+    /// <para>글리프 아래끝(위 테두리에서): <c>BossNameText</c> <b>206</b> ·
+    /// <c>BossPhaseText</c> 205 · <c>TimerText</c> 149 · <c>KillText</c> 91 · <c>HPText</c> 89.</para>
+    ///
+    /// <para>⚠️ HUD 를 손대면 <b>이 값을 다시 재라.</b> 그냥 두면 화살표가 조용히 다시 글자를 덮는다.</para>
+    /// </summary>
+    [Tooltip("화면 위쪽 HUD 글자 띠의 깊이(캔버스px). 보스 이름표까지 글리프로 잰 값 + 여유.")]
+    [SerializeField] private float topHudBand = 210f;
 
     private WaveManager      _wave;
     private EnemyBase        _boss;
@@ -110,6 +130,18 @@ public class BossOffscreenArrowUI : MonoBehaviour
         float halfW = size.x * 0.5f - edgeMargin;
         float halfH = size.y * 0.5f - edgeMargin;
 
+        // 🔴 <b>위쪽만 더 안으로 민다</b> (B20). 화살표는 테두리를 타는데
+        //    HUD 글자 여섯(HP·Level·Timer·XP·Kills·Gold)이 <b>전부 화면 위쪽 띠</b>에 있다
+        //    ⇒ 보스가 위쪽에 있으면 <b>반드시</b> 그 위를 탄다. 12방향 중 5방향에서 겹쳤다.
+        //    글자를 옮기지 않고 화살표를 내린다 — 글자를 건드리면 D85 가 잡아 놓은 배치가 흔들린다.
+        //
+        //    🔑 <b>여유를 arrowSize 에서 계산한다.</b> 회전한 사각형의 화면 AABB 는
+        //    각도에 따라 커지는데 <b>대각선을 넘지는 못한다</b> ⇒ 그 절반이 최악의 반높이다.
+        //    상수로 박아 두면 arrowSize 를 바꿀 때(이미 44 → 96 으로 바뀌었다) 조용히 다시 겹친다.
+        float w = _arrowRt.rect.width, h = _arrowRt.rect.height;
+        float arrowHalfMax = 0.5f * Mathf.Sqrt(w * w + h * h);
+        float halfHTop = size.y * 0.5f - Mathf.Max(edgeMargin, topHudBand + arrowHalfMax);
+
         // 🔴 <b>"화면 밖일 때만" 은 실제로 거의 안 뜬다</b> (D85 · 사용자가 세 번 지적했다).
         //    보스는 플레이어를 쫓고 카메라는 플레이어를 따라가므로 <b>화면 밖으로 나갈 일이 거의 없다.</b>
         //    `D83` 에서 보스를 25.7유닛 밖으로 옮겨 보니 화살표는 정상으로 떴다 —
@@ -136,8 +168,12 @@ public class BossOffscreenArrowUI : MonoBehaviour
 
         // 중심에서 p 방향으로 뻗은 반직선이 테두리 사각형과 만나는 점.
         // 두 축 중 <b>먼저 닿는 쪽</b>이 경계라서 비율의 최솟값을 쓴다.
+        // 🔑 위로 갈 때만 한계가 다르다 (B20). "언제 뜨는가"(위의 화면 안 판정)는 안 건드렸다 —
+        //    그건 이 버그 밖이고, 같이 바꾸면 화살표가 뜨는 조건까지 달라진다.
+        float limY = p.y >= 0f ? halfHTop : halfH;
+
         float tx = Mathf.Abs(p.x) > 0.0001f ? halfW / Mathf.Abs(p.x) : float.MaxValue;
-        float ty = Mathf.Abs(p.y) > 0.0001f ? halfH / Mathf.Abs(p.y) : float.MaxValue;
+        float ty = Mathf.Abs(p.y) > 0.0001f ? limY  / Mathf.Abs(p.y) : float.MaxValue;
         Vector2 edge = p * Mathf.Min(tx, ty);
 
         _arrowRt.anchoredPosition = edge;

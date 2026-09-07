@@ -30463,6 +30463,7 @@ MonoBehaviour:
   arrowColor: {r: 1, g: 0.28, b: 0.22, a: 1}
   pulsePerSecond: 2.4
   showBeyondDistance: 7
+  topHudBand: 210
 --- !u!1001 &7383268970717228493
 PrefabInstance:
   m_ObjectHideFlags: 0
