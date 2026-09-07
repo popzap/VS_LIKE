@@ -32,7 +32,7 @@ MonoBehaviour:
   BonusPassiveSlots: 4
   BonusBuildingSlots: 2
   ArtFacesRight: 1
-  Portrait: {fileID: 21300000, guid: d138124b5892ca54b846acd1e187fa53, type: 3}
+  Portrait: {fileID: 21300000, guid: cb5656748b6d8984994828f90fb94e98, type: 3}
   BodySprite: {fileID: -756708257, guid: 87bb800ad61c9854ababf57ee773bec2, type: 3}
   WalkFrames:
   - {fileID: -756708257, guid: 87bb800ad61c9854ababf57ee773bec2, type: 3}

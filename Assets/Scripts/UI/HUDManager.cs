@@ -13,7 +13,7 @@ public class HUDManager : MonoBehaviour
     public static HUDManager Instance { get; private set; }
 
     // 🔴 컴파일 반영 확인용 (D27).
-    public const int Version = 7;   // 7 = 칸 64 (D92) · 6 = 간격 22 (D89) · 5 = 칸 키우고 분류색 테두리 (D87) · 4 = 아이템 줄을 분류별 3줄로 (D85) · 3 = 초상화+아이템 줄 (D82) · 2 = 레벨업 파동 (D43)
+    public const int Version = 9;   // 9 = 초상 액자를 88x88 자리에 (D107) · 8 = 액자 최초(부모 전체를 덮었다) · 7 = 칸 64 (D92) · 6 = 간격 22 (D89) · 5 = 칸 키우고 분류색 테두리 (D87) · 4 = 아이템 줄을 분류별 3줄로 (D85) · 3 = 초상화+아이템 줄 (D82) · 2 = 레벨업 파동 (D43)
 
     // ── 포트레이트 (좌측 상단) ───────────────────────────────
     [Header("포트레이트")]
@@ -108,6 +108,8 @@ public class HUDManager : MonoBehaviour
         //    🔑 `D65` 가 피하려던 건 "하단 중앙"이 아니라 **플레이어 바로 아래**였는데,
         //    바닥에서 1/3 이면 플레이어(화면 중앙)보다 충분히 아래라 겹치지 않는다.
         PromptCorner.PlaceCenterLower(buildPromptText);
+
+        BuildPortraitFrame();   // D107 — 초상 자리에 원형 마스크 + 테두리 (애셋 0개)
 
         _playerStats = FindFirstObjectByType<PlayerStats>();
         _expManager  = ExperienceManager.Instance;
@@ -453,6 +455,127 @@ public class HUDManager : MonoBehaviour
     /// <para>🔴 <b>매번 다시 읽는다.</b> 캐시하면 승급으로 직업이 바뀌었을 때 옛 얼굴이 남는다.
     /// HP 가 바뀔 때만 불리는 함수라 비용도 문제되지 않는다.</para>
     /// </summary>
+    // ── 초상 액자 (D107) ──────────────────────────────────────
+    //
+    // 🔑 <b>애셋을 늘리지 않는다.</b> 원과 고리를 런타임에 그려서 쓴다 —
+    //    B16 에서 테두리 텍스처를 코드로 만든 것과 같은 방식이다.
+    // 🔑 <b>씬에도 안 남는다.</b> D66(보스 화살표)처럼 코드가 만든다.
+    //    씬에 칸을 하나 더 두면 그 칸이 언젠가 비거나(I-24) 위치가 어긋난다.
+
+    private static Sprite _discSprite, _ringSprite;
+
+    /// <summary>가운데가 꽉 찬 원. 마스크와 뒷판에 쓴다.</summary>
+    private static Sprite Disc() => _discSprite != null
+        ? _discSprite
+        : _discSprite = MakeCircle(128, 0f);
+
+    /// <summary>테두리만 남긴 고리. 액자에 쓴다.</summary>
+    private static Sprite Ring() => _ringSprite != null
+        ? _ringSprite
+        : _ringSprite = MakeCircle(128, 0.86f);
+
+    /// <param name="innerRatio">0 이면 꽉 찬 원, 0.86 이면 바깥 14 % 만 남는 고리.</param>
+    private static Sprite MakeCircle(int size, float innerRatio)
+    {
+        var tex = new Texture2D(size, size, TextureFormat.RGBA32, false)
+        {
+            filterMode = FilterMode.Bilinear,   // 원은 픽셀아트가 아니라 매끈해야 한다
+            wrapMode   = TextureWrapMode.Clamp,
+        };
+
+        float c = (size - 1) * 0.5f, rOut = c, rIn = c * innerRatio;
+        var px = new Color32[size * size];
+        for (int y = 0; y < size; y++)
+        for (int x = 0; x < size; x++)
+        {
+            float d = Mathf.Sqrt((x - c) * (x - c) + (y - c) * (y - c));
+            // 가장자리 1px 을 부드럽게 — 안 하면 원이 톱니가 된다
+            float a = Mathf.Clamp01(rOut - d);
+            if (innerRatio > 0f) a = Mathf.Min(a, Mathf.Clamp01(d - rIn));
+            px[y * size + x] = new Color32(255, 255, 255, (byte)(a * 255f));
+        }
+        tex.SetPixels32(px);
+        tex.Apply();
+        return Sprite.Create(tex, new Rect(0, 0, size, size), new Vector2(0.5f, 0.5f), 100f);
+    }
+
+    private void BuildPortraitFrame()
+    {
+        if (portraitImage == null) return;
+
+        var pr = portraitImage.rectTransform;
+        if (pr.parent != null && pr.parent.name == "PortraitMask") return;   // 두 번 만들지 않는다
+
+        var host = pr.parent as RectTransform;
+        if (host == null) return;
+        int order = pr.GetSiblingIndex();
+
+        // 🔴 <b>초상이 있던 그 자리(88x88)를 그대로 베낀다.</b> 부모에 맞춰 늘리면 안 된다 —
+        //    부모(PortraitGroup)는 <b>370x96</b> 로 HP 바까지 아우르는 칸이라
+        //    원이 HP 바를 덮는 거대한 타원이 된다. 실제로 그렇게 한 번 만들었다.
+        var aMin = pr.anchorMin; var aMax = pr.anchorMax;
+        var aPos = pr.anchoredPosition; var sd = pr.sizeDelta; var piv = pr.pivot;
+
+        // ① 뒷판 — 어두운 원. 초상이 바닥에 떠 있지 않고 "칸 안에" 있어 보이게 한다.
+        var disc = NewCircleChild(host, "PortraitDisc", Disc(), new Color(0.07f, 0.08f, 0.07f, 0.85f));
+        Place(disc, aMin, aMax, aPos, sd, piv);
+        disc.SetSiblingIndex(order);
+
+        // ② 마스크 — 초상을 원 밖으로 못 나가게 자른다.
+        var maskGo = new GameObject("PortraitMask",
+            typeof(RectTransform), typeof(CanvasRenderer),
+            typeof(global::UnityEngine.UI.Image), typeof(global::UnityEngine.UI.Mask));
+        var mrt = (RectTransform)maskGo.transform;
+        mrt.SetParent(host, false);
+        Place(mrt, aMin, aMax, aPos, sd, piv);
+        mrt.SetSiblingIndex(order + 1);
+
+        var mimg = maskGo.GetComponent<global::UnityEngine.UI.Image>();
+        mimg.sprite = Disc();
+        mimg.raycastTarget = false;
+        maskGo.GetComponent<global::UnityEngine.UI.Mask>().showMaskGraphic = false;
+
+        pr.SetParent(mrt, false);      // 초상을 마스크 안으로 — 여기서만 늘린다
+        Stretch(pr);
+
+        // ③ 고리 — 액자. 마스크 위에 얹어야 테두리가 안 잘린다.
+        var ring = NewCircleChild(host, "PortraitRing", Ring(), new Color(0.78f, 0.70f, 0.45f, 0.95f));
+        Place(ring, aMin, aMax, aPos, sd, piv);
+        ring.SetSiblingIndex(order + 2);
+    }
+
+    private static RectTransform NewCircleChild(RectTransform host, string name, Sprite spr, Color col)
+    {
+        var go = new GameObject(name, typeof(RectTransform), typeof(CanvasRenderer),
+                                typeof(global::UnityEngine.UI.Image));
+        var rt = (RectTransform)go.transform;
+        rt.SetParent(host, false);
+        var img = go.GetComponent<global::UnityEngine.UI.Image>();
+        img.sprite = spr;
+        img.color = col;
+        img.raycastTarget = false;     // 액자가 버튼을 먹으면 안 된다
+        return rt;
+    }
+
+    private static void Place(RectTransform rt, Vector2 aMin, Vector2 aMax,
+                              Vector2 aPos, Vector2 sizeDelta, Vector2 pivot)
+    {
+        rt.anchorMin = aMin;
+        rt.anchorMax = aMax;
+        rt.pivot     = pivot;
+        rt.sizeDelta = sizeDelta;
+        rt.anchoredPosition = aPos;
+    }
+
+    private static void Stretch(RectTransform rt)
+    {
+        rt.anchorMin = Vector2.zero;
+        rt.anchorMax = Vector2.one;
+        rt.offsetMin = Vector2.zero;
+        rt.offsetMax = Vector2.zero;
+        rt.pivot     = new Vector2(0.5f, 0.5f);
+    }
+
     private void UpdatePortrait(float ratio)
     {
         if (portraitImage == null) return;
