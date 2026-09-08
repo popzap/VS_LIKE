@@ -26,6 +26,11 @@ public class MeleeWeapon : WeaponBase
     [Tooltip("연타 사이의 간격(초). ProjectileCount 가 2 이상일 때만 쓰인다.")]
     [SerializeField] private float comboInterval = 0.18f;
 
+    [Header("소리")]
+    [Tooltip("휘두를 때 나는 소리. 🔴 검과 마이크가 이 클래스를 함께 쓰므로 프리팹마다 다르다 " +
+             "— 코드에 박아 두면 마이크에서 칼바람 소리가 난다 (D116).")]
+    [SerializeField] private SfxId swingSfx = SfxId.WeaponSwing;
+
     protected override void Fire()
     {
         // 사거리 안에 아무도 없으면 허공을 베지 않는다.
@@ -49,7 +54,7 @@ public class MeleeWeapon : WeaponBase
             dir.Normalize();
 
             SpawnArc(dir, range);
-            AudioManager.Play(SfxId.WeaponSwing);
+            AudioManager.Play(swingSfx);
 
             // 🔴 피해는 휘두르는 동안 딱 한 번이다. 프레임마다 굴리면 연타와 겹쳐 몇 배가 된다.
             yield return new WaitForSeconds(hitDelay);

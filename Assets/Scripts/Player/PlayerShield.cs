@@ -71,7 +71,7 @@ public class PlayerShield : MonoBehaviour
             {
                 _timer   = 0f;
                 _charged = true;
-                AudioManager.Play(SfxId.BuffPickup);   // 🟡 자리표시 — 전용 SFX 는 CONTENT 요청-64
+                AudioManager.Play(SfxId.ShieldUp);     // D116 · 전용 소리 (BuffPickup 을 빌려 쓰던 자리)
             }
         }
 
@@ -89,7 +89,7 @@ public class PlayerShield : MonoBehaviour
         _charged = false;
         _timer   = 0f;                 // 🔴 여기서 0 으로 되돌린다 — 안 하면 다음 장이 즉시 찬다
         BlockedCount++;
-        AudioManager.Play(SfxId.UiCancel);   // 🟡 자리표시 — 전용 SFX 는 CONTENT 요청-64
+        AudioManager.Play(SfxId.ShieldBlock);   // D116 · PlayerHit 의 반대말 (UiCancel 을 빌려 쓰던 자리)
         ShowRing(false);
         return true;
     }

@@ -75,6 +75,6 @@ public class PlayerTeleport : MonoBehaviour
         transform.position = to;
 
         JumpCount++;
-        AudioManager.Play(SfxId.Magnet);   // 🟡 자리표시 — 전용 SFX 는 CONTENT 요청-64
+        AudioManager.Play(SfxId.Blink);   // D116 · 전용 소리 (Magnet 을 빌려 쓰던 자리 — 뜻이 반대였다)
     }
 }

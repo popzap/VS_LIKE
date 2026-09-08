@@ -26,6 +26,9 @@ public enum SfxId
     //    SummonWeapon.lashHitDelay 를 바꾸면 클립도 다시 구워야 한다 (Tools/Audio/gen_tentacle_lash.py HIT_AT).
     TentacleLash = 6,  // 소환수 문어의 촉수 후리기 (SummonWeapon)
     DragonSpit   = 7,  // 소환수 드래곤의 화염구 뱉기 (SummonWeapon) — 착탄 폭발음(Explosion)이 아니다
+    // 🔴 마이크는 검(WeaponSwing)과 **같은 MeleeWeapon 코드**를 쓰지만 소리는 갈라야 한다 (D116).
+    //    검은 3k~9k 83%(칼바람), 이건 200~800Hz 53%(확성기 몸통) — 대역이 정반대다.
+    MicPulse     = 8,  // 마이크의 원뿔 범위 공격 (MeleeWeapon · Weapon_Mic 프리팹이 고른다)
 
     // 전투
     EnemyHit      = 10,
@@ -35,6 +38,9 @@ public enum SfxId
     EnemyDieElite = 14,   // 엘리트·보스 공용 사망음. 15 는 EnemyDieBoss 자리로 비워 둔다
     EnemyShoot    = 16,   // 원거리 적의 발사
     Crit          = 17,   // 치명타 — ⚠️ 클립·호출 미배선 (WeaponBase 가 치명타 여부를 버린다)
+    // 🔴 PlayerHit(12)의 **반대말**이다 — 같은 순간에 둘 중 하나만 난다 (D116).
+    //    닮으면 체력이 줄었는지 안 줄었는지 귀로 못 안다. 길이 5.6배·어택 100배로 벌려 두었다.
+    ShieldBlock   = 18,   // 보호막이 원거리 한 방을 먹었다 (PlayerShield)
 
     // 픽업 · 성장
     XpPickup    = 20,
@@ -45,6 +51,9 @@ public enum SfxId
     BombPickup  = 25,     // 화면 폭탄 픽업
     BuffPickup  = 26,     // 무적·공속 공용. 둘을 가르지 않는 이유는 화면 연출이 이미 다르기 때문이다
     GoldPickup  = 27,     // 골드 픽업
+    // 🔵 패시브가 만드는 "상태" 소리 2종 (D116). 픽업이 아니라 **저절로 일어나는 일**이다.
+    Blink       = 28,     // 자동 순간이동 (PlayerTeleport) — Magnet 을 빌려 쓰던 자리
+    ShieldUp    = 29,     // 보호막이 다 찼다 (PlayerShield) — BuffPickup 을 빌려 쓰던 자리
 
     // 건물 · 진행
     BuildingPlace = 30,

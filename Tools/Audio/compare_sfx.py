@@ -52,10 +52,22 @@ TARGETS = [
     ("ChestOpen  (22)", "Assets/Game/Audio/SFX_ChestOpen.wav", 22),
     ("Magnet     (23)", "Assets/Game/Audio/SFX_Magnet.wav", 23),
     ("Heal       (24)", "Assets/Game/Audio/SFX_Heal.wav", 24),
-    ("BombPickup (25)", "_Incoming/Audio/SFX_BombPickup.wav", 25),
-    ("BuffPickup (26)", "_Incoming/Audio/SFX_BuffPickup.wav", 26),
-    ("GoldPickup (27)", "_Incoming/Audio/SFX_GoldPickup.wav", 27),
+    # 🔴 이 셋은 `_Incoming/` 경로로 남아 있어 **표에서 조용히 사라져 있었다** (D116 에서 발견).
+    #    위 6번·7번 주석이 경고한 바로 그 고장이 다시 났다 — 파일을 옮기면 여기도 같이 옮길 것.
+    ("BombPickup (25)", "Assets/Game/Audio/SFX_BombPickup.wav", 25),
+    ("BuffPickup (26)", "Assets/Game/Audio/SFX_BuffPickup.wav", 26),
+    ("GoldPickup (27)", "Assets/Game/Audio/SFX_GoldPickup.wav", 27),
+    # ── 피격·UI (D116) ────────────────────────────────────────────────────────
+    # 🔴 보호막이 막는 소리는 **PlayerHit 의 반대말**이다("안 맞았다"). 둘이 닮으면 안 된다.
+    ("PlayerHit  (12)", "Assets/Game/Audio/SFX_PlayerHit.wav", 12),
+    ("EnemyShoot (16)", "Assets/Game/Audio/SFX_EnemyShoot.wav", 16),
     ("UiSelect   (40)", "Assets/Game/Audio/SFX_UiSelect.wav", 40),
+    ("UiCancel   (41)", "Assets/Game/Audio/SFX_UiCancel.wav", 41),
+    # ── D116 신규 4종 ─────────────────────────────────────────────────────────
+    ("MicPulse   (8)",  "Assets/Game/Audio/SFX_MicPulse.wav", 8),
+    ("Blink      (28)", "Assets/Game/Audio/SFX_Blink.wav", 28),
+    ("ShieldUp   (29)", "Assets/Game/Audio/SFX_ShieldUp.wav", 29),
+    ("ShieldBlock(18)", "Assets/Game/Audio/SFX_ShieldBlock.wav", 18),
 ]
 
 BANDS = [(0, 200), (200, 800), (800, 3000), (3000, 9000), (9000, 22050)]
