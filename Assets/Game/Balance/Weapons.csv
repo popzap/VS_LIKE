@@ -44,6 +44,18 @@ Bomb,Bomb,Assets/Prefabs/Weapon_Aoe.prefab,Assets/Game/Sprites/Weapons/Bomb.png,
 Shuriken,Shuriken,Assets/Prefabs/Weapon_Sword.prefab,Assets/Game/Sprites/Weapons/Shuriken.png,Assets/Prefabs/Proj_Shuriken.prefab,,16,6|9|13|17|23,0.9|0.8|0.7|0.6|0.5,0.9|0.95|1|1.1|1.2,1|1|1|2|2,12|12|14|14|16
 Toxin,Toxin,Assets/Prefabs/Weapon_Field.prefab,Assets/Game/Sprites/Weapons/Toxin.png,Assets/Prefabs/Proj_ToxinField.prefab,,0,3|4|6|8|11,3|2.7|2.4|2.1|1.8,1|1.1|1.2|1.35|1.5,1|1|1|1|1,4|5|5|6|6
 Mic,Mic,Assets/Prefabs/Weapon_Mic.prefab,Assets/Game/Sprites/Weapons/Mic.png,Assets/Prefabs/Fx_SoundCone.prefab,,0,7|10|14|19|26,1.1|1|0.9|0.8|0.7,1|1.1|1.2|1.3|1.4,1|1|2|2|3,4|4.4|4.8|5.2|5.6
+Orbit,Orbit,Assets/Prefabs/Weapon_Orbit.prefab,Assets/Game/Sprites/Weapons/Orb.png,Assets/Prefabs/Proj_Orb.prefab,,110,5|7|9|12|16,0.5|0.45|0.4|0.35|0.3,0.5|0.55|0.6|0.65|0.7,2|2|3|3|4,1.6|1.7|1.8|2|2.2
+# 🔴 Weapon_Orbit 은 아래 6개 열의 뜻을 **전부** 바꾼다 (D118). 이 무기만 조준을 안 한다.
+#   ProjectileCount = 동시 발사 수가 아니라 **구체 개수**.
+#                     🔑 ScaledProjectileCount 를 그대로 쓰므로 DoubleProjectiles 특전이 구체를 2배로 만든다.
+#   Range           = 날아가는 거리가 아니라 **공전 반지름**. 검(2~2.5)보다 가깝게 잡았다 —
+#                     크면 몸에서 떨어져 "내 것"이 아니라 "둘러싼 벽"으로 보인다.
+#   ProjectileSpeed = 유닛/초가 아니라 **회전 속도(도/초)**. 110 이면 한 바퀴 3.3초.
+#   ProjectileSize  = 구체 그림 크기 **겸 판정 반지름**의 배수 (프리팹 hitRadius 0.42 에 곱해진다).
+#   Cooldown        = 날리는 주기가 아니라 **같은 적을 다시 때리기까지의 간격**.
+#                     🔴 늘 켜져 있는 무기라 이 값이 곧 DPS 다 — 0.5 면 초당 2회.
+#   ProjectilePrefab= 발사체가 아니라 **구체 그림**(Proj_Orb · 콜라이더도 강체도 없다).
+# 🔵 겨누지 않는 유일한 무기다. 그래서 파는 것은 피해가 아니라 **등 뒤가 안전해진다**는 것이다.
 # ── 소환수 (C19 · D13 이 만든 SummonWeapon) ─────────────────────────────────
 # 🔴 소환수는 판정 기준점이 플레이어가 아니라 "몸통"이다. 몸통은 플레이어에게서
 #    offsetDistance(1.2) 만큼 떨어져 따라다닌다 — 아래 Range 는 전부 **몸통 기준**이다.
