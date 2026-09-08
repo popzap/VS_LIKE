@@ -48,7 +48,8 @@ public class EnemyProjectile : MonoBehaviour
         if (gap.sqrMagnitude > HitRadius * HitRadius) return;
 
         // TryTakeHit 안에 무적 시간이 들어 있다. 여기서 따로 연타를 막을 필요는 없다.
-        _player.GetComponent<PlayerStats>()?.TryTakeHit(_damage, transform.position);
+        // 🔴 ranged: true — 보호막이 막는 유일한 종류다 (D113).
+        _player.GetComponent<PlayerStats>()?.TryTakeHit(_damage, transform.position, ranged: true);
         Despawn();
     }
 

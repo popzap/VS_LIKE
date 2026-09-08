@@ -39,8 +39,19 @@ public class SummonWeapon : WeaponBase
              "촉수가 가장 멀리 뻗는 건 프레임 3 이라 0.1 = 그 순간이다.")]
     [SerializeField] private float lashHitDelay = 0.1f;
 
-    private GameObject   _body;
-    private SummonVisual _visual;
+    /// <summary>
+    /// 이 무기가 낳은 몸통들 (D113). <b>예전에는 하나였다</b> —
+    /// "소환수 개수 증가" 패시브(<see cref="StatBlock.SummonCount"/>) 때문에 목록이 됐다.
+    ///
+    /// <para>🔴 <b>0번이 특별하지 않다.</b> 전부 같은 자격으로 줄에 서고 각자 공격한다 —
+    /// 하나만 "진짜"로 두면 죽거나 사라질 때 특수 처리가 생긴다.</para>
+    /// </summary>
+    private readonly List<GameObject>   _bodies  = new();
+    private readonly List<SummonVisual> _visuals = new();
+
+    /// <summary>지금 있어야 할 몸통 수. 패시브를 판 도중에 얻을 수 있으므로 매 프레임 다시 읽는다.</summary>
+    private int DesiredBodyCount
+        => 1 + Mathf.Max(0, Mathf.RoundToInt(OwnerStats != null ? OwnerStats.Final.SummonCount : 0f));
 
     // ── 기차 ────────────────────────────────────────────────────
     //
@@ -62,11 +73,16 @@ public class SummonWeapon : WeaponBase
             // 도메인 리로드를 끄고 플레이하면 static 이 살아남아 파괴된 칸이 남는다.
             if (car == null) continue;
 
-            d += car.offsetDistance;
+            // 🔴 한 무기가 몸통을 여럿 낳으므로 앞칸이 먹는 길이도 마릿수만큼이다 (D113).
+            //    안 곱하면 앞 무기의 2번째 몸통과 내 1번째가 같은 자리에 겹친다.
+            d += car.offsetDistance * car._bodies.Count;
             if (car == this) return d;
         }
         return d + offsetDistance;   // 아직 등록 전이면 맨 뒤로 친다
     }
+
+    /// <summary>내 <c>i</c> 번째 몸통이 서야 할 길 위의 거리. 같은 무기 안에서도 한 칸씩 뒤로 선다.</summary>
+    private float BackDistanceOf(int i) => TrainBackDistance() - offsetDistance * (_bodies.Count - 1 - i);
 
     // ── 생애 ────────────────────────────────────────────────────
 
@@ -77,16 +93,52 @@ public class SummonWeapon : WeaponBase
         Train.RemoveAll(car => car == null);
         if (!Train.Contains(this)) Train.Add(this);
 
-        // 풀에서 재사용될 때 Initialize 가 다시 불린다. 몸통을 두 마리 낳으면 안 된다.
-        if (_body != null) return;
         if (bodyPrefab == null)
         {
             Debug.LogWarning($"[SummonWeapon] bodyPrefab 이 비었다 — {name}");
             return;
         }
 
-        _body   = Pool.Get(bodyPrefab, FollowTarget(), Quaternion.identity);
-        _visual = _body.GetComponent<SummonVisual>();
+        // 풀에서 재사용될 때 Initialize 가 다시 불린다. 이미 있는 몸통은 그대로 두고
+        // 모자란 만큼만 채운다 — 무조건 낳으면 재사용 때마다 마릿수가 불어난다.
+        SyncBodyCount();
+    }
+
+    /// <summary>
+    /// 몸통 수를 <see cref="DesiredBodyCount"/> 에 맞춘다 (D113).
+    ///
+    /// <para>패시브는 <b>판 도중에</b> 얻고 올린다. 소환 시점에 한 번만 세면
+    /// 이미 소환해 둔 드래곤은 영영 한 마리로 남는다 — 그래서 매 프레임 맞춘다.</para>
+    ///
+    /// <para>🔴 새로 낳은 몸통은 <b>줄의 제 자리에서</b> 태어나야 한다.
+    /// 플레이어 발밑에 낳으면 한 프레임 동안 앞칸을 뚫고 나온 것처럼 보인다.</para>
+    /// </summary>
+    private void SyncBodyCount()
+    {
+        if (bodyPrefab == null || Pool == null) return;
+
+        // 파괴된 몸통이 목록에 남아 있으면 마릿수가 틀어진다 (도메인 리로드·씬 전환).
+        for (int i = _bodies.Count - 1; i >= 0; i--)
+            if (_bodies[i] == null) { _bodies.RemoveAt(i); _visuals.RemoveAt(i); }
+
+        int want = DesiredBodyCount;
+
+        while (_bodies.Count > want)
+        {
+            int last = _bodies.Count - 1;
+            if (_bodies[last] != null) Pool.Return(_bodies[last]);
+            _bodies.RemoveAt(last);
+            _visuals.RemoveAt(last);
+        }
+
+        while (_bodies.Count < want)
+        {
+            _bodies.Add(null); _visuals.Add(null);          // 자리부터 잡아야 BackDistanceOf 가 맞는다
+            int i  = _bodies.Count - 1;
+            var go = Pool.Get(bodyPrefab, FollowTarget(BackDistanceOf(i)), Quaternion.identity);
+            _bodies[i]  = go;
+            _visuals[i] = go.GetComponent<SummonVisual>();
+        }
     }
 
     /// <summary>
@@ -101,11 +153,11 @@ public class SummonWeapon : WeaponBase
         //    있지도 않은 앞칸의 간격만큼 계속 뒤로 밀린다.
         Train.Remove(this);
 
-        if (_body == null) return;
         // 씬을 내릴 때도 여기가 불린다. 그때 풀은 이미 파괴돼 있을 수 있다.
-        if (Pool != null) Pool.Return(_body);
-        _body   = null;
-        _visual = null;
+        for (int i = 0; i < _bodies.Count; i++)
+            if (_bodies[i] != null && Pool != null) Pool.Return(_bodies[i]);
+        _bodies.Clear();
+        _visuals.Clear();
     }
 
     // ── 따라다니기 ──────────────────────────────────────────────
@@ -117,19 +169,23 @@ public class SummonWeapon : WeaponBase
     /// </summary>
     private void LateUpdate()
     {
-        if (_body == null) return;
-
-        Vector2 cur  = _body.transform.position;
-        Vector2 goal = FollowTarget();
+        SyncBodyCount();          // 패시브를 판 도중에 얻을 수 있다 (D113)
 
         // 프레임률에 좌우되지 않는 감쇠. Lerp(t = lerp * dt) 로 쓰면 프레임이 튈 때 따라오는 속도가 변한다.
-        float   k    = 1f - Mathf.Exp(-followLerp * Time.deltaTime);
-        Vector2 next = Vector2.Lerp(cur, goal, k);
+        float k = 1f - Mathf.Exp(-followLerp * Time.deltaTime);
 
-        _body.transform.position = next;
+        for (int i = 0; i < _bodies.Count; i++)
+        {
+            var body = _bodies[i];
+            if (body == null) continue;
 
-        if (_visual != null)
-            _visual.SetVelocity((next - cur) / Mathf.Max(Time.deltaTime, 1e-5f));
+            Vector2 cur  = body.transform.position;
+            Vector2 next = Vector2.Lerp(cur, FollowTarget(BackDistanceOf(i)), k);
+            body.transform.position = next;
+
+            if (_visuals[i] != null)
+                _visuals[i].SetVelocity((next - cur) / Mathf.Max(Time.deltaTime, 1e-5f));
+        }
     }
 
     /// <summary>
@@ -139,12 +195,13 @@ public class SummonWeapon : WeaponBase
     /// <b>옆으로 미끄러져</b> 따라오는 느낌이 안 났고, 각도를 겹치지 않게 손으로 배분해야 했다.
     /// 길을 되짚으면 배분이 필요 없다 — <b>줄 순서만 있으면 자동으로 안 겹친다.</b></para>
     /// </summary>
-    private Vector2 FollowTarget()
+    private Vector2 FollowTarget(float backDistance = -1f)
     {
         Transform owner = OwnerStats != null ? OwnerStats.transform : transform;
+        if (backDistance < 0f) backDistance = TrainBackDistance();
 
         var trail = PlayerTrail.Of(owner);
-        if (trail != null) return trail.SampleBack(TrainBackDistance());
+        if (trail != null) return trail.SampleBack(backDistance);
 
         // 길을 못 얻는 경우(소유자가 없다)에만 옛 방식으로 물러난다.
         float rad = offsetAngle * Mathf.Deg2Rad;
@@ -158,10 +215,13 @@ public class SummonWeapon : WeaponBase
     /// 소환수는 저 혼자 떨어져 있으므로 <b>몸통 자리</b>에서 찾아야 한다.
     /// </summary>
     protected override Transform FindNearestEnemy()
-    {
-        if (_body == null) return base.FindNearestEnemy();
+        => _bodies.Count > 0 && _bodies[0] != null
+             ? NearestFrom(_bodies[0].transform.position)
+             : base.FindNearestEnemy();
 
-        Vector2 origin = _body.transform.position;
+    /// <summary>몸통마다 사거리가 따로다 (D113) — 어느 자리에서 찾는지를 밖에서 정한다.</summary>
+    private Transform NearestFrom(Vector2 origin)
+    {
         Collider2D[] hits = Physics2D.OverlapCircleAll(origin, Data.GetRange(Level),
                             LayerMask.GetMask("Enemy"));
         if (hits.Length == 0) return null;
@@ -176,18 +236,24 @@ public class SummonWeapon : WeaponBase
         return nearest;
     }
 
+    /// <summary>
+    /// 🔴 <b>몸통마다 따로 쏜다</b> (D113). 대표 하나만 쏘면 "소환수 증가"가
+    /// 화면에만 늘고 <b>세기는 그대로</b>라 패시브가 거짓말이 된다.
+    /// </summary>
     protected override void Fire()
     {
-        if (_body == null) return;
-
-        if (mode == AttackMode.Ranged) FireRanged();
-        else                           FireRing();
+        for (int i = 0; i < _bodies.Count; i++)
+        {
+            if (_bodies[i] == null) continue;
+            if (mode == AttackMode.Ranged) FireRanged(_bodies[i]);
+            else                           FireRing(_bodies[i]);
+        }
     }
 
     /// <summary>드래곤 — 몸통 자리에서 화염구를 쏘고, 목표 지점에서 터진다.</summary>
-    private void FireRanged()
+    private void FireRanged(GameObject body)
     {
-        var target = FindNearestEnemy();
+        var target = NearestFrom(body.transform.position);
         if (target == null) return;
         if (Data.TravelPrefab == null || Data.ProjectileSpeed <= 0f) return;
 
@@ -197,7 +263,7 @@ public class SummonWeapon : WeaponBase
         float   damage = CalculateDamage();
         float   radius = explosionRadius * Data.GetProjectileSize(Level);
 
-        var go   = Pool.Get(Data.TravelPrefab, _body.transform.position, Quaternion.identity);
+        var go   = Pool.Get(Data.TravelPrefab, body.transform.position, Quaternion.identity);
         var bomb = go.GetComponent<BombProjectile>();
         if (bomb == null) { Pool.Return(go); return; }
 
@@ -206,17 +272,17 @@ public class SummonWeapon : WeaponBase
     }
 
     /// <summary>문어 — 사거리 안에 아무도 없으면 허공을 후리지 않는다.</summary>
-    private void FireRing()
+    private void FireRing(GameObject body)
     {
-        if (FindNearestEnemy() == null) return;
-        StartCoroutine(Lash());
+        if (NearestFrom(body.transform.position) == null) return;
+        StartCoroutine(Lash(body));
     }
 
-    private IEnumerator Lash()
+    private IEnumerator Lash(GameObject body)
     {
         float range = Data.GetRange(Level);
 
-        SpawnLash(range);
+        SpawnLash(body, range);
         // ⚠️ 클립은 "0.1초에 때리는 휘두르기"로 구워져 있다. lashHitDelay 를 바꾸면
         //    Tools/Audio/gen_tentacle_lash.py 의 HIT_AT 도 같이 바꿔 다시 구워야 한다.
         AudioManager.Play(SfxId.TentacleLash);
@@ -224,10 +290,10 @@ public class SummonWeapon : WeaponBase
         // 🔴 피해는 후리는 동안 딱 한 번이다. 프레임마다 굴리면 몇 배가 된다 (MeleeWeapon 과 같다).
         yield return new WaitForSeconds(lashHitDelay);
 
-        // 몸통이 사라졌을 수 있다 — 기다리는 사이에 무기가 환불됐다면.
-        if (_body == null) yield break;
+        // 몸통이 사라졌을 수 있다 — 기다리는 사이에 무기가 환불됐거나 마릿수가 줄었다면.
+        if (body == null || !body.activeInHierarchy) yield break;
 
-        Vector2 origin = _body.transform.position;
+        Vector2 origin = body.transform.position;
         float   dmg    = CalculateDamage();
 
         // 🔴 부채꼴이 아니라 링이다. 각도를 안 보므로 뒤쪽 적도 맞는다.
@@ -240,19 +306,19 @@ public class SummonWeapon : WeaponBase
         }
     }
 
-    private void SpawnLash(float range)
+    private void SpawnLash(GameObject body, float range)
     {
-        if (Data.ProjectilePrefab == null) return;
+        if (Data.ProjectilePrefab == null || body == null) return;
 
         // 🔴 z 를 돌리지 않는다. 6프레임에 9°/프레임 회전이 이미 그려져 있다.
-        var go = Pool.Get(Data.ProjectilePrefab, _body.transform.position, Quaternion.identity);
+        var go = Pool.Get(Data.ProjectilePrefab, body.transform.position, Quaternion.identity);
 
         var fx = go.GetComponent<SwingArcFx>();
         // Initialize 를 안 부르면 촉수가 풀로 돌아가지 않고 화면에 그대로 남는다 (I-39).
         if (fx == null) { Pool.Return(go); return; }
 
         // 후리는 0.2초 동안에도 소환수는 움직인다. 붙여 두지 않으면 촉수만 뒤에 남는다.
-        go.transform.SetParent(_body.transform, true);
+        go.transform.SetParent(body.transform, true);
         fx.Initialize(range, Pool);
     }
 }

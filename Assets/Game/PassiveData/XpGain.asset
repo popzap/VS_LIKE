@@ -91,3 +91,21 @@ MonoBehaviour:
   - 0
   - 0
   - 0
+  BonusSummonCount:
+  - 0
+  - 0
+  - 0
+  - 0
+  - 0
+  BonusTeleportInterval:
+  - 0
+  - 0
+  - 0
+  - 0
+  - 0
+  BonusShieldInterval:
+  - 0
+  - 0
+  - 0
+  - 0
+  - 0

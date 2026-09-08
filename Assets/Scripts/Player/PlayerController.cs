@@ -20,6 +20,18 @@ public class PlayerController : MonoBehaviour
     [SerializeField] private Color hitColor       = new(1f, 0.3f, 0.3f, 1f);
     [SerializeField] private float shakeMagnitude = 0.18f;
 
+    /// <summary>
+    /// 마지막으로 <b>실제로 움직인</b> 방향 (D113 · 텔레포트가 쓴다).
+    ///
+    /// <para>🔴 "지금 누르고 있는 키"가 아니다. 손을 떼면 입력은 0 이 되는데
+    /// 그때도 캐릭터가 <b>어딘가를 향하고 있어야</b> 순간이동이 뜻을 가진다.
+    /// 그림에는 방향이 없다(걷기 시트가 전부 정면이다 · D100) — 이건 <b>논리상의 방향</b>이다.</para>
+    ///
+    /// <para>한 번도 안 움직였으면 오른쪽. 벽을 보고 서 있어도 그쪽으로 나가고,
+    /// <see cref="ArenaBounds"/> 가 안쪽으로 붙여 준다.</para>
+    /// </summary>
+    public Vector2 LastMoveDir { get; private set; } = Vector2.right;
+
     private PlayerStats    _stats;
     private WeaponManager  _weaponManager;
     private BuildingManager _buildingManager;
@@ -65,6 +77,8 @@ public class PlayerController : MonoBehaviour
                                                     knockbackForce / knockbackTime * Time.deltaTime);
         else
             rb.linearVelocity = input.normalized * _stats.Final.MoveSpeed;
+
+        if (input.sqrMagnitude > 1e-6f) LastMoveDir = input.normalized;
 
         // ── 스프라이트 반전 ──────────────────────────────────
         // 🔴 <b>직업마다 기본 방향이 다르다</b> (D100 · 사용자 지적).

@@ -39,6 +39,39 @@ public class StatBlock
     public float HpRegen = 0f;
 
     /// <summary>
+    /// 소환수를 <b>몇 마리 더</b> 두는지 (D113 · 사용자 요구 "소환수 증가").
+    ///
+    /// <para>배율이 아니라 <b>덧셈 마릿수</b>다. 0 이면 소환 무기 하나당 몸통 한 마리 —
+    /// 지금까지의 동작 그대로다. 1 이면 두 마리, 2 면 세 마리.</para>
+    ///
+    /// <para>🔴 <b>무기 개수가 아니라 무기 <i>하나당</i> 몸통 수</b>다.
+    /// 드래곤과 문어를 둘 다 들고 이 값이 1 이면 <b>넷</b>이 따라온다.</para>
+    /// </summary>
+    public float SummonCount = 0f;
+
+    /// <summary>
+    /// 자동 순간이동 주기(초) — 0 이면 <b>기능 자체가 없다</b> (D113 · 사용자 요구 "텔레포트").
+    ///
+    /// <para>🔴 <b>다른 필드와 방향이 반대다</b> — 작을수록 좋다.
+    /// 그런데 <see cref="Add"/> 는 더하므로, 이 값을 쓰는 곳이 <b>둘</b>이 되면
+    /// 합쳐서 오히려 <b>느려진다.</b> 지금은 <c>Teleport</c> 패시브 하나뿐이고,
+    /// 레벨별 배열이 "그 레벨일 때의 총 보너스"라 덮어쓰기처럼 동작한다.
+    /// 두 번째 출처를 만들 때는 <b>여기 규칙부터 다시 정해야 한다.</b></para>
+    /// </summary>
+    public float TeleportInterval = 0f;
+
+    /// <summary>
+    /// 보호막 재생 주기(초) — 0 이면 <b>기능 자체가 없다</b> (D113 · 사용자 요구 "보호막").
+    ///
+    /// <para>막는 것은 <b>원거리 피격 한 번</b>이다. 접촉 피해는 안 막는다 —
+    /// 사용자 요구가 *"원거리 공격 막아주는 쉴드"* 였고, 접촉까지 막으면
+    /// 무적 픽업(<see cref="GrantInvincibility"/>)과 구분이 사라진다.</para>
+    ///
+    /// <para>🔴 <see cref="TeleportInterval"/> 과 같은 이유로 <b>작을수록 좋다.</b></para>
+    /// </summary>
+    public float ShieldInterval = 0f;
+
+    /// <summary>
     /// 전부 0 인 블록. <b>"보너스"로 쓸 때는 반드시 이걸 써야 한다.</b>
     ///
     /// <para>기본 생성자는 위 초기값(MaxHp 100, MoveSpeed 4 …)을 가진다. 그건 인스펙터에서
@@ -62,6 +95,9 @@ public class StatBlock
         BuildingCooldown = 0f,
         Luck             = 0f,
         HpRegen          = 0f,   // 🔴 새 필드는 여기에도 넣어야 한다 (I-21)
+        SummonCount      = 0f,
+        TeleportInterval = 0f,
+        ShieldInterval   = 0f,
     };
 
     /// <summary>
@@ -96,5 +132,8 @@ public class StatBlock
         BuildingCooldown = a.BuildingCooldown + b.BuildingCooldown,
         Luck             = a.Luck             + b.Luck,      // 🔴 B13 — 여기가 빠져 있었다
         HpRegen          = a.HpRegen          + b.HpRegen,
+        SummonCount      = a.SummonCount      + b.SummonCount,
+        TeleportInterval = a.TeleportInterval + b.TeleportInterval,
+        ShieldInterval   = a.ShieldInterval   + b.ShieldInterval,
     };
 }

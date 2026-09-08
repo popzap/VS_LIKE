@@ -30,5 +30,9 @@ public class PassiveEffect
         stat.BuildingCooldown += Data.GetBuildingCooldown(Level);
         stat.Luck           += Data.GetLuck(Level);
         stat.HpRegen        += Data.GetHpRegen(Level);
+        // 🔴 여기를 빠뜨리면 예외도 경고도 없이 그 스탯만 죽는다 (B13 의 Luck 이 그랬다).
+        stat.SummonCount      += Data.GetSummonCount(Level);
+        stat.TeleportInterval += Data.GetTeleportInterval(Level);
+        stat.ShieldInterval   += Data.GetShieldInterval(Level);
     }
 }

@@ -45,6 +45,9 @@ BuildingCooldown,Building Speed,Buildings work more often.,Assets/Game/Sprites/P
 # ── 행운 (C23) — 픽업 드랍 확률 배율. 값은 Passives.csv 의 BonusLuck 열이다.
 Luck,Luck,Enemies drop pickups more often. Doubles the chance at max level.,Assets/Game/Sprites/Passives/Luck.png,Passive,5,Luck,60
 HpRegen,Regeneration,Slowly heals you while you fight. Stacks with your base regeneration.,Assets/Game/Sprites/Passives/HpRegen.png,Passive,5,HpRegen,60
+SummonCount,Summon Count,Every summon weapon calls one more companion.,Assets/Game/Sprites/Passives/SummonCount.png,Passive,5,SummonCount,70
+Teleport,Blink,Blinks you forward on a timer. Breaks a surround without walking.,Assets/Game/Sprites/Passives/Teleport.png,Passive,5,Teleport,70
+Shield,Barrier,Regrows a barrier that eats one incoming shot. Ranged only.,Assets/Game/Sprites/Passives/Shield.png,Passive,5,Shield,70
 # ── 진화 결과 아이템 ────────────────────────────────────────────────────────
 # ⚠️ 이 아이템들은 SceneWiring.csv 의 LevelUpManager,allItems 에 넣지 말 것.
 #    넣으면 레벨업 3택과 상점에 그냥 나와서 진화라는 절차 자체가 무의미해진다.

@@ -65,6 +65,9 @@ public class PlayerStats : MonoBehaviour
     /// </summary>
     public bool IsInvincible => _invincibleTimer > 0f || _buffInvincibleTimer > 0f;
 
+    /// <summary>보호막 (D113). 없을 수도 있다 — 없으면 원거리도 그냥 맞는다.</summary>
+    private PlayerShield _shield;
+
     /// <summary>피격 무적(i-frame). 맞을 때마다 <see cref="invincibleTime"/> 로 채워진다.</summary>
     private float _invincibleTimer;
 
@@ -133,6 +136,9 @@ public class PlayerStats : MonoBehaviour
     {
         Current     = this;
         _controller = GetComponent<PlayerController>();
+        // 🔴 같은 오브젝트의 컴포넌트라 Awake 에서 잡아도 안전하다 —
+        //    I-8/I-38 이 금지한 건 GameManager 가 Start 에서 채우는 매니저 참조 쪽이다.
+        _shield     = GetComponent<PlayerShield>();
     }
 
     private void OnDestroy() { if (Current == this) Current = null; }
@@ -438,9 +444,22 @@ public class PlayerStats : MonoBehaviour
     /// 피해가 들어가면 무적 시간이 시작되고 넉백·피격 연출이 재생된다.
     /// </summary>
     /// <param name="sourcePos">가해자 위치. 여기서 멀어지는 방향으로 밀려난다.</param>
-    public bool TryTakeHit(float raw, Vector2 sourcePos)
+    /// <param name="ranged">
+    /// 날아온 것에 맞았는가 (D113). <b>보호막이 이것만 막는다.</b>
+    ///
+    /// <para>🔴 기본값이 <c>false</c> 인 것이 중요하다 — 접촉 피해 호출부
+    /// (<see cref="EnemyBase"/>·<see cref="BossSlam"/>)는 <b>고치지 않았다.</b>
+    /// 새 인자가 생겼다고 전부 <c>true</c> 로 채우면 보호막이 접촉까지 막아
+    /// 무적 픽업과 구분이 사라진다.</para>
+    /// </param>
+    public bool TryTakeHit(float raw, Vector2 sourcePos, bool ranged = false)
     {
         if (IsDead || IsInvincible) return false;
+
+        // 🔴 보호막은 무적보다 <b>뒤</b>, 피해보다 <b>앞</b>이다.
+        //    무적 중이면 애초에 막을 것이 없는데 여기서 먼저 먹으면 한 장을 헛되이 쓴다.
+        //    🔵 막았을 때 무적 시간을 주지 않는다 — 주면 "한 번 막는다"가 아니게 된다.
+        if (ranged && _shield != null && _shield.TryAbsorb()) return false;
 
         _invincibleTimer = invincibleTime;
 

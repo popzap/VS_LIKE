@@ -28949,6 +28949,12 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 1855837409175803465, guid: a25b3b2ed063c5b4d9bee9bbbca7add9, type: 3}
       insertIndex: -1
       addedObject: {fileID: 4505039495625385292}
+    - targetCorrespondingSourceObject: {fileID: 1855837409175803465, guid: a25b3b2ed063c5b4d9bee9bbbca7add9, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 4505039495625385299}
+    - targetCorrespondingSourceObject: {fileID: 1855837409175803465, guid: a25b3b2ed063c5b4d9bee9bbbca7add9, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 4505039495625385298}
   m_SourcePrefab: {fileID: 100100000, guid: a25b3b2ed063c5b4d9bee9bbbca7add9, type: 3}
 --- !u!4 &4505039495625385280 stripped
 Transform:
@@ -29014,6 +29020,36 @@ MonoBehaviour:
   auraWidth: 9
   auraBlinkBelow: 1.5
   auraBlinkPerSecond: 6
+--- !u!114 &4505039495625385298
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 404764583}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d6fa1a760bd890746ae2c04f0d9927a1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PlayerTeleport
+  distance: 5
+--- !u!114 &4505039495625385299
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 404764583}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3066907c2946b7642b01764f2d26df6a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PlayerShield
+  ringRadius: 0.75
+  ringWidth: 0.09
+  ringColor: {r: 0.45, g: 0.8, b: 1, a: 0.85}
+  ringSegments: 40
+  sortingOrder: 25
 --- !u!1001 &4688072706779885624
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -29651,7 +29687,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2390381838099993656, guid: c31a45deba47f474fbd07507a573c2b2, type: 3}
       propertyPath: allItems.Array.size
-      value: 31
+      value: 34
       objectReference: {fileID: 0}
     - target: {fileID: 2390381838099993656, guid: c31a45deba47f474fbd07507a573c2b2, type: 3}
       propertyPath: 'cards.Array.data[0]'
@@ -29789,6 +29825,18 @@ PrefabInstance:
       propertyPath: 'allItems.Array.data[30]'
       value: 
       objectReference: {fileID: 11400000, guid: 55fa89dd54141f34d9b7ed473b93320f, type: 2}
+    - target: {fileID: 2390381838099993656, guid: c31a45deba47f474fbd07507a573c2b2, type: 3}
+      propertyPath: 'allItems.Array.data[31]'
+      value: 
+      objectReference: {fileID: 11400000, guid: 58e6ad148cd43e3459fd594a881c40b3, type: 2}
+    - target: {fileID: 2390381838099993656, guid: c31a45deba47f474fbd07507a573c2b2, type: 3}
+      propertyPath: 'allItems.Array.data[32]'
+      value: 
+      objectReference: {fileID: 11400000, guid: 38075f10232e059499174d055705c6af, type: 2}
+    - target: {fileID: 2390381838099993656, guid: c31a45deba47f474fbd07507a573c2b2, type: 3}
+      propertyPath: 'allItems.Array.data[33]'
+      value: 
+      objectReference: {fileID: 11400000, guid: 836636ec0f5688b46a128aef92255dd9, type: 2}
     - target: {fileID: 4267826130673351957, guid: c31a45deba47f474fbd07507a573c2b2, type: 3}
       propertyPath: m_Name
       value: LevelUpManager

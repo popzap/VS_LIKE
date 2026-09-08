@@ -10,9 +10,9 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 8b780c200f55ddd4ea4c5e1257eeadfb, type: 3}
-  m_Name: Luck
+  m_Name: Shield
   m_EditorClassIdentifier: Assembly-CSharp::PassiveData
-  PassiveName: Luck
+  PassiveName: Barrier
   BonusMaxHp:
   - 0
   - 0
@@ -80,11 +80,11 @@ MonoBehaviour:
   - 0
   - 0
   BonusLuck:
-  - 0.15
-  - 0.3
-  - 0.5
-  - 0.7
-  - 1
+  - 0
+  - 0
+  - 0
+  - 0
+  - 0
   BonusHpRegen:
   - 0
   - 0
@@ -104,8 +104,8 @@ MonoBehaviour:
   - 0
   - 0
   BonusShieldInterval:
-  - 0
-  - 0
-  - 0
-  - 0
-  - 0
+  - 14
+  - 12
+  - 10
+  - 8
+  - 6
