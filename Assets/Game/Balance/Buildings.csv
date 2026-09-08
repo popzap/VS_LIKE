@@ -21,5 +21,5 @@ Bombard,Bombard,Assets/Prefabs/Building_Bombard.prefab,Assets/Game/Sprites/Build
 Village,Village,Assets/Prefabs/Building_Village.prefab,Assets/Game/Sprites/Buildings/House.png,0|0|0|0|0,0|0|0|0|0,6|5.5|5|4.5|4,1|1|2|2|3,2|3|5|7|10
 Farm,Farm,Assets/Prefabs/Building_Farm.prefab,Assets/Game/Sprites/Buildings/Farm.png,0|0|0|0|0,0|0|0|0|0,12|11|10|9|8,1|1|2|2|3,1|2|3|4|6
 Restaurant,Restaurant,Assets/Prefabs/Building_Restaurant.prefab,Assets/Game/Sprites/Buildings/Restaurant.png,0|0|0|0|0,0|0|0|0|0,60|55|50|45|40,1|1|1|2|2,15|25|40|60|85
-Freezer,Freezer,Assets/Prefabs/Building_Freezer.prefab,Assets/Game/Sprites/Buildings/Turret.png,0|0|0|0|0,3.5|3.8|4.2|4.6|5,0.5|0.5|0.5|0.5|0.5,1|1|2|2|2,0.25|0.32|0.4|0.48|0.55
-Siren,Siren,Assets/Prefabs/Building_Siren.prefab,Assets/Game/Sprites/Buildings/Turret.png,0|0|0|0|0,4|4.5|5|5.5|6,8|7.2|6.4|5.6|4.8,1|1|1|2|2,0.6|0.8|1|1.3|1.6
+Freezer,Freezer,Assets/Prefabs/Building_Freezer.prefab,Assets/Game/Sprites/Buildings/Freezer.png,0|0|0|0|0,3.5|3.8|4.2|4.6|5,0.5|0.5|0.5|0.5|0.5,1|1|2|2|2,0.25|0.32|0.4|0.48|0.55
+Siren,Siren,Assets/Prefabs/Building_Siren.prefab,Assets/Game/Sprites/Buildings/Siren.png,0|0|0|0|0,4|4.5|5|5.5|6,8|7.2|6.4|5.6|4.8,1|1|1|2|2,0.6|0.8|1|1.3|1.6

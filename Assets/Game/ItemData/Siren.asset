@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ItemData
   ItemName: Siren
   Description: Deploys a siren that freezes every enemy around it at a set interval.
-  Icon: {fileID: 21300000, guid: 36b024fcab94f004590aadcab4b4c3c9, type: 3}
+  Icon: {fileID: 21300000, guid: d173b617229294a4480627dcebe21fff, type: 3}
   Category: 1
   MaxLevel: 5
   WeaponRef: {fileID: 0}

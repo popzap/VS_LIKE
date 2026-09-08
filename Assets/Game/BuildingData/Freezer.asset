@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::BuildingData
   BuildingName: Freezer
   Prefab: {fileID: 1619185589761496762, guid: 3842885902eb2b44694bc7a40394fb25, type: 3}
-  Icon: {fileID: 21300000, guid: 36b024fcab94f004590aadcab4b4c3c9, type: 3}
+  Icon: {fileID: 21300000, guid: 240d092723e71094cafe3426a8770862, type: 3}
   Damage:
   - 0
   - 0

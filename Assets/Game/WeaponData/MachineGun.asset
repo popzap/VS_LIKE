@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::WeaponData
   WeaponName: Machine Gun
   WeaponPrefab: {fileID: 8236077640170519101, guid: 5e0148035faac8e44ade763bb3a3a701, type: 3}
-  Icon: {fileID: 21300000, guid: 0cfefbeb330f45c42918c8beb48a1d2d, type: 3}
+  Icon: {fileID: 21300000, guid: 71f0e0d6377f2f5488566266b5ca6bf0, type: 3}
   Damage:
   - 3
   - 4

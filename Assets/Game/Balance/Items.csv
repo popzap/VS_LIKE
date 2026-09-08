@@ -14,7 +14,7 @@ Id,ItemName,Description,Icon,Category,MaxLevel,RefId,ShopPrice
 Sword,Sword,Cleaves a wide arc right in front of you. Short reach.,Assets/Game/Sprites/Weapons/Sword.png,Weapon,5,Sword,70
 Bow,Bow,Long range shots that fan out as it levels.,Assets/Game/Sprites/Weapons/Bow.png,Weapon,5,Bow,70
 Gun,Gun,Rapid low damage fire.,Assets/Game/Sprites/Weapons/Gun.png,Weapon,5,Gun,80
-MachineGun,Machine Gun,Sprays bullets far faster. Many of them miss until you level it.,Assets/Game/Sprites/Weapons/Gun.png,Weapon,5,MachineGun,90
+MachineGun,Machine Gun,Sprays bullets far faster. Many of them miss until you level it.,Assets/Game/Sprites/Weapons/MachineGun.png,Weapon,5,MachineGun,90
 Fireball,Fireball,Explodes on the nearest enemy.,Assets/Game/Sprites/Weapons/Fireball.png,Weapon,5,Fireball,90
 Bomb,Bomb,Slow but heavy area damage.,Assets/Game/Sprites/Weapons/Bomb.png,Weapon,5,Bomb,100
 Shuriken,Shuriken,Spinning stars that punch through three enemies in a line.,Assets/Game/Sprites/Weapons/Shuriken.png,Weapon,5,Shuriken,80
@@ -28,8 +28,8 @@ Bombard,Bombard,Deploys a cannon that damages every enemy around it.,Assets/Game
 Village,Village,Deploys a village that generates experience over time.,Assets/Game/Sprites/Buildings/House.png,Building,5,Village,90
 Farm,Farm,Deploys a farm that generates gold over time.,Assets/Game/Sprites/Buildings/Farm.png,Building,5,Farm,90
 Restaurant,Restaurant,Deploys a restaurant that drops a healing meal. The next one waits until you eat it.,Assets/Game/Sprites/Buildings/Restaurant.png,Building,5,Restaurant,110
-Freezer,Freezer,Deploys a tower that keeps nearby enemies slowed.,Assets/Game/Sprites/Buildings/Turret.png,Building,5,Freezer,100
-Siren,Siren,Deploys a siren that freezes every enemy around it at a set interval.,Assets/Game/Sprites/Buildings/Turret.png,Building,5,Siren,120
+Freezer,Freezer,Deploys a tower that keeps nearby enemies slowed.,Assets/Game/Sprites/Buildings/Freezer.png,Building,5,Freezer,100
+Siren,Siren,Deploys a siren that freezes every enemy around it at a set interval.,Assets/Game/Sprites/Buildings/Siren.png,Building,5,Siren,120
 Damage,Damage Up,Increases all weapon damage.,Assets/Game/Sprites/Passives/Damage.png,Passive,5,Damage,60
 Speed,Move Speed,Increases movement speed.,Assets/Game/Sprites/Passives/MoveSpeed.png,Passive,5,MoveSpeed,50
 AttackSpeed,Attack Speed,Shortens weapon cooldowns.,Assets/Game/Sprites/Passives/AttackSpeed.png,Passive,5,AttackSpeed,60

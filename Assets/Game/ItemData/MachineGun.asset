@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ItemData
   ItemName: Machine Gun
   Description: Sprays bullets far faster. Many of them miss until you level it.
-  Icon: {fileID: 21300000, guid: 0cfefbeb330f45c42918c8beb48a1d2d, type: 3}
+  Icon: {fileID: 21300000, guid: 71f0e0d6377f2f5488566266b5ca6bf0, type: 3}
   Category: 0
   MaxLevel: 5
   WeaponRef: {fileID: 11400000, guid: 17b3bd27d90cd46499fc544428012d27, type: 2}
