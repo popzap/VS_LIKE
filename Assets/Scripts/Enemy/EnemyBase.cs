@@ -151,7 +151,12 @@ public class EnemyBase : MonoBehaviour
         // 🔴 층 배율은 등급 배율 "위에" 곱한다 (ROADMAP §3 결정 4 · B안).
         //    이동 속도는 일부러 뺐다 — 적이 플레이어(3.5~4.6)보다 빨라지면
         //    피하는 게 아니라 맞는 게 되고, 그건 난이도가 아니라 조작 불능이다.
-        MaxHp         = data.MaxHp         * hpMult  * LayerScaling.HpMult;
+        // 🔴 플레이어가 스스로 올린 적 체력도 여기서 곱한다 (D121 · Bounty 패시브).
+        //    층 배율 **옆**에 두는 이유는 성격이 같아서다 — 둘 다 "이 판의 적이 얼마나 단단한가"이고,
+        //    등급 배율(엘리트·보스) 위에 얹혀야 한다.
+        //    🔵 PlayerStats.Current 는 정적 프로퍼티이고 이 함수는 웨이브 중에 불리므로
+        //       Awake 순서 함정(I-8/I-38)과 무관하다 — ProjectileBase 가 특전을 읽는 것과 같다.
+        MaxHp         = data.MaxHp         * hpMult  * LayerScaling.HpMult * PlayerHpTax;
         CurrentHp     = MaxHp;
         MoveSpeed     = data.MoveSpeed     * speedMult;
         ContactDamage = data.ContactDamage * dmgMult * LayerScaling.DamageMult;
@@ -909,4 +914,17 @@ public class EnemyBase : MonoBehaviour
     /// 적마다 크기가 달라도 <b>벽에 박히는 깊이는 같아야</b> 보기 좋기 때문이다.
     /// </summary>
     private const float blockRadius = 0.28f;
+
+    /// <summary>
+    /// 플레이어가 <b>스스로 올린</b> 적 체력 배율 (D121 · <see cref="StatBlock.EnemyHpBonus"/>).
+    /// 0.5 를 골랐으면 1.5 를 돌려준다. 아무도 안 골랐으면 1 이다.
+    ///
+    /// <para>🔴 <b>이미 나와 있는 적에게는 소급되지 않는다.</b> 태어날 때 한 번 곱하는 값이라
+    /// 패시브를 먹는 순간 화면의 적이 갑자기 단단해지지는 않는다 —
+    /// <c>LayerScaling</c> 이 층을 넘을 때만 적용되는 것과 같은 규칙이다.</para>
+    /// </summary>
+    private static float PlayerHpTax
+        => PlayerStats.Current != null
+            ? 1f + Mathf.Max(0f, PlayerStats.Current.Final.EnemyHpBonus)
+            : 1f;
 }

@@ -72,6 +72,21 @@ public class StatBlock
     public float ShieldInterval = 0f;
 
     /// <summary>
+    /// <b>적 최대 체력 가산 배율</b> (D121 · 사용자 요구 "적이 강해지지만 정산 골드 증가").
+    ///
+    /// <para>🔴 <b>이 게임에서 유일하게 "나를 나쁘게 만드는" 스탯이다.</b>
+    /// 나머지 15종은 전부 순수 상향이라 레벨업 3택이 <i>"어느 숫자를 키울까"</i> 였다 —
+    /// 무엇을 골라도 손해가 없으면 그건 선택이 아니다.</para>
+    ///
+    /// <para>0.5 면 적 체력이 <b>1.5배</b>가 된다. <see cref="EnemyBase.Initialize"/> 가
+    /// 층 배율(<c>LayerScaling.HpMult</c>) 옆에서 같이 곱한다.</para>
+    ///
+    /// <para>🔵 <b>보상 쪽은 새 필드가 필요 없었다</b> — <see cref="GoldGain"/> 이
+    /// 런 골드와 <b>정산(메타) 골드에 똑같이</b> 곱해진다(<c>GameManager.GrantMetaGold</c>).</para>
+    /// </summary>
+    public float EnemyHpBonus = 0f;
+
+    /// <summary>
     /// 전부 0 인 블록. <b>"보너스"로 쓸 때는 반드시 이걸 써야 한다.</b>
     ///
     /// <para>기본 생성자는 위 초기값(MaxHp 100, MoveSpeed 4 …)을 가진다. 그건 인스펙터에서
@@ -98,6 +113,7 @@ public class StatBlock
         SummonCount      = 0f,
         TeleportInterval = 0f,
         ShieldInterval   = 0f,
+        EnemyHpBonus     = 0f,
     };
 
     /// <summary>
@@ -135,5 +151,6 @@ public class StatBlock
         SummonCount      = a.SummonCount      + b.SummonCount,
         TeleportInterval = a.TeleportInterval + b.TeleportInterval,
         ShieldInterval   = a.ShieldInterval   + b.ShieldInterval,
+        EnemyHpBonus     = a.EnemyHpBonus     + b.EnemyHpBonus,
     };
 }

@@ -37,6 +37,10 @@ public class PassiveData : ScriptableObject
     [Tooltip("보호막 재생 주기(초). 0 = 기능 없음. 🔴 작을수록 좋다 (D113)")]
     public float[] BonusShieldInterval   = { 0, 0, 0, 0, 0 };
 
+    [Tooltip("🔴 적 최대 체력 가산 배율 (D121). 0.5 = 적 체력 1.5배. " +
+             "이 게임에서 유일하게 '나를 나쁘게 만드는' 값이다")]
+    public float[] BonusEnemyHp          = { 0, 0, 0, 0, 0 };
+
     private float Get(float[] arr, int lv) => arr.Length == 0 ? 0 :
         arr[Mathf.Clamp(lv - 1, 0, arr.Length - 1)];
 
@@ -56,4 +60,5 @@ public class PassiveData : ScriptableObject
     public float GetSummonCount(int lv)      => Get(BonusSummonCount, lv);
     public float GetTeleportInterval(int lv) => Get(BonusTeleportInterval, lv);
     public float GetShieldInterval(int lv)   => Get(BonusShieldInterval, lv);
+    public float GetEnemyHp(int lv)          => Get(BonusEnemyHp, lv);
 }

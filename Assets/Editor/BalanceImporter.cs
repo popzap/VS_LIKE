@@ -251,6 +251,7 @@ public static class BalanceImporter
             a.BonusSummonCount      = CsvRow.Floats(row, "BonusSummonCount",      a.BonusSummonCount);
             a.BonusTeleportInterval = CsvRow.Floats(row, "BonusTeleportInterval", a.BonusTeleportInterval);
             a.BonusShieldInterval   = CsvRow.Floats(row, "BonusShieldInterval",   a.BonusShieldInterval);
+            a.BonusEnemyHp          = CsvRow.Floats(row, "BonusEnemyHp",          a.BonusEnemyHp);
 
             EditorUtility.SetDirty(a);
         }
@@ -922,7 +923,7 @@ public static class BalanceImporter
         ExportRows("Passives.csv",
             "Id,PassiveName,BonusMaxHp,BonusMoveSpeed,BonusDamage,BonusAttackSpeed,BonusProjectileSize," +
             "BonusPickupRadius,BonusCritChance,BonusArmor,BonusXpGain,BonusGoldGain,BonusBuildingCooldown,BonusLuck,BonusHpRegen," +
-            "BonusSummonCount,BonusTeleportInterval,BonusShieldInterval",
+            "BonusSummonCount,BonusTeleportInterval,BonusShieldInterval,BonusEnemyHp",
             LoadAll<PassiveData>(PassiveFolder), (a, id) => string.Join(",",
                 id, E(a.PassiveName), CsvTable.JoinArray(a.BonusMaxHp), CsvTable.JoinArray(a.BonusMoveSpeed),
                 CsvTable.JoinArray(a.BonusDamage), CsvTable.JoinArray(a.BonusAttackSpeed),
@@ -931,7 +932,8 @@ public static class BalanceImporter
                 CsvTable.JoinArray(a.BonusXpGain), CsvTable.JoinArray(a.BonusGoldGain),
                 CsvTable.JoinArray(a.BonusBuildingCooldown), CsvTable.JoinArray(a.BonusLuck),
                 CsvTable.JoinArray(a.BonusHpRegen), CsvTable.JoinArray(a.BonusSummonCount),
-                CsvTable.JoinArray(a.BonusTeleportInterval), CsvTable.JoinArray(a.BonusShieldInterval)));
+                CsvTable.JoinArray(a.BonusTeleportInterval), CsvTable.JoinArray(a.BonusShieldInterval),
+                CsvTable.JoinArray(a.BonusEnemyHp)));
 
         ExportRows("Items.csv",
             "Id,ItemName,Description,Icon,Category,MaxLevel,RefId,ShopPrice",

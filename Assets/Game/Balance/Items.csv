@@ -52,6 +52,8 @@ HpRegen,Regeneration,Slowly heals you while you fight. Stacks with your base reg
 SummonCount,Summon Count,Every summon weapon calls one more companion.,Assets/Game/Sprites/Passives/SummonCount.png,Passive,5,SummonCount,70
 Teleport,Blink,Blinks you forward on a timer. Breaks a surround without walking.,Assets/Game/Sprites/Passives/Teleport.png,Passive,5,Teleport,70
 Shield,Barrier,Regrows a barrier that eats one incoming shot. Ranged only.,Assets/Game/Sprites/Passives/Shield.png,Passive,5,Shield,70
+# ── 현상금 (D121) — 적 체력과 골드를 같이 올린다. 유일하게 불리한 면이 있는 패시브다.
+Bounty,Bounty Hunter,Enemies spawn with more health but every kill pays far more gold.,Assets/Game/Sprites/Passives/Bounty.png,Passive,5,Bounty,60
 # ── 진화 결과 아이템 ────────────────────────────────────────────────────────
 # ⚠️ 이 아이템들은 SceneWiring.csv 의 LevelUpManager,allItems 에 넣지 말 것.
 #    넣으면 레벨업 3택과 상점에 그냥 나와서 진화라는 절차 자체가 무의미해진다.

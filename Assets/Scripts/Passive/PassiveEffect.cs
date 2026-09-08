@@ -34,5 +34,6 @@ public class PassiveEffect
         stat.SummonCount      += Data.GetSummonCount(Level);
         stat.TeleportInterval += Data.GetTeleportInterval(Level);
         stat.ShieldInterval   += Data.GetShieldInterval(Level);
+        stat.EnemyHpBonus     += Data.GetEnemyHp(Level);
     }
 }
