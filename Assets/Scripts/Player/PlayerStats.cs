@@ -105,6 +105,19 @@ public class PlayerStats : MonoBehaviour
     public float HasteRemaining => Mathf.Max(0f, _hasteTimer);
 
     // ── 이속 버프 (D68 · 사용자 요구 12 "이속증가(추가해)") ──────
+    // ── 화톳불 (D120) ────────────────────────────────────────────
+    //
+    // 🔑 픽업 버프와 **같은 모양**이지만 켜지는 조건이 다르다 — 시간이 아니라 **자리**다.
+    //    건물이 짧은 주기로 계속 갱신하고, 벗어나면 그 주기가 지나며 저절로 꺼진다
+    //    (냉각탑이 슬로우를 유지하는 방식과 같다).
+    private float _campfireTimer;
+    private float _campfireDamage;
+
+    /// <summary>지금 화톳불 안에 있나. HUD·검증이 본다.</summary>
+    public bool  IsWarmed        => _campfireTimer > 0f;
+    /// <summary>화톳불이 주는 피해 가산분 (0.25 = +25 %).</summary>
+    public float CampfireDamage  => _campfireTimer > 0f ? _campfireDamage : 0f;
+
     private float _swiftTimer;
     private float _swiftMoveSpeed;
 
@@ -160,6 +173,13 @@ public class PlayerStats : MonoBehaviour
             // 만료된 프레임에 한 번만 재계산한다. 매 프레임 돌리면 패시브·직업 사슬을
             // 통째로 다시 더하게 되므로 켜져 있는 동안 내내 비용을 낸다.
             if (_hasteTimer <= 0f) { _hasteTimer = 0f; RecalculateStats(); }
+        }
+
+        if (_campfireTimer > 0f)
+        {
+            _campfireTimer -= Time.deltaTime;
+            // 만료된 프레임에 한 번만 재계산한다 (haste 와 같은 이유).
+            if (_campfireTimer <= 0f) { _campfireTimer = 0f; _campfireDamage = 0f; RecalculateStats(); }
         }
 
         if (_swiftTimer > 0f)
@@ -365,6 +385,7 @@ public class PlayerStats : MonoBehaviour
         // 버프가 꺼졌을 때 원래 자리로 정확히 돌아간다.
         if (_hasteTimer > 0f) Final.AttackSpeed += _hasteAttackSpeed;
         if (_swiftTimer > 0f) Final.MoveSpeed   += _swiftMoveSpeed;   // D68
+        if (_campfireTimer > 0f) Final.Damage   += _campfireDamage;   // D120 화톳불
 
         // 진화 특전 (D68). 🔑 배율이라 마지막에 곱한다 — 먼저 곱하면 뒤에 더해지는
         //    패시브·직업 보너스가 배율을 안 받아 "2배" 가 2배가 아니게 된다.
@@ -418,6 +439,30 @@ public class PlayerStats : MonoBehaviour
         _swiftMoveSpeed = Mathf.Max(_swiftMoveSpeed, moveSpeedBonus);   // 양수라 Max 가 "더 셈"
         _swiftTimer     = Mathf.Max(_swiftTimer, seconds);
         RecalculateStats();
+    }
+
+    /// <summary>
+    /// 화톳불 곁에 있는 동안의 피해 증가 (D120 · <see cref="CampfireBuilding"/> 이 부른다).
+    ///
+    /// <para>🔑 <b>건물이 짧은 주기로 계속 다시 걸어 준다.</b> 그래서 벗어나면
+    /// 아무도 안 걸어 주게 되고 <paramref name="seconds"/> 가 지나며 저절로 꺼진다 —
+    /// "나갔다"를 알아채는 코드가 따로 필요 없다(냉각탑이 슬로우를 유지하는 방식과 같다).</para>
+    ///
+    /// <para>🔴 <b>매번 <see cref="RecalculateStats"/> 를 부르지 않는다.</b>
+    /// 갱신 주기가 0.25초라 초당 4번인데, 재계산은 패시브·직업 사슬을 통째로 다시 더한다.
+    /// <b>값이 실제로 바뀌었을 때만</b> 돌린다.</para>
+    ///
+    /// <para>🔵 겹치면 <b>더 센 것 하나만</b> 남긴다 — 화톳불 두 개를 겹쳐 놓고
+    /// 두 배를 받는 길을 막는다(<see cref="GrantHaste"/> 와 같은 규칙).</para>
+    /// </summary>
+    public void GrantCampfire(float damageBonus, float seconds)
+    {
+        float best = Mathf.Max(_campfireTimer > 0f ? _campfireDamage : 0f, damageBonus);
+        bool changed = !Mathf.Approximately(best, _campfireDamage) || _campfireTimer <= 0f;
+
+        _campfireDamage = best;
+        _campfireTimer  = Mathf.Max(_campfireTimer, seconds);
+        if (changed) RecalculateStats();
     }
 
     /// <summary>

@@ -35,6 +35,7 @@ Freezer,Freezer,Deploys a tower that keeps nearby enemies slowed.,Assets/Game/Sp
 Siren,Siren,Deploys a siren that freezes every enemy around it at a set interval.,Assets/Game/Sprites/Buildings/Siren.png,Building,5,Siren,120
 Decoy,Decoy,Deploys a totem that enemies attack instead of you. It rebuilds itself after it falls.,Assets/Game/Sprites/Buildings/Decoy.png,Building,5,Decoy,110
 Barricade,Barricade,Deploys a wall enemies cannot cross. It burns whatever pushes on it and falls under enough weight.,Assets/Game/Sprites/Buildings/Barricade.png,Building,5,Barricade,110
+Campfire,Campfire,Lights a fire. Stand in its warmth and you hit harder. Step away and you do not.,Assets/Game/Sprites/Buildings/Campfire.png,Building,5,Campfire,100
 Damage,Damage Up,Increases all weapon damage.,Assets/Game/Sprites/Passives/Damage.png,Passive,5,Damage,60
 Speed,Move Speed,Increases movement speed.,Assets/Game/Sprites/Passives/MoveSpeed.png,Passive,5,MoveSpeed,50
 AttackSpeed,Attack Speed,Shortens weapon cooldowns.,Assets/Game/Sprites/Passives/AttackSpeed.png,Passive,5,AttackSpeed,60

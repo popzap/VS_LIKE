@@ -1,0 +1,24 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7c00dd7d5c5afcf40af02e50e0b97ffc, type: 3}
+  m_Name: Campfire
+  m_EditorClassIdentifier: Assembly-CSharp::ItemData
+  ItemName: Campfire
+  Description: Lights a fire. Stand in its warmth and you hit harder. Step away and
+    you do not.
+  Icon: {fileID: 21300000, guid: 2986ccbed488faa48973cd7981524532, type: 3}
+  Category: 1
+  MaxLevel: 5
+  WeaponRef: {fileID: 0}
+  BuildingRef: {fileID: 11400000, guid: 3fd2422cf82d0ba479d7146535299e11, type: 2}
+  PassiveRef: {fileID: 0}
+  ShopPrice: 100
