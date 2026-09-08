@@ -5,9 +5,21 @@
 #                  실제 주기는 여기에 PlayerStats.Final.BuildingCooldown 배율이 곱해진다.
 # Output         = 쿨다운 1회당 산출량. Village=경험치, Farm=골드, Restaurant=회복량.
 #                  전투 건물(Turret/Bombard)은 Damage 를 쓰므로 0.
+#
+# 🔴 Output 의 뜻은 건물마다 다르다 (D108). 새 건물을 넣을 때 여기를 같이 적을 것 —
+#    안 적으면 다음 사람이 "산출량" 으로 읽고 엉뚱한 값을 넣는다.
+#    Freezer = 감속률 0~1 (0.4 면 속도가 60 %가 된다)   · AttackCooldown = 다시 걸어 주는 주기
+#    Siren   = 정지 시간(초)                            · AttackCooldown = 울리는 주기
+#
+#    Freezer/Siren 은 Damage 를 안 쓰고 AttackRange 를 "효과 반경" 으로 쓴다.
+#    🔵 Freezer 의 AttackCooldown 은 레벨이 올라도 안 줄인다 — 지속시간을 주기보다 길게 걸어
+#       틈을 없애는 방식이라 주기를 줄여도 체감이 같다. 레벨은 감속률과 반경으로 올린다.
+#    🔴 Siren 의 Output 은 AttackCooldown 의 60 % 를 넘으면 코드가 잘라낸다(상시 정지 방지).
 Id,BuildingName,Prefab,Icon,Damage,AttackRange,AttackCooldown,MaxCount,Output
 Turret,Turret,Assets/Prefabs/Building_Turret.prefab,Assets/Game/Sprites/Buildings/Turret.png,6|9|13|19|26,5|5.5|6|6.5|7,1.2|1.05|0.9|0.75|0.6,1|2|2|3|3,0|0|0|0|0
 Bombard,Bombard,Assets/Prefabs/Building_Bombard.prefab,Assets/Game/Sprites/Buildings/Bombard.png,20|29|42|58|80,3.5|3.8|4.2|4.6|5,3|2.7|2.4|2|1.6,1|1|1|2|2,0|0|0|0|0
 Village,Village,Assets/Prefabs/Building_Village.prefab,Assets/Game/Sprites/Buildings/House.png,0|0|0|0|0,0|0|0|0|0,6|5.5|5|4.5|4,1|1|2|2|3,2|3|5|7|10
 Farm,Farm,Assets/Prefabs/Building_Farm.prefab,Assets/Game/Sprites/Buildings/Farm.png,0|0|0|0|0,0|0|0|0|0,12|11|10|9|8,1|1|2|2|3,1|2|3|4|6
 Restaurant,Restaurant,Assets/Prefabs/Building_Restaurant.prefab,Assets/Game/Sprites/Buildings/Restaurant.png,0|0|0|0|0,0|0|0|0|0,60|55|50|45|40,1|1|1|2|2,15|25|40|60|85
+Freezer,Freezer,Assets/Prefabs/Building_Freezer.prefab,Assets/Game/Sprites/Buildings/Turret.png,0|0|0|0|0,3.5|3.8|4.2|4.6|5,0.5|0.5|0.5|0.5|0.5,1|1|2|2|2,0.25|0.32|0.4|0.48|0.55
+Siren,Siren,Assets/Prefabs/Building_Siren.prefab,Assets/Game/Sprites/Buildings/Turret.png,0|0|0|0|0,4|4.5|5|5.5|6,8|7.2|6.4|5.6|4.8,1|1|1|2|2,0.6|0.8|1|1.3|1.6

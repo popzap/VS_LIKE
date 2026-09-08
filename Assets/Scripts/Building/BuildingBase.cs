@@ -11,7 +11,7 @@ using UnityEngine;
 public class BuildingBase : MonoBehaviour
 {
     // 🔴 컴파일 반영 확인용 (D27).
-    public const int Version = 1;   // 1 = 전투 노드에서만 쿨다운이 돈다 (B17)
+    public const int Version = 2;   // 1 = 전투 노드에서만 쿨다운이 돈다 (B17) · 2 = FindEnemiesInRange (D108)
 
     protected BuildingData Data;
     protected int          Level;
@@ -110,6 +110,21 @@ public class BuildingBase : MonoBehaviour
         // 기본 구현: 즉시 데미지
         target.GetComponent<EnemyBase>()?.TakeDamage(Data.GetDamage(Level), transform.position);
     }
+
+    /// <summary>
+    /// 사거리 안의 <b>모든</b> 적 (D108).
+    ///
+    /// <para><see cref="FindNearestEnemy"/> 는 "하나를 쏜다" 는 건물용이고,
+    /// 이건 <b>범위 전체에 같은 일을 하는</b> 건물(냉각탑·사이렌)용이다.
+    /// 둘 다 같은 <c>OverlapCircleAll</c> 을 부르지만, 두 벌로 두면
+    /// 나중에 레이어 이름이나 사거리 규칙이 바뀔 때 <b>한쪽만 고치게 된다.</b></para>
+    ///
+    /// <para>🔵 반환 배열은 <b>매번 새로 할당된다.</b> 지금은 건물 수가 한 자리라 문제없지만,
+    /// 건물이 수십 개가 되면 <c>OverlapCircleNonAlloc</c> 로 바꿀 것 (<c>PERF.md</c> 의 방침).</para>
+    /// </summary>
+    protected Collider2D[] FindEnemiesInRange()
+        => Physics2D.OverlapCircleAll(transform.position, Data.GetRange(Level),
+                                      LayerMask.GetMask("Enemy"));
 
     protected Transform FindNearestEnemy()
     {

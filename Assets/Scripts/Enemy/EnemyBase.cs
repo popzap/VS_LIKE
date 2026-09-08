@@ -59,7 +59,7 @@ public class EnemyBase : MonoBehaviour
     }
 
     // 🔴 컴파일 반영 확인용 (D27). Assets/Refresh 는 재컴파일을 보장하지 않는다.
-    public const int Version = 2;   // 2 = 행동 3종 추가 (D51)
+    public const int Version = 3;   // 2 = 행동 3종 추가 (D51) · 3 = ApplyStun (D108)
 
     protected Rigidbody2D Rb;
     protected Transform   PlayerTransform;
@@ -79,8 +79,37 @@ public class EnemyBase : MonoBehaviour
     private float _slowMult = 1f;   // 1 = 슬로우 없음. 작을수록 느리다
     private float _slowUntil;       // 이 시각을 넘기면 저절로 풀린다
 
-    /// <summary>이동 속도에 슬로우를 반영한 값. 원본 <see cref="MoveSpeed"/> 는 건드리지 않는다.</summary>
-    protected float CurrentSpeed => MoveSpeed * (Time.time <= _slowUntil ? _slowMult : 1f) * _phaseSpeedMult;
+    /// <summary>이동 속도에 슬로우·스턴을 반영한 값. 원본 <see cref="MoveSpeed"/> 는 건드리지 않는다.</summary>
+    protected float CurrentSpeed => IsStunned
+        ? 0f
+        : MoveSpeed * (Time.time <= _slowUntil ? _slowMult : 1f) * _phaseSpeedMult;
+
+    // ── 스턴 ─────────────────────────────────────────────────────
+
+    private float _stunUntil;
+
+    /// <summary>지금 멈춰 있나. 이동이 0 이 되고 원거리 발사도 건너뛴다.</summary>
+    public bool IsStunned => Time.time <= _stunUntil;
+
+    /// <summary>
+    /// 완전 정지 (D108 · <see cref="SirenBuilding"/>).
+    ///
+    /// <para>🔴 <b>슬로우와 일부러 갈라 두었다.</b> <c>ApplySlow(0f, …)</c> 로 대신하면
+    /// <b>영구 정지 버그가 난다</b> — <see cref="ApplySlow"/> 는 <c>_slowUntil</c> 이 살아 있는 동안
+    /// 더 약한 값으로 덮지 못하는데, 냉각탑은 <b>지속시간을 주기보다 길게</b> 걸어
+    /// <c>_slowUntil</c> 을 계속 밀어 준다. 그래서 냉각탑 옆에서 한 번 <c>mult = 0</c> 이 잡히면
+    /// <b>그 적은 다시는 안 움직인다.</b> (설계 단계에서 값을 따라가 보고 찾았다.)</para>
+    ///
+    /// <para>🔑 의미상으로도 다르다 — 슬로우는 <b>느려지는 것</b>, 스턴은 <b>아무것도 못 하는 것</b>이다.
+    /// 그래서 스턴은 발사까지 막는다.</para>
+    ///
+    /// <para>겹치면 <b>더 긴 쪽</b>이 남는다. 여러 사이렌이 번갈아 울려도 시간이 누적되지 않는다.</para>
+    /// </summary>
+    public void ApplyStun(float duration)
+    {
+        if (duration <= 0f) return;
+        _stunUntil = Mathf.Max(_stunUntil, Time.time + duration);
+    }
 
     /// <param name="mult">속도 배율(0~1).</param>
     /// <param name="duration">이번에 걸어 줄 지속 시간(초).</param>
@@ -137,6 +166,7 @@ public class EnemyBase : MonoBehaviour
         AiSuspended     = false;   // 🔴 풀 재사용 — 돌진 중에 죽었으면 켜진 채로 돌아온다 (D73)
         _slowMult       = 1f;   // 안 지우면 다음 웨이브의 멀쩡한 적이 느린 채로 태어난다
         _slowUntil      = 0f;
+        _stunUntil      = 0f;   // 스턴도 같은 이유로 지운다 (D108)
         if (_deathPopRoutine != null) { StopCoroutine(_deathPopRoutine); _deathPopRoutine = null; }
         SetCollidersEnabled(true);
 
@@ -406,6 +436,8 @@ public class EnemyBase : MonoBehaviour
 
     private void FireProjectile(Vector2 dir)
     {
+        // 🔴 멈춰 있으면 쏘지도 않는다 (D108). 이동만 막으면 "멈췄는데 총알은 날아온다" 가 된다.
+        if (IsStunned) return;
         if (Data.ProjectilePrefab == null || SharedPool == null) return;
 
         var go = SharedPool.Get(Data.ProjectilePrefab, transform.position, Quaternion.identity);
