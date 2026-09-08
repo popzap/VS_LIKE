@@ -22,6 +22,20 @@
 #       ⇒ Lv1 530 은 그 상황에서 약 8초다. 값을 고칠 때는 '초 x 66' 으로 되돌려 생각할 것.
 #       ⚠️ 후반에는 적 수와 LayerScaling.DamageMult 가 같이 올라 훨씬 빨리 깎인다 —
 #          Lv5 3400 도 9층에서는 8초가 안 된다. 그래서 레벨 곡선을 가파르게 잡았다.
+# ── 바리케이드 (D117) — 🔴 이 건물만 열 뜻이 또 다르다 ─────────────────────
+#   AttackRange     = 사거리가 아니라 **벽의 반길이**(유닛). 두께는 프리팹의 halfThickness(0.38) 고정.
+#                     1.4 면 가로 2.8 유닛 — 화면 가로의 약 8 %다.
+#   Damage          = 한 방이 아니라 **초당 피해**. 밀고 있는 동안 계속 들어간다.
+#                     🔴 다른 건물의 Damage 와 나란히 읽으면 안 된다 — 그쪽은 1히트 값이다.
+#   Output          = **내구도**. 🔑 되돌려 읽는 법: **적 1마리가 1초 미는 데 1 씩** 닳는다.
+#                     8 이면 4마리가 밀 때 2초. 적이 많을수록 빨리 무너진다 —
+#                     구석에 자신을 봉인하는 길을 이 규칙 하나로 막는다.
+#   AttackCooldown  = **부서진 뒤 다시 서기까지의 시간(초)**. 미끼(Decoy)와 같은 손잡이다.
+#
+# 🔴 벽은 **놓는 자리와 방향이 전부**다. 방향은 CSV 가 아니라 놓는 순간의
+#    PlayerController.LastMoveDir 이 정한다 — 가던 쪽을 가로막게 눕는다.
+# 🔵 **플레이어는 통과한다.** 막는 코드가 EnemyBase 에만 있어서 공짜로 그렇게 된다.
+#    막으면 제 벽에 갇히는 사고가 난다(놓는 자리를 사람이 못 고른다).
 Id,BuildingName,Prefab,Icon,Damage,AttackRange,AttackCooldown,MaxCount,Output
 Turret,Turret,Assets/Prefabs/Building_Turret.prefab,Assets/Game/Sprites/Buildings/Turret.png,6|9|13|19|26,5|5.5|6|6.5|7,1.2|1.05|0.9|0.75|0.6,1|2|2|3|3,0|0|0|0|0
 Bombard,Bombard,Assets/Prefabs/Building_Bombard.prefab,Assets/Game/Sprites/Buildings/Bombard.png,20|29|42|58|80,3.5|3.8|4.2|4.6|5,3|2.7|2.4|2|1.6,1|1|1|2|2,0|0|0|0|0
@@ -31,3 +45,4 @@ Restaurant,Restaurant,Assets/Prefabs/Building_Restaurant.prefab,Assets/Game/Spri
 Freezer,Freezer,Assets/Prefabs/Building_Freezer.prefab,Assets/Game/Sprites/Buildings/Freezer.png,0|0|0|0|0,3.5|3.8|4.2|4.6|5,0.5|0.5|0.5|0.5|0.5,1|1|2|2|2,0.25|0.32|0.4|0.48|0.55
 Siren,Siren,Assets/Prefabs/Building_Siren.prefab,Assets/Game/Sprites/Buildings/Siren.png,0|0|0|0|0,4|4.5|5|5.5|6,8|7.2|6.4|5.6|4.8,1|1|1|2|2,0.6|0.8|1|1.3|1.6
 Decoy,Decoy,Assets/Prefabs/Building_Decoy.prefab,Assets/Game/Sprites/Buildings/Decoy.png,0|0|0|0|0,5|5.5|6|6.5|7,12|11|10|9|8,1|1|1|2|2,530|900|1500|2300|3400
+Barricade,Barricade,Assets/Prefabs/Building_Barricade.prefab,Assets/Game/Sprites/Buildings/Barricade.png,6|8|11|15|20,1.4|1.6|1.8|2.1|2.4,10|9|8|7|6,1|1|1|2|2,8|11|15|20|26

@@ -32,6 +32,7 @@ Restaurant,Restaurant,Deploys a restaurant that drops a healing meal. The next o
 Freezer,Freezer,Deploys a tower that keeps nearby enemies slowed.,Assets/Game/Sprites/Buildings/Freezer.png,Building,5,Freezer,100
 Siren,Siren,Deploys a siren that freezes every enemy around it at a set interval.,Assets/Game/Sprites/Buildings/Siren.png,Building,5,Siren,120
 Decoy,Decoy,Deploys a totem that enemies attack instead of you. It rebuilds itself after it falls.,Assets/Game/Sprites/Buildings/Decoy.png,Building,5,Decoy,110
+Barricade,Barricade,Deploys a wall enemies cannot cross. It burns whatever pushes on it and falls under enough weight.,Assets/Game/Sprites/Buildings/Barricade.png,Building,5,Barricade,110
 Damage,Damage Up,Increases all weapon damage.,Assets/Game/Sprites/Passives/Damage.png,Passive,5,Damage,60
 Speed,Move Speed,Increases movement speed.,Assets/Game/Sprites/Passives/MoveSpeed.png,Passive,5,MoveSpeed,50
 AttackSpeed,Attack Speed,Shortens weapon cooldowns.,Assets/Game/Sprites/Passives/AttackSpeed.png,Passive,5,AttackSpeed,60

@@ -59,7 +59,7 @@ public class EnemyBase : MonoBehaviour
     }
 
     // 🔴 컴파일 반영 확인용 (D27). Assets/Refresh 는 재컴파일을 보장하지 않는다.
-    public const int Version = 5;   // 2 = 행동 3종 (D51) · 3 = ApplyStun (D108) · 4 = 미끼 어그로 (D110) · 5 = 아레나 경계 (D111)
+    public const int Version = 6;   // 2 = 행동 3종 (D51) · 3 = ApplyStun (D108) · 4 = 미끼 어그로 (D110) · 5 = 아레나 경계 (D111) · 6 = 바리케이드 (D117)
 
     protected Rigidbody2D Rb;
     protected Transform   PlayerTransform;
@@ -262,6 +262,22 @@ public class EnemyBase : MonoBehaviour
             Vector2 here = Rb.position;
             Vector2 inside = ArenaBounds.Clamp(here);
             if (inside != here) Rb.position = inside;
+        }
+
+        // 🔴 <b>바리케이드는 물리가 아니라 여기서 막는다</b> (D117).
+        //    이 프로젝트의 적 콜라이더는 isTrigger 라 **겹침을 알려 줄 뿐 밀어내지 않는다** —
+        //    실체로 바꾸면 적이 플레이어·다른 건물·서로와 전부 부딪히기 시작해 이동이 통째로 달라진다.
+        //    🔑 위의 ArenaBounds 와 **같은 자리·같은 방식**이다. early return 보다 위에 두는 이유도 같다 —
+        //    넉백으로 벽 안에 처박히는 것이 오히려 제일 흔하다.
+        if (BarricadeBuilding.AnyStanding)
+        {
+            Vector2 here = Rb.position;
+            var wall = BarricadeBuilding.Blocking(here, blockRadius);
+            if (wall != null)
+            {
+                Rb.position = wall.PushOut(here, blockRadius);
+                wall.Grind(this);          // 밀고 있는 동안 계속 아프다 (그리고 벽도 닳는다)
+            }
         }
 
         // 넉백 중에는 추적을 멈춘다.
@@ -887,4 +903,10 @@ public class EnemyBase : MonoBehaviour
     /// 여기에 배율을 하나 더 둬서 <b>얼마나 오래 버티는지</b>를 이 값 하나로 조절한다.</para>
     /// </summary>
     private const float decoyDpsScale = 1f;
+
+    /// <summary>
+    /// 바리케이드 판정에 쓸 적의 반지름 (D117). 콜라이더에서 읽지 않는 이유는
+    /// 적마다 크기가 달라도 <b>벽에 박히는 깊이는 같아야</b> 보기 좋기 때문이다.
+    /// </summary>
+    private const float blockRadius = 0.28f;
 }
