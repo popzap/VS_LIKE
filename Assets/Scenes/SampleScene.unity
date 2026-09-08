@@ -27461,6 +27461,7 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 6c26fdf87f463ac45ad7bd4a69764731, type: 2}
   - {fileID: 11400000, guid: 74cbd8dbeda31d04780844978b5f2881, type: 2}
   - {fileID: 11400000, guid: 459b6040c84fdaf4ab0039c0dee9eb12, type: 2}
+  - {fileID: 11400000, guid: 85e527e477822224a89e39af33ae2d3a, type: 2}
   classEvolutions:
   - {fileID: 11400000, guid: d4fcf7964f12bc545a2488edc5a75e4d, type: 2}
   - {fileID: 11400000, guid: 5384c7e8e3121a149b294da81f1ac760, type: 2}
@@ -29650,7 +29651,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2390381838099993656, guid: c31a45deba47f474fbd07507a573c2b2, type: 3}
       propertyPath: allItems.Array.size
-      value: 30
+      value: 31
       objectReference: {fileID: 0}
     - target: {fileID: 2390381838099993656, guid: c31a45deba47f474fbd07507a573c2b2, type: 3}
       propertyPath: 'cards.Array.data[0]'
@@ -29784,6 +29785,10 @@ PrefabInstance:
       propertyPath: 'allItems.Array.data[29]'
       value: 
       objectReference: {fileID: 11400000, guid: a4a43ed6f558dc243a44fa958f2ae6c5, type: 2}
+    - target: {fileID: 2390381838099993656, guid: c31a45deba47f474fbd07507a573c2b2, type: 3}
+      propertyPath: 'allItems.Array.data[30]'
+      value: 
+      objectReference: {fileID: 11400000, guid: 55fa89dd54141f34d9b7ed473b93320f, type: 2}
     - target: {fileID: 4267826130673351957, guid: c31a45deba47f474fbd07507a573c2b2, type: 3}
       propertyPath: m_Name
       value: LevelUpManager

@@ -22,3 +22,4 @@ Id,EvolutionName,Description,Ingredients,RequiredLevels,ResultItem,Perk
 Excalibur,Excalibur,Sword sharpened by raw power.,Sword|Damage,5|3,Excalibur,DoubleGold
 Windforce,Windforce,A bow that finds every weak point.,Bow|CritChance,5|3,Windforce,DoubleBuffDuration
 Devastator,Devastator,Gunfire that detonates on impact.,Gun|Fireball,5|5,Devastator,DoubleProjectiles
+Kunai,Kunai,Blades that never stop looking for the next throat.,Shuriken|AttackSpeed,5|3,Kunai,

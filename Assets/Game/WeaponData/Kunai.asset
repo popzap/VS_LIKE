@@ -1,0 +1,29 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7743b8d275c61e1489bfd9158b4aa25c, type: 3}
+  m_Name: Kunai
+  m_EditorClassIdentifier: Assembly-CSharp::WeaponData
+  WeaponName: Kunai
+  WeaponPrefab: {fileID: 7710070822802352840, guid: 5d7c717e7789c1e4bba31b411bd08f9c, type: 3}
+  Icon: {fileID: 21300000, guid: 6725de6f92ef2f849aa211bffb7bc44a, type: 3}
+  Damage:
+  - 30
+  Cooldown:
+  - 0.22
+  ProjectileSize:
+  - 1.1
+  ProjectileCount: 02000000
+  Range:
+  - 18
+  ProjectileSpeed: 18
+  ProjectilePrefab: {fileID: 691123369852945806, guid: d2be7df096fa9404fb541d2d9d1b7e2d, type: 3}
+  TravelPrefab: {fileID: 0}
