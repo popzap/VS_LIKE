@@ -128,6 +128,12 @@ public class PlayerStats : MonoBehaviour
     /// <summary>골드 획득 배율(특전분). <see cref="RecalculateStats"/> 가 <c>Final.GoldGain</c> 에 곱한다.</summary>
     private float _perkGoldMult = 1f;
 
+    /// <summary>
+    /// 발사체가 <b>추가로</b> 맞힐 적 수 (D114 · <see cref="EvolutionPerk.ExtraPierce"/>).
+    /// 0 이 기본이다. <see cref="ProjectileBase"/> 가 태어날 때 읽어 간다.
+    /// </summary>
+    public int BonusPierce { get; private set; }
+
     private readonly List<PassiveEffect> _activePassives = new();
 
     private PlayerController _controller;
@@ -431,6 +437,7 @@ public class PlayerStats : MonoBehaviour
             case EvolutionPerk.DoubleProjectiles:  ProjectileCountMult = 2;   break;
             case EvolutionPerk.DoubleBuffDuration: BuffDurationMult    = 2f;  break;
             case EvolutionPerk.DoubleGold:         _perkGoldMult       = 2f;  break;
+            case EvolutionPerk.ExtraPierce:        BonusPierce         = 1;   break;
             default: return;
         }
         Debug.Log($"[PlayerStats] 진화 특전 — {perk}");

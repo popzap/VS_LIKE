@@ -85,8 +85,8 @@ SummonOctopus,Octopus,Assets/Prefabs/Weapon_SummonOctopus.prefab,Assets/Game/Spr
 #      Kunai 136 · Excalibur 127 · Windforce 137 · Devastator 227. 무리 상대로만 3배가 된다.
 #    bounceCount(3) · searchRadius(6) · damageFalloff(0.85) 은 이 표가 아니라
 #    Proj_Kunai.prefab 의 BouncingProjectile 에 있다. 여기서 만져도 안 바뀐다.
-#    Perk 는 비웠다 — 남은 3종(DoubleProjectiles·DoubleBuffDuration·DoubleGold)이 전부
-#    다른 진화에 쓰였고, 새 perk 는 enum 추가라 코드 작업이다 (TODO.md 에 적었다).
+#    Perk 는 D114 에서 ExtraPierce 로 채웠다 — 쿠나이의 정체("첫 적에서 멈추지 않는다")를
+#    런 전체로 옮긴 것이다. 직선 발사체는 하나 더 뚫고, 쿠나이 자신은 한 번 더 튕긴다.
 Excalibur,Excalibur,Assets/Prefabs/Weapon_Sword.prefab,Assets/Game/Sprites/Weapons/Excalibur.png,Assets/Prefabs/Proj_Bullet.prefab,,10,70,0.55,2,5,16
 Windforce,Windforce,Assets/Prefabs/Weapon_Sword.prefab,Assets/Game/Sprites/Weapons/Windforce.png,Assets/Prefabs/Proj_Bullet.prefab,,16,55,0.4,1.4,6,20
 Devastator,Devastator,Assets/Prefabs/Weapon_Sword.prefab,Assets/Game/Sprites/Weapons/Devastator.png,Assets/Prefabs/Proj_Bullet.prefab,,20,34,0.15,1.2,4,17

@@ -37,7 +37,12 @@ public class BouncingProjectile : ProjectileBase
     {
         base.Initialize(dir, dmg, size, speed, range, pool);
         // 🔴 풀에서 재사용되므로 반드시 되돌린다 — 안 하면 두 번째 생애부터 안 튕긴다.
-        _bouncesLeft = Mathf.Max(0, bounceCount);
+        //
+        // 🔑 <b>특전은 여기서 "관통"이 아니라 "도약"으로 읽힌다</b> (D114).
+        //    부모는 ExtraPierce 를 관통 +1 로 더해 두는데, 아래 SetPierce 가 그걸 덮어쓴다 —
+        //    튕기는 발사체에게 관통 +1 은 <b>직선으로 하나 더 뚫는 것</b>이라 뜻이 어긋난다.
+        //    같은 특전을 이 무기의 언어(도약 +1)로 옮겨야 "적을 하나 더 맞힌다"가 유지된다.
+        _bouncesLeft = Mathf.Max(0, bounceCount) + BonusPierceNow;
 
         // 🔴 <b>이 줄이 없으면 첫 명중에 사라져서 한 번도 안 튕긴다.</b>
         //    부모는 맞힐 때마다 관통을 깎고 0 이면 Despawn 한다 — 도약 수만큼 여유를 줘야 한다.

@@ -36,7 +36,8 @@ public class ProjectileBase : MonoBehaviour
         Pool       = pool;
         _startPos  = transform.position;
 
-        _pierceLeft = Mathf.Max(1, pierceCount);
+        // 🔴 PlayerStats.Current 는 Unity Object 라 ?. 를 쓰면 "가짜 null" 을 통과시킨다 (I-24).
+        _pierceLeft = Mathf.Max(1, pierceCount) + BonusPierceNow;
         _alreadyHit.Clear();
 
         transform.localScale = Vector3.one * size;
@@ -110,6 +111,15 @@ public class ProjectileBase : MonoBehaviour
     {
         _pierceLeft = Mathf.Max(1, count);
     }
+
+    /// <summary>
+    /// 진화 특전이 주는 추가 관통 (D114 · <see cref="EvolutionPerk.ExtraPierce"/>).
+    ///
+    /// <para>🔵 <b>무기가 아니라 발사체가 읽는다.</b> 특전은 런 도중에 켜지므로
+    /// 무기 생성 시점에 한 번 읽어 두면 그 무기만 영영 못 받는다.</para>
+    /// </summary>
+    protected static int BonusPierceNow
+        => PlayerStats.Current != null ? Mathf.Max(0, PlayerStats.Current.BonusPierce) : 0;
 
     protected void Despawn() => Pool.Return(gameObject);
 }

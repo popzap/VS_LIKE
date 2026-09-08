@@ -89,4 +89,20 @@ public enum EvolutionPerk
 
     /// <summary>골드 획득이 <b>2배</b>가 된다.</summary>
     DoubleGold = 3,
+
+    /// <summary>
+    /// 모든 발사체가 <b>적을 하나 더 맞힌다</b> (D114 · 쿠나이 특전).
+    ///
+    /// <para>🔑 <b>무기 종류마다 "하나 더"의 뜻이 다르다 — 그래서 값이 하나다.</b>
+    /// 직선 발사체는 <b>하나 더 뚫고</b>(<see cref="ProjectileBase"/> 의 관통),
+    /// 튕기는 발사체는 <b>한 번 더 튕긴다</b>(<see cref="BouncingProjectile"/>).
+    /// 둘 다 결과는 같은 문장이다 — <i>"한 발이 적을 하나 더 맞힌다"</i>.</para>
+    ///
+    /// <para>🔴 <b>폭발·장판·근접에는 아무 일도 안 일어난다.</b>
+    /// <c>AoeProjectile</c>·<c>BombProjectile</c>·<c>MeleeWeapon</c> 은
+    /// <see cref="ProjectileBase"/> 를 안 쓴다 — 애초에 뚫을 것이 없다.</para>
+    ///
+    /// <para>🔵 적의 발사체(<c>EnemyProjectile</c>)는 다른 클래스라 영향이 없다.</para>
+    /// </summary>
+    ExtraPierce = 4,
 }
