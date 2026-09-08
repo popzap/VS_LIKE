@@ -14,6 +14,7 @@ Id,ItemName,Description,Icon,Category,MaxLevel,RefId,ShopPrice
 Sword,Sword,Cleaves a wide arc right in front of you. Short reach.,Assets/Game/Sprites/Weapons/Sword.png,Weapon,5,Sword,70
 Bow,Bow,Long range shots that fan out as it levels.,Assets/Game/Sprites/Weapons/Bow.png,Weapon,5,Bow,70
 Gun,Gun,Rapid low damage fire.,Assets/Game/Sprites/Weapons/Gun.png,Weapon,5,Gun,80
+MachineGun,Machine Gun,Sprays bullets far faster. Many of them miss until you level it.,Assets/Game/Sprites/Weapons/Gun.png,Weapon,5,MachineGun,90
 Fireball,Fireball,Explodes on the nearest enemy.,Assets/Game/Sprites/Weapons/Fireball.png,Weapon,5,Fireball,90
 Bomb,Bomb,Slow but heavy area damage.,Assets/Game/Sprites/Weapons/Bomb.png,Weapon,5,Bomb,100
 Shuriken,Shuriken,Spinning stars that punch through three enemies in a line.,Assets/Game/Sprites/Weapons/Shuriken.png,Weapon,5,Shuriken,80

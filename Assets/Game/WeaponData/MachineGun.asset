@@ -1,0 +1,45 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7743b8d275c61e1489bfd9158b4aa25c, type: 3}
+  m_Name: MachineGun
+  m_EditorClassIdentifier: Assembly-CSharp::WeaponData
+  WeaponName: Machine Gun
+  WeaponPrefab: {fileID: 8236077640170519101, guid: 5e0148035faac8e44ade763bb3a3a701, type: 3}
+  Icon: {fileID: 21300000, guid: 0cfefbeb330f45c42918c8beb48a1d2d, type: 3}
+  Damage:
+  - 3
+  - 4
+  - 5
+  - 7
+  - 9
+  Cooldown:
+  - 0.16
+  - 0.14
+  - 0.12
+  - 0.11
+  - 0.1
+  ProjectileSize:
+  - 0.6
+  - 0.6
+  - 0.65
+  - 0.7
+  - 0.75
+  ProjectileCount: 0100000001000000010000000200000002000000
+  Range:
+  - 9
+  - 9
+  - 10
+  - 11
+  - 12
+  ProjectileSpeed: 20
+  ProjectilePrefab: {fileID: 691123369852945806, guid: b302c4b4e24ee7442a8c2232aa722f92, type: 3}
+  TravelPrefab: {fileID: 0}
