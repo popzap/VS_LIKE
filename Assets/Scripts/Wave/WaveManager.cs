@@ -690,9 +690,23 @@ public class WaveManager : MonoBehaviour
     private EnemyBase SpawnEnemy(EnemyData data, bool isElite = false, bool isBoss = false)
         => SpawnEnemyAt(data, GetSpawnPosition(), isElite, isBoss);
 
-    /// <summary>자리를 직접 지정해 소환한다. 출현 패턴(D50)이 쓴다.</summary>
+    /// <summary>
+    /// 자리를 직접 지정해 소환한다. 출현 패턴(D50)이 쓴다.
+    ///
+    /// <para>🔑 <b>소환 좌표를 만드는 곳은 넷인데(반경 위 한 점 · 원 · 부대 · 땅굴)
+    /// 실제로 오브젝트를 놓는 곳은 여기 하나다.</b> 그래서 아레나 경계도 여기 한 곳에서 막는다 (D111) —
+    /// 네 곳에 흩어 놓으면 다음에 다섯 번째가 생길 때 <b>그 하나만 빠진다.</b></para>
+    ///
+    /// <para>🔴 <c>SpawnRadius</c>(기본 20)는 <b>플레이어 기준</b>이라, 플레이어가 벽 근처에 있으면
+    /// 소환 지점이 <b>벽 밖</b>이 된다. 그 적은 벽 밖에서 안쪽을 향해 걸어 들어오므로
+    /// 죽지는 않지만 <b>플레이어가 닿을 수 없는 곳에서 원거리 공격을 한다.</b></para>
+    ///
+    /// <para>🔵 여유(margin)를 1 유닛 둔다 — 벽에 딱 붙여 놓으면 벽에 낀 것처럼 보인다.</para>
+    /// </summary>
     private EnemyBase SpawnEnemyAt(EnemyData data, Vector2 spawnPos, bool isElite = false, bool isBoss = false)
     {
+        spawnPos = ArenaBounds.Clamp(spawnPos, 1f);
+
         var go = enemyPool.Get(data.Prefab, spawnPos, Quaternion.identity);
         var enemy = go.GetComponent<EnemyBase>();
         enemy.Initialize(data, isElite, isBoss);

@@ -90,6 +90,28 @@ public class PlayerController : MonoBehaviour
     }
 
     /// <summary>
+    /// 아레나 벽 (D111).
+    ///
+    /// <para>🔴 <b>속도가 아니라 위치를 막는다.</b> 속도를 0 으로 만들면 벽을 따라
+    /// <b>미끄러지지 못한다</b> — 벽에 비스듬히 부딪히면 그 자리에 붙어 버려서 조작이 답답해진다.
+    /// 위치를 밀어 넣으면 <b>벽에 닿은 축만</b> 멈추고 나머지 축으로는 계속 움직인다.</para>
+    ///
+    /// <para>🔴 <b><c>Update</c> 가 아니라 <c>FixedUpdate</c> 다.</b> 이동은
+    /// <c>rb.linearVelocity</c> 로 하므로 실제 위치는 물리가 옮긴다 —
+    /// <c>Update</c> 에서 밀어 넣으면 다음 물리 프레임이 다시 밖으로 내보낸다.</para>
+    ///
+    /// <para>🔵 넉백은 일부러 막지 않는다. 넉백으로 벽 밖까지 밀리면 여기서 되돌아온다.</para>
+    /// </summary>
+    private void FixedUpdate()
+    {
+        if (!ArenaBounds.Enabled || rb == null) return;
+
+        Vector2 now = rb.position;
+        Vector2 inside = ArenaBounds.Clamp(now);
+        if (inside != now) rb.position = inside;
+    }
+
+    /// <summary>
     /// <see cref="BuildingManager"/> 를 처음 쓸 때 찾아서 캐시한다.
     ///
     /// <para><b>Awake 에서 잡으면 안 된다.</b> <see cref="GameManager.BuildingMgr"/> 는

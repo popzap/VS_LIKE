@@ -59,7 +59,7 @@ public class EnemyBase : MonoBehaviour
     }
 
     // 🔴 컴파일 반영 확인용 (D27). Assets/Refresh 는 재컴파일을 보장하지 않는다.
-    public const int Version = 4;   // 2 = 행동 3종 추가 (D51) · 3 = ApplyStun (D108) · 4 = 미끼 어그로 (D110)
+    public const int Version = 5;   // 2 = 행동 3종 (D51) · 3 = ApplyStun (D108) · 4 = 미끼 어그로 (D110) · 5 = 아레나 경계 (D111)
 
     protected Rigidbody2D Rb;
     protected Transform   PlayerTransform;
@@ -250,6 +250,19 @@ public class EnemyBase : MonoBehaviour
     protected virtual void FixedUpdate()
     {
         if (IsDead || PlayerTransform == null) return;
+
+        // 🔴 <b>적도 아레나 안에 가둔다</b> (D111).
+        //    소환 지점은 이미 막았지만 그것만으로는 안 된다 —
+        //    ① 무리 분리와 콜라이더 밀림이 벽 밖으로 밀어낸다(실측 0.04 유닛)
+        //    ② 🔴 <b>Ranged 는 PreferredRange 를 지키려고 뒤로 물러난다</b> — 플레이어가 벽에 붙어 있으면
+        //       <b>벽 밖으로 후퇴해서 닿지 않는 곳에서 쏜다.</b> 이쪽이 진짜 문제다.
+        //    🔑 <b>early return 보다 위에 둔다</b> — 넉백 중에도(오히려 그때가 제일 많이 밀린다) 걸려야 한다.
+        if (ArenaBounds.Enabled)
+        {
+            Vector2 here = Rb.position;
+            Vector2 inside = ArenaBounds.Clamp(here);
+            if (inside != here) Rb.position = inside;
+        }
 
         // 넉백 중에는 추적을 멈춘다.
         // ⚠️ MoveTowardsPlayer 가 linearVelocity 를 통째로 덮어쓰기 때문에,

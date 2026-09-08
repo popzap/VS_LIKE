@@ -26,7 +26,9 @@ using UnityEngine;
 public class FreezerBuilding : BuildingBase
 {
     /// <summary>컴파일 반영 확인용 (D27).</summary>
-    public const int Version = 1;
+    // 🔴 `new` 가 필요하다 — BuildingBase 에도 Version 이 있어서 CS0108 경고가 난다 (D111 에서 잡았다).
+    //    가리는 게 의도다: 이 클래스의 컴파일 반영을 따로 확인하려는 상수다.
+    public new const int Version = 1;
 
     [Tooltip("지속시간을 주기의 몇 배로 걸어 줄지. 1 보다 커야 펄스 사이에 틈이 안 생긴다.")]
     [SerializeField] private float durationMultiplier = 1.35f;

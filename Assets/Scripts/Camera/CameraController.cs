@@ -129,8 +129,14 @@ public class CameraController : MonoBehaviour
         {
             float halfH = _cam.orthographicSize;
             float halfW = halfH * _cam.aspect;
-            smoothed.x = Mathf.Clamp(smoothed.x, cameraBounds.min.x + halfW, cameraBounds.max.x - halfW);
-            smoothed.y = Mathf.Clamp(smoothed.y, cameraBounds.min.y + halfH, cameraBounds.max.y - halfH);
+
+            // 🔴 아레나가 화면보다 좁으면 min > max 가 되고, Unity 의 Clamp 은 그때 <b>min 으로 붙인다</b>.
+            //    그러면 카메라가 한쪽 구석에 처박힌다. 그 축은 <b>가두지 말고 중앙에 둔다</b> (D111).
+            //    F7/F8 줌(4~11)으로 화면이 커질 수 있어서 실제로 일어날 수 있는 상황이다.
+            float loX = cameraBounds.min.x + halfW, hiX = cameraBounds.max.x - halfW;
+            float loY = cameraBounds.min.y + halfH, hiY = cameraBounds.max.y - halfH;
+            smoothed.x = loX <= hiX ? Mathf.Clamp(smoothed.x, loX, hiX) : cameraBounds.center.x;
+            smoothed.y = loY <= hiY ? Mathf.Clamp(smoothed.y, loY, hiY) : cameraBounds.center.y;
         }
 
         transform.position = smoothed;
@@ -170,6 +176,22 @@ public class CameraController : MonoBehaviour
     }
 
     /// <summary>보스 등장 줌아웃, 클리어 줌인 등에 사용.</summary>
+    /// <summary>
+    /// 카메라를 이 사각형 안에 가둔다 (D111 · <see cref="ArenaBounds"/> 가 부른다).
+    ///
+    /// <para>🔑 <b>클램프 코드는 원래 있었다</b> — <c>useBounds</c> 가 꺼져 있었을 뿐이다.
+    /// 여기서는 값을 넣고 스위치를 켜기만 한다.</para>
+    ///
+    /// <para>⚠️ 아레나가 화면보다 작으면 <c>min + halfW &gt; max - halfW</c> 가 되어
+    /// <c>Mathf.Clamp</c> 이 <b>min 쪽으로 붙는다</b>(Unity 의 Clamp 은 min 을 우선한다).
+    /// 그러면 카메라가 한쪽 구석에 붙어 버리므로, 그 경우에는 <b>가두지 않는다.</b></para>
+    /// </summary>
+    public void SetBounds(Bounds b)
+    {
+        cameraBounds = b;
+        useBounds    = true;
+    }
+
     public void SetTargetZoom(float zoom) => _targetZoom = zoom;
 
     /// <summary>기본 줌으로 복귀. 🔴 사용자가 F7/F8 로 정한 배율을 존중한다.</summary>
