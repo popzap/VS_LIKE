@@ -21,6 +21,7 @@ Shuriken,Shuriken,Spinning stars that punch through three enemies in a line.,Ass
 Toxin,Toxin,Spills a toxic pool nearby. Enemies inside are slowed and keep taking damage.,Assets/Game/Sprites/Weapons/Toxin.png,Weapon,5,Toxin,90
 Mic,Mic,A narrow cone that reaches much farther than a blade.,Assets/Game/Sprites/Weapons/Mic.png,Weapon,5,Mic,90
 Orbit,Orbit,Orbs circle you and strike whatever they touch. Never aims. Covers your back.,Assets/Game/Sprites/Weapons/Orb.png,Weapon,5,Orbit,100
+Mine,Mine,Drops mines where you stand. Whatever chases you walks onto them.,Assets/Game/Sprites/Weapons/Mine.png,Weapon,5,Mine,95
 # ── 소환수 (C19) — 설명문에 "follows you" 를 반드시 넣는다.
 #    이 둘만 화면에 몸통이 보이는 무기라, 플레이어가 아이템 설명에서 그걸 예상할 수 있어야 한다.
 SummonDragon,Dragon,A dragon flies at your side and spits fireballs that burst on impact.,Assets/Game/Sprites/Weapons/Dragon.png,Weapon,5,SummonDragon,110

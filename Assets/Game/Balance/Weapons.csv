@@ -45,6 +45,7 @@ Shuriken,Shuriken,Assets/Prefabs/Weapon_Sword.prefab,Assets/Game/Sprites/Weapons
 Toxin,Toxin,Assets/Prefabs/Weapon_Field.prefab,Assets/Game/Sprites/Weapons/Toxin.png,Assets/Prefabs/Proj_ToxinField.prefab,,0,3|4|6|8|11,3|2.7|2.4|2.1|1.8,1|1.1|1.2|1.35|1.5,1|1|1|1|1,4|5|5|6|6
 Mic,Mic,Assets/Prefabs/Weapon_Mic.prefab,Assets/Game/Sprites/Weapons/Mic.png,Assets/Prefabs/Fx_SoundCone.prefab,,0,7|10|14|19|26,1.1|1|0.9|0.8|0.7,1|1.1|1.2|1.3|1.4,1|1|2|2|3,4|4.4|4.8|5.2|5.6
 Orbit,Orbit,Assets/Prefabs/Weapon_Orbit.prefab,Assets/Game/Sprites/Weapons/Orb.png,Assets/Prefabs/Proj_Orb.prefab,,110,5|7|9|12|16,0.5|0.45|0.4|0.35|0.3,0.5|0.55|0.6|0.65|0.7,2|2|3|3|4,1.6|1.7|1.8|2|2.2
+Mine,Mine,Assets/Prefabs/Weapon_Mine.prefab,Assets/Game/Sprites/Weapons/Mine.png,Assets/Prefabs/Proj_Mine.prefab,Assets/Prefabs/Proj_Aoe(Boom).prefab,8,22|30|42|58|80,2.2|2|1.8|1.6|1.4,0.9|1|1.1|1.2|1.35,1|1|1|2|2,0.7|0.75|0.8|0.85|0.9
 # 🔴 Weapon_Orbit 은 아래 6개 열의 뜻을 **전부** 바꾼다 (D118). 이 무기만 조준을 안 한다.
 #   ProjectileCount = 동시 발사 수가 아니라 **구체 개수**.
 #                     🔑 ScaledProjectileCount 를 그대로 쓰므로 DoubleProjectiles 특전이 구체를 2배로 만든다.
@@ -56,6 +57,18 @@ Orbit,Orbit,Assets/Prefabs/Weapon_Orbit.prefab,Assets/Game/Sprites/Weapons/Orb.p
 #                     🔴 늘 켜져 있는 무기라 이 값이 곧 DPS 다 — 0.5 면 초당 2회.
 #   ProjectilePrefab= 발사체가 아니라 **구체 그림**(Proj_Orb · 콜라이더도 강체도 없다).
 # 🔵 겨누지 않는 유일한 무기다. 그래서 파는 것은 피해가 아니라 **등 뒤가 안전해진다**는 것이다.
+# 🔴 Weapon_Mine 은 아래 6개 열의 뜻을 바꾼다 (D119). 이 무기만 **겨누지 않고 발밑에 둔다.**
+#   ProjectileCount = 동시 발사 수가 아니라 **한 번에 놓는 개수**
+#   Range           = 사거리가 아니라 **밟았다고 볼 반경**(기폭). 0.7 이면 적이 그 안에 들어와야 터진다
+#   ProjectileSize  = **폭발 반경**의 배수 (프리팹 explosionRadius 1.8 에 곱해진다)
+#   ProjectileSpeed = 유닛/초가 아니라 **수명(초)**. 지나면 터지지 않고 조용히 사라진다
+#   ProjectilePrefab= 발사체가 아니라 **지뢰 몸체**(MineBody)
+#   TravelPrefab    = 🔑 **터질 때 쓸 폭발**(AoeProjectile). AoE 무기와 반대로 쓰인다 —
+#                     저쪽은 "날아가는 몸체"이고 여기는 **지뢰가 몸체**다
+# 🔑 폭탄과 갈리는 지점: 폭탄은 **가장 가까운 적을 노려 날리고**, 지뢰는 **지금 선 자리에 둔다.**
+#    그래서 이 게임의 핵심 동사(도망)와 짝이 맞는다 — 도망친 거리만큼 피해가 된다.
+# 🔴 Damage 를 폭탄보다 높게 잡은 이유: 적이 **제 발로 밟아야** 하고, 놓고 0.45초는 안 터진다.
+#    폭탄(즉발)과 나란히 읽으면 세 보이지만 실제로 맞는 비율이 다르다.
 # ── 소환수 (C19 · D13 이 만든 SummonWeapon) ─────────────────────────────────
 # 🔴 소환수는 판정 기준점이 플레이어가 아니라 "몸통"이다. 몸통은 플레이어에게서
 #    offsetDistance(1.2) 만큼 떨어져 따라다닌다 — 아래 Range 는 전부 **몸통 기준**이다.

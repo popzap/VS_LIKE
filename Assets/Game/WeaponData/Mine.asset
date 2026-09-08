@@ -1,0 +1,45 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7743b8d275c61e1489bfd9158b4aa25c, type: 3}
+  m_Name: Mine
+  m_EditorClassIdentifier: Assembly-CSharp::WeaponData
+  WeaponName: Mine
+  WeaponPrefab: {fileID: 7710070822802352840, guid: 2991c63d3cba2634d83a0ea5f5070496, type: 3}
+  Icon: {fileID: 21300000, guid: 2c1a9f5f35c15c2478a6dfb2cddcb587, type: 3}
+  Damage:
+  - 22
+  - 30
+  - 42
+  - 58
+  - 80
+  Cooldown:
+  - 2.2
+  - 2
+  - 1.8
+  - 1.6
+  - 1.4
+  ProjectileSize:
+  - 0.9
+  - 1
+  - 1.1
+  - 1.2
+  - 1.35
+  ProjectileCount: 0100000001000000010000000200000002000000
+  Range:
+  - 0.7
+  - 0.75
+  - 0.8
+  - 0.85
+  - 0.9
+  ProjectileSpeed: 8
+  ProjectilePrefab: {fileID: 691123369852945806, guid: 5085ab2ed1ba1304c91f929c40b3a0df, type: 3}
+  TravelPrefab: {fileID: 3536473091996557698, guid: 0af0a39c93ba02c41a7b601b9f02d161, type: 3}
