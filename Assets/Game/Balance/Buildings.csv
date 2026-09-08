@@ -15,6 +15,13 @@
 #    🔵 Freezer 의 AttackCooldown 은 레벨이 올라도 안 줄인다 — 지속시간을 주기보다 길게 걸어
 #       틈을 없애는 방식이라 주기를 줄여도 체감이 같다. 레벨은 감속률과 반경으로 올린다.
 #    🔴 Siren 의 Output 은 AttackCooldown 의 60 % 를 넘으면 코드가 잘라낸다(상시 정지 방지).
+#    Decoy   = 최대 체력                                · AttackCooldown = 부서진 뒤 다시 서기까지의 시간
+#              AttackRange 는 '어그로 반경' 이다 — 이 안의 적이 플레이어 대신 미끼를 쫓는다.
+#    🔴 Decoy 의 Output(체력)은 '몇 초 버티나' 로 읽어야 한다 — 숫자만 보면 감이 안 온다.
+#       D110 실측: 1층 잡몹 6마리가 붙으면 초당 66 이 깎인다(접촉 피해 합 그대로).
+#       ⇒ Lv1 530 은 그 상황에서 약 8초다. 값을 고칠 때는 '초 x 66' 으로 되돌려 생각할 것.
+#       ⚠️ 후반에는 적 수와 LayerScaling.DamageMult 가 같이 올라 훨씬 빨리 깎인다 —
+#          Lv5 3400 도 9층에서는 8초가 안 된다. 그래서 레벨 곡선을 가파르게 잡았다.
 Id,BuildingName,Prefab,Icon,Damage,AttackRange,AttackCooldown,MaxCount,Output
 Turret,Turret,Assets/Prefabs/Building_Turret.prefab,Assets/Game/Sprites/Buildings/Turret.png,6|9|13|19|26,5|5.5|6|6.5|7,1.2|1.05|0.9|0.75|0.6,1|2|2|3|3,0|0|0|0|0
 Bombard,Bombard,Assets/Prefabs/Building_Bombard.prefab,Assets/Game/Sprites/Buildings/Bombard.png,20|29|42|58|80,3.5|3.8|4.2|4.6|5,3|2.7|2.4|2|1.6,1|1|1|2|2,0|0|0|0|0
@@ -23,3 +30,4 @@ Farm,Farm,Assets/Prefabs/Building_Farm.prefab,Assets/Game/Sprites/Buildings/Farm
 Restaurant,Restaurant,Assets/Prefabs/Building_Restaurant.prefab,Assets/Game/Sprites/Buildings/Restaurant.png,0|0|0|0|0,0|0|0|0|0,60|55|50|45|40,1|1|1|2|2,15|25|40|60|85
 Freezer,Freezer,Assets/Prefabs/Building_Freezer.prefab,Assets/Game/Sprites/Buildings/Freezer.png,0|0|0|0|0,3.5|3.8|4.2|4.6|5,0.5|0.5|0.5|0.5|0.5,1|1|2|2|2,0.25|0.32|0.4|0.48|0.55
 Siren,Siren,Assets/Prefabs/Building_Siren.prefab,Assets/Game/Sprites/Buildings/Siren.png,0|0|0|0|0,4|4.5|5|5.5|6,8|7.2|6.4|5.6|4.8,1|1|1|2|2,0.6|0.8|1|1.3|1.6
+Decoy,Decoy,Assets/Prefabs/Building_Decoy.prefab,Assets/Game/Sprites/Buildings/Decoy.png,0|0|0|0|0,5|5.5|6|6.5|7,12|11|10|9|8,1|1|1|2|2,530|900|1500|2300|3400

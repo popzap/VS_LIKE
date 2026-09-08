@@ -59,7 +59,7 @@ public class EnemyBase : MonoBehaviour
     }
 
     // 🔴 컴파일 반영 확인용 (D27). Assets/Refresh 는 재컴파일을 보장하지 않는다.
-    public const int Version = 3;   // 2 = 행동 3종 추가 (D51) · 3 = ApplyStun (D108)
+    public const int Version = 4;   // 2 = 행동 3종 추가 (D51) · 3 = ApplyStun (D108) · 4 = 미끼 어그로 (D110)
 
     protected Rigidbody2D Rb;
     protected Transform   PlayerTransform;
@@ -297,7 +297,21 @@ public class EnemyBase : MonoBehaviour
         Rb.linearVelocity = Steer(ToPlayer().normalized) * CurrentSpeed;
     }
 
-    protected Vector2 ToPlayer() => (Vector2)PlayerTransform.position - (Vector2)transform.position;
+    /// <summary>
+    /// 지금 쫓아야 할 지점 (D110).
+    ///
+    /// <para>🔑 <b>이름은 <c>ToPlayer</c> 지만 늘 플레이어는 아니다.</b> 반경 안에 살아 있는
+    /// <see cref="DecoyBuilding"/>(미끼)이 있으면 그쪽이다. 이름을 안 바꾼 이유는
+    /// <b>호출부가 여섯 군데</b>(Chaser·Ranged·Charger·Flanker·Swarmer·Blocker)이고
+    /// 그 전부가 이 한 줄을 거치기 때문이다 — <b>여기만 바꾸면 여섯이 한꺼번에 따라온다.</b></para>
+    ///
+    /// <para>🔴 <c>AimPointNow</c>(Blocker 의 예측 조준)는 <b>일부러 안 바꿨다.</b>
+    /// 그건 "플레이어가 갈 길을 막는다" 는 행동이라 <b>움직이는 대상에만 뜻이 있다.</b>
+    /// 미끼는 가만히 있으므로 앞을 막을 것이 없다.</para>
+    /// </summary>
+    protected Vector2 ToPlayer()
+        => DecoyBuilding.ResolveTarget(transform.position, PlayerTransform.position)
+         - (Vector2)transform.position;
 
     // ── 무리 분리 (모든 적 공통) ─────────────────────────────────
     //
@@ -832,7 +846,32 @@ public class EnemyBase : MonoBehaviour
 
     private void OnTriggerStay2D(Collider2D other)
     {
-        if (IsDead || !other.CompareTag("Player")) return;
-        other.GetComponent<PlayerStats>()?.TryTakeHit(ContactDamage, transform.position);
+        if (IsDead) return;
+
+        if (other.CompareTag("Player"))
+        {
+            other.GetComponent<PlayerStats>()?.TryTakeHit(ContactDamage, transform.position);
+            return;
+        }
+
+        // 🔑 미끼는 때려서 부술 수 있다 (D110). 그래야 "끌어당기고 끝" 이 아니라
+        //    <b>버텨 주는 시간</b>이 자원이 된다 — 얼마나 오래 붙잡아 두느냐가 값어치다.
+        // 🔴 태그가 아니라 컴포넌트로 가른다. 건물 레이어에는 미끼가 아닌 건물도 있고,
+        //    그것들은 맞아도 아무 일이 없어야 한다.
+        var decoy = other.GetComponent<DecoyBuilding>();
+        if (decoy != null) decoy.TakeHit(ContactDamage * Time.fixedDeltaTime * decoyDpsScale);
     }
+
+    /// <summary>
+    /// 미끼에 넣는 피해의 배율 (D110).
+    ///
+    /// <para>🔴 <b>플레이어와 같은 계산을 쓸 수 없다.</b> 플레이어 쪽은 <b>무적 시간</b>이
+    /// 연타를 막아서 <c>ContactDamage</c> 를 "한 방"으로 넣는데, 미끼는 무적이 없어서
+    /// 같은 식이면 <b>물리 프레임마다 한 방</b>이 들어가 초당 50배가 된다
+    /// (예전에 플레이어 쪽에서 실제로 났던 문제다 — 위 주석 참고).</para>
+    ///
+    /// <para>⇒ 미끼에는 <b>초당 피해</b>로 넣는다. <c>fixedDeltaTime</c> 을 곱해 프레임 수와 무관하게 만들고,
+    /// 여기에 배율을 하나 더 둬서 <b>얼마나 오래 버티는지</b>를 이 값 하나로 조절한다.</para>
+    /// </summary>
+    private const float decoyDpsScale = 1f;
 }
