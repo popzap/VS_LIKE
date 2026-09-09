@@ -29,7 +29,7 @@ using UnityEngine;
 public class ChallengeStatue : MonoBehaviour
 {
     /// <summary>컴파일 반영 확인용 (D27).</summary>
-    public const int Version = 1;
+    public const int Version = 2;   // 2 = 깨어남 연출·전용 소리 (D124)
 
     [Header("도전")]
     [Tooltip("이 거리 안에서 E 를 누르면 발동한다(유닛). 🔴 좁으면 안 닿는다 (B18).")]
@@ -51,6 +51,16 @@ public class ChallengeStatue : MonoBehaviour
     [Tooltip("아직 쓸 수 있을 때 룬이 숨쉬는 주기(초). 0 이면 안 깜빡인다.")]
     [SerializeField] private float pulsePeriod = 1.6f;
 
+    [Header("깨어남 연출 (D124)")]
+    [Tooltip("퍼지는 고리의 색. 붉은 룬과 같은 계열이라야 '이 석상이 한 일'로 읽힌다.")]
+    [SerializeField] private Color awakenColor = new(1f, 0.35f, 0.2f, 1f);
+
+    [Tooltip("누른 순간 석상이 번쩍이는 색.")]
+    [SerializeField] private Color flashColor = new(1f, 0.85f, 0.7f, 1f);
+
+    [Tooltip("번쩍임이 지나 원래(쓴) 색으로 잦아드는 데 걸리는 시간(초).")]
+    [SerializeField] private float flashSeconds = 0.45f;
+
     /// <summary>지금 판에 서 있는 석상들. 디렉터와 안내 UI 가 본다.</summary>
     public static readonly List<ChallengeStatue> Active = new();
 
@@ -59,6 +69,7 @@ public class ChallengeStatue : MonoBehaviour
     private readonly List<EnemyBase> _summoned = new();
     private bool _used;
     private bool _paid;
+    private float _flashUntil;
 
     /// <summary>아직 도전할 수 있나 (검증용).</summary>
     public bool Ready => !_used;
@@ -135,8 +146,11 @@ public class ChallengeStatue : MonoBehaviour
 
         if (_summoned.Count == 0) { _used = false; return false; }   // 하나도 못 불렀으면 되돌린다
 
-        AudioManager.Play(SfxId.BossAppear);   // 🟡 자리표시 — 석상 전용 소리는 아직 없다
-        Tint(spentTint);
+        // D124 — 눌렀다는 사실이 화면과 귀에 남아야 한다.
+        AudioManager.Play(SfxId.StatueAwaken);
+        StatueAwakenFx.Play(transform.position, awakenColor);
+        _flashUntil = Time.time + flashSeconds;
+        Tint(flashColor);
         return true;
     }
 
@@ -154,6 +168,15 @@ public class ChallengeStatue : MonoBehaviour
             Pulse();
             return;
         }
+
+        // 🔵 번쩍임이 잦아든다 (D124). 코루틴을 안 쓰는 이유는 이미 매 프레임 도는 Update 가 있어서다.
+        if (_flashUntil > 0f)
+        {
+            float k = Mathf.InverseLerp(_flashUntil - flashSeconds, _flashUntil, Time.time);
+            Tint(Color.Lerp(flashColor, spentTint, k));
+            if (Time.time >= _flashUntil) { _flashUntil = 0f; Tint(spentTint); }
+        }
+
         if (_paid) return;
 
         for (int i = _summoned.Count - 1; i >= 0; i--)

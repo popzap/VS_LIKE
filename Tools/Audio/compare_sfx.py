@@ -68,6 +68,9 @@ TARGETS = [
     ("Blink      (28)", "Assets/Game/Audio/SFX_Blink.wav", 28),
     ("ShieldUp   (29)", "Assets/Game/Audio/SFX_ShieldUp.wav", 29),
     ("ShieldBlock(18)", "Assets/Game/Audio/SFX_ShieldBlock.wav", 18),
+
+    # ── D124 신규 ────────────────────────────────────────────
+    ("StatueAwake(35)", "Assets/Game/Audio/SFX_StatueAwaken.wav", 35),
 ]
 
 BANDS = [(0, 200), (200, 800), (800, 3000), (3000, 9000), (9000, 22050)]
