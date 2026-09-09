@@ -29000,6 +29000,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 1855837409175803465, guid: a25b3b2ed063c5b4d9bee9bbbca7add9, type: 3}
       insertIndex: -1
       addedObject: {fileID: 4505039495625385298}
+    - targetCorrespondingSourceObject: {fileID: 1855837409175803465, guid: a25b3b2ed063c5b4d9bee9bbbca7add9, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 4505039495625385300}
   m_SourcePrefab: {fileID: 100100000, guid: a25b3b2ed063c5b4d9bee9bbbca7add9, type: 3}
 --- !u!4 &4505039495625385280 stripped
 Transform:
@@ -29095,6 +29098,25 @@ MonoBehaviour:
   ringColor: {r: 0.45, g: 0.8, b: 1, a: 0.85}
   ringSegments: 40
   sortingOrder: 25
+--- !u!114 &4505039495625385300
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 404764583}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 20fa4db5e63ded94bb6ebffe60784255, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::BlinkGauge
+  width: 0.9
+  thickness: 0.1
+  yOffset: -0.62
+  emptyColor: {r: 0.08, g: 0.1, b: 0.14, a: 0.75}
+  fillColor: {r: 0.35, g: 0.85, b: 1, a: 0.95}
+  readyColor: {r: 1, g: 0.95, b: 0.55, a: 1}
+  sortingOrder: 5
 --- !u!1001 &4688072706779885624
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -29738,7 +29760,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2390381838099993656, guid: c31a45deba47f474fbd07507a573c2b2, type: 3}
       propertyPath: allItems.Array.size
-      value: 39
+      value: 40
       objectReference: {fileID: 0}
     - target: {fileID: 2390381838099993656, guid: c31a45deba47f474fbd07507a573c2b2, type: 3}
       propertyPath: 'cards.Array.data[0]'
@@ -29908,6 +29930,10 @@ PrefabInstance:
       propertyPath: 'allItems.Array.data[38]'
       value: 
       objectReference: {fileID: 11400000, guid: 4bddf396fe9454045950c3f0d75d6e2c, type: 2}
+    - target: {fileID: 2390381838099993656, guid: c31a45deba47f474fbd07507a573c2b2, type: 3}
+      propertyPath: 'allItems.Array.data[39]'
+      value: 
+      objectReference: {fileID: 11400000, guid: 65ed8e347064e984b8b64e0e73697005, type: 2}
     - target: {fileID: 4267826130673351957, guid: c31a45deba47f474fbd07507a573c2b2, type: 3}
       propertyPath: m_Name
       value: LevelUpManager

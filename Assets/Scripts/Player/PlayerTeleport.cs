@@ -21,7 +21,7 @@ using UnityEngine;
 public class PlayerTeleport : MonoBehaviour
 {
     /// <summary>컴파일 반영 확인용 (D27).</summary>
-    public const int Version = 1;
+    public const int Version = 3;   // 2 = 발밑 게이지용 창구 · 3 = 도약 프레임 Remaining 복구 (D126)
 
     [Tooltip("한 번에 건너뛰는 거리(유닛). 기본 이동 속도가 4 이므로 5 면 약 1.25초를 번다.")]
     [SerializeField] private float distance = 5f;
@@ -36,6 +36,28 @@ public class PlayerTeleport : MonoBehaviour
 
     /// <summary>다음 도약까지 남은 시간(초). 기능이 없으면 0.</summary>
     public float Remaining { get; private set; }
+
+    /// <summary>지금 도약 주기(초). 패시브가 없으면 0 — 곧 <b>기능이 없다</b>는 뜻이다 (D126).</summary>
+    public float Interval => _stats != null ? _stats.Final.TeleportInterval : 0f;
+
+    /// <summary>블링크를 가지고 있나. 게이지는 이게 거짓이면 아예 안 그린다 (D126).</summary>
+    public bool HasBlink => Interval > 0f;
+
+    /// <summary>
+    /// 다음 도약까지의 <b>차오름</b> (0 = 방금 썼다 · 1 = 준비됐다) — 발밑 게이지가 읽는다 (D126).
+    ///
+    /// <para>🔵 <c>Remaining</c> 을 그대로 안 쓴 이유는 <b>방향</b>이다 — 남은 시간은 줄어들고
+    /// 게이지는 차오른다. 뒤집는 자리를 게이지 쪽에 두면 다음에 표시가 하나 더 생길 때 또 뒤집는다.</para>
+    /// </summary>
+    public float Charge01
+    {
+        get
+        {
+            float iv = Interval;
+            if (iv <= 0f) return 0f;
+            return Mathf.Clamp01(1f - Remaining / iv);
+        }
+    }
 
     private void Awake()
     {
@@ -58,6 +80,10 @@ public class PlayerTeleport : MonoBehaviour
         if (_timer < interval) return;
 
         _timer = 0f;
+        // 🔴 도약한 <b>그 프레임</b>에도 남은 시간을 다시 채워 둔다 (D126 실측).
+        //    안 하면 Remaining 이 0 인 채로 한 프레임이 지나가서 발밑 게이지가
+        //    <b>튄 직후에 가득 찬 것처럼</b> 깜빡인다 — 실제로 그렇게 나왔다(직후 채움 1.00).
+        Remaining = interval;
         Jump();
     }
 
