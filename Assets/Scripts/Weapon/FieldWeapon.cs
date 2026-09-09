@@ -21,7 +21,7 @@ public class FieldWeapon : WeaponBase
         if (Data.ProjectilePrefab == null) return;
 
         // 적을 조준하지 않는다. 주변 아무 데나 깐다.
-        Vector2 spot = (Vector2)transform.position + Random.insideUnitCircle * Data.GetRange(Level);
+        Vector2 spot = (Vector2)transform.position + Random.insideUnitCircle * ScaledRange();
 
         var go    = Pool.Get(Data.ProjectilePrefab, spot, Quaternion.identity);
         var field = go.GetComponent<ToxinField>();

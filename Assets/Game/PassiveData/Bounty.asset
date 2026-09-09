@@ -115,3 +115,9 @@ MonoBehaviour:
   - 0.8
   - 1
   - 1.25
+  BonusRange:
+  - 0
+  - 0
+  - 0
+  - 0
+  - 0

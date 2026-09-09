@@ -57,7 +57,7 @@ public class MineWeapon : WeaponBase
         int    count  = ScaledProjectileCount();
         float  dmg    = CalculateDamage();
         float  radius = explosionRadius * Data.GetProjectileSize(Level);
-        float  trigger = Mathf.Max(0.2f, Data.GetRange(Level));
+        float  trigger = Mathf.Max(0.2f, ScaledRange());
         float  life   = Mathf.Max(1f, Data.ProjectileSpeed);
 
         for (int i = 0; i < count; i++)

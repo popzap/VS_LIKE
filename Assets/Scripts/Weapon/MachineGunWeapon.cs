@@ -64,7 +64,7 @@ public class MachineGunWeapon : ProjectileWeapon
             var go   = Pool.Get(Data.ProjectilePrefab, transform.position, Quaternion.identity);
             var proj = go.GetComponent<ProjectileBase>();
             proj.Initialize(dir, CalculateDamage(), Data.GetProjectileSize(Level),
-                            Data.ProjectileSpeed, Data.GetRange(Level), Pool);
+                            Data.ProjectileSpeed, ScaledRange(), Pool);
         }
 
         // 발사체 개수만큼 울리면 소리가 뭉개진다. 한 번만 낸다.

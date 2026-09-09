@@ -56,7 +56,7 @@ public class OrbitWeapon : WeaponBase
     private readonly HashSet<EnemyBase> _hitThisSweep = new();
 
     private int DesiredOrbs => Mathf.Max(1, ScaledProjectileCount());
-    private float OrbitRadius => Data != null ? Mathf.Max(0.3f, Data.GetRange(Level)) : 1f;
+    private float OrbitRadius => Data != null ? Mathf.Max(0.3f, ScaledRange()) : 1f;
     private float OrbScale => Data != null ? Mathf.Max(0.1f, Data.GetProjectileSize(Level)) : 1f;
 
     // ── 생애 ────────────────────────────────────────────────────

@@ -222,7 +222,7 @@ public class SummonWeapon : WeaponBase
     /// <summary>몸통마다 사거리가 따로다 (D113) — 어느 자리에서 찾는지를 밖에서 정한다.</summary>
     private Transform NearestFrom(Vector2 origin)
     {
-        Collider2D[] hits = Physics2D.OverlapCircleAll(origin, Data.GetRange(Level),
+        Collider2D[] hits = Physics2D.OverlapCircleAll(origin, ScaledRange(),
                             LayerMask.GetMask("Enemy"));
         if (hits.Length == 0) return null;
 
@@ -280,7 +280,7 @@ public class SummonWeapon : WeaponBase
 
     private IEnumerator Lash(GameObject body)
     {
-        float range = Data.GetRange(Level);
+        float range = ScaledRange();
 
         SpawnLash(body, range);
         // ⚠️ 클립은 "0.1초에 때리는 휘두르기"로 구워져 있다. lashHitDelay 를 바꾸면

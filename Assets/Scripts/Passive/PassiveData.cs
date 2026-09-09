@@ -41,6 +41,9 @@ public class PassiveData : ScriptableObject
              "이 게임에서 유일하게 '나를 나쁘게 만드는' 값이다")]
     public float[] BonusEnemyHp          = { 0, 0, 0, 0, 0 };
 
+    [Tooltip("무기 공격 범위 가산 배율 (D125). 0.2 = 사거리 1.2배. 🔴 건물에는 안 걸린다")]
+    public float[] BonusRange            = { 0, 0, 0, 0, 0 };
+
     private float Get(float[] arr, int lv) => arr.Length == 0 ? 0 :
         arr[Mathf.Clamp(lv - 1, 0, arr.Length - 1)];
 
@@ -61,4 +64,5 @@ public class PassiveData : ScriptableObject
     public float GetTeleportInterval(int lv) => Get(BonusTeleportInterval, lv);
     public float GetShieldInterval(int lv)   => Get(BonusShieldInterval, lv);
     public float GetEnemyHp(int lv)          => Get(BonusEnemyHp, lv);
+    public float GetRange(int lv)            => Get(BonusRange, lv);
 }

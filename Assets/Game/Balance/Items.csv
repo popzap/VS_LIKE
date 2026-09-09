@@ -54,6 +54,8 @@ Teleport,Blink,Blinks you forward on a timer. Breaks a surround without walking.
 Shield,Barrier,Regrows a barrier that eats one incoming shot. Ranged only.,Assets/Game/Sprites/Passives/Shield.png,Passive,5,Shield,70
 # ── 현상금 (D121) — 적 체력과 골드를 같이 올린다. 유일하게 불리한 면이 있는 패시브다.
 Bounty,Bounty Hunter,Enemies spawn with more health but every kill pays far more gold.,Assets/Game/Sprites/Passives/Bounty.png,Passive,5,Bounty,60
+# ── 공격 범위 (D125) — 무기만 늘어난다. 건물 사거리는 안 바뀐다.
+Range,Attack Range,Every weapon reaches farther. Melee arcs and mine triggers grow too.,Assets/Game/Sprites/Passives/Range.png,Passive,5,Range,60
 # ── 진화 결과 아이템 ────────────────────────────────────────────────────────
 # ⚠️ 이 아이템들은 SceneWiring.csv 의 LevelUpManager,allItems 에 넣지 말 것.
 #    넣으면 레벨업 3택과 상점에 그냥 나와서 진화라는 절차 자체가 무의미해진다.

@@ -18,6 +18,7 @@ public class StatBlock
     public float XpGain         = 1f;   // 획득 경험치 배율
     public float GoldGain       = 1f;   // 획득 골드 배율
     public float BuildingCooldown = 1f; // 건물 쿨다운 배율 (낮을수록 빠름)
+    public float AttackRange      = 1f; // 무기 사거리 배율 (D125). 🔴 건물은 안 건드린다
 
     /// <summary>
     /// 행운. <b>드랍 확률에 곱하는 배율의 "덧셈분"</b>이다 —
@@ -108,6 +109,7 @@ public class StatBlock
         XpGain         = 0f,
         GoldGain       = 0f,
         BuildingCooldown = 0f,
+        AttackRange      = 0f,
         Luck             = 0f,
         HpRegen          = 0f,   // 🔴 새 필드는 여기에도 넣어야 한다 (I-21)
         SummonCount      = 0f,
@@ -146,6 +148,7 @@ public class StatBlock
         XpGain           = a.XpGain           + b.XpGain,
         GoldGain         = a.GoldGain         + b.GoldGain,
         BuildingCooldown = a.BuildingCooldown + b.BuildingCooldown,
+        AttackRange      = a.AttackRange      + b.AttackRange,
         Luck             = a.Luck             + b.Luck,      // 🔴 B13 — 여기가 빠져 있었다
         HpRegen          = a.HpRegen          + b.HpRegen,
         SummonCount      = a.SummonCount      + b.SummonCount,
