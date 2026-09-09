@@ -9,6 +9,7 @@ WaveManager,normalWaves,Assets/Game/WaveData/Normal1.asset|Assets/Game/WaveData/
 WaveManager,eliteWaves,Assets/Game/WaveData/Elite1.asset|Assets/Game/WaveData/Elite2.asset,엘리트 스테이지에서 무작위로 하나 선택
 WaveManager,bossWave,Assets/Game/WaveData/Boss1.asset,보스 스테이지 고정
 WaveManager,eventWaves,Assets/Game/WaveData/Ambush1.asset,"이벤트 전투용 웨이브 (D76). 🔴 비어 있으면 노말로 떨어진다. Events.csv 의 WaveId 가 여기서 이름으로 찾는다 — 배선이 빠지면 FindWave 가 null 을 돌려주고 경고를 찍은 뒤 노드 종류로 간다"
+RiftDirector,riftData,Assets/Game/EnemyData/Rift.asset,"균열의 EnemyData (D122). 적이 아니라 적이 나오는 자리다 — 비우면 균열이 한 번도 안 열린다."
 GameManager,classes,Assets/Game/ClassData/Warrior.asset|Assets/Game/ClassData/Ranger.asset|Assets/Game/ClassData/Mage.asset|Assets/Game/ClassData/Demolitionist.asset|Assets/Game/ClassData/Assassin.asset|Assets/Game/ClassData/Summoner.asset,직업 목록. 여기 없는 직업은 선택 화면에 뜨지 않는다
 MetaProgressionManager,upgrades,Assets/Game/UpgradeData/UpPickupRadius.asset|Assets/Game/UpgradeData/UpMaxHp.asset|Assets/Game/UpgradeData/UpDamage.asset|Assets/Game/UpgradeData/UpXpGain.asset|Assets/Game/UpgradeData/UpCritMultiplier.asset|Assets/Game/UpgradeData/UpArmor.asset|Assets/Game/UpgradeData/UpMoveSpeed.asset,메타 강화 목록. 순서가 곧 화면 카드 순서다 (C29 가 정한 순서 · D33 이 이 줄을 열었다)
 BuildingManager,placementBlockLayer,Building,이 레이어와 겹치면 설치를 막는다. 레이어 "이름"을 | 로 나열

@@ -41,3 +41,7 @@ Wolf,Wolf,Assets/Prefabs/Enemy_Goblin.prefab,Assets/Game/Sprites/Enemies/Wolf.pn
 Demon,Demon,Assets/Prefabs/Enemy_Goblin.prefab,Assets/Game/Sprites/Enemies/Demon.png,Assets/Game/Sprites/Enemies/Walk/Demon_Walk.png,#FFFFFF,1.85,160,2.8,20,4,22,8,Ranged,Assets/Prefabs/Proj_EnemyBolt.prefab,7,2.5,6,12,,,,,,,,,,,,,,2.2,1.4,1.15,3,8,2.2,0.85,10
 Ogre,Ogre,Assets/Prefabs/Enemy_Goblin.prefab,Assets/Game/Sprites/Enemies/Ogre.png,Assets/Game/Sprites/Enemies/Walk/Ogre_Walk.png,#FFFFFF,2.4,220,1.2,25,6,18,6,Blocker,,,,,,,,,,,,,,,,,1.8,2.5,2,1.4,1.2,3,7,2,0.9,10
 Bonecaller,Bonecaller,Assets/Prefabs/Enemy_Goblin.prefab,Assets/Game/Sprites/Enemies/Bonecaller.png,,#FFFFFF,2.4,220,1.2,25,6,18,6,Chaser,,,,,,,,,,,,,,,,,,,2,1.4,1.2,3,7,2,0.9,10
+# ── 균열 (D122) — 적이 아니라 **적이 나오는 자리**다. MoveSpeed·ContactDamage 가 0 이고 RiftEnemy 가 이동을 통째로 덮어 안 걷는다.
+#   MaxHp = 닫는 데 드는 화력 · XpDrop·CurrencyDrop = 닫았을 때의 보상(상자는 코드가 따로 놓는다).
+#   🔴 AI 열은 안 쓴다 — 비워 두지 않고 Chaser 를 적은 것은 임포터가 enum 을 읽기 때문이다.
+Rift,Rift,Assets/Prefabs/Enemy_Rift.prefab,Assets/Game/Sprites/Enemies/Rift.png,,#FFFFFF,3.2,240,0,0,0,30,12,Chaser,,,,,,,,,,,,,,,,,,,1,1,1,1,1,1,1,1

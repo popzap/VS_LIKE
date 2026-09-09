@@ -10,7 +10,7 @@ using UnityEngine;
 public class WaveManager : MonoBehaviour
 {
     /// <summary>컴파일 반영 확인용 (D27). 새 심볼을 넣을 때마다 올린다.</summary>
-    public const int Version = 3;
+    public const int Version = 4;   // 4 = 균열 (D122 · RandomCurrentEnemy · ignoreCap · 앵커 제외)
 
     [Header("참조")]
     [SerializeField] private WaveData[]  normalWaves;   // 노말 웨이브 풀
@@ -612,7 +612,9 @@ public class WaveManager : MonoBehaviour
         foreach (var e in _alive)
         {
             // 보스는 옮기지 않는다 — 갑자기 등 뒤에 나타나면 반칙처럼 느껴진다.
-            if (e == null || e.IsBoss) continue;
+            // 🔴 균열도 옮기지 않는다 (D122) — 자리가 곧 그 존재라서, 따라오면
+            //    "저기서 온다"가 다시 "내 주변에서 온다"가 된다.
+            if (e == null || e.IsBoss || e.IsAnchored) continue;
             if (((Vector2)e.transform.position - p).sqrMagnitude < limitSqr) continue;
 
             e.Reposition(GetSpawnPosition());
@@ -808,19 +810,51 @@ public class WaveManager : MonoBehaviour
     /// 보스 옆에서 나와야 "불러냈다"로 보인다. 대신 <c>_alive</c> 에는 똑같이 넣어
     /// 상한·재배치·처치 판정이 그대로 걸리게 한다.</para>
     /// </summary>
-    public void SpawnMinion(EnemyData data, Vector2 at)
+    public EnemyBase SpawnMinion(EnemyData data, Vector2 at, bool ignoreCap = false)
     {
-        if (data == null || data.Prefab == null || enemyPool == null) return;
+        if (data == null || data.Prefab == null || enemyPool == null) return null;
 
         // 🔴 OnEnemyKilled 와 같은 이유로 null 을 본다 (B5). 이건 공개 API 라
         //    웨이브 밖에서 불릴 수 있고, 그때 NRE 가 나면 부르는 쪽(BossBrain)이 끊긴다.
-        if (_currentWaveData == null) return;
-        if (_alive.Count >= ScaledMaxAlive()) return;   // 상한은 보스도 못 넘는다
+        if (_currentWaveData == null) return null;
+
+        // 🔴 <b>균열만 상한을 넘는다</b> (D122 · <c>ignoreCap</c>). 균열은 잡몹이 아니라
+        //    <b>잡몹이 나오는 자리</b>라서, 판이 꽉 찼다는 이유로 못 열리면 후반에는 영영 안 나온다.
+        //    반대로 균열이 <b>뱉는</b> 것들은 상한을 그대로 지킨다 — 안 그러면 화면이 잠긴다.
+        if (!ignoreCap && _alive.Count >= ScaledMaxAlive()) return null;
 
         var go = enemyPool.Get(data.Prefab, at, Quaternion.identity);
         var enemy = go.GetComponent<EnemyBase>();
         enemy.Initialize(data);
         _alive.Add(enemy);
+        return enemy;
+    }
+
+    /// <summary>
+    /// <b>지금 웨이브에 나오는 잡몹 하나를 무작위로</b> 돌려준다 (D122 · <see cref="RiftEnemy"/>).
+    ///
+    /// <para>🔵 <see cref="CollectEnemies"/> 와 다르다 — 저쪽은 <b>도감용</b>이라 모든 웨이브 풀을
+    /// 훑어 보스·엘리트까지 담는다. 균열이 그걸 쓰면 <b>1층에서 보스가 기어 나온다.</b></para>
+    ///
+    /// <para>🔴 엘리트·보스 <c>Override</c> 는 일부러 뺐다. 균열이 뱉는 것은 <b>지금 이 웨이브의 잡몹</b>이다.</para>
+    /// </summary>
+    public EnemyData RandomCurrentEnemy()
+    {
+        if (_currentWaveData == null || _currentWaveData.Spawns == null) return null;
+
+        // 후보를 먼저 세고 고른다 — 빈 항목이 섞여 있으면 인덱스만 뽑아서는 null 이 나온다.
+        int n = 0;
+        foreach (var s in _currentWaveData.Spawns)
+            if (s != null && s.Enemy != null) n++;
+        if (n == 0) return null;
+
+        int pick = Random.Range(0, n);
+        foreach (var s in _currentWaveData.Spawns)
+        {
+            if (s == null || s.Enemy == null) continue;
+            if (pick-- == 0) return s.Enemy;
+        }
+        return null;
     }
 
     private Vector2 GetSpawnPosition()

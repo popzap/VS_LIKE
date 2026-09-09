@@ -7326,6 +7326,31 @@ MonoBehaviour:
   m_hasFontAssetChanged: 0
   m_baseMaterial: {fileID: 0}
   m_maskOffset: {x: 0, y: 0, z: 0, w: 0}
+--- !u!1 &536404948 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 6182971961831022965, guid: 3dec23194ba32e048855858b514f07fe, type: 3}
+  m_PrefabInstance: {fileID: 4688072706779885624}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &536404951
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 536404948}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 55912f54c7105f747ab09d3bd08b6d7a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RiftDirector
+  riftData: {fileID: 11400000, guid: 7ba76a171f0604146ae35d6d9c582d00, type: 2}
+  firstDelay: 25
+  interval: 40
+  maxActive: 2
+  minDistance: 9
+  maxDistance: 14
+  riftSpacing: 8
+  placeTries: 12
 --- !u!1 &580831803
 GameObject:
   m_ObjectHideFlags: 0
@@ -29169,7 +29194,10 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 6182971961831022965, guid: 3dec23194ba32e048855858b514f07fe, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 536404951}
   m_SourcePrefab: {fileID: 100100000, guid: 3dec23194ba32e048855858b514f07fe, type: 3}
 --- !u!1001 &4808611742429082723
 PrefabInstance:
@@ -29687,7 +29715,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2390381838099993656, guid: c31a45deba47f474fbd07507a573c2b2, type: 3}
       propertyPath: allItems.Array.size
-      value: 38
+      value: 39
       objectReference: {fileID: 0}
     - target: {fileID: 2390381838099993656, guid: c31a45deba47f474fbd07507a573c2b2, type: 3}
       propertyPath: 'cards.Array.data[0]'
@@ -29853,6 +29881,10 @@ PrefabInstance:
       propertyPath: 'allItems.Array.data[37]'
       value: 
       objectReference: {fileID: 11400000, guid: 76695f2462327014e94cc0c9a5bcc37f, type: 2}
+    - target: {fileID: 2390381838099993656, guid: c31a45deba47f474fbd07507a573c2b2, type: 3}
+      propertyPath: 'allItems.Array.data[38]'
+      value: 
+      objectReference: {fileID: 11400000, guid: 4bddf396fe9454045950c3f0d75d6e2c, type: 2}
     - target: {fileID: 4267826130673351957, guid: c31a45deba47f474fbd07507a573c2b2, type: 3}
       propertyPath: m_Name
       value: LevelUpManager

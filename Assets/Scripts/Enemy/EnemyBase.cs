@@ -20,6 +20,15 @@ public class EnemyBase : MonoBehaviour
     public bool IsElite { get; protected set; }
     public bool IsBoss  { get; protected set; }
 
+    /// <summary>
+    /// <b>자리에 못 박힌 적인가</b> (D122 · <see cref="RiftEnemy"/>).
+    ///
+    /// <para>🔴 <c>WaveManager.RecycleFarEnemies</c> 는 멀어진 적을 플레이어 곁으로 옮긴다.
+    /// 균열이 따라오면 <b>"저기"라는 개념 자체가 없어진다</b> — 보스를 뺀 것과 같은 이유이고,
+    /// 보스와 달리 균열은 <b>다음에 올 것들도 같이</b> 데려온다.</para>
+    /// </summary>
+    public virtual bool IsAnchored => false;
+
     // ── 밖에서 읽는 상태 (D31) ───────────────────────────────────
     //
     // 보스 HP 바와 BossBrain 이 본다. 🔴 읽기 전용으로만 연다 —
@@ -59,7 +68,7 @@ public class EnemyBase : MonoBehaviour
     }
 
     // 🔴 컴파일 반영 확인용 (D27). Assets/Refresh 는 재컴파일을 보장하지 않는다.
-    public const int Version = 6;   // 2 = 행동 3종 (D51) · 3 = ApplyStun (D108) · 4 = 미끼 어그로 (D110) · 5 = 아레나 경계 (D111) · 6 = 바리케이드 (D117)
+    public const int Version = 7;   // 2 = 행동 3종 (D51) · 3 = ApplyStun (D108) · 4 = 미끼 어그로 (D110) · 5 = 아레나 경계 (D111) · 6 = 바리케이드 (D117) · 7 = 균열 앵커 (D122)
 
     protected Rigidbody2D Rb;
     protected Transform   PlayerTransform;
