@@ -64,11 +64,18 @@ public class EvolutionPromptUI : MonoBehaviour
         // 동안이나 일시정지 화면 위에 안내가 겹쳐 뜰 이유가 없다.
         if (gm.CurrentState != GameState.Wave) return null;
 
-        var em = EvolutionManager.Instance;
-        if (em == null) return null;
-
         var player = PlayerStats.Current;
         if (player == null) return null;
+
+        // ⓪ 도전 석상 (D123). 🔴 <b><see cref="PlayerController"/> 와 같은 순서</b>여야 한다 —
+        //    거기서도 석상을 먼저 보므로, 여기서 뒤로 밀면 *"[E] 진화가 떴는데 도전이 걸린다"* 가 된다.
+        //    🔵 이 줄은 진화와 무관하지만 같은 자리를 쓴다 — 안내는 <b>한 줄뿐</b>이라
+        //    따로 만들면 두 시스템이 같은 픽셀을 놓고 다툰다(D81 이 겪은 일이다).
+        if (ChallengeStatue.NearestUsable(player.transform.position) != null)
+            return "<color=#F0C040>[E]</color>  CHALLENGE  —  awaken an elite";
+
+        var em = EvolutionManager.Instance;
+        if (em == null) return null;
 
         // ① 지금 누를 수 있다. 승급을 먼저 본다 — TryEvolveAtAltar 가 그 순서로 처리하므로
         //    안내와 실제 결과가 어긋나지 않아야 한다.

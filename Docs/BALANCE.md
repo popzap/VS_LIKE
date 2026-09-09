@@ -209,6 +209,22 @@ Assets/Game/Balance/*.csv
 씬의 `WaveManager` 오브젝트에 붙은 `RiftDirector` 가 들고 있다.
 뱉는 리듬(간격 3.5→1.0 · 초당 −0.06)은 `Enemy_Rift.prefab` 이 들고 있다.
 
+#### 🔴 구역 유도 2종 (D122·D123) — **수치의 절반이 CSV 밖에 있다**
+
+균열과 도전 석상은 *"언제·어디에·얼마나"* 가 **씬과 프리팹**에 있다. CSV 만 보면 못 찾는다.
+
+| 무엇 | 어디에 |
+|---|---|
+| 균열 체력·보상·크기 | `Enemies.csv` 의 `Rift` 행 (위 표) |
+| 균열이 **뱉는 리듬** (3.5 → 1.0초 · 초당 −0.06) | `Assets/Prefabs/Enemy_Rift.prefab` |
+| 균열을 **여는 리듬** (첫 25초 · 이후 40초 · 최대 2 · 거리 9~14) | 씬 `WaveManager` 의 `RiftDirector` |
+| 석상 **반경 2.8 · 엘리트 수 1 · 현상금 40** | `Assets/Prefabs/ChallengeStatue.prefab` |
+| 석상을 **세우는 리듬** (첫 12초 · 이후 35초 · 최대 2 · 거리 6~11) | 씬 `WaveManager` 의 `ChallengeDirector` |
+
+🔵 **석상이 깨우는 적은 값이 아니라 규칙이다** — `EliteOverride` 가 있으면 그것,
+없으면 그 웨이브의 잡몹 하나를 **엘리트로** 깨운다. 노말 웨이브는 후자라
+층이 바뀌면 도전 상대도 저절로 바뀐다. 등급 배율(체력 ×2.5 등)은 `Enemies.csv` 의 `Elite*` 열 그대로다.
+
 #### 스프라이트 규격 (I-25 · I-26 · I-27)
 
 | 항목 | 값 |

@@ -7351,6 +7351,26 @@ MonoBehaviour:
   maxDistance: 14
   riftSpacing: 8
   placeTries: 12
+--- !u!114 &536404952
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 536404948}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 609e746d6445b03488270c2bc2ccec0b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ChallengeDirector
+  statuePrefab: {fileID: 3698817762762957528, guid: dd3e31c921122ee40b6c01eed70829a5, type: 3}
+  firstDelay: 12
+  interval: 35
+  maxAlive: 2
+  minDistance: 6
+  maxDistance: 11
+  spacing: 6
+  placeTries: 12
 --- !u!1 &580831803
 GameObject:
   m_ObjectHideFlags: 0
@@ -29198,6 +29218,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 6182971961831022965, guid: 3dec23194ba32e048855858b514f07fe, type: 3}
       insertIndex: -1
       addedObject: {fileID: 536404951}
+    - targetCorrespondingSourceObject: {fileID: 6182971961831022965, guid: 3dec23194ba32e048855858b514f07fe, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 536404952}
   m_SourcePrefab: {fileID: 100100000, guid: 3dec23194ba32e048855858b514f07fe, type: 3}
 --- !u!1001 &4808611742429082723
 PrefabInstance:

@@ -10,7 +10,7 @@ using UnityEngine;
 public class WaveManager : MonoBehaviour
 {
     /// <summary>컴파일 반영 확인용 (D27). 새 심볼을 넣을 때마다 올린다.</summary>
-    public const int Version = 4;   // 4 = 균열 (D122 · RandomCurrentEnemy · ignoreCap · 앵커 제외)
+    public const int Version = 5;   // 4 = 균열 (D122 · RandomCurrentEnemy · ignoreCap · 앵커 제외) · 5 = 도전 석상 (D123 · ChallengeEnemy · isElite)
 
     [Header("참조")]
     [SerializeField] private WaveData[]  normalWaves;   // 노말 웨이브 풀
@@ -810,7 +810,7 @@ public class WaveManager : MonoBehaviour
     /// 보스 옆에서 나와야 "불러냈다"로 보인다. 대신 <c>_alive</c> 에는 똑같이 넣어
     /// 상한·재배치·처치 판정이 그대로 걸리게 한다.</para>
     /// </summary>
-    public EnemyBase SpawnMinion(EnemyData data, Vector2 at, bool ignoreCap = false)
+    public EnemyBase SpawnMinion(EnemyData data, Vector2 at, bool ignoreCap = false, bool isElite = false)
     {
         if (data == null || data.Prefab == null || enemyPool == null) return null;
 
@@ -825,9 +825,24 @@ public class WaveManager : MonoBehaviour
 
         var go = enemyPool.Get(data.Prefab, at, Quaternion.identity);
         var enemy = go.GetComponent<EnemyBase>();
-        enemy.Initialize(data);
+        enemy.Initialize(data, isElite);
         _alive.Add(enemy);
         return enemy;
+    }
+
+    /// <summary>
+    /// <b>도전 석상이 깨울 적</b>을 고른다 (D123 · <see cref="ChallengeStatue"/>).
+    ///
+    /// <para>🔵 <c>EliteOverride</c> 가 있으면 그것을, 없으면 <b>이 웨이브의 잡몹 하나</b>를 준다.
+    /// 노말 웨이브는 <c>EliteOverride</c> 가 비어 있어서(<c>Waves.csv</c> 실측) 후자가 기본이다 —
+    /// <b>이 층에 사는 놈의 엘리트판</b>이 나오는 셈이라 층마다 도전 상대가 저절로 달라진다.</para>
+    /// </summary>
+    public EnemyData ChallengeEnemy()
+    {
+        if (_currentWaveData == null) return null;
+        return _currentWaveData.EliteOverride != null
+             ? _currentWaveData.EliteOverride
+             : RandomCurrentEnemy();
     }
 
     /// <summary>

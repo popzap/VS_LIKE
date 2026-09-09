@@ -96,11 +96,21 @@ public class PlayerController : MonoBehaviour
             if (bm != null) bm.PlaceNext(transform.position);
         }
 
-        // ── 최종 진화 (E) ───────────────────────────────────
-        // 재료에 건물이 섞인 레시피는 그 건물 앞에서만 완성된다.
+        // ── 상호작용 (E) ────────────────────────────────────
+        // 재료에 건물이 섞인 진화 레시피는 그 건물 앞에서만 완성된다.
         // 조건이 안 맞으면 아무 일도 일어나지 않는다 — 실패 소리도 내지 않는다.
-        if (kb != null && kb.eKey.wasPressedThisFrame && EvolutionManager.Instance != null)
-            EvolutionManager.Instance.TryEvolveAtAltar(transform.position);
+        //
+        // 🔴 <b>도전 석상을 먼저 본다</b> (D123). 안내 UI 도 같은 순서라
+        //    "[E] 가 떴는데 눌러도 아무 일이 없다" 가 생기지 않는다.
+        //    석상과 제단이 겹칠 일은 거의 없지만, 겹치면 <b>눈앞에 서 있는 것</b>이 이긴다.
+        if (kb != null && kb.eKey.wasPressedThisFrame)
+        {
+            // 🔴 return 을 쓰지 않는다 — 지금은 이 블록이 함수의 끝이지만,
+            //    뒤에 무엇이 붙는 날 E 한 번에 그것들이 통째로 건너뛰어진다.
+            bool handled = ChallengeStatue.TryChallenge(transform.position);
+            if (!handled && EvolutionManager.Instance != null)
+                EvolutionManager.Instance.TryEvolveAtAltar(transform.position);
+        }
     }
 
     /// <summary>
